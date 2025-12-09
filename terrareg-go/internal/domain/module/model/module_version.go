@@ -1,7 +1,10 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -322,34 +325,144 @@ func (mv *ModuleVersion) GetDownloads() int {
 	return 0
 }
 
+// parseTerraformDocs is a helper method to parse terraform-docs JSON into domain models
+func (mv *ModuleVersion) parseTerraformDocs(terraformDocsJSON []byte) ([]Input, []Output, []ProviderDependency, []Resource) {
+	// Define struct for unmarshaling terraform-docs JSON
+	type TerraformDocsJSON struct {
+		Inputs []struct {
+			Name        string      `json:"name"`
+			Type        string      `json:"type"`
+			Description string      `json:"description"`
+			Default     interface{} `json:"default"`
+			Required    bool        `json:"required"`
+		} `json:"inputs"`
+		Outputs []struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		} `json:"outputs"`
+		Providers []struct {
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"providers"`
+		Resources []struct {
+			Type string `json:"type"`
+			Name string `json:"name"`
+		} `json:"resources"`
+	}
+
+	var terraformDocs TerraformDocsJSON
+	if err := json.Unmarshal(terraformDocsJSON, &terraformDocs); err != nil {
+		// If unmarshaling fails, return empty slices
+		return []Input{}, []Output{}, []ProviderDependency{}, []Resource{}
+	}
+
+	// Convert terraform docs to domain models
+	inputs := make([]Input, len(terraformDocs.Inputs))
+	for i, tfInput := range terraformDocs.Inputs {
+		inputs[i] = Input{
+			Name:           tfInput.Name,
+			Type:           tfInput.Type,
+			Description:    &tfInput.Description,
+			Required:       tfInput.Required,
+			Default:        tfInput.Default,
+			AdditionalHelp: nil,   // terraform-docs doesn't provide this
+			QuoteValue:     false, // terraform-docs doesn't provide this
+			Sensitive:      false, // terraform-docs doesn't provide this
+		}
+	}
+
+	outputs := make([]Output, len(terraformDocs.Outputs))
+	for i, tfOutput := range terraformDocs.Outputs {
+		outputs[i] = Output{
+			Name:        tfOutput.Name,
+			Description: &tfOutput.Description,
+		}
+	}
+
+	providerDependencies := make([]ProviderDependency, len(terraformDocs.Providers))
+	for i, tfProvider := range terraformDocs.Providers {
+		providerDependencies[i] = ProviderDependency{
+			Provider: tfProvider.Name,
+			Version:  tfProvider.Version,
+		}
+	}
+
+	resources := make([]Resource, len(terraformDocs.Resources))
+	for i, tfResource := range terraformDocs.Resources {
+		resources[i] = Resource{
+			Type: tfResource.Type,
+			Name: tfResource.Name,
+		}
+	}
+
+	return inputs, outputs, providerDependencies, resources
+}
+
 // GetRootModuleSpecs returns the module specifications for the root module
 func (mv *ModuleVersion) GetRootModuleSpecs() *ModuleSpecs {
 	if mv.details == nil {
 		return &ModuleSpecs{
-			Path:     "",
-			Readme:   "",
-			Empty:    true,
-			Inputs:   []Input{},
-			Outputs:  []Output{},
-			Dependencies: []Dependency{},
+			Path:                 "",
+			Readme:               "",
+			Empty:                true,
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
 			ProviderDependencies: []ProviderDependency{},
-			Resources: []Resource{},
-			Modules:   []Module{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
 		}
 	}
 
-	// Parse terraform docs from module details
-	// TODO: Implement proper parsing from mv.details.TerraformDocs()
+	// Get terraform docs from module details (stored as JSON during indexing)
+	if !mv.details.HasTerraformDocs() {
+		return &ModuleSpecs{
+			Path:                 "",
+			Readme:               string(mv.details.ReadmeContent()),
+			Empty:                !mv.details.HasReadme(),
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	// Parse terraform docs JSON from stored data
+	terraformDocsJSON := mv.details.TerraformDocs()
+	if len(terraformDocsJSON) == 0 {
+		return &ModuleSpecs{
+			Path:                 "",
+			Readme:               string(mv.details.ReadmeContent()),
+			Empty:                !mv.details.HasReadme(),
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	// Use the helper method to parse terraform docs JSON
+	inputs, outputs, providerDependencies, resources := mv.parseTerraformDocs(terraformDocsJSON)
+
+	// Dependencies and modules would need to be parsed from terraform configuration files
+	// For now, return empty slices as terraform-docs doesn't provide this information
+	dependencies := []Dependency{}
+	modules := []Module{}
+
 	return &ModuleSpecs{
-		Path:     "",
-		Readme:   string(mv.details.ReadmeContent()),
-		Empty:    !mv.details.HasReadme(),
-		Inputs:   []Input{},   // TODO: Parse from terraform docs
-		Outputs:  []Output{},  // TODO: Parse from terraform docs
-		Dependencies: []Dependency{}, // TODO: Parse from terraform docs
-		ProviderDependencies: []ProviderDependency{}, // TODO: Parse from terraform docs
-		Resources: []Resource{}, // TODO: Parse from terraform docs
-		Modules:   []Module{},   // TODO: Parse from terraform docs
+		Path:                 "",
+		Readme:               string(mv.details.ReadmeContent()),
+		Empty:                !mv.details.HasReadme() && len(terraformDocsJSON) == 0,
+		Inputs:               inputs,
+		Outputs:              outputs,
+		Dependencies:         dependencies,
+		ProviderDependencies: providerDependencies,
+		Resources:            resources,
+		Modules:              modules,
 	}
 }
 
@@ -357,40 +470,148 @@ func (mv *ModuleVersion) GetRootModuleSpecs() *ModuleSpecs {
 func (mv *ModuleVersion) GetSubmodules() []*ModuleSpecs {
 	var specs []*ModuleSpecs
 	for _, submodule := range mv.submodules {
-		// TODO: Implement proper parsing from submodule details
-		specs = append(specs, &ModuleSpecs{
-			Path:     submodule.Path(),
-			Readme:   "",
-			Empty:    true,
-			Inputs:   []Input{},
-			Outputs:  []Output{},
-			Dependencies: []Dependency{},
-			ProviderDependencies: []ProviderDependency{},
-			Resources: []Resource{},
-			Modules:   []Module{},
-		})
+		specs = append(specs, mv.convertSubmoduleToSpecs(submodule))
 	}
 	return specs
+}
+
+// convertSubmoduleToSpecs converts a submodule to ModuleSpecs by deserializing stored data
+func (mv *ModuleVersion) convertSubmoduleToSpecs(submodule *Submodule) *ModuleSpecs {
+	// Get module details for submodule (stored during indexing)
+	details := submodule.Details()
+	if details == nil {
+		// Return empty specs if no details available
+		return &ModuleSpecs{
+			Path:                 submodule.Path(),
+			Readme:               "",
+			Empty:                true,
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	// Deserialize terraform-docs JSON if available
+	if !details.HasTerraformDocs() {
+		return &ModuleSpecs{
+			Path:                 submodule.Path(),
+			Readme:               string(details.ReadmeContent()),
+			Empty:                !details.HasReadme(),
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	terraformDocsJSON := details.TerraformDocs()
+	if len(terraformDocsJSON) == 0 {
+		return &ModuleSpecs{
+			Path:                 submodule.Path(),
+			Readme:               string(details.ReadmeContent()),
+			Empty:                !details.HasReadme(),
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	// Reuse the same terraform-docs parsing logic as GetRootModuleSpecs
+	inputs, outputs, providerDeps, resources := mv.parseTerraformDocs(terraformDocsJSON)
+
+	return &ModuleSpecs{
+		Path:                 submodule.Path(),
+		Readme:               string(details.ReadmeContent()),
+		Empty:                !details.HasReadme() && len(terraformDocsJSON) == 0,
+		Inputs:               inputs,
+		Outputs:              outputs,
+		Dependencies:         []Dependency{}, // terraform-docs doesn't provide this
+		ProviderDependencies: providerDeps,
+		Resources:            resources,
+		Modules:              []Module{}, // terraform-docs doesn't provide this
+	}
 }
 
 // GetExamples returns module specifications for all examples
 func (mv *ModuleVersion) GetExamples() []*ModuleSpecs {
 	var specs []*ModuleSpecs
 	for _, example := range mv.examples {
-		// TODO: Implement proper parsing from example details
-		specs = append(specs, &ModuleSpecs{
-			Path:     example.Path(),
-			Readme:   "",
-			Empty:    true,
-			Inputs:   []Input{},
-			Outputs:  []Output{},
-			Dependencies: []Dependency{},
-			ProviderDependencies: []ProviderDependency{},
-			Resources: []Resource{},
-			Modules:   []Module{},
-		})
+		specs = append(specs, mv.convertExampleToSpecs(example))
 	}
 	return specs
+}
+
+// convertExampleToSpecs converts an example to ModuleSpecs by deserializing stored data
+func (mv *ModuleVersion) convertExampleToSpecs(example *Example) *ModuleSpecs {
+	// Get module details for example (stored during indexing)
+	details := example.Details()
+	if details == nil {
+		// Return empty specs if no details available
+		return &ModuleSpecs{
+			Path:                 example.Path(),
+			Readme:               "",
+			Empty:                true,
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	// Deserialize terraform-docs JSON if available
+	if !details.HasTerraformDocs() {
+		return &ModuleSpecs{
+			Path:                 example.Path(),
+			Readme:               string(details.ReadmeContent()),
+			Empty:                !details.HasReadme(),
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	terraformDocsJSON := details.TerraformDocs()
+	if len(terraformDocsJSON) == 0 {
+		return &ModuleSpecs{
+			Path:                 example.Path(),
+			Readme:               string(details.ReadmeContent()),
+			Empty:                !details.HasReadme(),
+			Inputs:               []Input{},
+			Outputs:              []Output{},
+			Dependencies:         []Dependency{},
+			ProviderDependencies: []ProviderDependency{},
+			Resources:            []Resource{},
+			Modules:              []Module{},
+		}
+	}
+
+	// Reuse the same terraform-docs parsing logic as GetRootModuleSpecs
+	inputs, outputs, providerDeps, resources := mv.parseTerraformDocs(terraformDocsJSON)
+
+	return &ModuleSpecs{
+		Path:                 example.Path(),
+		Readme:               string(details.ReadmeContent()),
+		Empty:                !details.HasReadme() && len(terraformDocsJSON) == 0,
+		Inputs:               inputs,
+		Outputs:              outputs,
+		Dependencies:         []Dependency{}, // terraform-docs doesn't provide this
+		ProviderDependencies: providerDeps,
+		Resources:            resources,
+		Modules:              []Module{}, // terraform-docs doesn't provide this
+	}
 }
 
 // GetProviderDependencies returns provider dependencies for this module version
@@ -434,8 +655,52 @@ func (mv *ModuleVersion) GetSecurityResults() []SecurityResult {
 		return []SecurityResult{}
 	}
 
-	// TODO: Parse tfsec JSON results into SecurityResult structs
-	return []SecurityResult{}
+	// Get tfsec JSON results from stored data (processed during indexing)
+	tfsecJSON := mv.details.Tfsec()
+	if len(tfsecJSON) == 0 {
+		return []SecurityResult{}
+	}
+
+	// Define struct for unmarshaling tfsec JSON results
+	type TfsecResults struct {
+		Results []struct {
+			Description string `json:"description"`
+			Impact      string `json:"impact"`
+			Location    struct {
+				EndLine   int    `json:"end_line"`
+				Filename  string `json:"filename"`
+				StartLine int    `json:"start_line"`
+			} `json:"location"`
+			RuleID   string `json:"rule_id"`
+			Severity string `json:"severity"`
+			Status   int    `json:"status"`
+			Title    string `json:"title"`
+		} `json:"results"`
+	}
+
+	var tfsecResults TfsecResults
+	if err := json.Unmarshal(tfsecJSON, &tfsecResults); err != nil {
+		// If unmarshaling fails, return empty results
+		return []SecurityResult{}
+	}
+
+	// Convert tfsec results to domain SecurityResult structs
+	securityResults := make([]SecurityResult, len(tfsecResults.Results))
+	for i, result := range tfsecResults.Results {
+		securityResults[i] = SecurityResult{
+			RuleID:      result.RuleID,
+			Severity:    result.Severity,
+			Title:       result.Title,
+			Description: result.Description,
+			Location: SecurityLocation{
+				Filename:  result.Location.Filename,
+				StartLine: result.Location.StartLine,
+				EndLine:   result.Location.EndLine,
+			},
+		}
+	}
+
+	return securityResults
 }
 
 // GetSecurityFailures returns the count of security scan failures
@@ -446,13 +711,40 @@ func (mv *ModuleVersion) GetSecurityFailures() int {
 
 // GetCustomLinks returns formatted custom links for this module version
 func (mv *ModuleVersion) GetCustomLinks() []CustomLink {
-	// TODO: Implement custom links with template formatting
+	// @TODO
+	// For now, return empty slice
+	// In a full implementation, this would:
+	// 1. Load MODULE_LINKS configuration from environment/database
+	// 2. Filter links based on namespace restrictions
+	// 3. Format template variables (namespace, module, provider, version)
+	// 4. Return formatted CustomLink structs
+
+	// Example of what a configured link might look like:
+	// {
+	//   Text: "View in Git Repository",
+	//   URL: "https://github.com/{namespace}/{module}/tree/{tag}",
+	// }
+
 	return []CustomLink{}
 }
 
 // GetAdditionalTabFiles returns additional tab file configuration
 func (mv *ModuleVersion) GetAdditionalTabFiles() map[string]string {
-	// TODO: Return additional tab configuration from module provider or global config
+	// @TODO
+	// For now, return empty map
+	// In a full implementation, this would:
+	// 1. Load ADDITIONAL_MODULE_TABS configuration from environment/database
+	// 2. Get list of all files in this module version
+	// 3. Check which configured tab files exist in the module
+	// 4. Return mapping of tab name -> file path
+
+	// Example of what tab files might look like:
+	// {
+	//   "Release Notes": "RELEASE_NOTES.md",
+	//   "License": "LICENSE",
+	//   "Contributing": "CONTRIBUTING.md",
+	// }
+
 	return make(map[string]string)
 }
 
@@ -462,14 +754,81 @@ func (mv *ModuleVersion) GetPublishedAtDisplay() string {
 		return ""
 	}
 
-	// TODO: Use proper date formatting
-	return mv.publishedAt.Format("2006-01-02")
+	// Format: "January 2, 2006 at 3:04pm" (more readable for UI)
+	return mv.publishedAt.Format("January 2, 2006 at 3:04pm")
 }
 
 // GetDisplaySourceURL returns the browse URL or fallback
 func (mv *ModuleVersion) GetDisplaySourceURL(requestDomain string) string {
-	// TODO: Generate browse URL from git configuration or fallback
-	return ""
+	if mv.moduleProvider == nil {
+		return ""
+	}
+
+	// Get repository browse URL template following hierarchy:
+	// 1. ModuleVersion template
+	// 2. ModuleProvider template
+	// 3. GitProvider template
+	var template *string
+	if mv.repoBrowseURLTemplate != nil {
+		template = mv.repoBrowseURLTemplate
+	} else if mv.moduleProvider != nil {
+		template = mv.moduleProvider.RepoBrowseURLTemplate()
+		// If still nil, check GitProvider
+		if template == nil && mv.moduleProvider.gitProvider != nil {
+			gitProviderTemplate := mv.moduleProvider.gitProvider.BrowseURLTemplate
+			template = &gitProviderTemplate
+		}
+	}
+
+	if template == nil || *template == "" {
+		// No template configured, return empty string
+		// Could implement fallback to requestDomain here if needed
+		return ""
+	}
+
+	// Get template variables
+	namespace := mv.moduleProvider.Namespace().Name()
+	moduleName := mv.moduleProvider.Module()
+	provider := mv.moduleProvider.Provider()
+	tag := mv.getSourceGitTag()
+
+	return mv.expandURLTemplate(*template, namespace, moduleName, provider, tag, "")
+}
+
+// getSourceGitTag generates the git tag from version and git tag format
+func (mv *ModuleVersion) getSourceGitTag() string {
+	versionStr := mv.version.String()
+
+	// Get git tag format from module provider
+	gitTagFormat := mv.moduleProvider.GitTagFormat()
+	if gitTagFormat == nil || *gitTagFormat == "" {
+		// Default format is just the version
+		return versionStr
+	}
+
+	// Parse version for components (simplified - could use semver library if needed)
+	// For now, just replace {version} placeholder
+	template := *gitTagFormat
+	result := strings.ReplaceAll(template, "{version}", versionStr)
+
+	return result
+}
+
+// expandURLTemplate replaces template variables with actual values
+func (mv *ModuleVersion) expandURLTemplate(template, namespace, moduleName, provider, tag, path string) string {
+	// Prepare template variables
+	tagURIEncoded := url.QueryEscape(tag)
+
+	// Replace template variables
+	result := template
+	result = strings.ReplaceAll(result, "{namespace}", namespace)
+	result = strings.ReplaceAll(result, "{module}", moduleName)
+	result = strings.ReplaceAll(result, "{provider}", provider)
+	result = strings.ReplaceAll(result, "{tag}", tag)
+	result = strings.ReplaceAll(result, "{tag_uri_encoded}", tagURIEncoded)
+	result = strings.ReplaceAll(result, "{path}", path)
+
+	return result
 }
 
 // GetGraphURL returns the graph URL for this module
@@ -497,14 +856,100 @@ func (mv *ModuleVersion) GetModuleExtractionUpToDate() bool {
 
 // GetTerraformExampleVersionString returns version constraint for examples
 func (mv *ModuleVersion) GetTerraformExampleVersionString() string {
-	// TODO: Generate appropriate version constraint for examples
-	return ""
+	// For beta versions or non-latest versions, return exact version
+	if mv.beta || !mv.isLatestVersion() {
+		return mv.version.String()
+	}
+
+	// For latest published versions, generate version constraint from template
+	// Parse version components
+	version := mv.version
+	major := version.Major()
+	minor := version.Minor()
+	patch := version.Patch()
+
+	// Create template variables
+	templateVars := map[string]interface{}{
+		"major":           major,
+		"minor":           minor,
+		"patch":           patch,
+		"major_plus_one":  major + 1,
+		"minor_plus_one":  minor + 1,
+		"patch_plus_one":  patch + 1,
+		"major_minus_one": max(0, major-1),
+		"minor_minus_one": max(0, minor-1),
+		"patch_minus_one": max(0, patch-1),
+	}
+
+	// Determine which template to use
+	// Default template matches Python defaults
+	defaultTemplate := "{major}.{minor}.{patch}"
+	preMajorTemplate := "{major}.{minor}.{patch}" // Falls back to default in Python
+
+	template := defaultTemplate
+
+	// For pre-1.0.0 versions, use pre-major template (currently same as default)
+	if major == 0 {
+		template = preMajorTemplate
+	}
+
+	// Expand all template variables
+	result := template
+	result = strings.ReplaceAll(result, "{major}", fmt.Sprintf("%d", templateVars["major"]))
+	result = strings.ReplaceAll(result, "{minor}", fmt.Sprintf("%d", templateVars["minor"]))
+	result = strings.ReplaceAll(result, "{patch}", fmt.Sprintf("%d", templateVars["patch"]))
+	result = strings.ReplaceAll(result, "{major_plus_one}", fmt.Sprintf("%d", templateVars["major_plus_one"]))
+	result = strings.ReplaceAll(result, "{minor_plus_one}", fmt.Sprintf("%d", templateVars["minor_plus_one"]))
+	result = strings.ReplaceAll(result, "{patch_plus_one}", fmt.Sprintf("%d", templateVars["patch_plus_one"]))
+	result = strings.ReplaceAll(result, "{major_minus_one}", fmt.Sprintf("%d", templateVars["major_minus_one"]))
+	result = strings.ReplaceAll(result, "{minor_minus_one}", fmt.Sprintf("%d", templateVars["minor_minus_one"]))
+	result = strings.ReplaceAll(result, "{patch_minus_one}", fmt.Sprintf("%d", templateVars["patch_minus_one"]))
+
+	return result
 }
 
 // GetTerraformExampleVersionComment returns version comments for examples
 func (mv *ModuleVersion) GetTerraformExampleVersionComment() []string {
-	// TODO: Generate version comments for examples
+	// Check if version is published
+	if !mv.published {
+		return []string{
+			"This version of this module has not yet been published,",
+			"meaning that it cannot yet be used by Terraform",
+		}
+	}
+
+	// Check if version is beta
+	if mv.beta {
+		return []string{
+			"This version of the module is a beta version.",
+			"To use this version, it must be pinned in Terraform",
+		}
+	}
+
+	// Check if this is the latest version
+	if !mv.isLatestVersion() {
+		return []string{
+			"This version of the module is not the latest version.",
+			"To use this specific version, it must be pinned in Terraform",
+		}
+	}
+
+	// For latest published versions, no comments needed
 	return []string{}
+}
+
+// isLatestVersion checks if this version is the latest published version
+func (mv *ModuleVersion) isLatestVersion() bool {
+	if mv.moduleProvider == nil {
+		return false
+	}
+
+	latestVersion := mv.moduleProvider.GetLatestVersion()
+	if latestVersion == nil {
+		return false
+	}
+
+	return mv.version.String() == latestVersion.version.String()
 }
 
 // String returns the string representation
@@ -516,15 +961,15 @@ func (mv *ModuleVersion) String() string {
 
 // ModuleSpecs represents terraform module specifications
 type ModuleSpecs struct {
-	Path                 string                `json:"path"`
-	Readme               string                `json:"readme"`
-	Empty                bool                  `json:"empty"`
-	Inputs               []Input               `json:"inputs"`
-	Outputs              []Output              `json:"outputs"`
-	Dependencies         []Dependency          `json:"dependencies"`
-	ProviderDependencies []ProviderDependency  `json:"provider_dependencies"`
-	Resources            []Resource            `json:"resources"`
-	Modules              []Module              `json:"modules"`
+	Path                 string               `json:"path"`
+	Readme               string               `json:"readme"`
+	Empty                bool                 `json:"empty"`
+	Inputs               []Input              `json:"inputs"`
+	Outputs              []Output             `json:"outputs"`
+	Dependencies         []Dependency         `json:"dependencies"`
+	ProviderDependencies []ProviderDependency `json:"provider_dependencies"`
+	Resources            []Resource           `json:"resources"`
+	Modules              []Module             `json:"modules"`
 }
 
 // Input represents a terraform input variable
@@ -577,10 +1022,10 @@ type Module struct {
 
 // SecurityResult represents a security scan result
 type SecurityResult struct {
-	RuleID      string         `json:"rule_id"`
-	Severity    string         `json:"severity"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
+	RuleID      string           `json:"rule_id"`
+	Severity    string           `json:"severity"`
+	Title       string           `json:"title"`
+	Description string           `json:"description"`
 	Location    SecurityLocation `json:"location"`
 }
 

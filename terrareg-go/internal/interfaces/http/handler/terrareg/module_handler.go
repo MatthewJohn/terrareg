@@ -12,7 +12,9 @@ import (
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
 )
@@ -37,6 +39,7 @@ type ModuleHandler struct {
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                     *model.DomainConfig
+	analyticsRepo                    analyticsCmd.AnalyticsRepository
 }
 
 // NewModuleHandler creates a new module handler
@@ -57,6 +60,8 @@ func NewModuleHandler(
 	uploadModuleVersionCmd *moduleCmd.UploadModuleVersionCommand,
 	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
 	domainConfig *model.DomainConfig,
+	namespaceService *moduleService.NamespaceService,
+	analyticsRepo analyticsCmd.AnalyticsRepository,
 ) *ModuleHandler {
 	return &ModuleHandler{
 		listModulesQuery:                listModulesQuery,
@@ -75,8 +80,9 @@ func NewModuleHandler(
 		uploadModuleVersionCmd:          uploadModuleVersionCmd,
 		importModuleVersionCmd:          importModuleVersionCmd,
 		presenter:                       presenter.NewModulePresenter(),
-		versionPresenter:                presenter.NewModuleVersionPresenter(),
+		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                     domainConfig,
+		analyticsRepo:                    analyticsRepo,
 	}
 }
 

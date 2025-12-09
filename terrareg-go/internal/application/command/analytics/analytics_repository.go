@@ -13,6 +13,9 @@ type AnalyticsRepository interface {
 	// GetDownloadStats retrieves download statistics for a module provider
 	GetDownloadStats(ctx context.Context, namespace, module, provider string) (*DownloadStats, error)
 
+	// GetDownloadsByVersionID retrieves download count for a specific module version ID
+	GetDownloadsByVersionID(ctx context.Context, moduleVersionID int) (int, error)
+
 	// GetMostRecentlyPublished retrieves the most recently published module version
 	GetMostRecentlyPublished(ctx context.Context) (*ModuleVersionInfo, error)
 

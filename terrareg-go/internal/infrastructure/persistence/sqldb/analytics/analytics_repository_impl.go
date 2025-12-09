@@ -77,6 +77,22 @@ func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespac
 	}, nil
 }
 
+// GetDownloadsByVersionID retrieves download count for a specific module version ID
+func (r *AnalyticsRepositoryImpl) GetDownloadsByVersionID(ctx context.Context, moduleVersionID int) (int, error) {
+	var count int64
+
+	err := r.db.WithContext(ctx).
+		Model(&sqldb.AnalyticsDB{}).
+		Where("parent_module_version = ?", moduleVersionID).
+		Count(&count).Error
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
 // GetMostRecentlyPublished retrieves the most recently published module version
 func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) (*analyticsCmd.ModuleVersionInfo, error) {
 	var result struct {

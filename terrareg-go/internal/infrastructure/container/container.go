@@ -348,6 +348,8 @@ func NewContainer(
 		c.UploadModuleVersionCmd,
 		c.ImportModuleVersionCmd,
 		domainConfig,
+		c.NamespaceService,
+		c.AnalyticsRepo,
 	)
 	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(
 		c.GlobalStatsQuery,
