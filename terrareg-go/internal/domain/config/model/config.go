@@ -40,6 +40,10 @@ type DomainConfig struct {
 	AutoCreateModuleProvider bool
 	DefaultUiDetailsView     DefaultUiInputOutputView
 
+	// Terraform example version templates
+	TerraformExampleVersionTemplate          string
+	TerraformExampleVersionTemplatePreMajor string
+
 	// Provider sources (domain configuration)
 	ProviderSources map[string]ProviderSourceConfig
 }

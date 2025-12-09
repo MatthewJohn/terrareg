@@ -1,26 +1,49 @@
 package presenter
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/terrareg"
 )
 
 // ModuleVersionPresenter converts module version domain models to DTOs
-type ModuleVersionPresenter struct{}
+type ModuleVersionPresenter struct {
+	namespaceService *moduleService.NamespaceService
+	analyticsRepo     analyticsCmd.AnalyticsRepository
+}
 
 // NewModuleVersionPresenter creates a new module version presenter
-func NewModuleVersionPresenter() *ModuleVersionPresenter {
-	return &ModuleVersionPresenter{}
+func NewModuleVersionPresenter(namespaceService *moduleService.NamespaceService, analyticsRepo analyticsCmd.AnalyticsRepository) *ModuleVersionPresenter {
+	return &ModuleVersionPresenter{
+		namespaceService: namespaceService,
+		analyticsRepo:     analyticsRepo,
+	}
 }
 
 // ToDTO converts a module version domain model to a DTO
 func (p *ModuleVersionPresenter) ToDTO(mv *model.ModuleVersion, namespace, moduleName, provider string) moduledto.ModuleVersionResponse {
 	// Build version ID in format: namespace/name/provider/version
 	id := fmt.Sprintf("%s/%s/%s/%s", namespace, moduleName, provider, mv.Version().String())
+
+	// Get module provider for verified status
+	moduleProvider := mv.ModuleProvider()
+	verified := false
+	if moduleProvider != nil {
+		verified = moduleProvider.IsVerified()
+	}
+
+	// Check if namespace is trusted
+	trusted := false
+	if p.namespaceService != nil && moduleProvider != nil {
+		ns := moduleProvider.Namespace()
+		trusted = p.namespaceService.IsTrusted(ns)
+	}
 
 	response := moduledto.ModuleVersionResponse{
 		VersionBase: moduledto.VersionBase{
@@ -29,8 +52,8 @@ func (p *ModuleVersionPresenter) ToDTO(mv *model.ModuleVersion, namespace, modul
 				Namespace: namespace,
 				Name:      moduleName,
 				Provider:  provider,
-				Verified:  false, // TODO: Get from module provider
-				Trusted:   false, // TODO: Get from namespace service
+				Verified:  verified,
+				Trusted:   trusted,
 			},
 			Version:  mv.Version().String(),
 			Internal: mv.IsInternal(),
@@ -66,6 +89,13 @@ func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespac
 		return nil
 	}
 
+	// Check if namespace is trusted
+	trusted := false
+	if p.namespaceService != nil {
+		ns := moduleProvider.Namespace()
+		trusted = p.namespaceService.IsTrusted(ns)
+	}
+
 	response := moduledto.TerraregModuleVersionResponse{
 		TerraregVersionDetails: moduledto.TerraregVersionDetails{
 			VersionDetails: moduledto.VersionDetails{
@@ -76,7 +106,7 @@ func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespac
 						Name:      moduleName,
 						Provider:  provider,
 						Verified:  moduleProvider != nil && moduleProvider.IsVerified(),
-						Trusted:   false, // TODO: Get from namespace service when implemented
+						Trusted:   trusted,
 					},
 					Version:  mv.Version().String(),
 					Internal: mv.IsInternal(),
@@ -141,6 +171,13 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	// Get module provider for additional details
 	moduleProvider := mv.ModuleProvider()
 
+	// Check if namespace is trusted
+	trusted := false
+	if p.namespaceService != nil && moduleProvider != nil {
+		ns := moduleProvider.Namespace()
+		trusted = p.namespaceService.IsTrusted(ns)
+	}
+
 	// Start with base response structure
 	response := &terrareg.TerraregModuleProviderDetailsResponse{
 		// Base provider info (from ModuleProvider.get_terrareg_api_details)
@@ -149,7 +186,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 		Name:      moduleName,
 		Provider:  provider,
 		Verified:  moduleProvider != nil && moduleProvider.IsVerified(),
-		Trusted:   false, // TODO: Get from namespace service when implemented
+		Trusted:   trusted,
 
 		// Module version details (from ModuleVersion.get_api_details)
 		Owner:       mv.Owner(),
@@ -186,9 +223,14 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 		response.PublishedAt = &publishedAtStr
 	}
 
-	// Add downloads count
-	// TODO: Implement GetDownloads() method in domain model
-	response.Downloads = mv.GetDownloads()
+	// Add downloads count from analytics
+	downloads := 0
+	if p.analyticsRepo != nil {
+		if count, err := p.analyticsRepo.GetDownloadsByVersionID(context.Background(), mv.ID()); err == nil {
+			downloads = count
+		}
+	}
+	response.Downloads = downloads
 
 	// Extract analytics token from namespace if present (namespace__token format)
 	if strings.Contains(namespace, "__") {
