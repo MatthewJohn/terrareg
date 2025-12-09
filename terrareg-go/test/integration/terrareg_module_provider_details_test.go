@@ -1,10 +1,10 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -15,7 +15,6 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/router"
 )
 
 func TestTerraregModuleProviderDetails_EndToEnd(t *testing.T) {
@@ -54,6 +53,7 @@ func TestTerraregModuleProviderDetails_EndToEnd(t *testing.T) {
 	r.Get("/v1/terrareg/modules/{namespace}/{module}/{provider}", func(w http.ResponseWriter, r *http.Request) {
 		// For this integration test, return a mocked response using our test data
 		response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+			context.Background(),
 			moduleVersion,
 			"test-namespace",
 			"test-module",
@@ -155,6 +155,7 @@ func TestTerraregModuleProviderDetails_UnpublishedVersion(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/v1/terrareg/modules/{namespace}/{module}/{provider}", func(w http.ResponseWriter, r *http.Request) {
 		response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+			context.Background(),
 			moduleVersion,
 			"test-namespace",
 			"test-module",
@@ -224,6 +225,7 @@ func TestTerraregModuleProviderDetails_WithAnalyticsToken(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/v1/terrareg/modules/{namespace}/{module}/{provider}", func(w http.ResponseWriter, r *http.Request) {
 		response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+			context.Background(),
 			moduleVersion,
 			namespaceName, // Use full namespace with token
 			"test-module",
@@ -285,6 +287,7 @@ func TestTerraregModuleProviderDetails_JSONSerialization(t *testing.T) {
 	moduleVersionPresenter := presenter.NewModuleVersionPresenter()
 
 	response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+		context.Background(),
 		moduleVersion,
 		"test-namespace",
 		"test-module",

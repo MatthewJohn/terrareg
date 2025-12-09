@@ -15,10 +15,10 @@ import (
 
 // Renderer handles HTML template rendering
 type Renderer struct {
-	templates   *template.Template
+	templates    *template.Template
 	domainConfig *model.DomainConfig
 	infraConfig  *config.InfrastructureConfig
-	mu          sync.RWMutex
+	mu           sync.RWMutex
 }
 
 // NewRenderer creates a new template renderer
@@ -164,8 +164,8 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 }
 
 // Render renders a template with the given data (maintains backward compatibility)
-func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{}) error {
-	return r.RenderWithContext(context.Background(), w, name, data, nil)
+func (r *Renderer) Render(ctx context.Context, w io.Writer, name string, data map[string]interface{}) error {
+	return r.RenderWithContext(ctx, w, name, data, nil)
 }
 
 // RenderWithRequest renders a template with the given data, context, and HTTP request

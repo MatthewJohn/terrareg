@@ -105,7 +105,7 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
 
-	request := model.NewAuthenticationRequest(auth.AuthMethodNotAuthenticated, headers, formData, queryParams)
+	request := model.NewAuthenticationRequest(ctx, auth.AuthMethodNotAuthenticated, headers, formData, queryParams)
 	request.Context = ctx
 
 	// Try each auth method in priority order
