@@ -197,8 +197,8 @@ func NewContainer(
 		DomainConfig:  domainConfig,
 		InfraConfig:   infraConfig,
 		ConfigService: configService,
-		Logger:       logger,
-		DB:           db,
+		Logger:        logger,
+		DB:            db,
 	}
 
 	// Initialize repositories
@@ -289,8 +289,8 @@ func NewContainer(
 	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
 	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig) // Uses InfrastructureConfig for DataDirectory
-	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig) // Uses InfrastructureConfig for DataDirectory
-	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
+	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig)     // Uses InfrastructureConfig for DataDirectory
+	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
 	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
 	c.GetMostDownloadedThisWeekQuery = analyticsQuery.NewGetMostDownloadedThisWeekQuery(c.AnalyticsRepo)

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
-	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/terrareg"
 )
@@ -15,19 +15,19 @@ import (
 // ModuleVersionPresenter converts module version domain models to DTOs
 type ModuleVersionPresenter struct {
 	namespaceService *moduleService.NamespaceService
-	analyticsRepo     analyticsCmd.AnalyticsRepository
+	analyticsRepo    analyticsCmd.AnalyticsRepository
 }
 
 // NewModuleVersionPresenter creates a new module version presenter
 func NewModuleVersionPresenter(namespaceService *moduleService.NamespaceService, analyticsRepo analyticsCmd.AnalyticsRepository) *ModuleVersionPresenter {
 	return &ModuleVersionPresenter{
 		namespaceService: namespaceService,
-		analyticsRepo:     analyticsRepo,
+		analyticsRepo:    analyticsRepo,
 	}
 }
 
 // ToDTO converts a module version domain model to a DTO
-func (p *ModuleVersionPresenter) ToDTO(mv *model.ModuleVersion, namespace, moduleName, provider string) moduledto.ModuleVersionResponse {
+func (p *ModuleVersionPresenter) ToDTO(ctx context.Context, mv *model.ModuleVersion, namespace, moduleName, provider string) moduledto.ModuleVersionResponse {
 	// Build version ID in format: namespace/name/provider/version
 	id := fmt.Sprintf("%s/%s/%s/%s", namespace, moduleName, provider, mv.Version().String())
 
@@ -73,6 +73,18 @@ func (p *ModuleVersionPresenter) ToDTO(mv *model.ModuleVersion, namespace, modul
 		publishedAtStr := publishedAt.Format("2006-01-02T15:04:05Z")
 		response.PublishedAt = &publishedAtStr
 	}
+
+	// Add downloads count from analytics
+	downloads := 0
+	if p.analyticsRepo != nil {
+		count, err := p.analyticsRepo.GetDownloadStats(ctx, namespace, moduleName, provider)
+		if err == nil {
+			downloads = count.TotalDownloads
+		}
+		// If analytics fails, continue with 0 downloads
+	}
+
+	response.Downloads = downloads
 
 	return response
 }

@@ -79,7 +79,7 @@ func NewModuleHandler(
 		deleteModuleProviderCmd:         deleteModuleProviderCmd,
 		uploadModuleVersionCmd:          uploadModuleVersionCmd,
 		importModuleVersionCmd:          importModuleVersionCmd,
-		presenter:                       presenter.NewModulePresenter(),
+		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                     domainConfig,
 		analyticsRepo:                    analyticsRepo,
@@ -98,7 +98,7 @@ func (h *ModuleHandler) HandleModuleList(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Convert to DTO
-	response := h.presenter.ToListDTO(modules)
+	response := h.presenter.ToListDTO(ctx, modules)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -144,7 +144,7 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Convert to DTO
-	response := h.presenter.ToSearchDTO(result.Modules, result.TotalCount, limit, offset)
+	response := h.presenter.ToSearchDTO(ctx, result.Modules, result.TotalCount, limit, offset)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -163,7 +163,7 @@ func (h *ModuleHandler) HandleNamespaceModules(w http.ResponseWriter, r *http.Re
 	}
 
 	// Convert to DTO
-	response := h.presenter.ToListDTO(modules)
+	response := h.presenter.ToListDTO(ctx, modules)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -193,7 +193,7 @@ func (h *ModuleHandler) HandleModuleProviderCreate(w http.ResponseWriter, r *htt
 	}
 
 	// Convert to DTO
-	response := h.presenter.ToDTO(moduleProvider)
+	response := h.presenter.ToDTO(ctx, moduleProvider)
 
 	// Send response
 	RespondJSON(w, http.StatusCreated, response)
@@ -215,7 +215,7 @@ func (h *ModuleHandler) HandleModuleDetails(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Convert to DTO
-	response := h.presenter.ToListDTO(providers)
+	response := h.presenter.ToListDTO(ctx, providers)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -238,7 +238,7 @@ func (h *ModuleHandler) HandleModuleProviderDetails(w http.ResponseWriter, r *ht
 	}
 
 	// Convert to DTO
-	response := h.presenter.ToDTO(moduleProvider)
+	response := h.presenter.ToDTO(ctx, moduleProvider)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -326,7 +326,7 @@ func (h *ModuleHandler) HandleModuleVersionPublish(w http.ResponseWriter, r *htt
 	}
 
 	// Convert to DTO
-	response := h.versionPresenter.ToDTO(moduleVersion, namespace, name, provider)
+	response := h.versionPresenter.ToDTO(ctx, moduleVersion, namespace, name, provider)
 
 	// Send response
 	RespondJSON(w, http.StatusCreated, response)
@@ -350,7 +350,7 @@ func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *htt
 	}
 
 	// Convert to DTO
-	response := h.versionPresenter.ToDTO(moduleVersion, namespace, name, provider)
+	response := h.versionPresenter.ToDTO(ctx, moduleVersion, namespace, name, provider)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
