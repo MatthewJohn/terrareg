@@ -227,3 +227,98 @@ func (r *AnalyticsRepositoryImpl) GetMostDownloadedThisWeek(ctx context.Context)
 		DownloadCount: result.DownloadCount,
 	}, nil
 }
+
+// GetModuleProviderID retrieves the ID for a module provider
+func (r *AnalyticsRepositoryImpl) GetModuleProviderID(ctx context.Context, namespace, module, provider string) (int, error) {
+	var result struct {
+		ID int
+	}
+
+	err := r.db.WithContext(ctx).
+		Table("module_provider").
+		Select("module_provider.id AS id").
+		Joins("JOIN namespace ON module_provider.namespace_id = namespace.id").
+		Where("namespace.namespace = ?", namespace).
+		Where("module_provider.module = ?", module).
+		Where("module_provider.provider = ?", provider).
+		Scan(&result).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, fmt.Errorf("module provider not found")
+		}
+		return 0, err
+	}
+
+	return result.ID, nil
+}
+
+// GetLatestTokenVersions retrieves the latest analytics entry for each token for a module provider
+func (r *AnalyticsRepositoryImpl) GetLatestTokenVersions(ctx context.Context, moduleProviderID int) (map[string]analyticsCmd.TokenVersionInfo, error) {
+	type TokenVersionResult struct {
+		AnalyticsToken   *string
+		TerraformVersion *string
+		ModuleVersion    string
+		Environment      *string
+	}
+
+	var results []TokenVersionResult
+
+	// This query gets the latest analytics entry for each unique token+environment combination
+	// for the specified module provider, joining with module version to get the version string
+	err := r.db.WithContext(ctx).
+		Raw(`
+			WITH ranked_analytics AS (
+				SELECT
+					a.analytics_token,
+					a.environment,
+					a.terraform_version,
+					mv.version AS module_version,
+					ROW_NUMBER() OVER (
+						PARTITION BY a.analytics_token, a.environment
+						ORDER BY a.timestamp DESC
+					) AS rn
+				FROM analytics a
+				JOIN module_version mv ON a.parent_module_version = mv.id
+				WHERE a.parent_module_version IN (
+					SELECT id FROM module_version WHERE module_provider_id = ?
+				)
+			)
+			SELECT
+				analytics_token,
+				terraform_version,
+				module_version,
+				environment
+			FROM ranked_analytics
+			WHERE rn = 1
+		`, moduleProviderID).
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert results to map
+	tokenVersions := make(map[string]analyticsCmd.TokenVersionInfo)
+	for _, result := range results {
+		// Use "No token provided" as default key for nil tokens (matching Python behavior)
+		tokenKey := "No token provided"
+		if result.AnalyticsToken != nil && *result.AnalyticsToken != "" {
+			tokenKey = *result.AnalyticsToken
+		}
+
+		// Use "0.0.0" as default terraform version for nil values
+		terraformVersion := "0.0.0"
+		if result.TerraformVersion != nil && *result.TerraformVersion != "" {
+			terraformVersion = *result.TerraformVersion
+		}
+
+		tokenVersions[tokenKey] = analyticsCmd.TokenVersionInfo{
+			TerraformVersion: terraformVersion,
+			ModuleVersion:    result.ModuleVersion,
+			Environment:      result.Environment,
+		}
+	}
+
+	return tokenVersions, nil
+}

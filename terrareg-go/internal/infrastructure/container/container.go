@@ -144,6 +144,7 @@ type Container struct {
 	GetDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
 	GetMostRecentlyPublishedQuery  *analyticsQuery.GetMostRecentlyPublishedQuery
 	GetMostDownloadedThisWeekQuery *analyticsQuery.GetMostDownloadedThisWeekQuery
+	GetTokenVersionsQuery          *analyticsQuery.GetTokenVersionsQuery
 	ListProvidersQuery             *providerQuery.ListProvidersQuery
 	SearchProvidersQuery           *providerQuery.SearchProvidersQuery
 	GetProviderQuery               *providerQuery.GetProviderQuery
@@ -312,12 +313,13 @@ func NewContainer(
 	c.ListModuleVersionsQuery = moduleQuery.NewListModuleVersionsQuery(c.ModuleProviderRepo) // New query
 	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
-	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig) // Uses InfrastructureConfig for DataDirectory
-	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig)     // Uses InfrastructureConfig for DataDirectory
+	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
+	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
 	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
 	c.GetMostDownloadedThisWeekQuery = analyticsQuery.NewGetMostDownloadedThisWeekQuery(c.AnalyticsRepo)
+	c.GetTokenVersionsQuery = analyticsQuery.NewGetTokenVersionsQuery(c.AnalyticsRepo)
 	c.ListProvidersQuery = providerQuery.NewListProvidersQuery(c.ProviderRepo)
 	c.SearchProvidersQuery = providerQuery.NewSearchProvidersQuery(c.ProviderRepo)
 	c.GetProviderQuery = providerQuery.NewGetProviderQuery(c.ProviderRepo)
@@ -386,6 +388,7 @@ func NewContainer(
 		c.RecordModuleDownloadCmd,
 		c.GetMostRecentlyPublishedQuery,
 		c.GetMostDownloadedThisWeekQuery,
+		c.GetTokenVersionsQuery,
 	)
 	c.ProviderHandler = terrareg.NewProviderHandler(
 		c.ListProvidersQuery,
