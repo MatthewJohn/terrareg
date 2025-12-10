@@ -137,21 +137,40 @@ func (s *MarkdownService) postProcessHTML(html, filename string) string {
 // In a production environment, consider using a proper HTML sanitizer like bluemonday
 func (s *MarkdownService) SanitizeHTML(html string) string {
 	// Basic sanitization - remove potentially dangerous elements
-	dangerousTags := []string{"script", "iframe", "object", "embed", "form", "input", "button"}
+	dangerousTags := []string{"script", "iframe", "object", "embed"}
 
 	for _, tag := range dangerousTags {
-		// Remove opening tags
-		openTagRegex := regexp.MustCompile(`<` + tag + `[^>]*>`)
+		// Remove opening tags and everything between them
+		openTagRegex := regexp.MustCompile(`(?s)<` + tag + `[^>]*>.*?</` + tag + `>`)
 		html = openTagRegex.ReplaceAllString(html, "")
+
+		// Remove standalone opening tags
+		openTagStandaloneRegex := regexp.MustCompile(`<` + tag + `[^>]*>`)
+		html = openTagStandaloneRegex.ReplaceAllString(html, "")
 
 		// Remove closing tags
 		closeTagRegex := regexp.MustCompile(`</` + tag + `>`)
 		html = closeTagRegex.ReplaceAllString(html, "")
 	}
 
-	// Remove javascript: links
-	jsLinkRegex := regexp.MustCompile(`href=["'][^"']*javascript:[^"']*["']`)
+	// For form tags, remove just the form tags but preserve the content
+	formTagRegex := regexp.MustCompile(`</?form[^>]*>`)
+	html = formTagRegex.ReplaceAllString(html, "")
+
+	// Remove dangerous attributes
+	dangerousAttrs := []string{"onload", "onerror", "onclick", "onmouseover"}
+	for _, attr := range dangerousAttrs {
+		attrRegex := regexp.MustCompile(`\s` + attr + `=["'][^"']*["']`)
+		html = attrRegex.ReplaceAllString(html, "")
+	}
+
+	// Remove javascript: links using a more precise pattern
+	jsLinkRegex := regexp.MustCompile(`href\s*=\s*"(?:[^""]*javascript[^""]*)"`)
 	html = jsLinkRegex.ReplaceAllString(html, `href="#"`)
+
+	// Also handle single quotes
+	jsLinkRegexSingle := regexp.MustCompile(`href\s*=\s*'(?:[^'']*javascript[^'']*)'`)
+	html = jsLinkRegexSingle.ReplaceAllString(html, `href='#'`)
 
 	return html
 }
