@@ -23,6 +23,7 @@ type ProviderHandler struct {
 	createOrUpdateProviderCmd *providerCommand.CreateOrUpdateProviderCommand
 	publishProviderVersionCmd *providerCommand.PublishProviderVersionCommand
 	manageGPGKeyCmd           *providerCommand.ManageGPGKeyCommand
+	getProviderDownloadQuery   *providerCommand.GetProviderDownloadQuery
 }
 
 // NewProviderHandler creates a new provider handler
@@ -35,6 +36,7 @@ func NewProviderHandler(
 	createOrUpdateProviderCmd *providerCommand.CreateOrUpdateProviderCommand,
 	publishProviderVersionCmd *providerCommand.PublishProviderVersionCommand,
 	manageGPGKeyCmd *providerCommand.ManageGPGKeyCommand,
+	getProviderDownloadQuery *providerCommand.GetProviderDownloadQuery,
 ) *ProviderHandler {
 	return &ProviderHandler{
 		listProvidersQuery:        listProvidersQuery,
@@ -45,6 +47,7 @@ func NewProviderHandler(
 		createOrUpdateProviderCmd: createOrUpdateProviderCmd,
 		publishProviderVersionCmd: publishProviderVersionCmd,
 		manageGPGKeyCmd:           manageGPGKeyCmd,
+		getProviderDownloadQuery:   getProviderDownloadQuery,
 	}
 }
 
@@ -355,4 +358,69 @@ func parsePaginationParams(r *http.Request) (int, int) {
 	}
 
 	return offset, limit
+}
+
+// HandleProviderDownload handles GET /v1/providers/{namespace}/{provider}/{version}/download/{os}/{arch}
+func (h *ProviderHandler) HandleProviderDownload(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+	os := chi.URLParam(r, "os")
+	arch := chi.URLParam(r, "arch")
+
+	// Extract headers for analytics
+	userAgent := r.Header.Get("User-Agent")
+	terraformVersion := r.Header.Get("X-Terraform-Version")
+
+	// Create request
+	req := &providerCommand.GetProviderDownloadRequest{
+		Namespace:       namespace,
+		Provider:        provider,
+		Version:         version,
+		OS:              os,
+		Arch:            arch,
+		UserAgent:       userAgent,
+		TerraformVersion: terraformVersion,
+	}
+
+	// Execute query
+	resp, err := h.getProviderDownloadQuery.Execute(ctx, req)
+	if err != nil {
+		if err.Error() == "namespace not found" ||
+		   err.Error() == "provider not found" ||
+		   err.Error() == "provider version not found" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"error": "Provider version not found"}`))
+			return
+		}
+		if err.Error() == "unsupported OS" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf(`{"error": "Unsupported OS: %s"}`, os)))
+			return
+		}
+		if err.Error() == "unsupported architecture" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf(`{"error": "Unsupported architecture: %s"}`, arch)))
+			return
+		}
+		if err.Error() == "binary not found" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(fmt.Sprintf(`{"error": "Binary not found for %s/%s"}`, os, arch)))
+			return
+		}
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Set content type and respond with JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 }

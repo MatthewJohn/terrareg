@@ -439,10 +439,8 @@ func (s *Server) handleProviderVersions(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleProviderDownload(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement provider download handler
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"error": "Provider downloads not yet implemented",
-	})
+	// Delegate to the provider handler following DDD principles
+	s.providerHandler.HandleProviderDownload(w, r)
 }
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	s.configHandler.HandleConfig(w, r)
