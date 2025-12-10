@@ -957,6 +957,28 @@ func (mv *ModuleVersion) String() string {
 	return mv.version.String()
 }
 
+// VersionedID returns the versioned module ID for terrareg API calls
+// Format: namespace/name/provider/version
+func (mv *ModuleVersion) VersionedID() string {
+	if mv.moduleProvider == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s/%s/%s",
+		mv.moduleProvider.Namespace().Name(),
+		mv.moduleProvider.Module(),
+		mv.moduleProvider.Provider(),
+		mv.version.String())
+}
+
+// ModuleProviderID returns the provider ID without version
+// Format: namespace/name/provider
+func (mv *ModuleVersion) ModuleProviderID() string {
+	if mv.moduleProvider == nil {
+		return ""
+	}
+	return mv.moduleProvider.FrontendID()
+}
+
 // Module specifications types for terrareg API
 
 // ModuleSpecs represents terraform module specifications
