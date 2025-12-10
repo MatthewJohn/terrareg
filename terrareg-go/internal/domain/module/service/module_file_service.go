@@ -77,11 +77,6 @@ func (s *ModuleFileService) GetModuleFile(ctx context.Context, req *GetModuleFil
 		return nil, fmt.Errorf("version %s not found: %w", req.Version, model.ErrFileNotFound)
 	}
 
-	// Check if module is accessible
-	if err := s.checkModuleAccess(ctx, moduleProvider); err != nil {
-		return nil, err
-	}
-
 	// Get module version file from repository
 	file, err := s.moduleVersionFileRepo.FindByPath(ctx, moduleVersion.ID(), req.Path)
 	if err != nil {
@@ -144,21 +139,6 @@ func (s *ModuleFileService) validateFilePath(path string) error {
 	return nil
 }
 
-// checkModuleAccess checks if the user has access to the module
-func (s *ModuleFileService) checkModuleAccess(ctx context.Context, moduleProvider *model.ModuleProvider) error {
-	// Get namespace from module provider
-	namespace := moduleProvider.Namespace()
-
-	// Check if namespace is trusted
-	if !s.namespaceService.IsTrusted(namespace) {
-		return model.ErrUnauthorized
-	}
-
-	// Additional security checks can be added here
-	// For example, checking if the module is published, user permissions, etc.
-
-	return nil
-}
 
 // processMarkdownContent processes markdown content into HTML
 func (s *ModuleFileService) processMarkdownContent(content string) string {
@@ -193,11 +173,6 @@ func (s *ModuleFileService) ListModuleFiles(ctx context.Context, namespace, modu
 	moduleVersion, err := moduleProvider.GetVersion(version)
 	if err != nil || moduleVersion == nil {
 		return nil, fmt.Errorf("version %s not found: %w", version, shared.ErrNotFound)
-	}
-
-	// Check module access
-	if err := s.checkModuleAccess(ctx, moduleProvider); err != nil {
-		return nil, err
 	}
 
 	// Get all files for the module version
