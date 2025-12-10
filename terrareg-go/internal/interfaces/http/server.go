@@ -560,10 +560,8 @@ func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Re
 	s.moduleHandler.HandleModuleVersionReadmeHTML(w, r)
 }
 func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module version variable template not yet implemented",
-	})
+	// Delegate to the module handler following DDD principles
+	s.moduleHandler.HandleModuleVersionVariableTemplate(w, r)
 }
 func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {
 	// Delegate to the module handler following DDD principles
