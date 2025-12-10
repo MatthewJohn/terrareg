@@ -98,9 +98,6 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	namespace, moduleName, provider string,
 	requestDomain string,
 ) *terrareg.TerraregModuleProviderDetailsResponse {
-	// Build provider ID (without version)
-	providerID := fmt.Sprintf("%s/%s/%s", namespace, moduleName, provider)
-
 	// Get module provider for additional details
 	moduleProvider := mv.ModuleProvider()
 
@@ -114,7 +111,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	// Start with base response structure
 	response := &terrareg.TerraregModuleProviderDetailsResponse{
 		// Base provider info (from ModuleProvider.get_terrareg_api_details)
-		ID:        providerID,
+		ID:        mv.VersionedID(), // Business-defined versioned ID for frontend API calls
 		Namespace: namespace,
 		Name:      moduleName,
 		Provider:  provider,
@@ -134,7 +131,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 
 	// Add module provider metadata
 	if moduleProvider != nil {
-		response.ModuleProviderID = moduleProvider.FrontendID()
+		response.ModuleProviderID = mv.ModuleProviderID() // Business-defined provider ID without version
 		response.GitProviderID = moduleProvider.GitProviderID()
 		response.GitTagFormat = moduleProvider.GitTagFormat()
 		response.GitPath = moduleProvider.GitPath()
