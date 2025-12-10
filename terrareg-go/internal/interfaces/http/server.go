@@ -452,8 +452,7 @@ func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request
 	s.analyticsHandler.HandleGlobalStatsSummary(w, r)
 }
 func (s *Server) handleGlobalUsageStats(w http.ResponseWriter, r *http.Request) {
-	// For now, delegate to global stats summary
-	s.analyticsHandler.HandleGlobalStatsSummary(w, r)
+	s.analyticsHandler.HandleGlobalUsageStats(w, r)
 }
 func (s *Server) handleMostRecentlyPublished(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleMostRecentlyPublished(w, r)
@@ -514,10 +513,7 @@ func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *ht
 	s.moduleHandler.HandleModuleProviderSettingsUpdate(w, r)
 }
 func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request)   {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module provider integrations not yet implemented",
-	})
+	s.moduleHandler.HandleGetIntegrations(w, r)
 }
 func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request)      {
 	// For now, return a placeholder response

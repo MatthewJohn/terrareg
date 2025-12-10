@@ -30,6 +30,7 @@ type ModuleHandler struct {
 	getModuleProviderSettingsQuery  *moduleQuery.GetModuleProviderSettingsQuery
 	getSubmodulesQuery              *moduleQuery.GetSubmodulesQuery
 	getExamplesQuery                *moduleQuery.GetExamplesQuery
+	getIntegrationsQuery             *moduleQuery.GetIntegrationsQuery
 	createModuleProviderCmd         *moduleCmd.CreateModuleProviderCommand
 	publishModuleVersionCmd         *moduleCmd.PublishModuleVersionCommand
 	updateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand
@@ -57,6 +58,7 @@ func NewModuleHandler(
 	getModuleProviderSettingsQuery *moduleQuery.GetModuleProviderSettingsQuery,
 	getSubmodulesQuery *moduleQuery.GetSubmodulesQuery,
 	getExamplesQuery *moduleQuery.GetExamplesQuery,
+	getIntegrationsQuery *moduleQuery.GetIntegrationsQuery,
 	createModuleProviderCmd *moduleCmd.CreateModuleProviderCommand,
 	publishModuleVersionCmd *moduleCmd.PublishModuleVersionCommand,
 	updateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand,
@@ -81,6 +83,7 @@ func NewModuleHandler(
 		getModuleProviderSettingsQuery:  getModuleProviderSettingsQuery,
 		getSubmodulesQuery:              getSubmodulesQuery,
 		getExamplesQuery:                getExamplesQuery,
+		getIntegrationsQuery:            getIntegrationsQuery,
 		createModuleProviderCmd:         createModuleProviderCmd,
 		publishModuleVersionCmd:         publishModuleVersionCmd,
 		updateModuleProviderSettingsCmd: updateModuleProviderSettingsCmd,
@@ -1049,4 +1052,29 @@ func (h *ModuleHandler) HandleModuleVersionVariableTemplate(w http.ResponseWrite
 
 	// Send response
 	RespondJSON(w, http.StatusOK, resp)
+}
+
+// HandleGetIntegrations handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/integrations
+func (h *ModuleHandler) HandleGetIntegrations(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	if namespace == "" || name == "" || provider == "" {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Execute query
+	integrations, err := h.getIntegrationsQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return integrations
+	RespondJSON(w, http.StatusOK, integrations)
 }

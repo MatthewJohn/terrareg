@@ -140,7 +140,9 @@ type Container struct {
 	ListModuleVersionsQuery        *module.ListModuleVersionsQuery
 	GetSubmodulesQuery             *module.GetSubmodulesQuery
 	GetExamplesQuery               *module.GetExamplesQuery
+	GetIntegrationsQuery           *module.GetIntegrationsQuery
 	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery
+	GlobalUsageStatsQuery          *analyticsQuery.GlobalUsageStatsQuery
 	GetDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
 	GetMostRecentlyPublishedQuery  *analyticsQuery.GetMostRecentlyPublishedQuery
 	GetMostDownloadedThisWeekQuery *analyticsQuery.GetMostDownloadedThisWeekQuery
@@ -315,7 +317,9 @@ func NewContainer(
 	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
 	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
+	c.GetIntegrationsQuery = moduleQuery.NewGetIntegrationsQuery(c.ModuleProviderRepo)
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo, c.AnalyticsRepo)
+	c.GlobalUsageStatsQuery = analyticsQuery.NewGlobalUsageStatsQuery(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
 	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
 	c.GetMostDownloadedThisWeekQuery = analyticsQuery.NewGetMostDownloadedThisWeekQuery(c.AnalyticsRepo)
@@ -368,6 +372,7 @@ func NewContainer(
 		c.GetModuleProviderSettingsQuery,
 		c.GetSubmodulesQuery,
 		c.GetExamplesQuery,
+		c.GetIntegrationsQuery,
 		c.CreateModuleProviderCmd,
 		c.PublishModuleVersionCmd,
 		c.UpdateModuleProviderSettingsCmd,
@@ -384,6 +389,7 @@ func NewContainer(
 	)
 	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(
 		c.GlobalStatsQuery,
+		c.GlobalUsageStatsQuery,
 		c.GetDownloadSummaryQuery,
 		c.RecordModuleDownloadCmd,
 		c.GetMostRecentlyPublishedQuery,
