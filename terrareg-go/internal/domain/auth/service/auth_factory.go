@@ -8,6 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	infraAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
 )
 
 // AuthFactory implements the factory pattern for authentication methods
@@ -55,15 +56,42 @@ func (af *AuthFactory) initializeAuthMethods() {
 
 	// Register AdminApiKeyAuthMethod (highest priority)
 	if af.config.AdminAuthenticationToken != "" {
-		adminApiKeyAuthMethod := model.NewAdminApiKeyAuthMethod(af.config)
+		adminApiKeyAuthMethod := infraAuth.NewAdminApiKeyAuthMethod()
 		af.RegisterAuthMethod(adminApiKeyAuthMethod)
 	}
 
-	// Register other auth methods (to be implemented in future phases)
-	// TODO: Add AdminSessionAuthMethod, SamlAuthMethod, etc.
+	// Register AdminSessionAuthMethod (2nd priority)
+	adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(af.sessionRepo, af.userGroupRepo)
+	af.RegisterAuthMethod(adminSessionAuthMethod)
+
+	// Register SamlAuthMethod (3rd priority) - only if SAML is configured
+	if af.config.SAML2IDPMetadataURL != "" && af.config.SAML2IssuerEntityID != "" {
+		samlConfig := &infraAuth.SAMLConfig{
+			EntityID:    af.config.SAML2IssuerEntityID,
+			SSOURL:      af.config.SAML2IDPMetadataURL, // This might need adjustment based on actual SAML implementation
+			SLOURL:      "",                           // TODO: Add SLO URL to config if needed
+			Certificate: "",                           // TODO: Add certificate to config if needed
+			PrivateKey:  "",                           // TODO: Add private key to config if needed
+		}
+		samlAuthMethod := infraAuth.NewSamlAuthMethod(samlConfig, af.userGroupRepo)
+		af.RegisterAuthMethod(samlAuthMethod)
+	}
+
+	// Register OpenIDConnectAuthMethod (4th priority) - only if OIDC is configured
+	if af.config.OpenIDConnectClientID != "" && af.config.OpenIDConnectIssuer != "" {
+		oidcConfig := &infraAuth.OIDCConfig{
+			ClientID:     af.config.OpenIDConnectClientID,
+			ClientSecret: af.config.OpenIDConnectClientSecret,
+			IssuerURL:    af.config.OpenIDConnectIssuer,
+			RedirectURI:  "", // TODO: Add redirect URI to config if needed
+			Scopes:       []string{"openid", "profile", "email"}, // Default scopes
+		}
+		oidcAuthMethod := infraAuth.NewOpenIDConnectAuthMethod(oidcConfig, af.userGroupRepo)
+		af.RegisterAuthMethod(oidcAuthMethod)
+	}
 
 	// Register fallback method
-	af.RegisterAuthMethod(&NotAuthenticatedAuthMethod{})
+	af.RegisterAuthMethod(NewNotAuthenticatedAuthMethod())
 }
 
 // RegisterAuthMethod registers an authentication method with the factory
@@ -84,7 +112,7 @@ func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
 	}
 
 	// Fallback to NotAuthenticated if no method is current
-	return &NotAuthenticatedAuthMethod{}
+	return NewNotAuthenticatedAuthMethod()
 }
 
 // GetCurrentAuthContext returns the current authentication context
@@ -209,11 +237,105 @@ func (af *AuthFactory) buildAuthContext(ctx context.Context, authMethod auth.Aut
 	return authCtx
 }
 
+// NotAuthenticatedAuthMethod represents the fallback authentication method
+type NotAuthenticatedAuthMethod struct {
+	auth.BaseAuthMethod
+}
+
+// NewNotAuthenticatedAuthMethod creates a new not authenticated method
+func NewNotAuthenticatedAuthMethod() *NotAuthenticatedAuthMethod {
+	return &NotAuthenticatedAuthMethod{}
+}
+
+// GetType returns the authentication method type
+func (n *NotAuthenticatedAuthMethod) GetType() string {
+	return "NotAuthenticated"
+}
+
+// Implement AuthMethod interface methods
+func (n *NotAuthenticatedAuthMethod) IsBuiltInAdmin() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) IsAdmin() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) IsAuthenticated() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) IsEnabled() bool {
+	return true
+}
+
+func (n *NotAuthenticatedAuthMethod) RequiresCSRF() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) CheckAuthState() bool {
+	return true
+}
+
+func (n *NotAuthenticatedAuthMethod) CanPublishModuleVersion(namespace string) bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) CanUploadModuleVersion(namespace string) bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+
+func (n *NotAuthenticatedAuthMethod) GetUsername() string {
+	return ""
+}
+
+func (n *NotAuthenticatedAuthMethod) GetUserGroupNames() []string {
+	return []string{}
+}
+
+func (n *NotAuthenticatedAuthMethod) CanAccessReadAPI() bool {
+	return true
+}
+
+func (n *NotAuthenticatedAuthMethod) CanAccessTerraformAPI() bool {
+	return true
+}
+
+func (n *NotAuthenticatedAuthMethod) GetTerraformAuthToken() string {
+	return ""
+}
+
+func (n *NotAuthenticatedAuthMethod) GetProviderType() auth.AuthMethodType {
+	return auth.AuthMethodNotAuthenticated
+}
+
 // loadUserGroupsForAuthMethod loads user groups for an authentication method
 func (af *AuthFactory) loadUserGroupsForAuthMethod(ctx context.Context, authMethod auth.AuthMethod) ([]*auth.UserGroup, error) {
-	// This will be implemented when we add concrete auth methods
-	// For now, return empty list
-	return []*auth.UserGroup{}, nil
+	// Get username from the auth method if available
+	username := authMethod.GetUsername()
+	if username == "" {
+		// If no username is available, return empty groups list
+		// This is the case for API key authentication methods and NotAuthenticated
+		return []*auth.UserGroup{}, nil
+	}
+
+	// Get user groups for the authenticated user
+	userGroups, err := af.userGroupRepo.GetGroupsForUser(ctx, username)
+	if err != nil {
+		// If user groups can't be loaded, don't fail authentication
+		// Return empty groups list instead
+		return []*auth.UserGroup{}, nil
+	}
+
+	return userGroups, nil
 }
 
 // extractSessionID extracts session ID from headers
@@ -251,37 +373,4 @@ func (af *AuthFactory) getStringPtr(s string) *string {
 		return nil
 	}
 	return &s
-}
-
-// NotAuthenticatedAuthMethod is the fallback authentication method
-type NotAuthenticatedAuthMethod struct {
-	auth.BaseAuthMethod
-}
-
-func (n *NotAuthenticatedAuthMethod) IsEnabled() bool {
-	return true // Always enabled as fallback
-}
-
-func (n *NotAuthenticatedAuthMethod) CheckAuthState() bool {
-	return true // Always succeeds as fallback
-}
-
-func (n *NotAuthenticatedAuthMethod) IsAuthenticated() bool {
-	return false // Not actually authenticated
-}
-
-func (n *NotAuthenticatedAuthMethod) GetProviderType() auth.AuthMethodType {
-	return auth.AuthMethodNotAuthenticated
-}
-
-func (n *NotAuthenticatedAuthMethod) GetUsername() string {
-	return "Anonymous User"
-}
-
-func (n *NotAuthenticatedAuthMethod) GetUserGroupNames() []string {
-	return []string{}
-}
-
-func (n *NotAuthenticatedAuthMethod) RequiresCSRF() bool {
-	return false
 }
