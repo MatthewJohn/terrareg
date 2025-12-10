@@ -220,8 +220,8 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
 			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/variable_template", s.handleModuleVersionVariableTemplate)
+			r.With(s.authMiddleware.RequireAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
+			r.With(s.authMiddleware.RequireAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/variable_template", s.handleModuleVersionVariableTemplate)
 			r.Get("/modules/{namespace}/{name}/{provider}/{version}/files/{path}", s.handleModuleVersionFile)
 			r.Get("/modules/{namespace}/{name}/{provider}/{version}/source.zip", s.handleModuleVersionSourceDownload)
 
@@ -465,10 +465,7 @@ func (s *Server) handleModuleVersionAnalytics(w http.ResponseWriter, r *http.Req
 	s.analyticsHandler.HandleModuleDownloadsSummary(w, r)
 }
 func (s *Server) handleAnalyticsTokenVersions(w http.ResponseWriter, r *http.Request) {
-	// For now, return a basic analytics response
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"token_versions": []string{},
-	})
+	s.analyticsHandler.HandleTokenVersions(w, r)
 }
 func (s *Server) handleInitialSetup(w http.ResponseWriter, r *http.Request) {
 	s.initialSetupHandler.HandleInitialSetup(w, r)

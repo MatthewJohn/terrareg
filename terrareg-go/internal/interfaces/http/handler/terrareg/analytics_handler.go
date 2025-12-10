@@ -19,6 +19,7 @@ type AnalyticsHandler struct {
 	recordModuleDownloadCmd        *analyticsCmd.RecordModuleDownloadCommand
 	getMostRecentlyPublishedQuery  *analyticsQuery.GetMostRecentlyPublishedQuery
 	getMostDownloadedThisWeekQuery *analyticsQuery.GetMostDownloadedThisWeekQuery
+	getTokenVersionsQuery          *analyticsQuery.GetTokenVersionsQuery
 }
 
 // NewAnalyticsHandler creates a new analytics handler
@@ -28,6 +29,7 @@ func NewAnalyticsHandler(
 	recordModuleDownloadCmd *analyticsCmd.RecordModuleDownloadCommand,
 	getMostRecentlyPublishedQuery *analyticsQuery.GetMostRecentlyPublishedQuery,
 	getMostDownloadedThisWeekQuery *analyticsQuery.GetMostDownloadedThisWeekQuery,
+	getTokenVersionsQuery *analyticsQuery.GetTokenVersionsQuery,
 ) *AnalyticsHandler {
 	return &AnalyticsHandler{
 		globalStatsQuery:               globalStatsQuery,
@@ -35,6 +37,7 @@ func NewAnalyticsHandler(
 		recordModuleDownloadCmd:        recordModuleDownloadCmd,
 		getMostRecentlyPublishedQuery:  getMostRecentlyPublishedQuery,
 		getMostDownloadedThisWeekQuery: getMostDownloadedThisWeekQuery,
+		getTokenVersionsQuery:          getTokenVersionsQuery,
 	}
 }
 
@@ -143,6 +146,31 @@ func (h *AnalyticsHandler) HandleModuleDownloadsSummary(w http.ResponseWriter, r
 	}
 
 	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleTokenVersions handles GET /v1/terrareg/analytics/{namespace}/{name}/{provider}/token_versions
+func (h *AnalyticsHandler) HandleTokenVersions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	if namespace == "" || name == "" || provider == "" {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Execute query
+	tokenVersions, err := h.getTokenVersionsQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return token versions
+	RespondJSON(w, http.StatusOK, tokenVersions)
 }
 
 // RecordModuleDownload records a module download (called during download)

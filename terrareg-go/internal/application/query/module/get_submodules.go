@@ -3,30 +3,21 @@ package module
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
-	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // GetSubmodulesQuery retrieves submodules for a module version
 type GetSubmodulesQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
-	moduleParser       service.ModuleParser
-	infraConfig        *infraConfig.InfrastructureConfig
 }
 
 // NewGetSubmodulesQuery creates a new query
 func NewGetSubmodulesQuery(
 	moduleProviderRepo repository.ModuleProviderRepository,
-	moduleParser service.ModuleParser,
-	infraConfig *infraConfig.InfrastructureConfig,
 ) *GetSubmodulesQuery {
 	return &GetSubmodulesQuery{
 		moduleProviderRepo: moduleProviderRepo,
-		moduleParser:       moduleParser,
-		infraConfig:        infraConfig,
 	}
 }
 
@@ -56,19 +47,13 @@ func (q *GetSubmodulesQuery) Execute(ctx context.Context, namespace, module, pro
 		return nil, fmt.Errorf("module version is not published")
 	}
 
-	// Get the module directory
-	moduleDir := filepath.Join(q.infraConfig.DataDirectory, "modules", namespace, module, provider, version)
-
-	// Use the parser to detect submodules
-	submodulePaths, err := q.moduleParser.DetectSubmodules(moduleDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect submodules: %w", err)
-	}
+	// Get submodules from database using domain model
+	submoduleSpecs := moduleVersion.GetSubmodules()
 
 	// Convert to SubmoduleInfo
-	result := make([]SubmoduleInfo, len(submodulePaths))
-	for i, path := range submodulePaths {
-		result[i] = SubmoduleInfo{Path: path}
+	result := make([]SubmoduleInfo, len(submoduleSpecs))
+	for i, submoduleSpec := range submoduleSpecs {
+		result[i] = SubmoduleInfo{Path: submoduleSpec.Path}
 	}
 
 	return result, nil

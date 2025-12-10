@@ -21,6 +21,12 @@ type AnalyticsRepository interface {
 
 	// GetMostDownloadedThisWeek retrieves the most downloaded module provider this week
 	GetMostDownloadedThisWeek(ctx context.Context) (*ModuleProviderInfo, error)
+
+	// GetModuleProviderID retrieves the ID for a module provider
+	GetModuleProviderID(ctx context.Context, namespace, module, provider string) (int, error)
+
+	// GetLatestTokenVersions retrieves the latest analytics entry for each token for a module provider
+	GetLatestTokenVersions(ctx context.Context, moduleProviderID int) (map[string]TokenVersionInfo, error)
 }
 
 // AnalyticsEvent represents a module download analytics event
@@ -65,4 +71,11 @@ type ModuleProviderInfo struct {
 	Module        string
 	Provider      string
 	DownloadCount int
+}
+
+// TokenVersionInfo represents information about a token's latest usage
+type TokenVersionInfo struct {
+	TerraformVersion string  `json:"terraform_version"`
+	ModuleVersion    string  `json:"module_version"`
+	Environment      *string `json:"environment"`
 }

@@ -3,30 +3,21 @@ package module
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
-	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // GetExamplesQuery retrieves examples for a module version
 type GetExamplesQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
-	moduleParser       service.ModuleParser
-	infraConfig        *infraConfig.InfrastructureConfig
 }
 
 // NewGetExamplesQuery creates a new query
 func NewGetExamplesQuery(
 	moduleProviderRepo repository.ModuleProviderRepository,
-	moduleParser service.ModuleParser,
-	infraConfig *infraConfig.InfrastructureConfig,
 ) *GetExamplesQuery {
 	return &GetExamplesQuery{
 		moduleProviderRepo: moduleProviderRepo,
-		moduleParser:       moduleParser,
-		infraConfig:        infraConfig,
 	}
 }
 
@@ -56,19 +47,13 @@ func (q *GetExamplesQuery) Execute(ctx context.Context, namespace, module, provi
 		return nil, fmt.Errorf("module version is not published")
 	}
 
-	// Get the module directory
-	moduleDir := filepath.Join(q.infraConfig.DataDirectory, "modules", namespace, module, provider, version)
-
-	// Use the parser to detect examples
-	examplePaths, err := q.moduleParser.DetectExamples(moduleDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect examples: %w", err)
-	}
+	// Get examples from database using domain model
+	exampleSpecs := moduleVersion.GetExamples()
 
 	// Convert to ExampleInfo
-	result := make([]ExampleInfo, len(examplePaths))
-	for i, path := range examplePaths {
-		result[i] = ExampleInfo{Path: path}
+	result := make([]ExampleInfo, len(exampleSpecs))
+	for i, exampleSpec := range exampleSpecs {
+		result[i] = ExampleInfo{Path: exampleSpec.Path}
 	}
 
 	return result, nil
