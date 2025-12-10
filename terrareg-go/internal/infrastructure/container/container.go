@@ -105,6 +105,7 @@ type Container struct {
 	GetModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
 	DeleteModuleVersionCmd          *moduleCmd.DeleteModuleVersionCommand
 	GenerateModuleSourceCmd         *moduleCmd.GenerateModuleSourceCommand
+	GetVariableTemplateQuery        *moduleCmd.GetVariableTemplateQuery
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	AdminLoginCmd                   *authCmd.AdminLoginCommand
 
@@ -288,6 +289,7 @@ func NewContainer(
 	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)
 	c.DeleteModuleVersionCmd = moduleCmd.NewDeleteModuleVersionCommand(c.ModuleProviderRepo, c.ModuleVersionRepo)
 	c.GenerateModuleSourceCmd = moduleCmd.NewGenerateModuleSourceCommand(c.ModuleProviderRepo, c.ModuleFileService)
+	c.GetVariableTemplateQuery = moduleCmd.NewGetVariableTemplateQuery(c.ModuleProviderRepo, c.ModuleFileService)
 
 	// Initialize admin login command
 	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, infraConfig) // Uses InfrastructureConfig for auth settings
@@ -370,6 +372,7 @@ func NewContainer(
 		c.GetModuleVersionFileCmd,
 		c.DeleteModuleVersionCmd,
 		c.GenerateModuleSourceCmd,
+		c.GetVariableTemplateQuery,
 		domainConfig,
 		c.NamespaceService,
 		c.AnalyticsRepo,

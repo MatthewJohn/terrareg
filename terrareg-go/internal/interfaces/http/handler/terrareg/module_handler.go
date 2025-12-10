@@ -39,6 +39,7 @@ type ModuleHandler struct {
 	getModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
 	deleteModuleVersionCmd          *moduleCmd.DeleteModuleVersionCommand
 	generateModuleSourceCmd         *moduleCmd.GenerateModuleSourceCommand
+	getVariableTemplateQuery         *moduleCmd.GetVariableTemplateQuery
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -65,6 +66,7 @@ func NewModuleHandler(
 	getModuleVersionFileCmd *moduleCmd.GetModuleVersionFileQuery,
 	deleteModuleVersionCmd *moduleCmd.DeleteModuleVersionCommand,
 	generateModuleSourceCmd *moduleCmd.GenerateModuleSourceCommand,
+	getVariableTemplateQuery *moduleCmd.GetVariableTemplateQuery,
 	domainConfig *model.DomainConfig,
 	namespaceService *moduleService.NamespaceService,
 	analyticsRepo analyticsCmd.AnalyticsRepository,
@@ -88,6 +90,7 @@ func NewModuleHandler(
 		getModuleVersionFileCmd:         getModuleVersionFileCmd,
 		deleteModuleVersionCmd:          deleteModuleVersionCmd,
 		generateModuleSourceCmd:        generateModuleSourceCmd,
+		getVariableTemplateQuery:        getVariableTemplateQuery,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -997,4 +1000,53 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 	// Write the ZIP content
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp.Content)
+}
+
+// HandleModuleVersionVariableTemplate handles GET /modules/{namespace}/{name}/{provider}/{version}/variable_template
+func (h *ModuleHandler) HandleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Extract query parameter for output format
+	outputFormat := r.URL.Query().Get("output")
+	if outputFormat == "" {
+		outputFormat = "md" // Default to markdown
+	}
+
+	// Create request
+	req := &moduleCmd.GetVariableTemplateRequest{
+		Namespace: namespace,
+		Module:    moduleName,
+		Provider:  provider,
+		Version:   version,
+		Output:    outputFormat,
+	}
+
+	// Execute query
+	resp, err := h.getVariableTemplateQuery.Execute(ctx, req)
+	if err != nil {
+		if err.Error() == "missing required parameters" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"message": "Missing required path parameters"}`))
+			return
+		}
+		if err.Error() == "module version not found" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"message": "Module version not found"}`))
+			return
+		}
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Set content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// Send response
+	RespondJSON(w, http.StatusOK, resp)
 }
