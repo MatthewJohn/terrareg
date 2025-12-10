@@ -24,6 +24,7 @@ func NewGetExamplesQuery(
 // ExampleInfo represents information about an example
 type ExampleInfo struct {
 	Path string `json:"path"`
+	Href string `json:"href"`
 }
 
 // Execute retrieves examples for a module version
@@ -53,7 +54,12 @@ func (q *GetExamplesQuery) Execute(ctx context.Context, namespace, module, provi
 	// Convert to ExampleInfo
 	result := make([]ExampleInfo, len(exampleSpecs))
 	for i, exampleSpec := range exampleSpecs {
-		result[i] = ExampleInfo{Path: exampleSpec.Path}
+		// Generate href URL similar to Python terrareg
+		href := fmt.Sprintf("/modules/%s/%s/%s/%s/example/%s", namespace, module, provider, version, exampleSpec.Path)
+		result[i] = ExampleInfo{
+			Path: exampleSpec.Path,
+			Href: href,
+		}
 	}
 
 	return result, nil

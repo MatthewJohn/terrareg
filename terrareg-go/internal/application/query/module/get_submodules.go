@@ -24,6 +24,7 @@ func NewGetSubmodulesQuery(
 // SubmoduleInfo represents information about a submodule
 type SubmoduleInfo struct {
 	Path string `json:"path"`
+	Href string `json:"href"`
 }
 
 // Execute retrieves submodules for a module version
@@ -53,7 +54,12 @@ func (q *GetSubmodulesQuery) Execute(ctx context.Context, namespace, module, pro
 	// Convert to SubmoduleInfo
 	result := make([]SubmoduleInfo, len(submoduleSpecs))
 	for i, submoduleSpec := range submoduleSpecs {
-		result[i] = SubmoduleInfo{Path: submoduleSpec.Path}
+		// Generate href URL similar to Python terrareg
+		href := fmt.Sprintf("/modules/%s/%s/%s/%s/submodule/%s", namespace, module, provider, version, submoduleSpec.Path)
+		result[i] = SubmoduleInfo{
+			Path: submoduleSpec.Path,
+			Href: href,
+		}
 	}
 
 	return result, nil
