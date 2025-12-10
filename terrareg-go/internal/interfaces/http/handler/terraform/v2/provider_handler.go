@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
@@ -49,7 +50,7 @@ func (h *TerraformV2ProviderHandler) HandleProviderDetails(w http.ResponseWriter
 	}
 
 	// Build Terraform Registry v2 response
-	response := h.buildV2ProviderResponse(provider)
+	response := h.buildV2ProviderResponse(namespace, providerName, provider)
 	terrareg.RespondJSON(w, http.StatusOK, response)
 }
 
@@ -173,27 +174,66 @@ func (h *TerraformV2ProviderHandler) HandleProviderDownloadsSummary(w http.Respo
 }
 
 // buildV2ProviderResponse builds a Terraform Registry v2 provider response
-func (h *TerraformV2ProviderHandler) buildV2ProviderResponse(provider interface{}) map[string]interface{} {
-	// Convert provider to map (in a real implementation, this would use proper domain model methods)
-	providerMap := map[string]interface{}{
-		"id":           "placeholder", // This should come from provider.ID()
-		"namespace":    "placeholder", // This should come from provider.Namespace().Name()
-		"name":         "placeholder", // This should come from provider.Name()
-		"versions":     []interface{}{},
-		"logo_url":     "",          // Optional logo URL
-		"source":       "",          // Optional source URL
-		"tier":         "community", // Optional tier
-		"description":  "",          // Optional description
-		"published_at": "",          // Optional published date
+func (h *TerraformV2ProviderHandler) buildV2ProviderResponse(namespace, providerName string, provider *provider.Provider) map[string]interface{} {
+	// Build response following Python terrareg API format
+	response := map[string]interface{}{
+		"data": map[string]interface{}{
+			"type": "providers",
+			"id":   provider.ID(),
+			"attributes": map[string]interface{}{
+				"alias":         "", // TODO: Implement when alias is added to domain model
+				"description":   provider.Description(),
+				"downloads":     0, // TODO: Implement analytics integration
+				"featured":      false, // TODO: Implement when featured is added to domain model
+				"full-name":     fmt.Sprintf("%s/%s", namespace, providerName),
+				"logo-url":      "", // TODO: Implement when logo URL is added to domain model
+				"name":          provider.Name(),
+				"namespace":     namespace,
+				"owner-name":    "", // TODO: Implement when owner name is added to domain model
+				"repository-id": provider.RepositoryID(),
+				"robots-noindex": false, // TODO: Implement when robots noindex is added to domain model
+				"source":        "", // TODO: Implement when source URL is added to domain model
+				"tier":          provider.Tier(),
+				"unlisted":      false, // TODO: Implement when unlisted is added to domain model
+				"warning":       "", // TODO: Implement when warning is added to domain model
+			},
+			"links": map[string]interface{}{
+				"self": fmt.Sprintf("/v2/providers/%d", provider.ID()),
+			},
+		},
 	}
-	return providerMap
+
+	// Add optional includes if requested (for future enhancement)
+	// TODO: Parse include parameter when needed
+
+	return response
 }
 
 // buildV2VersionsResponse builds a Terraform Registry v2 versions response
-func (h *TerraformV2ProviderHandler) buildV2VersionsResponse(namespace, providerName string, versions interface{}) map[string]interface{} {
+func (h *TerraformV2ProviderHandler) buildV2VersionsResponse(namespace, providerName string, versions []*provider.ProviderVersion) map[string]interface{} {
+	versionList := make([]map[string]interface{}, 0, len(versions))
+
+	for _, version := range versions {
+		versionData := map[string]interface{}{
+			"id": version.ID(),
+			"type": "provider-versions",
+			"attributes": map[string]interface{}{
+				"description": "", // TODO: Implement when description is added to provider version
+				"downloads":     0, // TODO: Implement analytics integration
+				"published-at":  "", // TODO: Implement when published_at is added to provider version
+				"tag":           "", // TODO: Implement when git tag is added to provider version
+				"version":       version.Version(),
+			},
+			"links": map[string]interface{}{
+				"self": fmt.Sprintf("/v2/provider-versions/%d", version.ID()),
+			},
+		}
+		versionList = append(versionList, versionData)
+	}
+
 	versionsMap := map[string]interface{}{
 		"id":       fmt.Sprintf("%s/%s", namespace, providerName),
-		"versions": []interface{}{},
+		"versions": versionList,
 		"permissions": map[string]bool{
 			"can_delete":  false,
 			"can_create":  false,
@@ -205,16 +245,42 @@ func (h *TerraformV2ProviderHandler) buildV2VersionsResponse(namespace, provider
 }
 
 // buildV2VersionResponse builds a Terraform Registry v2 version response
-func (h *TerraformV2ProviderHandler) buildV2VersionResponse(namespace, providerName string, version interface{}) map[string]interface{} {
+func (h *TerraformV2ProviderHandler) buildV2VersionResponse(namespace, providerName string, version *provider.ProviderVersion) map[string]interface{} {
+	// Build platforms list from binaries
+	platforms := make([]map[string]interface{}, 0)
+	for _, binary := range version.Binaries() {
+		platform := map[string]interface{}{
+			"os":           binary.OS(),
+			"arch":         binary.Architecture(),
+			"filename":     binary.Filename(),
+			"shasum":       binary.FileHash(),
+			"download_url": binary.DownloadURL(),
+		}
+		platforms = append(platforms, platform)
+	}
+
 	versionMap := map[string]interface{}{
-		"id": fmt.Sprintf("%s/%s", namespace, providerName),
+		"data": map[string]interface{}{
+			"type": "provider-versions",
+			"id":   version.ID(),
+			"attributes": map[string]interface{}{
+				"description": "", // TODO: Implement when description is added to provider version
+				"downloads":     0, // TODO: Implement analytics integration
+				"published-at":  "", // TODO: Implement when published_at is added to provider version
+				"tag":           "", // TODO: Implement when git tag is added to provider version
+				"version":       version.Version(),
+			},
+			"links": map[string]interface{}{
+				"self": fmt.Sprintf("/v2/provider-versions/%d", version.ID()),
+			},
+		},
 		"versions": []map[string]interface{}{
 			{
-				"version":      "placeholder",          // This should come from version.Version()
-				"protocols":    []string{"5.0", "6.0"}, // This should come from version.ProtocolVersions()
-				"platforms":    []interface{}{},        // This should be populated from version.Binaries()
-				"published_at": "",                     // Optional published date
-				"beta":         false,                  // This should come from version.Beta()
+				"version":      version.Version(),
+				"protocols":    version.ProtocolVersions(),
+				"platforms":    platforms,
+				"published_at": "", // TODO: Implement when published_at is added to provider version
+				"beta":         version.Beta(),
 			},
 		},
 		"permissions": map[string]bool{
