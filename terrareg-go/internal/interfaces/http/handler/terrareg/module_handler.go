@@ -658,10 +658,8 @@ func (h *ModuleHandler) HandleGetSubmodules(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Return submodules
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
-		"submodules": submodules,
-	})
+	// Return submodules (match Python terrareg format - direct array)
+	RespondJSON(w, http.StatusOK, submodules)
 }
 
 // HandleGetExamples handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/examples
@@ -686,10 +684,8 @@ func (h *ModuleHandler) HandleGetExamples(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Return examples
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
-		"examples": examples,
-	})
+	// Return examples (match Python terrareg format - direct array)
+	RespondJSON(w, http.StatusOK, examples)
 }
 
 // HandleTerraregModuleProviderDetails handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}
