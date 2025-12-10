@@ -121,7 +121,8 @@ type Container struct {
 	GetProviderDownloadQuery   *providerCmd.GetProviderDownloadQuery
 
 	// Provider Queries
-	GetProviderVersionQuery *providerQuery.GetProviderVersionQuery
+	GetProviderVersionQuery    *providerQuery.GetProviderVersionQuery
+	GetNamespaceGPGKeysQuery   *providerQuery.GetNamespaceGPGKeysQuery
 
 	// Provider Logo Queries
 	GetProviderLogosQuery *providerLogoQuery.GetAllProviderLogosQuery
@@ -322,7 +323,7 @@ func NewContainer(
 	c.GetProviderQuery = providerQuery.NewGetProviderQuery(c.ProviderRepo)
 	c.GetProviderVersionsQuery = providerQuery.NewGetProviderVersionsQuery(c.ProviderRepo)
 	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
-	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
+	c.GetNamespaceGPGKeysQuery = providerQuery.NewGetNamespaceGPGKeysQuery(c.NamespaceRepo)
 	c.GetProviderLogosQuery = providerLogoQuery.NewGetAllProviderLogosQuery(c.ProviderLogoRepo)
 	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
@@ -410,7 +411,7 @@ func NewContainer(
 	// Initialize v2 handlers
 	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery)
 	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(nil)) // TODO: Add proper category repo
-	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler()
+	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler(c.ManageGPGKeyCmd, c.GetNamespaceGPGKeysQuery)
 
 	// Initialize Terraform authentication handlers
 	c.TerraformAuthHandler = terraformHandler.NewTerraformAuthHandler(
