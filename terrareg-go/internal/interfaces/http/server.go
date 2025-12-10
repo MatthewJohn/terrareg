@@ -175,83 +175,83 @@ func (s *Server) setupRoutes() {
 
 		// Terrareg Custom API
 		r.Route("/terrareg", func(r chi.Router) {
-			r.Get("/config", s.handleConfig)
-			r.Get("/git_providers", s.handleGitProviders)
-			r.Get("/health", s.handleHealth)
-			r.Get("/version", s.handleVersion)
+			r.With(s.authMiddleware.OptionalAuth).Get("/config", s.handleConfig)
+			r.With(s.authMiddleware.OptionalAuth).Get("/git_providers", s.handleGitProviders)
+			r.With(s.authMiddleware.OptionalAuth).Get("/health", s.handleHealth)
+			r.With(s.authMiddleware.OptionalAuth).Get("/version", s.handleVersion)
 
 			// Analytics
 			r.Route("/analytics", func(r chi.Router) {
-				r.Get("/global/stats_summary", s.handleGlobalStatsSummary)
-				r.Get("/global/usage_stats", s.handleGlobalUsageStats)
-				r.Get("/global/most_recently_published_module_version", s.handleMostRecentlyPublished)
-				r.Get("/global/most_downloaded_module_provider_this_week", s.handleMostDownloadedThisWeek)
-				r.Get("/{namespace}/{name}/{provider}/{version}", s.handleModuleVersionAnalytics)
-				r.Get("/{namespace}/{name}/{provider}/token_versions", s.handleAnalyticsTokenVersions)
+				r.With(s.authMiddleware.OptionalAuth).Get("/global/stats_summary", s.handleGlobalStatsSummary)
+				r.With(s.authMiddleware.OptionalAuth).Get("/global/usage_stats", s.handleGlobalUsageStats)
+				r.With(s.authMiddleware.OptionalAuth).Get("/global/most_recently_published_module_version", s.handleMostRecentlyPublished)
+				r.With(s.authMiddleware.OptionalAuth).Get("/global/most_downloaded_module_provider_this_week", s.handleMostDownloadedThisWeek)
+				r.With(s.authMiddleware.OptionalAuth).Get("/{namespace}/{name}/{provider}/{version}", s.handleModuleVersionAnalytics)
+				r.With(s.authMiddleware.OptionalAuth).Get("/{namespace}/{name}/{provider}/token_versions", s.handleAnalyticsTokenVersions)
 			})
 
 			// Initial setup
-			r.Get("/initial_setup", s.handleInitialSetup)
-			r.Post("/initial_setup", s.handleInitialSetupPost)
+			r.With(s.authMiddleware.OptionalAuth).Get("/initial_setup", s.handleInitialSetup)
+			r.With(s.authMiddleware.OptionalAuth).Post("/initial_setup", s.handleInitialSetupPost)
 
 			// Namespaces
-			r.Get("/namespaces", s.handleNamespaceList)
+			r.With(s.authMiddleware.OptionalAuth).Get("/namespaces", s.handleNamespaceList)
 			r.With(s.authMiddleware.RequireAuth).Post("/namespaces", s.handleNamespaceCreate)
-			r.Get("/namespaces/{namespace}", s.handleNamespaceGet)
+			r.With(s.authMiddleware.OptionalAuth).Get("/namespaces/{namespace}", s.handleNamespaceGet)
 			r.With(s.authMiddleware.RequireAuth).Post("/namespaces/{namespace}", s.handleNamespaceUpdate)
 
 			// Modules
-			r.Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
-			r.Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
-			r.Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
-			r.Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
 			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
-			r.Get("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettings)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettings)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
-			r.Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
-			r.Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
 			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
 
 			// Module versions
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
 			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
-			r.With(s.authMiddleware.RequireAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
-			r.With(s.authMiddleware.RequireAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/variable_template", s.handleModuleVersionVariableTemplate)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/files/{path}", s.handleModuleVersionFile)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/source.zip", s.handleModuleVersionSourceDownload)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/variable_template", s.handleModuleVersionVariableTemplate)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/files/{path}", s.handleModuleVersionFile)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/source.zip", s.handleModuleVersionSourceDownload)
 
 			// Submodules
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/submodules", s.handleModuleVersionSubmodules)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/submodules/details/{submodule:.*}", s.handleSubmoduleDetails)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/submodules/readme_html/{submodule:.*}", s.handleSubmoduleReadmeHTML)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/submodules", s.handleModuleVersionSubmodules)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/submodules/details/{submodule:.*}", s.handleSubmoduleDetails)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/submodules/readme_html/{submodule:.*}", s.handleSubmoduleReadmeHTML)
 
 			// Examples
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/examples", s.handleModuleVersionExamples)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/examples/details/{example:.*}", s.handleExampleDetails)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/examples/readme_html/{example:.*}", s.handleExampleReadmeHTML)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/examples/filelist/{example:.*}", s.handleExampleFileList)
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/examples/file/{file:.*}", s.handleExampleFile)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/examples", s.handleModuleVersionExamples)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/examples/details/{example:.*}", s.handleExampleDetails)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/examples/readme_html/{example:.*}", s.handleExampleReadmeHTML)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/examples/filelist/{example:.*}", s.handleExampleFileList)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/examples/file/{file:.*}", s.handleExampleFile)
 
 			// Graph
-			r.Get("/modules/{namespace}/{name}/{provider}/{version}/graph/data", s.handleGraphData)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/graph/data", s.handleGraphData)
 
 			// Providers
-			r.Get("/providers/{namespace}", s.handleTerraregNamespaceProviders)
-			r.Get("/providers/{namespace}/{provider}/integrations", s.handleProviderIntegrations)
-			r.Get("/provider_logos", s.handleProviderLogos)
+			r.With(s.authMiddleware.OptionalAuth).Get("/providers/{namespace}", s.handleTerraregNamespaceProviders)
+			r.With(s.authMiddleware.OptionalAuth).Get("/providers/{namespace}/{provider}/integrations", s.handleProviderIntegrations)
+			r.With(s.authMiddleware.OptionalAuth).Get("/provider_logos", s.handleProviderLogos)
 
 			// Search filters
-			r.Get("/search_filters", s.handleModuleSearchFilters)
-			r.Get("/modules/search/filters", s.handleModuleSearchFilters)
-			r.Get("/providers/search/filters", s.handleProviderSearchFilters)
+			r.With(s.authMiddleware.OptionalAuth).Get("/search_filters", s.handleModuleSearchFilters)
+			r.With(s.authMiddleware.OptionalAuth).Get("/modules/search/filters", s.handleModuleSearchFilters)
+			r.With(s.authMiddleware.OptionalAuth).Get("/providers/search/filters", s.handleProviderSearchFilters)
 
 			// Audit
-			r.Get("/audit-history", s.handleAuditHistory)
+			r.With(s.authMiddleware.RequireAuth).Get("/audit-history", s.handleAuditHistory)
 
 			// User groups
 			r.With(s.authMiddleware.RequireAuth).Get("/user-groups", s.handleUserGroupList)
@@ -272,46 +272,46 @@ func (s *Server) setupRoutes() {
 	// Terraform Registry API v2
 	s.router.Route("/v2", func(r chi.Router) {
 		// Provider endpoints
-		r.Get("/providers/{namespace}/{provider}", s.terraformV2ProviderHandler.HandleProviderDetails)
-		r.Get("/providers/{namespace}/{provider}/versions", s.terraformV2ProviderHandler.HandleProviderVersions)
-		r.Get("/providers/{namespace}/{provider}/{version}", s.terraformV2ProviderHandler.HandleProviderVersion)
-		r.Get("/providers/{namespace}/{provider}/{version}/download/{os}/{arch}", s.terraformV2ProviderHandler.HandleProviderDownload)
-		r.Get("/providers/{provider_id}/downloads/summary", s.terraformV2ProviderHandler.HandleProviderDownloadsSummary)
+		r.With(s.authMiddleware.OptionalAuth).Get("/providers/{namespace}/{provider}", s.terraformV2ProviderHandler.HandleProviderDetails)
+		r.With(s.authMiddleware.OptionalAuth).Get("/providers/{namespace}/{provider}/versions", s.terraformV2ProviderHandler.HandleProviderVersions)
+		r.With(s.authMiddleware.OptionalAuth).Get("/providers/{namespace}/{provider}/{version}", s.terraformV2ProviderHandler.HandleProviderVersion)
+		r.With(s.authMiddleware.OptionalAuth).Get("/providers/{namespace}/{provider}/{version}/download/{os}/{arch}", s.terraformV2ProviderHandler.HandleProviderDownload)
+		r.With(s.authMiddleware.OptionalAuth).Get("/providers/{provider_id}/downloads/summary", s.terraformV2ProviderHandler.HandleProviderDownloadsSummary)
 
 		// Provider docs (placeholder - can be implemented later)
-		r.Get("/provider-docs", s.handleV2ProviderDocs)
-		r.Get("/provider-docs/{doc_id}", s.handleV2ProviderDoc)
+		r.With(s.authMiddleware.OptionalAuth).Get("/provider-docs", s.handleV2ProviderDocs)
+		r.With(s.authMiddleware.OptionalAuth).Get("/provider-docs/{doc_id}", s.handleV2ProviderDoc)
 
 		// GPG keys
-		r.Get("/gpg-keys", s.terraformV2GPGHandler.HandleListGPGKeys)
-		r.Post("/gpg-keys", s.terraformV2GPGHandler.HandleCreateGPGKey)
-		r.Get("/gpg-keys/{namespace}/{key_id}", s.terraformV2GPGHandler.HandleGetGPGKey)
+		r.With(s.authMiddleware.OptionalAuth).Get("/gpg-keys", s.terraformV2GPGHandler.HandleListGPGKeys)
+		r.With(s.authMiddleware.RequireAuth).Post("/gpg-keys", s.terraformV2GPGHandler.HandleCreateGPGKey)
+		r.With(s.authMiddleware.OptionalAuth).Get("/gpg-keys/{namespace}/{key_id}", s.terraformV2GPGHandler.HandleGetGPGKey)
 
 		// Categories
-		r.Get("/categories", s.terraformV2CategoryHandler.HandleListCategories)
+		r.With(s.authMiddleware.OptionalAuth).Get("/categories", s.terraformV2CategoryHandler.HandleListCategories)
 	})
 
 	// Authentication endpoints
-	s.router.Get("/openid/login", s.handleOIDCLogin)
-	s.router.Get("/openid/callback", s.handleOIDCCallback)
-	s.router.Get("/saml/login", s.handleSAMLLogin)
-	s.router.Get("/saml/metadata", s.handleSAMLMetadata)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/openid/login", s.handleOIDCLogin)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/openid/callback", s.handleOIDCCallback)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/saml/login", s.handleSAMLLogin)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/saml/metadata", s.handleSAMLMetadata)
 
 	// Provider source endpoints (GitHub, GitLab, etc.)
-	s.router.Get("/{provider_source}/login", s.handleProviderSourceLogin)
-	s.router.Get("/{provider_source}/callback", s.handleProviderSourceCallback)
-	s.router.Get("/{provider_source}/auth/status", s.handleProviderSourceAuthStatus)
-	s.router.Get("/{provider_source}/organizations", s.handleProviderSourceOrganizations)
-	s.router.Get("/{provider_source}/repositories", s.handleProviderSourceRepositories)
-	s.router.Post("/{provider_source}/refresh-namespace", s.handleProviderSourceRefreshNamespace)
-	s.router.Post("/{provider_source}/repositories/{repo_id}/publish-provider", s.handleProviderSourcePublishProvider)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/{provider_source}/login", s.handleProviderSourceLogin)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/{provider_source}/callback", s.handleProviderSourceCallback)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/{provider_source}/auth/status", s.handleProviderSourceAuthStatus)
+	s.router.With(s.authMiddleware.RequireAuth).Get("/{provider_source}/organizations", s.handleProviderSourceOrganizations)
+	s.router.With(s.authMiddleware.RequireAuth).Get("/{provider_source}/repositories", s.handleProviderSourceRepositories)
+	s.router.With(s.authMiddleware.RequireAuth).Post("/{provider_source}/refresh-namespace", s.handleProviderSourceRefreshNamespace)
+	s.router.With(s.authMiddleware.RequireAuth).Post("/{provider_source}/repositories/{repo_id}/publish-provider", s.handleProviderSourcePublishProvider)
 
 	// Webhooks
-	s.router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", s.handleGitHubWebhook)
-	s.router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.handleBitBucketWebhook)
+	s.router.With(s.authMiddleware.OptionalAuth).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", s.handleGitHubWebhook)
+	s.router.With(s.authMiddleware.OptionalAuth).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.handleBitBucketWebhook)
 
 	// Initial Setup API
-	s.router.Get("/v1/terrareg/initial_setup", s.handleInitialSetup)
+	s.router.With(s.authMiddleware.OptionalAuth).Get("/v1/terrareg/initial_setup", s.handleInitialSetup)
 
 	// Static files
 	fileServer := http.FileServer(http.Dir("./static"))
