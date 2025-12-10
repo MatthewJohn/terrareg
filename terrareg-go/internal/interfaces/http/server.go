@@ -589,17 +589,8 @@ func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// For now, return a stub response
-	// TODO: Implement actual source download logic
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte(fmt.Sprintf(`{
-		"message": "Source download not yet implemented",
-		"namespace": "%s",
-		"name": "%s",
-		"provider": "%s",
-		"version": "%s"
-	}`, namespace, name, provider, version)))
+	// Delegate to the module handler following DDD principles
+	s.moduleHandler.HandleModuleVersionSourceDownload(w, r)
 }
 func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetSubmodules(w, r)

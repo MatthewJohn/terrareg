@@ -38,6 +38,7 @@ type ModuleHandler struct {
 	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	getModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
 	deleteModuleVersionCmd          *moduleCmd.DeleteModuleVersionCommand
+	generateModuleSourceCmd         *moduleCmd.GenerateModuleSourceCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -63,6 +64,7 @@ func NewModuleHandler(
 	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
 	getModuleVersionFileCmd *moduleCmd.GetModuleVersionFileQuery,
 	deleteModuleVersionCmd *moduleCmd.DeleteModuleVersionCommand,
+	generateModuleSourceCmd *moduleCmd.GenerateModuleSourceCommand,
 	domainConfig *model.DomainConfig,
 	namespaceService *moduleService.NamespaceService,
 	analyticsRepo analyticsCmd.AnalyticsRepository,
@@ -85,6 +87,7 @@ func NewModuleHandler(
 		importModuleVersionCmd:          importModuleVersionCmd,
 		getModuleVersionFileCmd:         getModuleVersionFileCmd,
 		deleteModuleVersionCmd:          deleteModuleVersionCmd,
+		generateModuleSourceCmd:        generateModuleSourceCmd,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -949,4 +952,49 @@ func (h *ModuleHandler) HandleModuleVersionReadmeHTML(w http.ResponseWriter, r *
 	// Write the processed HTML content
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp.ContentHTML))
+}
+
+// HandleModuleVersionSourceDownload handles GET /modules/{namespace}/{name}/{provider}/{version}/source.zip
+func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Create request
+	req := &moduleCmd.GenerateModuleSourceRequest{
+		Namespace: namespace,
+		Module:    moduleName,
+		Provider:  provider,
+		Version:   version,
+	}
+
+	// Execute command
+	resp, err := h.generateModuleSourceCmd.Execute(ctx, req)
+	if err != nil {
+		if err.Error() == "missing required parameters" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"message": "Missing required path parameters"}`))
+			return
+		}
+		if err.Error() == "no files found for module version" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"message": "No source files found for module version"}`))
+			return
+		}
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Set headers for file download
+	w.Header().Set("Content-Type", resp.ContentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", resp.Filename))
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", resp.ContentSize))
+
+	// Write the ZIP content
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp.Content)
 }
