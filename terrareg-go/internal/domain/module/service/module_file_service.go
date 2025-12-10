@@ -12,10 +12,10 @@ import (
 
 // ModuleFileService handles module file operations following DDD principles
 type ModuleFileService struct {
-	moduleProviderRepo     moduleRepo.ModuleProviderRepository
-	moduleVersionFileRepo  model.ModuleVersionFileRepository
-	namespaceService       *NamespaceService
-	securityService        *SecurityService
+	moduleProviderRepo    moduleRepo.ModuleProviderRepository
+	moduleVersionFileRepo model.ModuleVersionFileRepository
+	namespaceService      *NamespaceService
+	securityService       *SecurityService
 }
 
 // NewModuleFileService creates a new module file service
@@ -26,10 +26,10 @@ func NewModuleFileService(
 	securityService *SecurityService,
 ) *ModuleFileService {
 	return &ModuleFileService{
-		moduleProviderRepo:     moduleProviderRepo,
-		moduleVersionFileRepo:  moduleVersionFileRepo,
-		namespaceService:       namespaceService,
-		securityService:        securityService,
+		moduleProviderRepo:    moduleProviderRepo,
+		moduleVersionFileRepo: moduleVersionFileRepo,
+		namespaceService:      namespaceService,
+		securityService:       securityService,
 	}
 }
 
@@ -44,10 +44,10 @@ type GetModuleFileRequest struct {
 
 // GetModuleFileResponse represents the response for getting a module file
 type GetModuleFileResponse struct {
-	File         *model.ModuleVersionFile
-	Content      string
-	ContentType  string
-	ContentHTML  string // For display purposes (processed markdown, etc.)
+	File        *model.ModuleVersionFile
+	Content     string
+	ContentType string
+	ContentHTML string // For display purposes (processed markdown, etc.)
 }
 
 // GetModuleFile retrieves a module file with proper security and processing
