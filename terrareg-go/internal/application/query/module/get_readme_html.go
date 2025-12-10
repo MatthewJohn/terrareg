@@ -3,20 +3,25 @@ package module
 import (
 	"context"
 	"fmt"
-	"strings"
 
+	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // GetReadmeHTMLQuery retrieves README HTML content for a module version
 type GetReadmeHTMLQuery struct {
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
+	markdownService     *sharedService.MarkdownService
 }
 
 // NewGetReadmeHTMLQuery creates a new query
-func NewGetReadmeHTMLQuery(moduleProviderRepo moduleRepo.ModuleProviderRepository) *GetReadmeHTMLQuery {
+func NewGetReadmeHTMLQuery(
+	moduleProviderRepo moduleRepo.ModuleProviderRepository,
+	markdownService *sharedService.MarkdownService,
+) *GetReadmeHTMLQuery {
 	return &GetReadmeHTMLQuery{
 		moduleProviderRepo: moduleProviderRepo,
+		markdownService:     markdownService,
 	}
 }
 
@@ -58,33 +63,13 @@ func (q *GetReadmeHTMLQuery) Execute(ctx context.Context, req *GetReadmeHTMLRequ
 		return nil, fmt.Errorf("no README content found")
 	}
 
-	// Convert markdown to HTML
-	html := q.convertMarkdownToHTML(string(readmeContent))
+	// Convert markdown to HTML using the common markdown service
+	html := q.markdownService.ConvertToHTML(
+		string(readmeContent),
+		sharedService.WithFileName("README.md"),
+	)
 
 	return &GetReadmeHTMLResponse{
 		HTML: html,
 	}, nil
-}
-
-// convertMarkdownToHTML converts markdown content to HTML
-// For now, this is a basic implementation - in a full system, would use a proper markdown library
-func (q *GetReadmeHTMLQuery) convertMarkdownToHTML(markdown string) string {
-	if markdown == "" {
-		return ""
-	}
-
-	// Basic markdown to HTML conversion
-	// In a full implementation, this would use a library like blackfriday
-	html := markdown
-
-	// Convert headers
-	html = strings.ReplaceAll(html, "# ", "<h1>")
-	html = strings.ReplaceAll(html, "## ", "<h2>")
-	html = strings.ReplaceAll(html, "### ", "<h3>")
-
-	// Convert line breaks to <br>
-	html = strings.ReplaceAll(html, "\n", "<br>")
-
-	// Wrap in a div for styling
-	return fmt.Sprintf(`<div class="markdown-content">%s</div>`, html)
 }

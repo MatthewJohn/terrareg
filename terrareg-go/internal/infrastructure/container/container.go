@@ -27,6 +27,7 @@ import (
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
+	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
@@ -85,6 +86,7 @@ type Container struct {
 	NamespaceService      *moduleService.NamespaceService
 	SecurityService       *moduleService.SecurityService
 	ModuleFileService     *moduleService.ModuleFileService
+	MarkdownService       *sharedService.MarkdownService
 	AuthFactory           *authservice.AuthFactory
 	SessionService        *authservice.SessionService
 	CookieService         *authservice.CookieService
@@ -249,6 +251,7 @@ func NewContainer(
 
 	// Initialize security and module file services
 	c.SecurityService = moduleService.NewSecurityService()
+	c.MarkdownService = sharedService.NewMarkdownService()
 	c.ModuleFileService = moduleService.NewModuleFileService(
 		c.ModuleProviderRepo,
 		c.ModuleVersionFileRepo,
@@ -319,7 +322,7 @@ func NewContainer(
 	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetIntegrationsQuery = moduleQuery.NewGetIntegrationsQuery(c.ModuleProviderRepo)
-	c.GetReadmeHTMLQuery = moduleQuery.NewGetReadmeHTMLQuery(c.ModuleProviderRepo)
+	c.GetReadmeHTMLQuery = moduleQuery.NewGetReadmeHTMLQuery(c.ModuleProviderRepo, c.MarkdownService)
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GlobalUsageStatsQuery = analyticsQuery.NewGlobalUsageStatsQuery(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
