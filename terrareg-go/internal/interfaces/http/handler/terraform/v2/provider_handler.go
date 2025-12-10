@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
+	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
@@ -17,6 +18,7 @@ type TerraformV2ProviderHandler struct {
 	getProviderVersionsQuery *providerQuery.GetProviderVersionsQuery
 	getProviderVersionQuery  *providerQuery.GetProviderVersionQuery
 	listProvidersQuery       *providerQuery.ListProvidersQuery
+	getProviderDownloadQuery *providerCmd.GetProviderDownloadQuery
 }
 
 // NewTerraformV2ProviderHandler creates a new TerraformV2ProviderHandler
@@ -25,12 +27,14 @@ func NewTerraformV2ProviderHandler(
 	getProviderVersionsQuery *providerQuery.GetProviderVersionsQuery,
 	getProviderVersionQuery *providerQuery.GetProviderVersionQuery,
 	listProvidersQuery *providerQuery.ListProvidersQuery,
+	getProviderDownloadQuery *providerCmd.GetProviderDownloadQuery,
 ) *TerraformV2ProviderHandler {
 	return &TerraformV2ProviderHandler{
 		getProviderQuery:         getProviderQuery,
 		getProviderVersionsQuery: getProviderVersionsQuery,
 		getProviderVersionQuery:  getProviderVersionQuery,
 		listProvidersQuery:       listProvidersQuery,
+		getProviderDownloadQuery: getProviderDownloadQuery,
 	}
 }
 
@@ -120,39 +124,48 @@ func (h *TerraformV2ProviderHandler) HandleProviderDownload(w http.ResponseWrite
 	os := chi.URLParam(r, "os")
 	arch := chi.URLParam(r, "arch")
 
-	// Get provider first
-	provider, err := h.getProviderQuery.Execute(ctx, namespace, providerName)
-	if err != nil {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found: %s", namespace, providerName, err.Error()))
-		return
+	// Parse headers for analytics
+	userAgent := r.Header.Get("User-Agent")
+	terraformVersion := r.Header.Get("X-Terraform-Version")
+
+	// Create download request (similar to V1)
+	req := &providerCmd.GetProviderDownloadRequest{
+		Namespace:       namespace,
+		Provider:        providerName,
+		Version:         version,
+		OS:              os,
+		Arch:            arch,
+		UserAgent:       userAgent,
+		TerraformVersion: terraformVersion,
 	}
 
-	// Get specific version
-	providerVersion, err := h.getProviderVersionQuery.Execute(ctx, provider.ID(), version)
+	// Execute query
+	resp, err := h.getProviderDownloadQuery.Execute(ctx, req)
 	if err != nil {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider version %s/%s/%s not found: %s", namespace, providerName, version, err.Error()))
-		return
-	}
-
-	// Find binary for this OS/Arch combination
-	var binaryURL string
-	for _, binary := range providerVersion.Binaries() {
-		if binary.OS() == os && binary.Architecture() == arch {
-			binaryURL = fmt.Sprintf("/providers/%s/%s/%s/download/%s/%s/%s",
-				namespace, providerName, version, os, arch, binary.Filename())
-			break
+		// Handle errors consistently with V1 handler
+		if err.Error() == "provider not found" ||
+		   err.Error() == "provider version not found" {
+			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider version %s/%s/%s not found", namespace, providerName, version))
+			return
 		}
-	}
-
-	if binaryURL == "" {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Binary for %s/%s not found", os, arch))
+		if err.Error() == "unsupported OS" {
+			terrareg.RespondError(w, http.StatusBadRequest, fmt.Sprintf("Unsupported OS: %s", os))
+			return
+		}
+		if err.Error() == "unsupported architecture" {
+			terrareg.RespondError(w, http.StatusBadRequest, fmt.Sprintf("Unsupported architecture: %s", arch))
+			return
+		}
+		if err.Error() == "binary not found" {
+			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Binary not found for %s/%s", os, arch))
+			return
+		}
+		terrareg.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Terraform Registry API expects a 204 No Content response with X-Terraform-Get header
-	w.Header().Set("X-Terraform-Get", binaryURL)
-	w.Header().Set("X-Terraform-Protocol-Version", "6.0")
-	w.WriteHeader(http.StatusNoContent)
+	// Return JSON response with download metadata (like Python terrareg)
+	terrareg.RespondJSON(w, http.StatusOK, resp)
 }
 
 // HandleProviderDownloadsSummary handles GET /v2/providers/{provider_id}/downloads/summary

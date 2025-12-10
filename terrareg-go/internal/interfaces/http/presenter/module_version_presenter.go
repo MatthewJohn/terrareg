@@ -136,7 +136,7 @@ func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespac
 			// Terrareg-specific fields
 			Beta:             mv.IsBeta(),
 			Published:        mv.IsPublished(),
-			SecurityFailures: 0, // TODO: Implement security scanning
+			SecurityFailures: mv.GetSecurityFailures(),
 			// Other UI-specific fields would be populated here
 		},
 	}
