@@ -89,86 +89,6 @@ func (p *ModuleVersionPresenter) ToDTO(ctx context.Context, mv *model.ModuleVers
 	return response
 }
 
-// ToTerraregDTO converts a module version to TerraregModuleVersionResponse
-func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespace, moduleName, provider string) *moduledto.TerraregModuleVersionResponse {
-	// Build version ID
-	id := fmt.Sprintf("%s/%s/%s/%s", namespace, moduleName, provider, mv.Version().String())
-
-	// Get module provider for additional details
-	moduleProvider := mv.ModuleProvider()
-
-	if moduleProvider == nil {
-		return nil
-	}
-
-	// Check if namespace is trusted
-	trusted := false
-	if p.namespaceService != nil {
-		ns := moduleProvider.Namespace()
-		trusted = p.namespaceService.IsTrusted(ns)
-	}
-
-	response := moduledto.TerraregModuleVersionResponse{
-		TerraregVersionDetails: moduledto.TerraregVersionDetails{
-			VersionDetails: moduledto.VersionDetails{
-				VersionBase: moduledto.VersionBase{
-					ProviderBase: moduledto.ProviderBase{
-						ID:        id,
-						Namespace: namespace,
-						Name:      moduleName,
-						Provider:  provider,
-						Verified:  moduleProvider != nil && moduleProvider.IsVerified(),
-						Trusted:   trusted,
-					},
-					Version:  mv.Version().String(),
-					Internal: mv.IsInternal(),
-				},
-				// Add Terraform specs (this would need to be populated from the module version details)
-				Root: moduledto.ModuleSpecs{
-					Path:   "",
-					Readme: "",
-					Empty:  true,
-					// Other fields would be populated from actual module data
-				},
-				Submodules: []moduledto.ModuleSpecs{},
-				Providers:  []string{}, // Would be populated from module data
-			},
-			// Terrareg-specific fields
-			Beta:             mv.IsBeta(),
-			Published:        mv.IsPublished(),
-			SecurityFailures: mv.GetSecurityFailures(),
-			// Other UI-specific fields would be populated here
-		},
-	}
-
-	// Add optional fields
-	if owner := mv.Owner(); owner != nil {
-		response.Owner = owner
-	}
-
-	if desc := mv.Description(); desc != nil {
-		response.Description = desc
-	}
-
-	if publishedAt := mv.PublishedAt(); publishedAt != nil {
-		publishedAtStr := publishedAt.Format("2006-01-02T15:04:05Z")
-		response.PublishedAt = &publishedAtStr
-	}
-
-	// Add module provider specific fields
-	// Get provider ID - using a field that exists
-	response.ModuleProviderID = moduleProvider.FrontendID()
-
-	response.GitProviderID = moduleProvider.GitProviderID()
-	response.GitTagFormat = moduleProvider.GitTagFormat()
-	response.GitPath = moduleProvider.GitPath()
-	response.ArchiveGitPath = moduleProvider.ArchiveGitPath()
-	response.RepoBaseURLTemplate = moduleProvider.RepoBaseURLTemplate()
-	response.RepoCloneURLTemplate = moduleProvider.RepoCloneURLTemplate()
-	response.RepoBrowseURLTemplate = moduleProvider.RepoBrowseURLTemplate()
-
-	return &response
-}
 
 // ToTerraregProviderDetailsDTO converts a module version to TerraregModuleProviderDetailsResponse.
 // This replicates Python's ModuleVersion.get_terrareg_api_details() method.
@@ -260,31 +180,86 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 
 	// Terraform module specifications
 	rootSpecs := mv.GetRootModuleSpecs()
+	inputs := convertInputsToTerrareg(rootSpecs.Inputs)
+	outputs := convertOutputsToTerrareg(rootSpecs.Outputs)
+	dependencies := convertDependenciesToTerrareg(rootSpecs.Dependencies)
+	providerDeps := convertProviderDepsToTerrareg(rootSpecs.ProviderDependencies)
+	resources := convertResourcesToTerrareg(rootSpecs.Resources)
+	modules := convertModulesToTerrareg(rootSpecs.Modules)
+
+	// Ensure all slices are initialized (never nil) to prevent JSON null values
+	if inputs == nil {
+		inputs = []terrareg.TerraregInput{}
+	}
+	if outputs == nil {
+		outputs = []terrareg.TerraregOutput{}
+	}
+	if dependencies == nil {
+		dependencies = []terrareg.TerraregDependency{}
+	}
+	if providerDeps == nil {
+		providerDeps = []terrareg.TerraregProviderDep{}
+	}
+	if resources == nil {
+		resources = []terrareg.TerraregResource{}
+	}
+	if modules == nil {
+		modules = []terrareg.TerraregModule{}
+	}
+
 	response.Root = terrareg.TerraregModuleSpecs{
 		Path:                 rootSpecs.Path,
 		Readme:               rootSpecs.Readme,
 		Empty:                rootSpecs.Empty,
-		Inputs:               convertInputsToTerrareg(rootSpecs.Inputs),
-		Outputs:              convertOutputsToTerrareg(rootSpecs.Outputs),
-		Dependencies:         convertDependenciesToTerrareg(rootSpecs.Dependencies),
-		ProviderDependencies: convertProviderDepsToTerrareg(rootSpecs.ProviderDependencies),
-		Resources:            convertResourcesToTerrareg(rootSpecs.Resources),
-		Modules:              convertModulesToTerrareg(rootSpecs.Modules),
+		Inputs:               inputs,
+		Outputs:              outputs,
+		Dependencies:         dependencies,
+		ProviderDependencies: providerDeps,
+		Resources:            resources,
+		Modules:              modules,
 	}
 
 	// Convert submodules
 	var submoduleSpecs []terrareg.TerraregModuleSpecs
 	for _, subSpec := range mv.GetSubmodules() {
+		// Convert submodule specs with nil protection
+		inputs := convertInputsToTerrareg(subSpec.Inputs)
+		outputs := convertOutputsToTerrareg(subSpec.Outputs)
+		dependencies := convertDependenciesToTerrareg(subSpec.Dependencies)
+		providerDeps := convertProviderDepsToTerrareg(subSpec.ProviderDependencies)
+		resources := convertResourcesToTerrareg(subSpec.Resources)
+		modules := convertModulesToTerrareg(subSpec.Modules)
+
+		// Ensure all slices are initialized (never nil) to prevent JSON null values
+		if inputs == nil {
+			inputs = []terrareg.TerraregInput{}
+		}
+		if outputs == nil {
+			outputs = []terrareg.TerraregOutput{}
+		}
+		if dependencies == nil {
+			dependencies = []terrareg.TerraregDependency{}
+		}
+		if providerDeps == nil {
+			providerDeps = []terrareg.TerraregProviderDep{}
+		}
+		if resources == nil {
+			resources = []terrareg.TerraregResource{}
+		}
+		if modules == nil {
+			modules = []terrareg.TerraregModule{}
+		}
+
 		submoduleSpecs = append(submoduleSpecs, terrareg.TerraregModuleSpecs{
 			Path:                 subSpec.Path,
 			Readme:               subSpec.Readme,
 			Empty:                subSpec.Empty,
-			Inputs:               convertInputsToTerrareg(subSpec.Inputs),
-			Outputs:              convertOutputsToTerrareg(subSpec.Outputs),
-			Dependencies:         convertDependenciesToTerrareg(subSpec.Dependencies),
-			ProviderDependencies: convertProviderDepsToTerrareg(subSpec.ProviderDependencies),
-			Resources:            convertResourcesToTerrareg(subSpec.Resources),
-			Modules:              convertModulesToTerrareg(subSpec.Modules),
+			Inputs:               inputs,
+			Outputs:              outputs,
+			Dependencies:         dependencies,
+			ProviderDependencies: providerDeps,
+			Resources:            resources,
+			Modules:              modules,
 		})
 	}
 	response.Submodules = submoduleSpecs

@@ -361,8 +361,8 @@ func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Convert to DTO
-	response := h.versionPresenter.ToDTO(ctx, moduleVersion, namespace, name, provider)
+	// Convert to DTO - use the same detailed format as module provider endpoint
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleVersion, namespace, name, provider, r.Host)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)

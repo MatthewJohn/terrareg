@@ -42,11 +42,6 @@ type ModuleVersionDetailsResponse struct {
 	VersionDetails
 }
 
-// TerraregModuleVersionResponse for terrareg UI (equivalent to get_terrareg_api_details)
-type TerraregModuleVersionResponse struct {
-	TerraregVersionDetails
-	AnalyticsToken *string `json:"analytics_token,omitempty"`
-}
 
 // SubmoduleResponse for submodules (uses ModuleSpecs)
 type SubmoduleResponse struct {
