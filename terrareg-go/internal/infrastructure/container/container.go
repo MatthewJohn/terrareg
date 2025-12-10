@@ -141,6 +141,7 @@ type Container struct {
 	GetSubmodulesQuery             *module.GetSubmodulesQuery
 	GetExamplesQuery               *module.GetExamplesQuery
 	GetIntegrationsQuery           *module.GetIntegrationsQuery
+	GetReadmeHTMLQuery             *module.GetReadmeHTMLQuery
 	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery
 	GlobalUsageStatsQuery          *analyticsQuery.GlobalUsageStatsQuery
 	GetDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
@@ -318,6 +319,7 @@ func NewContainer(
 	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetIntegrationsQuery = moduleQuery.NewGetIntegrationsQuery(c.ModuleProviderRepo)
+	c.GetReadmeHTMLQuery = moduleQuery.NewGetReadmeHTMLQuery(c.ModuleProviderRepo)
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GlobalUsageStatsQuery = analyticsQuery.NewGlobalUsageStatsQuery(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
@@ -370,6 +372,7 @@ func NewContainer(
 		c.GetModuleVersionQuery,
 		c.GetModuleDownloadQuery,
 		c.GetModuleProviderSettingsQuery,
+		c.GetReadmeHTMLQuery,
 		c.GetSubmodulesQuery,
 		c.GetExamplesQuery,
 		c.GetIntegrationsQuery,

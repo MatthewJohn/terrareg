@@ -28,6 +28,7 @@ type ModuleHandler struct {
 	getModuleVersionQuery           *moduleQuery.GetModuleVersionQuery
 	getModuleDownloadQuery          *moduleQuery.GetModuleDownloadQuery
 	getModuleProviderSettingsQuery  *moduleQuery.GetModuleProviderSettingsQuery
+	getReadmeHTMLQuery              *moduleQuery.GetReadmeHTMLQuery
 	getSubmodulesQuery              *moduleQuery.GetSubmodulesQuery
 	getExamplesQuery                *moduleQuery.GetExamplesQuery
 	getIntegrationsQuery             *moduleQuery.GetIntegrationsQuery
@@ -56,6 +57,7 @@ func NewModuleHandler(
 	getModuleVersionQuery *moduleQuery.GetModuleVersionQuery,
 	getModuleDownloadQuery *moduleQuery.GetModuleDownloadQuery,
 	getModuleProviderSettingsQuery *moduleQuery.GetModuleProviderSettingsQuery,
+	getReadmeHTMLQuery *moduleQuery.GetReadmeHTMLQuery,
 	getSubmodulesQuery *moduleQuery.GetSubmodulesQuery,
 	getExamplesQuery *moduleQuery.GetExamplesQuery,
 	getIntegrationsQuery *moduleQuery.GetIntegrationsQuery,
@@ -81,6 +83,7 @@ func NewModuleHandler(
 		getModuleVersionQuery:           getModuleVersionQuery,
 		getModuleDownloadQuery:          getModuleDownloadQuery,
 		getModuleProviderSettingsQuery:  getModuleProviderSettingsQuery,
+		getReadmeHTMLQuery:              getReadmeHTMLQuery,
 		getSubmodulesQuery:              getSubmodulesQuery,
 		getExamplesQuery:                getExamplesQuery,
 		getIntegrationsQuery:            getIntegrationsQuery,
@@ -915,41 +918,26 @@ func (h *ModuleHandler) HandleModuleVersionReadmeHTML(w http.ResponseWriter, r *
 	provider := chi.URLParam(r, "provider")
 	version := chi.URLParam(r, "version")
 
-	// Create request to get README file (typically named README.md)
-	req := &moduleCmd.GetModuleVersionFileRequest{
+	// Create request to get README HTML from module details
+	req := &moduleQuery.GetReadmeHTMLRequest{
 		Namespace: namespace,
 		Module:    moduleName,
 		Provider:  provider,
 		Version:   version,
-		Path:      "README.md", // Standard README filename
 	}
 
-	// Execute query to get README file
-	resp, err := h.getModuleVersionFileCmd.Execute(ctx, req)
+	// Execute query to get README HTML
+	resp, err := h.getReadmeHTMLQuery.Execute(ctx, req)
 	if err != nil {
-		// Try alternative README filenames
-		altReadmeFiles := []string{"README", "readme.md", "Readme.md"}
-
-		for _, readmeFile := range altReadmeFiles {
-			req.Path = readmeFile
-			resp, err = h.getModuleVersionFileCmd.Execute(ctx, req)
-			if err == nil {
-				break
-			}
-		}
-
-		if err != nil {
-			if err.Error() == "module version file not found" ||
-			   err.Error() == "file not found: module version file not found" {
-				// Return HTML error page for missing README
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`<div class="alert alert-warning">No README found for this module version</div>`))
-				return
-			}
-			RespondError(w, http.StatusInternalServerError, err.Error())
+		if err.Error() == "no README content found" {
+			// Return HTML error page for missing README
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`<div class="alert alert-warning">No README found for this module version</div>`))
 			return
 		}
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	// Set content type to HTML
@@ -957,7 +945,7 @@ func (h *ModuleHandler) HandleModuleVersionReadmeHTML(w http.ResponseWriter, r *
 
 	// Write the processed HTML content
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(resp.ContentHTML))
+	w.Write([]byte(resp.HTML))
 }
 
 // HandleModuleVersionSourceDownload handles GET /modules/{namespace}/{name}/{provider}/{version}/source.zip
