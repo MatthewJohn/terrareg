@@ -333,6 +333,9 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	// Configuration
 	response.AdditionalTabFiles = mv.GetAdditionalTabFiles()
 
+	// Initialize custom links to empty slice to prevent null in JSON response
+	response.CustomLinks = []terrareg.TerraregCustomLink{}
+
 	customLinks := mv.GetCustomLinks()
 	for _, link := range customLinks {
 		response.CustomLinks = append(response.CustomLinks, terrareg.TerraregCustomLink{

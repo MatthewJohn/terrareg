@@ -118,6 +118,7 @@ type Container struct {
 	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
 	PublishProviderVersionCmd *providerCmd.PublishProviderVersionCommand
 	ManageGPGKeyCmd           *providerCmd.ManageGPGKeyCommand
+	GetProviderDownloadQuery   *providerCmd.GetProviderDownloadQuery
 
 	// Provider Queries
 	GetProviderVersionQuery *providerQuery.GetProviderVersionQuery
@@ -326,6 +327,7 @@ func NewContainer(
 	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.GetProviderDownloadQuery = providerCmd.NewGetProviderDownloadQuery(c.ProviderRepo, c.NamespaceRepo, c.AnalyticsRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
 	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery()
 
@@ -393,6 +395,7 @@ func NewContainer(
 		c.CreateOrUpdateProviderCmd,
 		c.PublishProviderVersionCmd,
 		c.ManageGPGKeyCmd,
+		c.GetProviderDownloadQuery,
 	)
 	c.ProviderLogosHandler = terrareg.NewProviderLogosHandler(c.GetProviderLogosQuery)
 	c.AuthHandler = terrareg.NewAuthHandler(
