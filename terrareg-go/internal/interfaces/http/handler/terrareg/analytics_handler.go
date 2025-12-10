@@ -15,6 +15,7 @@ import (
 // AnalyticsHandler handles analytics-related requests
 type AnalyticsHandler struct {
 	globalStatsQuery               *analyticsQuery.GlobalStatsQuery
+	globalUsageStatsQuery          *analyticsQuery.GlobalUsageStatsQuery
 	getDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
 	recordModuleDownloadCmd        *analyticsCmd.RecordModuleDownloadCommand
 	getMostRecentlyPublishedQuery  *analyticsQuery.GetMostRecentlyPublishedQuery
@@ -25,6 +26,7 @@ type AnalyticsHandler struct {
 // NewAnalyticsHandler creates a new analytics handler
 func NewAnalyticsHandler(
 	globalStatsQuery *analyticsQuery.GlobalStatsQuery,
+	globalUsageStatsQuery *analyticsQuery.GlobalUsageStatsQuery,
 	getDownloadSummaryQuery *analyticsQuery.GetDownloadSummaryQuery,
 	recordModuleDownloadCmd *analyticsCmd.RecordModuleDownloadCommand,
 	getMostRecentlyPublishedQuery *analyticsQuery.GetMostRecentlyPublishedQuery,
@@ -33,6 +35,7 @@ func NewAnalyticsHandler(
 ) *AnalyticsHandler {
 	return &AnalyticsHandler{
 		globalStatsQuery:               globalStatsQuery,
+		globalUsageStatsQuery:          globalUsageStatsQuery,
 		getDownloadSummaryQuery:        getDownloadSummaryQuery,
 		recordModuleDownloadCmd:        recordModuleDownloadCmd,
 		getMostRecentlyPublishedQuery:  getMostRecentlyPublishedQuery,
@@ -171,6 +174,19 @@ func (h *AnalyticsHandler) HandleTokenVersions(w http.ResponseWriter, r *http.Re
 
 	// Return token versions
 	RespondJSON(w, http.StatusOK, tokenVersions)
+}
+
+// HandleGlobalUsageStats handles GET /v1/terrareg/analytics/global/usage_stats
+func (h *AnalyticsHandler) HandleGlobalUsageStats(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	stats, err := h.globalUsageStatsQuery.Execute(ctx)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, stats)
 }
 
 // RecordModuleDownload records a module download (called during download)
