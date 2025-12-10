@@ -3,6 +3,7 @@ package module
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 
@@ -122,14 +123,96 @@ func (r *ModuleVersionRepositoryImpl) Exists(ctx context.Context, moduleProvider
 
 // mapToDomainModel converts persistence model to domain model using centralized mapper
 func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVersionDB) (*model.ModuleVersion, error) {
+	// Load module details if available
 	var details *model.ModuleDetails
 	if dbVersion.ModuleDetailsID != nil {
-		// If there's a details ID, we would need to fetch it
-		// For now, create empty details
+		var detailsDB sqldb.ModuleDetailsDB
+		err := r.db.First(&detailsDB, *dbVersion.ModuleDetailsID).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("failed to load module details: %w", err)
+		}
+		if err == nil {
+			details = fromDBModuleDetails(&detailsDB)
+		}
+	}
+	if details == nil {
 		details = model.NewModuleDetails([]byte{})
 	}
 
-	return fromDBModuleVersion(&dbVersion, details)
+	// Create basic module version
+	moduleVersion, err := fromDBModuleVersion(&dbVersion, details)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load submodules from database (examples are also stored as submodules with type="example")
+	var submodulesDB []sqldb.SubmoduleDB
+	if err := r.db.Where("parent_module_version = ?", dbVersion.ID).Find(&submodulesDB).Error; err != nil {
+		return nil, fmt.Errorf("failed to load submodules: %w", err)
+	}
+
+	log.Printf("DEBUG: Found %d submodules for module version %d", len(submodulesDB), dbVersion.ID)
+
+	// Convert submodules to domain models and add to module version
+	for _, submoduleDB := range submodulesDB {
+		// Load module details for submodule if available
+		var submoduleDetails *model.ModuleDetails
+		if submoduleDB.ModuleDetailsID != nil {
+			var detailsDB sqldb.ModuleDetailsDB
+			err := r.db.First(&detailsDB, *submoduleDB.ModuleDetailsID).Error
+			if err == nil {
+				submoduleDetails = fromDBModuleDetails(&detailsDB)
+			}
+		}
+		if submoduleDetails == nil {
+			submoduleDetails = model.NewModuleDetails([]byte{})
+		}
+
+		// Determine if this is an example based on type field
+		isExample := submoduleDB.Type != nil && *submoduleDB.Type == "example"
+		log.Printf("DEBUG: Processing submodule: path=%s, type=%v, isExample=%v", submoduleDB.Path, submoduleDB.Type, isExample)
+
+		if isExample {
+			// Create Example and load its files
+			example := model.NewExample(
+				submoduleDB.Path,
+				submoduleDB.Name,
+				submoduleDetails,
+			)
+
+			// Load example files for this example (submodule)
+			var exampleFilesDB []sqldb.ExampleFileDB
+			if err := r.db.Where("submodule_id = ?", submoduleDB.ID).Find(&exampleFilesDB).Error; err != nil {
+				return nil, fmt.Errorf("failed to load example files: %w", err)
+			}
+
+			log.Printf("DEBUG: Found %d files for example %s", len(exampleFilesDB), submoduleDB.Path)
+
+			// Add files to example
+			for _, exampleFileDB := range exampleFilesDB {
+				exampleFile := model.NewExampleFile(
+					exampleFileDB.Path,
+					exampleFileDB.Content,
+				)
+				example.AddFile(exampleFile)
+			}
+
+			moduleVersion.AddExample(example)
+			log.Printf("DEBUG: Added example to module version")
+		} else {
+			// Create Submodule
+			submodule := model.NewSubmodule(
+				submoduleDB.Path,
+				submoduleDB.Name,
+				submoduleDB.Type,
+				submoduleDetails,
+			)
+			moduleVersion.AddSubmodule(submodule)
+			log.Printf("DEBUG: Added submodule to module version")
+		}
+	}
+
+	return moduleVersion, nil
 }
 
 // mapToPersistenceModel converts domain model to persistence model using centralized mapper
