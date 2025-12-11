@@ -64,6 +64,7 @@ type SecurityScanResponse struct {
 // SecurityScanSummary provides a summary of security scan results
 type SecurityScanSummary struct {
 	Total    int `json:"total"`
+	Critical int `json:"critical"`
 	High     int `json:"high"`
 	Medium   int `json:"medium"`
 	Low      int `json:"low"`
@@ -73,6 +74,11 @@ type SecurityScanSummary struct {
 
 // ExecuteSecurityScan runs a tfsec security scan on a module version
 func (s *SecurityScanningService) ExecuteSecurityScan(ctx context.Context, req *SecurityScanRequest) (*SecurityScanResponse, error) {
+	// Check if services are properly initialized
+	if s.moduleFileService == nil {
+		return nil, fmt.Errorf("module file service not initialized")
+	}
+
 	// TODO: Add security scanning configuration check when available
 	// For now, always allow security scanning
 

@@ -40,6 +40,7 @@ type GPGKeyResponse struct {
 	KeyID         string `json:"key_id"`
 	ASCIIArmor    string `json:"ascii_armor"`
 	TrustSignature string `json:"trust_signature,omitempty"`
+	Source        string `json:"source,omitempty"`
 	CreatedAt     string `json:"created_at"`
 	UpdatedAt     string `json:"updated_at"`
 }
