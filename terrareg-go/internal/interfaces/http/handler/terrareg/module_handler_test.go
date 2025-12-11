@@ -51,10 +51,10 @@ func TestModuleHandler_HandleGetSubmodules_Success(t *testing.T) {
 		getSubmodulesQuery: mockSubmodulesQuery,
 	}
 
-	// Create test data
+	// Create test data with Href fields
 	expectedSubmodules := []moduleQuery.SubmoduleInfo{
-		{Path: "submodule1"},
-		{Path: "submodule2"},
+		{Path: "submodule1", Href: "/modules/testns/testmod/testprov/1.0.0/submodule/submodule1"},
+		{Path: "submodule2", Href: "/modules/testns/testmod/testprov/1.0.0/submodule/submodule2"},
 	}
 
 	// Setup mock
@@ -82,20 +82,20 @@ func TestModuleHandler_HandleGetSubmodules_Success(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	// Response should be a direct array, not wrapped
+	var response []interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
+	assert.Len(t, response, 2)
 
-	assert.Contains(t, response, "submodules")
-	submodules := response["submodules"].([]interface{})
-	assert.Len(t, submodules, 2)
-
-	// Verify submodule data
-	submodule1 := submodules[0].(map[string]interface{})
+	// Verify submodule data with both path and href
+	submodule1 := response[0].(map[string]interface{})
 	assert.Equal(t, "submodule1", submodule1["path"])
+	assert.Equal(t, "/modules/testns/testmod/testprov/1.0.0/submodule/submodule1", submodule1["href"])
 
-	submodule2 := submodules[1].(map[string]interface{})
+	submodule2 := response[1].(map[string]interface{})
 	assert.Equal(t, "submodule2", submodule2["path"])
+	assert.Equal(t, "/modules/testns/testmod/testprov/1.0.0/submodule/submodule2", submodule2["href"])
 
 	mockSubmodulesQuery.AssertExpectations(t)
 }
@@ -132,13 +132,11 @@ func TestModuleHandler_HandleGetSubmodules_EmptySubmodules(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	// Response should be a direct empty array
+	var response []interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
-
-	assert.Contains(t, response, "submodules")
-	submodules := response["submodules"].([]interface{})
-	assert.Len(t, submodules, 0) // Empty array, not null
+	assert.Len(t, response, 0) // Empty array, not null
 
 	mockSubmodulesQuery.AssertExpectations(t)
 }
