@@ -16,10 +16,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
@@ -38,21 +40,82 @@ func (suite *AllowModuleHostingIntegrationTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 	suite.db = db
 
-	// Create test config
-	cfg := &config.Config{
-		ListenPort:                5000,
-		PublicURL:                "http://localhost:5000",
-		DatabaseURL:               ":memory:",
-		Debug:                    true,
+	// Create test configs manually since we're testing
+	domainCfg := &model.DomainConfig{
 		AllowModuleHosting:       model.ModuleHostingModeAllow,
 		TrustedNamespaces:        []string{},
+		VerifiedModuleNamespaces: []string{},
+		// Add other required fields with defaults
+		TrustedNamespaceLabel:     "Trusted",
+		ContributedNamespaceLabel: "Contributed",
+		VerifiedModuleLabel:       "Verified",
+		AnalyticsTokenPhrase:      "",
+		AnalyticsTokenDescription: "",
+		ExampleAnalyticsToken:     "my-tf-application",
+		DisableAnalytics:          false,
+		UploadAPIKeysEnabled:      false,
+		PublishAPIKeysEnabled:     false,
+		DisableTerraregExclusiveLabels: false,
+		AllowCustomGitURLModuleProvider: true,
+		AllowCustomGitURLModuleVersion:  true,
+		SecretKeySet:              false,
+		OpenIDConnectEnabled:      false,
+		OpenIDConnectLoginText:    "Login with OpenID",
+		SAMLEnabled:               false,
+		SAMLLoginText:             "Login with SAML",
+		AdminLoginEnabled:         false,
+		AdditionalModuleTabs:      []string{},
+		AutoCreateNamespace:       true,
+		AutoCreateModuleProvider:  true,
+		DefaultUiDetailsView:      model.DefaultUiInputOutputViewTable,
+		TerraformExampleVersionTemplate: "",
+		TerraformExampleVersionTemplatePreMajor: "",
+		ProviderSources:           make(map[string]model.ProviderSourceConfig),
 	}
+
+	infraCfg := &config.InfrastructureConfig{
+		ListenPort:  5000,
+		PublicURL:   "http://localhost:5000",
+		DatabaseURL: ":memory:",
+		Debug:       true,
+		// Add other required fields with defaults
+		DomainName:                 "",
+		DataDirectory:              "./data",
+		UploadDirectory:            "./data/upload",
+		GitProviderConfig:          "",
+		SAML2IDPMetadataURL:        "",
+		SAML2IssuerEntityID:        "",
+		OpenIDConnectClientID:      "",
+		OpenIDConnectClientSecret:  "",
+		OpenIDConnectIssuer:        "",
+		AdminAuthenticationToken:   "",
+		SecretKey:                  "",
+		AllowProviderHosting:       true,
+		AllowCustomGitProvider:     true,
+		EnableAccessControls:       false,
+		EnableSecurityScanning:     true,
+		ApplicationName:            "Terrareg",
+		LogoURL:                    "/static/images/logo.png",
+		SiteWarning:                "",
+		SessionExpiry:              0,
+		AdminSessionExpiryMins:     60,
+		SessionCookieName:          "terrareg_session",
+		SessionRefreshAge:          0,
+		InfracostAPIKey:            "",
+		InfracostPricingAPIEndpoint: "",
+		SentryDSN:                  "",
+		SentryTracesSampleRate:     0.1,
+	}
+
+	// Create config service - it needs version reader and options
+	versionReader := version.NewVersionReader()
+	configService := service.NewConfigurationService(service.ConfigurationServiceOptions{}, versionReader)
 
 	// Create logger
 	logger := zerolog.Nop()
 
 	// Create container with test dependencies
-	suite.container, err = container.NewContainer(cfg, logger, db)
+	suite.container, err = container.NewContainer(domainCfg, infraCfg, configService, logger, db)
 	suite.Require().NoError(err)
 
 	// Create server
@@ -70,13 +133,13 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestUploadEndpoint_AllowMod
 		name               string
 		allowModuleHosting model.ModuleHostingMode
 		expectedStatus     int
-		setupFunc          func(cfg *config.Config)
+		setupFunc          func(cfg *model.DomainConfig)
 	}{
 		{
 			name:               "ALLOW mode - upload should succeed",
 			allowModuleHosting: model.ModuleHostingModeAllow,
 			expectedStatus:     http.StatusOK,
-			setupFunc: func(cfg *config.Config) {
+			setupFunc: func(cfg *model.DomainConfig) {
 				cfg.AllowModuleHosting = model.ModuleHostingModeAllow
 			},
 		},
@@ -84,7 +147,7 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestUploadEndpoint_AllowMod
 			name:               "ENFORCE mode - upload should succeed",
 			allowModuleHosting: model.ModuleHostingModeEnforce,
 			expectedStatus:     http.StatusOK,
-			setupFunc: func(cfg *config.Config) {
+			setupFunc: func(cfg *model.DomainConfig) {
 				cfg.AllowModuleHosting = model.ModuleHostingModeEnforce
 			},
 		},
@@ -92,7 +155,7 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestUploadEndpoint_AllowMod
 			name:               "DISALLOW mode - upload should be blocked",
 			allowModuleHosting: model.ModuleHostingModeDisallow,
 			expectedStatus:     http.StatusBadRequest,
-			setupFunc: func(cfg *config.Config) {
+			setupFunc: func(cfg *model.DomainConfig) {
 				cfg.AllowModuleHosting = model.ModuleHostingModeDisallow
 			},
 		},
@@ -101,7 +164,7 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestUploadEndpoint_AllowMod
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
 			// Update config in container
-			tt.setupFunc(suite.container.Config)
+			tt.setupFunc(suite.container.DomainConfig)
 
 			// Create test module provider first (required for upload)
 			namespace := "testns"
@@ -159,13 +222,13 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestSourceDownloadEndpoint_
 		name               string
 		allowModuleHosting model.ModuleHostingMode
 		expectedStatus     int
-		setupFunc          func(cfg *config.Config)
+		setupFunc          func(cfg *model.DomainConfig)
 	}{
 		{
 			name:               "ALLOW mode - download should proceed",
 			allowModuleHosting: model.ModuleHostingModeAllow,
 			expectedStatus:     http.StatusNotImplemented, // Our implementation returns 501 for now
-			setupFunc: func(cfg *config.Config) {
+			setupFunc: func(cfg *model.DomainConfig) {
 				cfg.AllowModuleHosting = model.ModuleHostingModeAllow
 			},
 		},
@@ -173,7 +236,7 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestSourceDownloadEndpoint_
 			name:               "ENFORCE mode - download should proceed",
 			allowModuleHosting: model.ModuleHostingModeEnforce,
 			expectedStatus:     http.StatusNotImplemented,
-			setupFunc: func(cfg *config.Config) {
+			setupFunc: func(cfg *model.DomainConfig) {
 				cfg.AllowModuleHosting = model.ModuleHostingModeEnforce
 			},
 		},
@@ -181,7 +244,7 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestSourceDownloadEndpoint_
 			name:               "DISALLOW mode - download should be blocked",
 			allowModuleHosting: model.ModuleHostingModeDisallow,
 			expectedStatus:     http.StatusInternalServerError,
-			setupFunc: func(cfg *config.Config) {
+			setupFunc: func(cfg *model.DomainConfig) {
 				cfg.AllowModuleHosting = model.ModuleHostingModeDisallow
 			},
 		},
@@ -190,7 +253,7 @@ func (suite *AllowModuleHostingIntegrationTestSuite) TestSourceDownloadEndpoint_
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
 			// Update config in container
-			tt.setupFunc(suite.container.Config)
+			tt.setupFunc(suite.container.DomainConfig)
 
 			// Create source download request
 			downloadReq := httptest.NewRequest("GET", "/v1/terrareg/modules/testns/testmod/testprov/1.0.0/source.zip", nil)
