@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -20,9 +21,12 @@ func (m *MockTerraformIdpAuthorizationCodeRepository) Create(ctx context.Context
 	return args.Error(0)
 }
 
-func (m *MockTerraformIdpAuthorizationCodeRepository) FindByKey(ctx context.Context, key string) (*repository.AuthCodeRecord, error) {
+func (m *MockTerraformIdpAuthorizationCodeRepository) FindByKey(ctx context.Context, key string) (*sqldb.TerraformIDPAuthorizationCodeDB, error) {
 	args := m.Called(ctx, key)
-	return args.Get(0).(*repository.AuthCodeRecord), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*sqldb.TerraformIDPAuthorizationCodeDB), args.Error(1)
 }
 
 func (m *MockTerraformIdpAuthorizationCodeRepository) DeleteByKey(ctx context.Context, key string) error {
@@ -50,9 +54,12 @@ func (m *MockTerraformIdpAccessTokenRepository) Create(ctx context.Context, key 
 	return args.Error(0)
 }
 
-func (m *MockTerraformIdpAccessTokenRepository) FindByKey(ctx context.Context, key string) (*repository.AccessTokenRecord, error) {
+func (m *MockTerraformIdpAccessTokenRepository) FindByKey(ctx context.Context, key string) (*sqldb.TerraformIDPAccessTokenDB, error) {
 	args := m.Called(ctx, key)
-	return args.Get(0).(*repository.AccessTokenRecord), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*sqldb.TerraformIDPAccessTokenDB), args.Error(1)
 }
 
 func (m *MockTerraformIdpAccessTokenRepository) DeleteByKey(ctx context.Context, key string) error {
@@ -80,9 +87,12 @@ func (m *MockTerraformIdpSubjectIdentifierRepository) Create(ctx context.Context
 	return args.Error(0)
 }
 
-func (m *MockTerraformIdpSubjectIdentifierRepository) FindByKey(ctx context.Context, key string) (*repository.SubjectIdentifierRecord, error) {
+func (m *MockTerraformIdpSubjectIdentifierRepository) FindByKey(ctx context.Context, key string) (*sqldb.TerraformIDPSubjectIdentifierDB, error) {
 	args := m.Called(ctx, key)
-	return args.Get(0).(*repository.SubjectIdentifierRecord), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*sqldb.TerraformIDPSubjectIdentifierDB), args.Error(1)
 }
 
 func (m *MockTerraformIdpSubjectIdentifierRepository) DeleteByKey(ctx context.Context, key string) error {
@@ -133,7 +143,7 @@ func TestCreateAuthorizationCode(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Code)
 	assert.Equal(t, "test-state", resp.State)
-	assert.Regexp(t, `^[A-Za-z0-9+/=]+$`, resp.Code) // Base64 pattern
+	assert.Regexp(t, `^[A-Za-z0-9+/=-]+$`, resp.Code) // Base64 pattern (including URL-safe)
 
 	authCodeRepo.AssertExpectations(t)
 }
@@ -175,14 +185,7 @@ func TestExchangeCodeForToken_Success(t *testing.T) {
 	}
 
 	// Mock authorization code lookup
-	authData := map[string]interface{}{
-		"client_id":     "test-client",
-		"redirect_uri":  "http://localhost:3000/callback",
-		"scope":         "openid profile",
-		"state":         "test-state",
-		"response_type": "code",
-	}
-	authCodeRecord := &repository.AuthCodeRecord{
+	authCodeRecord := &sqldb.TerraformIDPAuthorizationCodeDB{
 		Key:  "test-auth-code",
 		Data: []byte(`{"client_id":"test-client","redirect_uri":"http://localhost:3000/callback"}`),
 	}
@@ -260,17 +263,9 @@ func TestValidateToken_Success(t *testing.T) {
 	token := "test-access-token"
 
 	// Mock access token lookup
-	userInfoData := map[string]interface{}{
-		"sub":   "terraform-user",
-		"name":  "Terraform User",
-		"email": "terraform@example.com",
-		"iss":   "terraform-idp",
-		"aud":   "test-client",
-	}
-
-	tokenRecord := &repository.AccessTokenRecord{
+	tokenRecord := &sqldb.TerraformIDPAccessTokenDB{
 		Key:  "test-access-token",
-		Data: []byte(`{"sub":"terraform-user","name":"Terraform User"}`),
+		Data: []byte(`{"user_info":{"sub":"terraform-user","name":"Terraform User","email":"terraform@example.com"}}`),
 	}
 
 	accessTokenRepo.On("FindByKey", mock.Anything, token).Return(tokenRecord, nil)
@@ -395,7 +390,7 @@ func TestGetSubjectIdentifier(t *testing.T) {
 	subject := "terraform-user"
 	clientID := "test-client"
 
-	record := &repository.SubjectIdentifierRecord{
+	record := &sqldb.TerraformIDPSubjectIdentifierDB{
 		Key:  "terraform-user:test-client",
 		Data: []byte(`{"custom_field":"custom_value"}`),
 	}

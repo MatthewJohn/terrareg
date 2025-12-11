@@ -156,11 +156,19 @@ func (s *TerraformIdpService) ExchangeCodeForToken(ctx context.Context, req Acce
 		Audience: req.ClientID,
 	}
 
+	// Get scope from auth data, with fallback to default scope
+	var scope string
+	if s, ok := authData["scope"].(string); ok {
+		scope = s
+	} else {
+		scope = "openid profile"
+	}
+
 	tokenData := map[string]interface{}{
 		"access_token": accessToken,
 		"token_type":   "Bearer",
 		"expires_in":   3600,
-		"scope":        authData["scope"],
+		"scope":        scope,
 		"user_info":    userInfo,
 		"created_at":   time.Now().Unix(),
 	}
@@ -188,7 +196,7 @@ func (s *TerraformIdpService) ExchangeCodeForToken(ctx context.Context, req Acce
 		AccessToken: accessToken,
 		TokenType:   "Bearer",
 		ExpiresIn:   3600,
-		Scope:       authData["scope"].(string),
+		Scope:       scope,
 	}, nil
 }
 

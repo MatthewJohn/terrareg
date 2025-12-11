@@ -36,7 +36,7 @@ func (a *AdminApiKeyAuthMethod) CheckAuthState() bool {
 
 // IsBuiltInAdmin returns whether this is a built-in admin method
 func (a *AdminApiKeyAuthMethod) IsBuiltInAdmin() bool {
-	return a.isAdmin
+	return true // Admin API key method is always considered built-in admin
 }
 
 // IsAuthenticated returns whether the current request is authenticated
@@ -113,9 +113,14 @@ func (a *AdminApiKeyAuthMethod) GetTerraformAuthToken() string {
 // GetProviderData returns provider-specific data
 func (a *AdminApiKeyAuthMethod) GetProviderData() map[string]interface{} {
 	data := make(map[string]interface{})
-	data["api_key"] = a.apiKey
 	data["is_admin"] = a.isAdmin
 	data["username"] = a.username
+
+	// Only include api_key if authenticated
+	if a.isValid {
+		data["api_key"] = a.apiKey
+	}
+
 	return data
 }
 
