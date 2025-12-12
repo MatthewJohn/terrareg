@@ -12,7 +12,6 @@ import (
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
-	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
@@ -31,7 +30,7 @@ type ModuleHandler struct {
 	getReadmeHTMLQuery              *moduleQuery.GetReadmeHTMLQuery
 	getSubmodulesQuery              *moduleQuery.GetSubmodulesQuery
 	getExamplesQuery                *moduleQuery.GetExamplesQuery
-	getIntegrationsQuery             *moduleQuery.GetIntegrationsQuery
+	getIntegrationsQuery            *moduleQuery.GetIntegrationsQuery
 	createModuleProviderCmd         *moduleCmd.CreateModuleProviderCommand
 	publishModuleVersionCmd         *moduleCmd.PublishModuleVersionCommand
 	updateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand
@@ -41,7 +40,7 @@ type ModuleHandler struct {
 	getModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
 	deleteModuleVersionCmd          *moduleCmd.DeleteModuleVersionCommand
 	generateModuleSourceCmd         *moduleCmd.GenerateModuleSourceCommand
-	getVariableTemplateQuery         *moduleCmd.GetVariableTemplateQuery
+	getVariableTemplateQuery        *moduleCmd.GetVariableTemplateQuery
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -95,7 +94,7 @@ func NewModuleHandler(
 		importModuleVersionCmd:          importModuleVersionCmd,
 		getModuleVersionFileCmd:         getModuleVersionFileCmd,
 		deleteModuleVersionCmd:          deleteModuleVersionCmd,
-		generateModuleSourceCmd:        generateModuleSourceCmd,
+		generateModuleSourceCmd:         generateModuleSourceCmd,
 		getVariableTemplateQuery:        getVariableTemplateQuery,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
@@ -367,8 +366,14 @@ func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *htt
 		return
 	}
 
+	moduleProvider := moduleVersion.ModuleProvider()
+	if moduleProvider == nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
 	// Convert to DTO - use the same detailed format as module provider endpoint
-	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleVersion, namespace, name, provider, r.Host)
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleProvider, moduleVersion, namespace, name, provider, r.Host)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -711,23 +716,8 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 		return
 	}
 
-	// Get all versions to find the most recent one
-	allVersions := moduleProvider.GetAllVersions()
-	if len(allVersions) == 0 {
-		RespondError(w, http.StatusNotFound, "No versions found")
-		return
-	}
-
-	// Find the most recent version (regardless of publish status)
-	var latestVersion *moduleModel.ModuleVersion
-	for _, version := range allVersions {
-		if latestVersion == nil || version.Version().GreaterThan(latestVersion.Version()) {
-			latestVersion = version
-		}
-	}
-
 	// Convert to Terrareg Provider Details DTO with request domain and analytics token
-	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, latestVersion, namespace, name, provider, requestDomain)
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleProvider, moduleProvider.GetLatestVersion(), namespace, name, provider, requestDomain)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -850,7 +840,7 @@ func (h *ModuleHandler) HandleModuleVersionCreate(w http.ResponseWriter, r *http
 		Module:    moduleName,
 		Provider:  provider,
 		Version:   &version, // Use version from URL
-		GitTag:    nil,       // No git tag, derive from version
+		GitTag:    nil,      // No git tag, derive from version
 	}
 
 	// Execute import command

@@ -89,18 +89,18 @@ func (p *ModuleVersionPresenter) ToDTO(ctx context.Context, mv *model.ModuleVers
 	return response
 }
 
-
 // ToTerraregProviderDetailsDTO converts a module version to TerraregModuleProviderDetailsResponse.
 // This replicates Python's ModuleVersion.get_terrareg_api_details() method.
 func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	ctx context.Context,
+	moduleProvider *model.ModuleProvider,
 	mv *model.ModuleVersion,
 	namespace, moduleName, provider string,
 	requestDomain string,
 ) *terrareg.TerraregModuleProviderDetailsResponse {
-	// Get module provider for additional details
-	moduleProvider := mv.ModuleProvider()
-
+	if moduleProvider == nil {
+		return nil
+	}
 	// Check if namespace is trusted
 	trusted := false
 	if p.namespaceService != nil && moduleProvider != nil {
@@ -108,40 +108,38 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 		trusted = p.namespaceService.IsTrusted(ns)
 	}
 
-	// Start with base response structure
 	response := &terrareg.TerraregModuleProviderDetailsResponse{
-		// Base provider info (from ModuleProvider.get_terrareg_api_details)
-		ID:        mv.VersionedID(), // Business-defined versioned ID for frontend API calls
+		ID:                    moduleProvider.FrontendID(),
+		ModuleProviderID:      moduleProvider.FrontendID(), // Business-defined provider ID without version
+		GitProviderID:         moduleProvider.GitProviderID(),
+		GitTagFormat:          moduleProvider.GitTagFormat(),
+		GitPath:               moduleProvider.GitPath(),
+		ArchiveGitPath:        moduleProvider.ArchiveGitPath(),
+		RepoBaseURLTemplate:   moduleProvider.RepoBaseURLTemplate(),
+		RepoCloneURLTemplate:  moduleProvider.RepoCloneURLTemplate(),
+		RepoBrowseURLTemplate: moduleProvider.RepoBrowseURLTemplate(),
+
 		Namespace: namespace,
 		Name:      moduleName,
 		Provider:  provider,
-		Verified:  moduleProvider != nil && moduleProvider.IsVerified(),
+		Verified:  moduleProvider.IsVerified(),
 		Trusted:   trusted,
 
-		// Module version details (from ModuleVersion.get_api_details)
-		Owner:       mv.Owner(),
-		Version:     mv.Version().String(),
-		Description: mv.Description(),
-		Internal:    mv.IsInternal(),
-
-		// UI-specific terrareg fields
-		Beta:      mv.IsBeta(),
-		Published: mv.IsPublished(),
+		// Get versions list from module provider
+		Versions: moduleProvider.GetVersionsList(),
 	}
 
-	// Add module provider metadata
-	if moduleProvider != nil {
-		response.ModuleProviderID = mv.ModuleProviderID() // Business-defined provider ID without version
-		response.GitProviderID = moduleProvider.GitProviderID()
-		response.GitTagFormat = moduleProvider.GitTagFormat()
-		response.GitPath = moduleProvider.GitPath()
-		response.ArchiveGitPath = moduleProvider.ArchiveGitPath()
-		response.RepoBaseURLTemplate = moduleProvider.RepoBaseURLTemplate()
-		response.RepoCloneURLTemplate = moduleProvider.RepoCloneURLTemplate()
-		response.RepoBrowseURLTemplate = moduleProvider.RepoBrowseURLTemplate()
+	// Start with base response structure
+	if mv != nil {
+		response.ID = mv.VersionedID()
+		response.Owner = mv.Owner()
+		response.Version = mv.Version().String()
+		response.Internal = mv.IsInternal()
 
-		// Get versions list from module provider
-		response.Versions = moduleProvider.GetVersionsList()
+		// UI-specific terrareg fields
+		response.Beta = mv.IsBeta()
+		response.Published = mv.IsPublished()
+
 	}
 
 	// TODO: Add source URL when Source() method is implemented in domain model
