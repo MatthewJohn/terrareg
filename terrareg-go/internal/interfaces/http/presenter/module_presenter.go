@@ -29,13 +29,10 @@ func (p *ModulePresenter) ToDTO(ctx context.Context, mp *model.ModuleProvider) m
 
 	// Get download statistics from analytics
 	downloads := 0
-	if p.analyticsRepo != nil {
-		stats, err := p.analyticsRepo.GetDownloadStats(ctx,
-			mp.Namespace().Name(), mp.Module(), mp.Provider())
-		if err == nil {
-			downloads = stats.TotalDownloads
-		}
-		// If analytics fails, continue with 0 downloads
+	stats, err := p.analyticsRepo.GetDownloadStats(ctx,
+		mp.Namespace().Name(), mp.Module(), mp.Provider())
+	if err == nil {
+		downloads = stats.TotalDownloads
 	}
 
 	response := moduledto.ModuleProviderResponse{
