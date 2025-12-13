@@ -15,6 +15,7 @@ import (
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
@@ -46,6 +47,7 @@ type Server struct {
 	versionHandler              *terrareg.VersionHandler
 	providerLogosHandler        *terrareg.ProviderLogosHandler
 	searchFiltersHandler        *terrareg.SearchFiltersHandler
+	moduleWebhookHandler        *webhook.ModuleWebhookHandler
 }
 
 // NewServer creates a new HTTP server
@@ -74,6 +76,7 @@ func NewServer(
 	versionHandler *terrareg.VersionHandler,
 	providerLogosHandler *terrareg.ProviderLogosHandler,
 	searchFiltersHandler *terrareg.SearchFiltersHandler,
+	moduleWebhookHandler *webhook.ModuleWebhookHandler,
 ) *Server {
 	s := &Server{
 		router:                      chi.NewRouter(),
@@ -101,6 +104,7 @@ func NewServer(
 		versionHandler:              versionHandler,
 		providerLogosHandler:        providerLogosHandler,
 		searchFiltersHandler:        searchFiltersHandler,
+		moduleWebhookHandler:        moduleWebhookHandler,
 	}
 
 	s.setupMiddleware()
@@ -219,6 +223,11 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
+
+			// Module webhooks (matching Python implementation)
+			r.Post("/modules/{namespace}/{name}/{provider}/hooks/github", s.moduleWebhookHandler.HandleModuleWebhook)
+			r.Post("/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.moduleWebhookHandler.HandleModuleWebhook)
+			r.Post("/modules/{namespace}/{name}/{provider}/hooks/gitlab", s.moduleWebhookHandler.HandleModuleWebhook)
 
 			// Module versions
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)

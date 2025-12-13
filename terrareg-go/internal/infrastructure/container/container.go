@@ -48,6 +48,7 @@ import (
 	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
 	v2 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
@@ -87,6 +88,7 @@ type Container struct {
 	NamespaceService      *moduleService.NamespaceService
 	SecurityService       *moduleService.SecurityService
 	ModuleFileService     *moduleService.ModuleFileService
+	WebhookService        *moduleService.WebhookService
 	MarkdownService       *sharedService.MarkdownService
 	AuthFactory           *authservice.AuthFactory
 	SessionService        *authservice.SessionService
@@ -188,6 +190,7 @@ type Container struct {
 	ProviderHandler            *terrareg.ProviderHandler
 	ProviderLogosHandler       *terrareg.ProviderLogosHandler
 	AuthHandler                *terrareg.AuthHandler
+	ModuleWebhookHandler       *webhook.ModuleWebhookHandler
 	TerraformV1ModuleHandler   *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 	TerraformV2ProviderHandler *v2.TerraformV2ProviderHandler
 	TerraformV2CategoryHandler *v2.TerraformV2CategoryHandler
@@ -278,6 +281,13 @@ func NewContainer(
 		c.ModuleVersionFileRepo,
 		c.NamespaceService,
 		c.SecurityService,
+	)
+
+	// Initialize webhook service
+	c.WebhookService = moduleService.NewWebhookService(
+		c.ModuleImporterService,
+		c.ModuleProviderRepo,
+		infraConfig,
 	)
 
 	// Initialize auth services
@@ -469,6 +479,13 @@ func NewContainer(
 		c.AuthenticationService,
 		infraConfig,
 	)
+
+	// Initialize webhook handler with upload API keys for signature validation
+	var uploadAPIKeys []string
+	if infraConfig.UploadApiKeys != nil {
+		uploadAPIKeys = infraConfig.UploadApiKeys
+	}
+	c.ModuleWebhookHandler = webhook.NewModuleWebhookHandler(c.WebhookService, uploadAPIKeys)
 	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
 
 	// Initialize submodule and example handlers
@@ -530,6 +547,7 @@ func NewContainer(
 		c.VersionHandler,
 		c.ProviderLogosHandler,
 		c.SearchFiltersHandler,
+		c.ModuleWebhookHandler, // Add webhook handler
 	)
 
 	return c, nil
