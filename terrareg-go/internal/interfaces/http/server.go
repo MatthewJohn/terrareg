@@ -204,7 +204,7 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.OptionalAuth).Get("/namespaces", s.handleNamespaceList)
 			r.With(s.authMiddleware.RequireAuth).Post("/namespaces", s.handleNamespaceCreate)
 			r.With(s.authMiddleware.OptionalAuth).Get("/namespaces/{namespace}", s.handleNamespaceGet)
-			r.With(s.authMiddleware.RequireAuth).Post("/namespaces/{namespace}", s.handleNamespaceUpdate)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Post("/namespaces/{namespace}", s.handleNamespaceUpdate)
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/namespaces/{namespace}", s.handleNamespaceDelete)
 
 			// Modules
@@ -212,13 +212,13 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
-			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
-			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettings)
-			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
+			r.With(s.authMiddleware.RequireNamespacePermission("MODIFY", "{namespace}")).Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
-			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
 
 			// Module versions
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
@@ -226,7 +226,7 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
-			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/variable_template", s.handleModuleVersionVariableTemplate)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/files/{path}", s.handleModuleVersionFile)
@@ -258,15 +258,15 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.OptionalAuth).Get("/providers/search/filters", s.handleProviderSearchFilters)
 
 			// Audit
-			r.With(s.authMiddleware.RequireAuth).Get("/audit-history", s.handleAuditHistory)
+			r.With(s.authMiddleware.RequireAdmin).Get("/audit-history", s.handleAuditHistory)
 
 			// User groups
-			r.With(s.authMiddleware.RequireAuth).Get("/user-groups", s.handleUserGroupList)
-			r.With(s.authMiddleware.RequireAuth).Post("/user-groups", s.handleUserGroupCreate)
-			r.With(s.authMiddleware.RequireAuth).Get("/user-groups/{group}", s.handleUserGroupDetails)
-			r.With(s.authMiddleware.RequireAuth).Delete("/user-groups/{group}", s.handleUserGroupDelete)
-			r.With(s.authMiddleware.RequireAuth).Get("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissions)
-			r.With(s.authMiddleware.RequireAuth).Post("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissionsUpdate)
+			r.With(s.authMiddleware.RequireAdmin).Get("/user-groups", s.handleUserGroupList)
+			r.With(s.authMiddleware.RequireAdmin).Post("/user-groups", s.handleUserGroupCreate)
+			r.With(s.authMiddleware.RequireAdmin).Get("/user-groups/{group}", s.handleUserGroupDetails)
+			r.With(s.authMiddleware.RequireAdmin).Delete("/user-groups/{group}", s.handleUserGroupDelete)
+			r.With(s.authMiddleware.RequireAdmin).Get("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissions)
+			r.With(s.authMiddleware.RequireAdmin).Post("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissionsUpdate)
 
 			// Auth
 			r.Route("/auth", func(r chi.Router) {
@@ -291,7 +291,7 @@ func (s *Server) setupRoutes() {
 
 		// GPG keys
 		r.With(s.authMiddleware.OptionalAuth).Get("/gpg-keys", s.terraformV2GPGHandler.HandleListGPGKeys)
-		r.With(s.authMiddleware.RequireAuth).Post("/gpg-keys", s.terraformV2GPGHandler.HandleCreateGPGKey)
+		r.With(s.authMiddleware.RequireAdmin).Post("/gpg-keys", s.terraformV2GPGHandler.HandleCreateGPGKey)
 		r.With(s.authMiddleware.OptionalAuth).Get("/gpg-keys/{namespace}/{key_id}", s.terraformV2GPGHandler.HandleGetGPGKey)
 
 		// Categories
