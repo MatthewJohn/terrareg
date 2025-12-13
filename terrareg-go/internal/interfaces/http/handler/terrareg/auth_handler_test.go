@@ -1,4 +1,4 @@
-package terrareg
+package terrareg_test
 
 import (
 	"context"
@@ -11,12 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
-	authCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
-	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // MockOIDCLoginCommand is a mock for OIDCLoginCommand

@@ -243,7 +243,7 @@ func testCommandInjectionPrevention(t *testing.T) {
 				}
 
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{"status": "success", "git_url": "`+sanitizeGitURL(reqBody.GitURL)+`"}`))
+				w.Write([]byte(`{"status": "success", "git_url": "` + sanitizeGitURL(reqBody.GitURL) + `"}`))
 			}
 
 			handler(w, req)
@@ -278,15 +278,15 @@ func testAuthenticationBypassPrevention(t *testing.T) {
 		cookie string
 	}{
 		{
-			name: "Empty session cookie",
+			name:   "Empty session cookie",
 			cookie: "",
 		},
 		{
-			name: "Malformed session cookie",
+			name:   "Malformed session cookie",
 			cookie: "malformed-session-data",
 		},
 		{
-			name: "Admin bypass attempt",
+			name:   "Admin bypass attempt",
 			cookie: "terrareg_admin=true",
 		},
 		{
@@ -567,13 +567,13 @@ func containsSQLInjectionPatterns(input string) bool {
 func sanitizeHTML(input string) string {
 	// Basic HTML sanitization (in real app, use a proper HTML sanitizer)
 	replacements := map[string]string{
-		"<script>":   "",
-		"</script>":  "",
-		"<iframe>":   "",
-		"</iframe>":  "",
+		"<script>":    "",
+		"</script>":   "",
+		"<iframe>":    "",
+		"</iframe>":   "",
 		"javascript:": "",
-		"onerror=":   "",
-		"onload=":    "",
+		"onerror=":    "",
+		"onload=":     "",
 	}
 
 	result := input
@@ -585,9 +585,9 @@ func sanitizeHTML(input string) string {
 
 func isPathTraversal(path string) bool {
 	return strings.Contains(path, "..") ||
-		   strings.Contains(path, "\\") ||
-		   strings.HasPrefix(path, "/") ||
-		   strings.Contains(path, "%2e%2e")
+		strings.Contains(path, "\\") ||
+		strings.HasPrefix(path, "/") ||
+		strings.Contains(path, "%2e%2e")
 }
 
 func sanitizeFilePath(path string) string {
@@ -673,16 +673,16 @@ func isValidModuleName(name string) bool {
 		strings.Contains(lowerName, "%2a") || // *
 		strings.Contains(lowerName, "%28") || // (
 		strings.Contains(lowerName, "%29") || // )
-		strings.Contains(lowerName, "%20") {  // space
+		strings.Contains(lowerName, "%20") { // space
 		return false
 	}
 
 	// Check for invalid characters
 	for _, char := range name {
 		if !((char >= 'a' && char <= 'z') ||
-			 (char >= 'A' && char <= 'Z') ||
-			 (char >= '0' && char <= '9') ||
-			 char == '-' || char == '_') {
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '-' || char == '_') {
 			return false
 		}
 	}

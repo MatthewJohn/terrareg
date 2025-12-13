@@ -1,4 +1,4 @@
-package terrareg
+package terrareg_test
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	userGroupCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/user_group"
-	userGroupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/user_group"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	usergroupdto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/user_group_dto"
 )
@@ -287,10 +287,10 @@ func TestUserGroupHandler_HandleGetUserGroupDetails(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:        "group not found",
-			groupID:     "999",
-			queryResult: nil,
-			queryError:  errors.New("group not found"),
+			name:           "group not found",
+			groupID:        "999",
+			queryResult:    nil,
+			queryError:     errors.New("group not found"),
 			expectedStatus: http.StatusNotFound,
 		},
 	}
