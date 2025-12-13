@@ -1,4 +1,4 @@
-package terrareg
+package terrareg_test
 
 import (
 	"bytes"
@@ -10,14 +10,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	userCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/user"
 	userQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/user"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/userdto"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/userdto"
 )
 
 // MockGetUserProfileQuery is a mock for GetUserProfileQuery
@@ -278,7 +279,7 @@ func TestUserHandler_HandleCreateUserAccessToken(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name: "success",
+			name:        "success",
 			userIDInCtx: 1,
 			requestBody: map[string]interface{}{
 				"name":        "test-token",

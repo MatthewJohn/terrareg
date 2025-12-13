@@ -1,7 +1,6 @@
-package terrareg
+package terrareg_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -81,23 +80,26 @@ func TestExampleHandler_HandleExampleDetails(t *testing.T) {
 			method:         "POST",
 			url:            "/modules/test/mod/provider/1.0.0/examples/details/example",
 			expectedStatus: http.StatusMethodNotAllowed,
-			setupMocks:     func(*MockGetExampleDetailsQuery, *MockGetExampleReadmeHTMLQuery, *MockGetExampleFileListQuery, *MockGetExampleFileQuery) {},
+			setupMocks: func(*MockGetExampleDetailsQuery, *MockGetExampleReadmeHTMLQuery, *MockGetExampleFileListQuery, *MockGetExampleFileQuery) {
+			},
 		},
 		{
 			name:           "missing namespace parameter",
 			method:         "GET",
 			url:            "/modules//mod/provider/1.0.0/examples/details/example",
 			expectedStatus: http.StatusBadRequest,
-			setupMocks:     func(*MockGetExampleDetailsQuery, *MockGetExampleReadmeHTMLQuery, *MockGetExampleFileListQuery, *MockGetExampleFileQuery) {},
-			expectedBody:   "Missing required path parameters",
+			setupMocks: func(*MockGetExampleDetailsQuery, *MockGetExampleReadmeHTMLQuery, *MockGetExampleFileListQuery, *MockGetExampleFileQuery) {
+			},
+			expectedBody: "Missing required path parameters",
 		},
 		{
 			name:           "missing example parameter",
 			method:         "GET",
 			url:            "/modules/test/mod/provider/1.0.0/examples/details/",
 			expectedStatus: http.StatusBadRequest,
-			setupMocks:     func(*MockGetExampleDetailsQuery, *MockGetExampleReadmeHTMLQuery, *MockGetExampleFileListQuery, *MockGetExampleFileQuery) {},
-			expectedBody:   "Missing required path parameters",
+			setupMocks: func(*MockGetExampleDetailsQuery, *MockGetExampleReadmeHTMLQuery, *MockGetExampleFileListQuery, *MockGetExampleFileQuery) {
+			},
+			expectedBody: "Missing required path parameters",
 		},
 		{
 			name:           "example not found",
@@ -336,10 +338,10 @@ func TestExampleHandler_HandleExampleFile(t *testing.T) {
 			},
 		},
 		{
-			name:            "file not found",
-			method:          "GET",
-			url:             "/modules/test/mod/provider/1.0.0/examples/file/example/missing.tf",
-			expectedStatus:  http.StatusNotFound,
+			name:           "file not found",
+			method:         "GET",
+			url:            "/modules/test/mod/provider/1.0.0/examples/file/example/missing.tf",
+			expectedStatus: http.StatusNotFound,
 			setupMocks: func(mockDetails *MockGetExampleDetailsQuery, mockReadme *MockGetExampleReadmeHTMLQuery, mockFileList *MockGetExampleFileListQuery, mockFile *MockGetExampleFileQuery) {
 				mockFile.On("Execute", mock.Anything, "test", "mod", "provider", "1.0.0", "example", "missing.tf").
 					Return(nil, assert.AnError).

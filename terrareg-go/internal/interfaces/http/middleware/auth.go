@@ -39,6 +39,22 @@ func NewAuthMiddleware(cfg *domainConfig.DomainConfig, authFactory *authservice.
 	}
 }
 
+func (m *AuthMiddleware) setContextWithAuthResponse(ctx context.Context, authResponse *model.AuthenticationResponse) context.Context {
+	if authResponse != nil && authResponse.Success {
+		// Set authentication context if successful
+		ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+		ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
+		ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
+		ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
+
+		// Set session ID if available
+		if authResponse.SessionID != nil {
+			ctx = context.WithValue(ctx, sessionIDContextKey, *authResponse.SessionID)
+		}
+	}
+	return ctx
+}
+
 // RequireAuth is a middleware that requires authentication
 func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -70,17 +86,7 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Set authentication context
-		ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
-		ctx = context.WithValue(ctx, authMethodInstanceKey, m.authFactory.GetCurrentAuthMethod())
-		ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
-		ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
-		ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
-
-		// Set session ID if available
-		if authResponse.SessionID != nil {
-			ctx = context.WithValue(ctx, sessionIDContextKey, *authResponse.SessionID)
-		}
+		ctx = m.setContextWithAuthResponse(ctx, authResponse)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -111,18 +117,8 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 		}
 
 		// Use AuthFactory to authenticate the request (optional)
-		authResponse, err := m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams)
-		if err == nil && authResponse != nil && authResponse.Success {
-			// Set authentication context if successful
-			ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
-			ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
-			ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
-			ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
-
-			// Set session ID if available
-			if authResponse.SessionID != nil {
-				ctx = context.WithValue(ctx, sessionIDContextKey, *authResponse.SessionID)
-			}
+		if authResponse, err := m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams); err == nil {
+			ctx = m.setContextWithAuthResponse(ctx, authResponse)
 		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))

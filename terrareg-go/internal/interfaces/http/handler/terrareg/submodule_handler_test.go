@@ -1,7 +1,6 @@
-package terrareg
+package terrareg_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -39,7 +38,7 @@ func (m *MockGetSubmoduleReadmeHTMLQuery) Execute(ctx context.Context, namespace
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*module.SubmoduleReadmeHTMLResponse), args.Error(1)
+	return args.Get(0).(*module.GetReadmeHTMLResponse), args.Error(1)
 }
 
 func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {

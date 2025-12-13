@@ -1077,11 +1077,11 @@ func (h *ModuleHandler) HandleModuleProviderRedirectsGet(w http.ResponseWriter, 
 	response := make([]map[string]interface{}, len(redirects))
 	for i, redirect := range redirects {
 		response[i] = map[string]interface{}{
-			"id":                  redirect.ID,
-			"module_provider_id":  redirect.ModuleProviderID,
-			"namespace_id":        redirect.NamespaceID,
-			"module":              redirect.Module,
-			"provider":            redirect.Provider,
+			"id":                 redirect.ID,
+			"module_provider_id": redirect.ModuleProviderID,
+			"namespace_id":       redirect.NamespaceID,
+			"module":             redirect.Module,
+			"provider":           redirect.Provider,
 		}
 	}
 
