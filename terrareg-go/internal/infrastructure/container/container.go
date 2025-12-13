@@ -34,7 +34,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
-	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+		sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	providerLogoRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_logo/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/parser"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
@@ -243,7 +243,7 @@ func NewContainer(
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ModuleVersionFileRepo = modulePersistence.NewModuleVersionFileRepository(db.DB)
 	c.ModuleProviderRedirectRepo = modulePersistence.NewModuleProviderRedirectRepository(db.DB)
-	c.ProviderRepo = providerRepository.NewProviderRepository()
+	c.ProviderRepo = sqldbprovider.NewProviderRepository(db.DB)
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
