@@ -205,6 +205,7 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.RequireAuth).Post("/namespaces", s.handleNamespaceCreate)
 			r.With(s.authMiddleware.OptionalAuth).Get("/namespaces/{namespace}", s.handleNamespaceGet)
 			r.With(s.authMiddleware.RequireAuth).Post("/namespaces/{namespace}", s.handleNamespaceUpdate)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/namespaces/{namespace}", s.handleNamespaceDelete)
 
 			// Modules
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
@@ -490,6 +491,9 @@ func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceUpdate(w, r)
+}
+func (s *Server) handleNamespaceDelete(w http.ResponseWriter, r *http.Request) {
+	s.namespaceHandler.HandleNamespaceDelete(w, r)
 }
 func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleNamespaceModules(w, r)

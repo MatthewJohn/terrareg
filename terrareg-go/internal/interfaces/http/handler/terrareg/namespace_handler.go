@@ -19,6 +19,7 @@ type NamespaceHandler struct {
 	listNamespacesQuery   *module.ListNamespacesQuery
 	createNamespaceCmd    *namespace.CreateNamespaceCommand
 	updateNamespaceCmd    *namespace.UpdateNamespaceCommand
+	deleteNamespaceCmd    *namespace.DeleteNamespaceCommand
 	namespaceDetailsQuery *namespaceQuery.NamespaceDetailsQuery
 	presenter             *presenter.NamespacePresenter
 }
@@ -28,12 +29,14 @@ func NewNamespaceHandler(
 	listNamespacesQuery *module.ListNamespacesQuery,
 	createNamespaceCmd *namespace.CreateNamespaceCommand,
 	updateNamespaceCmd *namespace.UpdateNamespaceCommand,
+	deleteNamespaceCmd *namespace.DeleteNamespaceCommand,
 	namespaceDetailsQuery *namespaceQuery.NamespaceDetailsQuery,
 ) *NamespaceHandler {
 	return &NamespaceHandler{
 		listNamespacesQuery:   listNamespacesQuery,
 		createNamespaceCmd:    createNamespaceCmd,
 		updateNamespaceCmd:    updateNamespaceCmd,
+		deleteNamespaceCmd:    deleteNamespaceCmd,
 		namespaceDetailsQuery: namespaceDetailsQuery,
 		presenter:             presenter.NewNamespacePresenter(),
 	}
@@ -159,4 +162,25 @@ func (h *NamespaceHandler) HandleNamespaceUpdate(w http.ResponseWriter, r *http.
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleNamespaceDelete handles DELETE /v1/terrareg/namespaces/{namespace}
+func (h *NamespaceHandler) HandleNamespaceDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse namespace from URL
+	namespaceName := chi.URLParam(r, "namespace")
+	if namespaceName == "" {
+		RespondError(w, http.StatusBadRequest, "namespace is required")
+		return
+	}
+
+	// Execute delete command
+	if err := h.deleteNamespaceCmd.Execute(ctx, namespaceName); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Send success response (empty JSON object like Python)
+	RespondJSON(w, http.StatusOK, map[string]interface{}{})
 }
