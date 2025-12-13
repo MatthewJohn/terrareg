@@ -77,11 +77,23 @@ func (r *IdentityRepositoryImpl) FindByAccessToken(ctx context.Context, accessTo
 	return r.mapAccessTokenToDomain(&accessTokenDB)
 }
 
-// Delete deletes an identity by ID
-func (r *IdentityRepositoryImpl) Delete(ctx context.Context, id string) error {
+// Delete deletes an identity by ID (interface expects int, but implementation uses string)
+func (r *IdentityRepositoryImpl) Delete(ctx context.Context, id int) error {
+	// Convert int to string for internal use
+	idStr := fmt.Sprintf("%d", id)
 	// Delete from both tables
-	r.db.WithContext(ctx).Where("key = ?", id).Delete(&TerraformIDPAccessTokenDB{})
-	return r.db.WithContext(ctx).Where("key = ?", id).Delete(&TerraformIDPSubjectIdentifierDB{}).Error
+	r.db.WithContext(ctx).Where("key = ?", idStr).Delete(&TerraformIDPAccessTokenDB{})
+	return r.db.WithContext(ctx).Where("key = ?", idStr).Delete(&TerraformIDPSubjectIdentifierDB{}).Error
+}
+
+// GetByToken gets an identity by token
+func (r *IdentityRepositoryImpl) GetByToken(ctx context.Context, token string) (interface{}, error) {
+	return r.FindByAccessToken(ctx, token)
+}
+
+// GetByProviderID gets an identity by provider ID
+func (r *IdentityRepositoryImpl) GetByProviderID(ctx context.Context, provider string, providerID string) (interface{}, error) {
+	return r.FindBySubject(ctx, providerID)
 }
 
 // Exists checks if an identity exists by ID
