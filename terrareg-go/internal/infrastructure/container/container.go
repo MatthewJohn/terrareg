@@ -67,6 +67,7 @@ type Container struct {
 	ModuleProviderRepo                moduleRepo.ModuleProviderRepository
 	ModuleVersionRepo                 moduleRepo.ModuleVersionRepository
 	ModuleVersionFileRepo            moduleModel.ModuleVersionFileRepository
+	ModuleProviderRedirectRepo        *modulePersistence.ModuleProviderRedirectRepositoryImpl
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
 	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
@@ -240,6 +241,7 @@ func NewContainer(
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, domainConfig) // Uses DomainConfig for TrustedNamespaces
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ModuleVersionFileRepo = modulePersistence.NewModuleVersionFileRepository(db.DB)
+	c.ModuleProviderRedirectRepo = modulePersistence.NewModuleProviderRedirectRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
@@ -322,10 +324,9 @@ func NewContainer(
 	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, infraConfig) // Uses InfrastructureConfig for auth settings
 
 	// Initialize redirect commands and queries
-	// TODO: Implement ModuleProviderRedirectRepository
-	// c.CreateModuleProviderRedirectCmd = moduleCmd.NewCreateModuleProviderRedirectCommand(c.ModuleProviderRepo)
-	// c.DeleteModuleProviderRedirectCmd = moduleCmd.NewDeleteModuleProviderRedirectCommand(c.ModuleProviderRepo)
-	// c.GetModuleProviderRedirectsQuery = moduleQuery.NewGetModuleProviderRedirectsQuery(c.ModuleProviderRepo)
+	c.CreateModuleProviderRedirectCmd = moduleCmd.NewCreateModuleProviderRedirectCommand(c.ModuleProviderRedirectRepo)
+	c.DeleteModuleProviderRedirectCmd = moduleCmd.NewDeleteModuleProviderRedirectCommand(c.ModuleProviderRedirectRepo)
+	c.GetModuleProviderRedirectsQuery = moduleQuery.NewGetModuleProviderRedirectsQuery(c.ModuleProviderRedirectRepo)
 
 	// Initialize authentication commands
 	c.OidcLoginCmd = authCmd.NewOidcLoginCommand(c.AuthFactory, c.SessionService, infraConfig)
@@ -426,9 +427,9 @@ func NewContainer(
 		c.DeleteModuleVersionCmd,
 		c.GenerateModuleSourceCmd,
 		c.GetVariableTemplateQuery,
-		nil, // CreateModuleProviderRedirectCommand - TODO: Implement ModuleProviderRedirectRepository
-		nil, // DeleteModuleProviderRedirectCommand - TODO: Implement ModuleProviderRedirectRepository
-		nil, // GetModuleProviderRedirectsQuery - TODO: Implement ModuleProviderRedirectRepository
+		c.CreateModuleProviderRedirectCmd,
+		c.DeleteModuleProviderRedirectCmd,
+		c.GetModuleProviderRedirectsQuery,
 		domainConfig,
 		c.NamespaceService,
 		c.AnalyticsRepo,

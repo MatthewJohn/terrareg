@@ -1021,3 +1021,8 @@ func (s *Server) handleProviderPage(w http.ResponseWriter, r *http.Request) {
 		s.logger.Error().Err(err).Msg("Failed to render provider template")
 	}
 }
+
+// GetRouter returns the HTTP router for testing purposes
+func (s *Server) GetRouter() *chi.Mux {
+	return s.router
+}
