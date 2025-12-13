@@ -7,8 +7,8 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
-	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	infraAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // AuthFactory implements the factory pattern for authentication methods
@@ -45,22 +45,40 @@ func NewAuthFactory(
 // initializeAuthMethods sets up authentication methods in priority order
 func (af *AuthFactory) initializeAuthMethods() {
 	// Priority order from Python terrareg
-	// 1. AdminApiKeyAuthMethod
-	// 2. AdminSessionAuthMethod
-	// 3. SamlAuthMethod
-	// 4. OpenidConnectAuthMethod
-	// 5. GithubAuthMethod
-	// 6. TerraformOidcAuthMethod
-	// 7. TerraformAnalyticsAuthKeyAuthMethod
-	// 8. NotAuthenticated (fallback)
+	// 1. AdminApiKeyAuthMethod (legacy)
+	// 2. AuthenticationTokenAuthMethod (admin tokens)
+	// 3. AuthenticationTokenAuthMethod (upload tokens)
+	// 4. AuthenticationTokenAuthMethod (publish tokens)
+	// 5. AdminSessionAuthMethod
+	// 6. SamlAuthMethod
+	// 7. OpenidConnectAuthMethod
+	// 8. GithubAuthMethod
+	// 9. TerraformOidcAuthMethod
+	// 10. TerraformAnalyticsAuthKeyAuthMethod
+	// 11. NotAuthenticated (fallback)
 
-	// Register AdminApiKeyAuthMethod (highest priority)
+	// Register AdminApiKeyAuthMethod (legacy admin token - highest priority)
 	if af.config.AdminAuthenticationToken != "" {
-		adminApiKeyAuthMethod := infraAuth.NewAdminApiKeyAuthMethod()
+		adminApiKeyAuthMethod := infraAuth.NewAdminApiKeyAuthMethod(af.config)
 		af.RegisterAuthMethod(adminApiKeyAuthMethod)
 	}
 
-	// Register AdminSessionAuthMethod (2nd priority)
+	// Register UploadApiKeyAuthMethod for upload tokens
+	if len(af.config.UploadApiKeys) > 0 {
+		uploadApiKeyAuthMethod := infraAuth.NewUploadApiKeyAuthMethod(af.config)
+		af.RegisterAuthMethod(uploadApiKeyAuthMethod)
+	}
+
+	// Register PublishApiKeyAuthMethod for publish tokens
+	if len(af.config.PublishApiKeys) > 0 {
+		publishApiKeyAuthMethod := infraAuth.NewPublishApiKeyAuthMethod(af.config)
+		af.RegisterAuthMethod(publishApiKeyAuthMethod)
+	}
+
+	// AuthenticationTokenAuthMethod is not used as we follow Python's approach
+	// of using environment variables for API keys
+
+	// Register AdminSessionAuthMethod (5th priority)
 	adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(af.sessionRepo, af.userGroupRepo)
 	af.RegisterAuthMethod(adminSessionAuthMethod)
 
@@ -69,9 +87,9 @@ func (af *AuthFactory) initializeAuthMethods() {
 		samlConfig := &infraAuth.SAMLConfig{
 			EntityID:    af.config.SAML2IssuerEntityID,
 			SSOURL:      af.config.SAML2IDPMetadataURL, // This might need adjustment based on actual SAML implementation
-			SLOURL:      "",                           // TODO: Add SLO URL to config if needed
-			Certificate: "",                           // TODO: Add certificate to config if needed
-			PrivateKey:  "",                           // TODO: Add private key to config if needed
+			SLOURL:      "",                            // TODO: Add SLO URL to config if needed
+			Certificate: "",                            // TODO: Add certificate to config if needed
+			PrivateKey:  "",                            // TODO: Add private key to config if needed
 		}
 		samlAuthMethod := infraAuth.NewSamlAuthMethod(samlConfig, af.userGroupRepo)
 		af.RegisterAuthMethod(samlAuthMethod)
@@ -83,7 +101,7 @@ func (af *AuthFactory) initializeAuthMethods() {
 			ClientID:     af.config.OpenIDConnectClientID,
 			ClientSecret: af.config.OpenIDConnectClientSecret,
 			IssuerURL:    af.config.OpenIDConnectIssuer,
-			RedirectURI:  "", // TODO: Add redirect URI to config if needed
+			RedirectURI:  "",                                     // TODO: Add redirect URI to config if needed
 			Scopes:       []string{"openid", "profile", "email"}, // Default scopes
 		}
 		oidcAuthMethod := infraAuth.NewOpenIDConnectAuthMethod(oidcConfig, af.userGroupRepo)
@@ -136,9 +154,43 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	request := model.NewAuthenticationRequest(ctx, auth.AuthMethodNotAuthenticated, headers, formData, queryParams)
 	request.Context = ctx
 
+	// Extract API key from X-Terrareg-ApiKey header (matches Python)
+	apiKey := headers["X-Terrareg-ApiKey"]
+
 	// Try each auth method in priority order
 	for _, authMethod := range af.authMethods {
-		if authMethod.IsEnabled() && authMethod.CheckAuthState() {
+		if !authMethod.IsEnabled() {
+			continue
+		}
+
+		// Check authentication state
+		isAuthenticated := false
+
+		// Special handling for API key auth methods
+		switch authMethod.GetProviderType() {
+		case auth.AuthMethodAdminApiKey:
+			if adminAuthMethod, ok := authMethod.(*infraAuth.AdminApiKeyAuthMethod); ok {
+				isAuthenticated = adminAuthMethod.CheckAuthStateWithKey(apiKey)
+			} else {
+				isAuthenticated = authMethod.CheckAuthState()
+			}
+		case auth.AuthMethodUploadApiKey:
+			if uploadAuthMethod, ok := authMethod.(*infraAuth.UploadApiKeyAuthMethod); ok {
+				isAuthenticated = uploadAuthMethod.CheckAuthStateWithKey(apiKey)
+			} else {
+				isAuthenticated = authMethod.CheckAuthState()
+			}
+		case auth.AuthMethodPublishApiKey:
+			if publishAuthMethod, ok := authMethod.(*infraAuth.PublishApiKeyAuthMethod); ok {
+				isAuthenticated = publishAuthMethod.CheckAuthStateWithKey(apiKey)
+			} else {
+				isAuthenticated = authMethod.CheckAuthState()
+			}
+		default:
+			isAuthenticated = authMethod.CheckAuthState()
+		}
+
+		if isAuthenticated {
 			af.currentAuthMethod = authMethod
 			af.currentAuthCtx = af.buildAuthContext(ctx, authMethod)
 

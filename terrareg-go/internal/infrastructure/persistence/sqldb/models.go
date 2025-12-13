@@ -599,3 +599,23 @@ type AuditHistoryDB struct {
 func (AuditHistoryDB) TableName() string {
 	return "audit_history"
 }
+
+// AuthenticationTokenDB represents authentication tokens for API access
+type AuthenticationTokenDB struct {
+	ID          int    `gorm:"primaryKey;autoIncrement"`
+	TokenType   string `gorm:"type:enum('admin','upload','publish');not null"`
+	TokenValue  string `gorm:"type:varchar(255);not null;uniqueIndex"`
+	NamespaceID *int   `gorm:"default:null"` // Only for publish tokens
+	Description string `gorm:"type:text;not null"`
+	CreatedAt   time.Time `gorm:"not null"`
+	ExpiresAt   *time.Time `gorm:"default:null"`
+	IsActive    bool   `gorm:"default:true;not null"`
+	CreatedBy   string `gorm:"type:varchar(128);not null"`
+
+	// Relationships
+	Namespace *NamespaceDB `gorm:"foreignKey:NamespaceID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+}
+
+func (AuthenticationTokenDB) TableName() string {
+	return "authentication_tokens"
+}

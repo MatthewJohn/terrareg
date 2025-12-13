@@ -119,6 +119,7 @@ func autoMigrate(db *sqldb.Database) error {
 		&sqldb.ProviderVersionDB{},
 		&sqldb.ProviderVersionDocumentationDB{},
 		&sqldb.ProviderVersionBinaryDB{},
+		&sqldb.AuthenticationTokenDB{},
 		&sqldb.AuditHistoryDB{},
 	)
 }

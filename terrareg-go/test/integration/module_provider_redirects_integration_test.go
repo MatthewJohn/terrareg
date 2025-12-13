@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
@@ -69,9 +67,9 @@ func TestModuleProviderRedirectsIntegration(t *testing.T) {
 
 	t.Run("Create Module Provider Redirect", func(t *testing.T) {
 		redirectReq := map[string]interface{}{
-			"from_namespace":      "test-namespace",
-			"from_module":         "old-module",
-			"from_provider":       "old-provider",
+			"from_namespace":        "test-namespace",
+			"from_module":           "old-module",
+			"from_provider":         "old-provider",
 			"to_module_provider_id": targetProvider.ID,
 		}
 		reqBody, _ := json.Marshal(redirectReq)
@@ -138,9 +136,9 @@ func TestModuleProviderRedirectsIntegration(t *testing.T) {
 
 	t.Run("Create Redirect with Invalid Target", func(t *testing.T) {
 		redirectReq := map[string]interface{}{
-			"from_namespace":      "test-namespace",
-			"from_module":         "invalid-module",
-			"from_provider":       "invalid-provider",
+			"from_namespace":        "test-namespace",
+			"from_module":           "invalid-module",
+			"from_provider":         "invalid-provider",
 			"to_module_provider_id": 99999, // Non-existent ID
 		}
 		reqBody, _ := json.Marshal(redirectReq)

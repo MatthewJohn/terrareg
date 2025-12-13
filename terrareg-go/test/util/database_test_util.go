@@ -50,6 +50,7 @@ func NewTestDatabase(t *testing.T) *DatabaseTestHelper {
 		&sqldb.ProviderVersionDB{},
 		&sqldb.ProviderVersionDocumentationDB{},
 		&sqldb.ProviderVersionBinaryDB{},
+		&sqldb.AuthenticationTokenDB{},
 		&sqldb.AuditHistoryDB{},
 	)
 	require.NoError(t, err)

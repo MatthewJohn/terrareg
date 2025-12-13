@@ -47,6 +47,7 @@ func SetupTestDatabase(t *testing.T) *sqldb.Database {
 		&sqldb.ProviderVersionDB{},
 		&sqldb.ProviderVersionDocumentationDB{},
 		&sqldb.ProviderVersionBinaryDB{},
+		&sqldb.AuthenticationTokenDB{},
 		&sqldb.AuditHistoryDB{},
 	)
 	require.NoError(t, err)

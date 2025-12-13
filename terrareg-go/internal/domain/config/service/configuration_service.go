@@ -124,6 +124,8 @@ func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]st
 
 		// Admin authentication
 		AdminAuthenticationToken: rawConfig["ADMIN_AUTHENTICATION_TOKEN"],
+		UploadApiKeys:            s.parseStringSlice(rawConfig["UPLOAD_API_KEYS"], ","),
+		PublishApiKeys:           s.parseStringSlice(rawConfig["PUBLISH_API_KEYS"], ","),
 		SecretKey:                rawConfig["SECRET_KEY"],
 
 		// Feature flags (infrastructure)

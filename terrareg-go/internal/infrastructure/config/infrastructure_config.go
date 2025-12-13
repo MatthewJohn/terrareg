@@ -35,8 +35,10 @@ type InfrastructureConfig struct {
 	OpenIDConnectIssuer       string `env:"OPENID_CONNECT_ISSUER"`
 
 	// Admin authentication
-	AdminAuthenticationToken string `env:"ADMIN_AUTHENTICATION_TOKEN"`
-	SecretKey                string `env:"SECRET_KEY"`
+	AdminAuthenticationToken string   `env:"ADMIN_AUTHENTICATION_TOKEN"`
+	UploadApiKeys            []string `env:"UPLOAD_API_KEYS"`
+	PublishApiKeys           []string `env:"PUBLISH_API_KEYS"`
+	SecretKey                string   `env:"SECRET_KEY"`
 
 	// Feature flags (infrastructure concerns)
 	AllowProviderHosting   bool `env:"ALLOW_PROVIDER_HOSTING"`
