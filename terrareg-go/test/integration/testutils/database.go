@@ -6,6 +6,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -50,6 +52,37 @@ func SetupTestDatabase(t *testing.T) *sqldb.Database {
 	require.NoError(t, err)
 
 	return db
+}
+
+// GetTestLogger returns a test logger
+func GetTestLogger() zerolog.Logger {
+	return TestLogger
+}
+
+// CreateTestDomainConfig creates a test domain configuration
+func CreateTestDomainConfig(t *testing.T) *model.DomainConfig {
+	return &model.DomainConfig{
+		TrustedNamespaces:        []string{"test"},
+		VerifiedModuleNamespaces: []string{"verified"},
+		AllowModuleHosting:       model.ModuleHostingModeAllow,
+		SecretKeySet:            true,
+		OpenIDConnectEnabled:    true,
+		SAMLEnabled:             true,
+		AdminLoginEnabled:       true,
+	}
+}
+
+// CreateTestInfraConfig creates a test infrastructure configuration
+func CreateTestInfraConfig(t *testing.T) *config.InfrastructureConfig {
+	return &config.InfrastructureConfig{
+		ListenPort:    5000,
+		PublicURL:     "http://localhost:5000",
+		DomainName:    "localhost",
+		Debug:         true,
+		DatabaseURL:   "sqlite:///:memory:",
+		DataDirectory: "/tmp/terrareg-test",
+		SecretKey:     "test-secret-key-that-is-32-chars-long",
+	}
 }
 
 // CleanupTestDatabase closes the test database
