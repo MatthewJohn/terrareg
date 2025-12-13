@@ -51,3 +51,20 @@ type ModuleSearchResult struct {
 	Modules    []*model.ModuleProvider
 	TotalCount int
 }
+
+// ModuleProviderRedirectRepository defines operations for module provider redirects
+// Matches Python ModuleProviderRedirect model
+type ModuleProviderRedirectRepository interface {
+	GetByOriginalDetails(ctx context.Context, namespace, module, provider string, caseInsensitive bool) (*model.ModuleProvider, error)
+	GetByModuleProvider(ctx context.Context, moduleProviderID int) ([]*ModuleProviderRedirect, error)
+}
+
+// ModuleProviderRedirect represents a redirect from old module provider details to new ones
+// Matches Python ModuleProviderRedirect model
+type ModuleProviderRedirect struct {
+	ID                 int
+	ModuleProviderID   int
+	NamespaceID        int
+	Module             string
+	Provider           string
+}

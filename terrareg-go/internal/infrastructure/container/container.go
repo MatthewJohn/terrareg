@@ -110,6 +110,15 @@ type Container struct {
 	GetVariableTemplateQuery        *moduleCmd.GetVariableTemplateQuery
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	AdminLoginCmd                   *authCmd.AdminLoginCommand
+	CreateModuleProviderRedirectCmd *moduleCmd.CreateModuleProviderRedirectCommand
+	DeleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand
+
+	// Authentication Commands
+	OidcLoginCmd                    *authCmd.OidcLoginCommand
+	OidcCallbackCmd                 *authCmd.OidcCallbackCommand
+	SamlLoginCmd                    *authCmd.SamlLoginCommand
+	SamlMetadataCmd                 *authCmd.SamlMetadataCommand
+	GithubOAuthCmd                  *authCmd.GithubOAuthCommand
 
 	// Terraform Authentication Commands
 	AuthenticateOIDCTokenCmd *terraformCmd.AuthenticateOIDCTokenCommand
@@ -137,6 +146,7 @@ type Container struct {
 	GetModuleProviderQuery         *module.GetModuleProviderQuery
 	ListModuleProvidersQuery       *module.ListModuleProvidersQuery
 	GetModuleVersionQuery          *module.GetModuleVersionQuery
+	GetModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery
 	GetModuleDownloadQuery         *module.GetModuleDownloadQuery
 	GetModuleProviderSettingsQuery *module.GetModuleProviderSettingsQuery
 	ListModuleVersionsQuery        *module.ListModuleVersionsQuery
@@ -144,6 +154,12 @@ type Container struct {
 	GetExamplesQuery               *module.GetExamplesQuery
 	GetIntegrationsQuery           *module.GetIntegrationsQuery
 	GetReadmeHTMLQuery             *module.GetReadmeHTMLQuery
+	GetSubmoduleDetailsQuery       *module.GetSubmoduleDetailsQuery
+	GetSubmoduleReadmeHTMLQuery    *module.GetSubmoduleReadmeHTMLQuery
+	GetExampleDetailsQuery         *module.GetExampleDetailsQuery
+	GetExampleReadmeHTMLQuery      *module.GetExampleReadmeHTMLQuery
+	GetExampleFileListQuery        *module.GetExampleFileListQuery
+	GetExampleFileQuery            *module.GetExampleFileQuery
 	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery
 	GlobalUsageStatsQuery          *analyticsQuery.GlobalUsageStatsQuery
 	GetDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
@@ -164,6 +180,8 @@ type Container struct {
 	// Handlers
 	NamespaceHandler           *terrareg.NamespaceHandler
 	ModuleHandler              *terrareg.ModuleHandler
+	SubmoduleHandler           *terrareg.SubmoduleHandler
+	ExampleHandler             *terrareg.ExampleHandler
 	AnalyticsHandler           *terrareg.AnalyticsHandler
 	ProviderHandler            *terrareg.ProviderHandler
 	ProviderLogosHandler       *terrareg.ProviderLogosHandler
@@ -303,6 +321,19 @@ func NewContainer(
 	// Initialize admin login command
 	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, infraConfig) // Uses InfrastructureConfig for auth settings
 
+	// Initialize redirect commands and queries
+	// TODO: Implement ModuleProviderRedirectRepository
+	// c.CreateModuleProviderRedirectCmd = moduleCmd.NewCreateModuleProviderRedirectCommand(c.ModuleProviderRepo)
+	// c.DeleteModuleProviderRedirectCmd = moduleCmd.NewDeleteModuleProviderRedirectCommand(c.ModuleProviderRepo)
+	// c.GetModuleProviderRedirectsQuery = moduleQuery.NewGetModuleProviderRedirectsQuery(c.ModuleProviderRepo)
+
+	// Initialize authentication commands
+	c.OidcLoginCmd = authCmd.NewOidcLoginCommand(c.AuthFactory, c.SessionService, infraConfig)
+	c.OidcCallbackCmd = authCmd.NewOidcCallbackCommand(c.AuthFactory, c.SessionService, infraConfig)
+	c.SamlLoginCmd = authCmd.NewSamlLoginCommand(c.AuthFactory, c.SessionService, infraConfig)
+	c.SamlMetadataCmd = authCmd.NewSamlMetadataCommand(c.AuthFactory, c.SessionService, infraConfig)
+	c.GithubOAuthCmd = authCmd.NewGithubOAuthCommand(c.AuthFactory, c.SessionService, infraConfig)
+
 	// Initialize Terraform authentication commands
 	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.AuthFactory)
 	c.ValidateTokenCmd = terraformCmd.NewValidateTokenCommand(c.AuthFactory)
@@ -323,6 +354,12 @@ func NewContainer(
 	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetIntegrationsQuery = moduleQuery.NewGetIntegrationsQuery(c.ModuleProviderRepo)
 	c.GetReadmeHTMLQuery = moduleQuery.NewGetReadmeHTMLQuery(c.ModuleProviderRepo, c.MarkdownService)
+	c.GetSubmoduleDetailsQuery = moduleQuery.NewGetSubmoduleDetailsQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
+	c.GetSubmoduleReadmeHTMLQuery = moduleQuery.NewGetSubmoduleReadmeHTMLQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
+	c.GetExampleDetailsQuery = moduleQuery.NewGetExampleDetailsQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
+	c.GetExampleReadmeHTMLQuery = moduleQuery.NewGetExampleReadmeHTMLQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
+	c.GetExampleFileListQuery = moduleQuery.NewGetExampleFileListQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
+	c.GetExampleFileQuery = moduleQuery.NewGetExampleFileQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GlobalUsageStatsQuery = analyticsQuery.NewGlobalUsageStatsQuery(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
@@ -389,6 +426,9 @@ func NewContainer(
 		c.DeleteModuleVersionCmd,
 		c.GenerateModuleSourceCmd,
 		c.GetVariableTemplateQuery,
+		nil, // CreateModuleProviderRedirectCommand - TODO: Implement ModuleProviderRedirectRepository
+		nil, // DeleteModuleProviderRedirectCommand - TODO: Implement ModuleProviderRedirectRepository
+		nil, // GetModuleProviderRedirectsQuery - TODO: Implement ModuleProviderRedirectRepository
 		domainConfig,
 		c.NamespaceService,
 		c.AnalyticsRepo,
@@ -418,10 +458,19 @@ func NewContainer(
 		c.AdminLoginCmd,
 		c.CheckSessionQuery,
 		c.IsAuthenticatedQuery,
+		c.OidcLoginCmd,
+		c.OidcCallbackCmd,
+		c.SamlLoginCmd,
+		c.SamlMetadataCmd,
+		c.GithubOAuthCmd,
 		c.AuthenticationService,
 		infraConfig,
 	)
 	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
+
+	// Initialize submodule and example handlers
+	c.SubmoduleHandler = terrareg.NewSubmoduleHandler(c.GetSubmoduleDetailsQuery, c.GetSubmoduleReadmeHTMLQuery)
+	c.ExampleHandler = terrareg.NewExampleHandler(c.GetExampleDetailsQuery, c.GetExampleReadmeHTMLQuery, c.GetExampleFileListQuery, c.GetExampleFileQuery)
 
 	// Initialize v2 handlers
 	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery, c.GetProviderDownloadQuery)
@@ -459,6 +508,8 @@ func NewContainer(
 		logger,
 		c.NamespaceHandler,
 		c.ModuleHandler,
+		c.SubmoduleHandler,
+		c.ExampleHandler,
 		c.AnalyticsHandler,
 		c.ProviderHandler,
 		c.AuthHandler,

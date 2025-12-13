@@ -230,6 +230,138 @@ func (as *AuthenticationService) RefreshSession(
 	return nil
 }
 
+// CreateSession creates a session cookie from an existing session ID
+func (as *AuthenticationService) CreateSession(ctx context.Context, w http.ResponseWriter, sessionID string) error {
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("CreateSession: starting")
+
+	// Get session from database to ensure it's valid
+	session, err := as.sessionService.GetSession(ctx, sessionID)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("session_id", sessionID).
+			Msg("CreateSession: failed to get session from database")
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+
+	log.Info().
+		Str("session_id", sessionID).
+		Time("expiry", session.Expiry).
+		Msg("CreateSession: retrieved session successfully")
+
+	// Create basic session data
+	sessionData := &SessionData{
+		SessionID:   sessionID,
+		AuthMethod:  "", // We'll extract this from provider data
+		IsAdmin:     false, // Default to false, can be updated based on session
+		SiteAdmin:   false,
+		UserGroups:  []string{},
+		Permissions: make(map[string]string),
+		Expiry:      &session.Expiry,
+	}
+
+	// Parse provider data from session to extract auth method and user details if available
+	if len(session.ProviderSourceAuth) > 0 {
+		var providerData map[string]interface{}
+		if err := json.Unmarshal(session.ProviderSourceAuth, &providerData); err == nil {
+			// Extract auth method from provider data if present
+			if authMethod, ok := providerData["auth_method"].(string); ok {
+				sessionData.AuthMethod = authMethod
+			}
+			// Extract username from provider data if present
+			if username, ok := providerData["username"].(string); ok {
+				sessionData.Username = username
+			}
+			// Extract admin status from provider data if present
+			if isAdmin, ok := providerData["is_admin"].(bool); ok {
+				sessionData.IsAdmin = isAdmin
+			}
+			// Extract permissions from provider data if present
+			if permissions, ok := providerData["permissions"].(map[string]string); ok {
+				sessionData.Permissions = permissions
+			}
+		}
+	}
+
+	// Encrypt and set cookie
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("CreateSession: encrypting session data")
+
+	encryptedSession, err := as.cookieService.EncryptSession(sessionData)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("session_id", sessionID).
+			Msg("CreateSession: failed to encrypt session")
+		return fmt.Errorf("failed to encrypt session: %w", err)
+	}
+
+	// Calculate TTL for cookie
+	ttl := time.Until(session.Expiry)
+	log.Info().
+		Str("session_id", sessionID).
+		Dur("ttl", ttl).
+		Msg("CreateSession: setting cookie")
+
+	if ttl <= 0 {
+		ttl = 24 * time.Hour // Default to 24 hours
+		log.Warn().
+			Str("session_id", sessionID).
+			Dur("default_ttl", ttl).
+			Msg("CreateSession: session expiry in past, using default TTL")
+	}
+
+	as.cookieService.SetCookie(w, as.cookieService.GetSessionCookieName(), encryptedSession, &CookieOptions{
+		Path:     "/",
+		MaxAge:   int(ttl.Seconds()),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("CreateSession: completed successfully")
+
+	return nil
+}
+
+// ClearSession removes the session cookie and invalidates the session
+func (as *AuthenticationService) ClearSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	log.Info().
+		Msg("ClearSession: starting")
+
+	// Extract and validate session cookie
+	cookie, err := r.Cookie(as.cookieService.GetSessionCookieName())
+	if err == nil {
+		sessionData, err := as.cookieService.ValidateSessionCookie(cookie.Value)
+		if err == nil {
+			// Delete session from database
+			if sessionData.SessionID != "" {
+				log.Info().
+					Str("session_id", sessionData.SessionID).
+					Msg("ClearSession: invalidating session in database")
+
+				_ = as.sessionService.DeleteSession(ctx, sessionData.SessionID)
+			}
+		}
+	}
+
+	// Clear the cookie
+	log.Info().
+		Msg("ClearSession: clearing session cookie")
+
+	as.cookieService.ClearCookie(w, as.cookieService.GetSessionCookieName())
+
+	log.Info().
+		Msg("ClearSession: completed successfully")
+
+	return nil
+}
+
 // CreateAdminSession creates a complete admin session (convenience method)
 func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.ResponseWriter, sessionID string) error {
 	log.Info().

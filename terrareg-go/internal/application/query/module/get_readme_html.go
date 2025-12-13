@@ -6,6 +6,7 @@ import (
 
 	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	
 )
 
 // GetReadmeHTMLQuery retrieves README HTML content for a module version

@@ -27,6 +27,8 @@ type Server struct {
 	logger                      zerolog.Logger
 	namespaceHandler            *terrareg.NamespaceHandler
 	moduleHandler               *terrareg.ModuleHandler
+	submoduleHandler            *terrareg.SubmoduleHandler
+	exampleHandler              *terrareg.ExampleHandler
 	analyticsHandler            *terrareg.AnalyticsHandler
 	providerHandler             *terrareg.ProviderHandler
 	authHandler                 *terrareg.AuthHandler
@@ -53,6 +55,8 @@ func NewServer(
 	logger zerolog.Logger,
 	namespaceHandler *terrareg.NamespaceHandler,
 	moduleHandler *terrareg.ModuleHandler,
+	submoduleHandler *terrareg.SubmoduleHandler,
+	exampleHandler *terrareg.ExampleHandler,
 	analyticsHandler *terrareg.AnalyticsHandler,
 	providerHandler *terrareg.ProviderHandler,
 	authHandler *terrareg.AuthHandler,
@@ -78,6 +82,8 @@ func NewServer(
 		logger:                      logger,
 		namespaceHandler:            namespaceHandler,
 		moduleHandler:               moduleHandler,
+		submoduleHandler:            submoduleHandler,
+		exampleHandler:              exampleHandler,
 		analyticsHandler:            analyticsHandler,
 		providerHandler:             providerHandler,
 		authHandler:                 authHandler,
@@ -585,43 +591,25 @@ func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Re
 	s.moduleHandler.HandleGetSubmodules(w, r)
 }
 func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request)    {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Submodule details not yet implemented",
-	})
+	s.submoduleHandler.HandleSubmoduleDetails(w, r)
 }
 func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Submodule readme HTML not yet implemented",
-	})
+	s.submoduleHandler.HandleSubmoduleReadmeHTML(w, r)
 }
 func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetExamples(w, r)
 }
 func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)             {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Example details not yet implemented",
-	})
+	s.exampleHandler.HandleExampleDetails(w, r)
 }
 func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)          {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Example readme HTML not yet implemented",
-	})
+	s.exampleHandler.HandleExampleReadmeHTML(w, r)
 }
 func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)            {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Example file list not yet implemented",
-	})
+	s.exampleHandler.HandleExampleFileList(w, r)
 }
 func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Example file serving not yet implemented",
-	})
+	s.exampleHandler.HandleExampleFile(w, r)
 }
 func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                  {
 	// For now, return a placeholder response
@@ -730,31 +718,27 @@ func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request)     
 	s.terraformV2CategoryHandler.HandleListCategories(w, r)
 }
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request)                      {
-	// External OIDC authentication not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "External OIDC authentication not yet implemented",
-	})
+	s.authHandler.HandleOIDCLogin(w, r)
 }
 func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request)                   {
-	// External OIDC callback handling not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "External OIDC callback not yet implemented",
-	})
+	s.authHandler.HandleOIDCCallback(w, r)
 }
 func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request)                      {
-	// SAML login not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "SAML login not yet implemented",
-	})
+	s.authHandler.HandleSAMLLogin(w, r)
 }
 func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request)                   {
-	// SAML metadata not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "SAML metadata not yet implemented",
-	})
+	s.authHandler.HandleSAMLMetadata(w, r)
 }
 func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request)            {
-	// Provider source login not yet implemented
+	providerSource := chi.URLParam(r, "provider_source")
+
+	// Handle GitHub OAuth
+	if providerSource == "github" {
+		s.authHandler.HandleGitHubOAuth(w, r)
+		return
+	}
+
+	// Other provider sources not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider source login not yet implemented",
 	})

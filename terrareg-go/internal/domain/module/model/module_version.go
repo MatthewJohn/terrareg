@@ -549,6 +549,26 @@ func (mv *ModuleVersion) GetExamples() []*ModuleSpecs {
 	return specs
 }
 
+// GetSubmoduleByPath returns a specific submodule by its path
+func (mv *ModuleVersion) GetSubmoduleByPath(path string) *Submodule {
+	for _, submodule := range mv.submodules {
+		if submodule.Path() == path {
+			return submodule
+		}
+	}
+	return nil
+}
+
+// GetExampleByPath returns a specific example by its path
+func (mv *ModuleVersion) GetExampleByPath(path string) *Example {
+	for _, example := range mv.examples {
+		if example.Path() == path {
+			return example
+		}
+	}
+	return nil
+}
+
 // convertExampleToSpecs converts an example to ModuleSpecs by deserializing stored data
 func (mv *ModuleVersion) convertExampleToSpecs(example *Example) *ModuleSpecs {
 	// Get module details for example (stored during indexing)

@@ -41,6 +41,9 @@ type ModuleHandler struct {
 	deleteModuleVersionCmd          *moduleCmd.DeleteModuleVersionCommand
 	generateModuleSourceCmd         *moduleCmd.GenerateModuleSourceCommand
 	getVariableTemplateQuery        *moduleCmd.GetVariableTemplateQuery
+	createModuleProviderRedirectCmd *moduleCmd.CreateModuleProviderRedirectCommand
+	deleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand
+	getModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -70,6 +73,9 @@ func NewModuleHandler(
 	deleteModuleVersionCmd *moduleCmd.DeleteModuleVersionCommand,
 	generateModuleSourceCmd *moduleCmd.GenerateModuleSourceCommand,
 	getVariableTemplateQuery *moduleCmd.GetVariableTemplateQuery,
+	createModuleProviderRedirectCmd *moduleCmd.CreateModuleProviderRedirectCommand,
+	deleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand,
+	getModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery,
 	domainConfig *model.DomainConfig,
 	namespaceService *moduleService.NamespaceService,
 	analyticsRepo analyticsCmd.AnalyticsRepository,
@@ -96,6 +102,9 @@ func NewModuleHandler(
 		deleteModuleVersionCmd:          deleteModuleVersionCmd,
 		generateModuleSourceCmd:         generateModuleSourceCmd,
 		getVariableTemplateQuery:        getVariableTemplateQuery,
+		createModuleProviderRedirectCmd: createModuleProviderRedirectCmd,
+		deleteModuleProviderRedirectCmd: deleteModuleProviderRedirectCmd,
+		getModuleProviderRedirectsQuery: getModuleProviderRedirectsQuery,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -1051,4 +1060,101 @@ func (h *ModuleHandler) HandleGetIntegrations(w http.ResponseWriter, r *http.Req
 
 	// Return integrations
 	RespondJSON(w, http.StatusOK, integrations)
+}
+
+// HandleModuleProviderRedirectsGet handles GET /v1/terrareg/modules/redirects
+func (h *ModuleHandler) HandleModuleProviderRedirectsGet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Execute query to get all redirects
+	redirects, err := h.getModuleProviderRedirectsQuery.Execute(ctx)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO format
+	response := make([]map[string]interface{}, len(redirects))
+	for i, redirect := range redirects {
+		response[i] = map[string]interface{}{
+			"id":                  redirect.ID,
+			"module_provider_id":  redirect.ModuleProviderID,
+			"namespace_id":        redirect.NamespaceID,
+			"module":              redirect.Module,
+			"provider":            redirect.Provider,
+		}
+	}
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleProviderRedirectCreate handles PUT /v1/terrareg/modules/{namespace}/{name}/{provider}/redirect
+func (h *ModuleHandler) HandleModuleProviderRedirectCreate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Parse request body
+	var reqBody struct {
+		ToModuleProviderID int `json:"to_module_provider_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		RespondError(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err).Error())
+		return
+	}
+
+	// Create command request
+	cmdReq := moduleCmd.CreateModuleProviderRedirectRequest{
+		FromNamespace:      namespace,
+		FromModule:         name,
+		FromProvider:       provider,
+		ToModuleProviderID: reqBody.ToModuleProviderID,
+	}
+
+	// Execute command
+	if err := h.createModuleProviderRedirectCmd.Execute(ctx, cmdReq); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return success response
+	RespondJSON(w, http.StatusCreated, map[string]interface{}{
+		"message": "Module provider redirect created successfully",
+		"redirect": map[string]interface{}{
+			"from_namespace":        namespace,
+			"from_module":           name,
+			"from_provider":         provider,
+			"to_module_provider_id": reqBody.ToModuleProviderID,
+		},
+	})
+}
+
+// HandleModuleProviderRedirectDelete handles DELETE /v1/terrareg/modules/{namespace}/{name}/{provider}/redirect
+func (h *ModuleHandler) HandleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Create command request
+	cmdReq := moduleCmd.DeleteModuleProviderRedirectRequest{
+		Namespace: namespace,
+		Module:    name,
+		Provider:  provider,
+	}
+
+	// Execute command
+	if err := h.deleteModuleProviderRedirectCmd.Execute(ctx, cmdReq); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return 204 No Content on successful deletion
+	w.WriteHeader(http.StatusNoContent)
 }
