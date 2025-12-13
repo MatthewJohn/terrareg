@@ -130,26 +130,26 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	}
 
 	// Start with base response structure
-	if mv != nil {
-		response.ID = mv.VersionedID()
-		response.Owner = mv.Owner()
-		response.Version = mv.Version().String()
-		response.Internal = mv.IsInternal()
-
-		// UI-specific terrareg fields
-		response.Beta = mv.IsBeta()
-		response.Published = mv.IsPublished()
-
+	if mv == nil {
+		return response
 	}
+	response.ID = mv.VersionedID()
+	response.Owner = mv.Owner()
+	response.Version = mv.Version().String()
+	response.Internal = mv.IsInternal()
 
-	// TODO: Add source URL when Source() method is implemented in domain model
-	// response.Source = mv.Source()
+	// UI-specific terrareg fields
+	response.Beta = mv.IsBeta()
+	response.Published = mv.IsPublished()
 
 	// Add published date
 	if publishedAt := mv.PublishedAt(); publishedAt != nil {
 		publishedAtStr := publishedAt.Format("2006-01-02T15:04:05Z")
 		response.PublishedAt = &publishedAtStr
 	}
+
+	// TODO: Add source URL when Source() method is implemented in domain model
+	// response.Source = mv.Source()
 
 	// Add downloads count from analytics
 	downloads := 0
