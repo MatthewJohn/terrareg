@@ -69,14 +69,12 @@ func (c *CreateOrUpdateProviderCommand) Execute(ctx context.Context, req CreateO
 
 	// Create new provider
 	newProvider := provider.NewProvider(
-		0, // ID - will be set by repository
 		namespace.ID(),
 		req.Name,
 		req.Description,
 		req.Tier,
 		nil,   // CategoryID
 		nil,   // RepositoryID
-		nil,   // LatestVersionID
 		false, // UseProviderSourceAuth
 	)
 

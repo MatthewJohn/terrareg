@@ -82,7 +82,7 @@ func (c *ManageGPGKeyCommand) ExecuteRemove(ctx context.Context, req RemoveGPGKe
 	}
 
 	// Remove GPG key from provider
-	if err := providerEntity.RemoveGPGKey(req.KeyID); err != nil {
+	if err := providerEntity.RemoveGPGKeyByKeyID(req.KeyID); err != nil {
 		return nil, fmt.Errorf("failed to remove GPG key: %w", err)
 	}
 

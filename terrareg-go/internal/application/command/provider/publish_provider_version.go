@@ -44,7 +44,10 @@ func (c *PublishProviderVersionCommand) Execute(ctx context.Context, req Publish
 	}
 
 	// Create new provider version
-	providerVersion := providerEntity.PublishVersion(req.Version, req.Protocol, req.IsBeta)
+	providerVersion, err := providerEntity.PublishVersion(req.Version, []string{req.Protocol}, req.IsBeta)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create provider version: %w", err)
+	}
 
 	// Save provider with new version
 	if err := c.providerRepo.Save(ctx, providerEntity); err != nil {
