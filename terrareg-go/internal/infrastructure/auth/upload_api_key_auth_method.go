@@ -2,217 +2,153 @@ package auth
 
 import (
 	"context"
-	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
-// UploadApiKeyAuthMethod implements authentication for module uploads via API keys
+// UploadApiKeyAuthMethod implements upload API key authentication
+// Matches Python's UploadApiKeyAuthMethod which uses X-Terrareg-ApiKey header
 type UploadApiKeyAuthMethod struct {
-	auth.BaseAuthMethod
-	apiKey           string
-	isValid          bool
-	username         string
-	allowedNamespace string
+	config *config.InfrastructureConfig
 }
 
-// NewUploadApiKeyAuthMethod creates a new upload API key authentication method
-func NewUploadApiKeyAuthMethod() *UploadApiKeyAuthMethod {
+// NewUploadApiKeyAuthMethod creates a new upload API key auth method
+func NewUploadApiKeyAuthMethod(config *config.InfrastructureConfig) *UploadApiKeyAuthMethod {
 	return &UploadApiKeyAuthMethod{
-		isValid: false,
+		config: config,
 	}
 }
 
 // GetProviderType returns the authentication provider type
-func (u *UploadApiKeyAuthMethod) GetProviderType() auth.AuthMethodType {
+func (a *UploadApiKeyAuthMethod) GetProviderType() auth.AuthMethodType {
 	return auth.AuthMethodUploadApiKey
 }
 
-// CheckAuthState validates the current authentication state
-func (u *UploadApiKeyAuthMethod) CheckAuthState() bool {
-	return u.isValid
+// IsEnabled checks if upload authentication is enabled
+func (a *UploadApiKeyAuthMethod) IsEnabled() bool {
+	return len(a.config.UploadApiKeys) > 0
 }
 
-// IsBuiltInAdmin returns whether this is a built-in admin method
-func (u *UploadApiKeyAuthMethod) IsBuiltInAdmin() bool {
-	return false // Upload API keys are not built-in admin
+// Authenticate validates the upload API key from X-Terrareg-ApiKey header
+func (a *UploadApiKeyAuthMethod) Authenticate(ctx context.Context, apiKey string) (*auth.AuthContext, error) {
+	if apiKey == "" {
+		return nil, model.ErrInvalidCredentials
+	}
+
+	// Check against upload tokens from config
+	for _, validKey := range a.config.UploadApiKeys {
+		if validKey != "" && apiKey == validKey {
+			authCtx := auth.NewAuthContext(a)
+			authCtx.IsAuthenticated = true
+			authCtx.Username = "Upload API Key"
+			return authCtx, nil
+		}
+	}
+
+	return nil, model.ErrInvalidCredentials
+}
+
+// CheckAuthState checks if upload API key is provided
+func (a *UploadApiKeyAuthMethod) CheckAuthState() bool {
+	return len(a.config.UploadApiKeys) > 0
+}
+
+// CheckAuthStateWithKey checks if upload API key is provided (helper method)
+func (a *UploadApiKeyAuthMethod) CheckAuthStateWithKey(apiKey string) bool {
+	if apiKey == "" || len(a.config.UploadApiKeys) == 0 {
+		return false
+	}
+	for _, validKey := range a.config.UploadApiKeys {
+		if validKey != "" && apiKey == validKey {
+			return true
+		}
+	}
+	return false
 }
 
 // IsAuthenticated returns whether the current request is authenticated
-func (u *UploadApiKeyAuthMethod) IsAuthenticated() bool {
-	return u.isValid
+func (a *UploadApiKeyAuthMethod) IsAuthenticated() bool {
+	return true // Always returns true since this method is only used when authenticated
 }
 
 // IsAdmin returns whether the authenticated user has admin privileges
-func (u *UploadApiKeyAuthMethod) IsAdmin() bool {
+func (a *UploadApiKeyAuthMethod) IsAdmin() bool {
 	return false // Upload API keys are not admin
 }
 
-// IsEnabled returns whether this authentication method is enabled
-func (u *UploadApiKeyAuthMethod) IsEnabled() bool {
-	return true
+// IsBuiltInAdmin returns whether this is a built-in admin method
+func (a *UploadApiKeyAuthMethod) IsBuiltInAdmin() bool {
+	return false // Upload API key is not admin
 }
 
 // RequiresCSRF returns whether this authentication method requires CSRF protection
-func (u *UploadApiKeyAuthMethod) RequiresCSRF() bool {
-	return false // API key auth doesn't need CSRF
+func (a *UploadApiKeyAuthMethod) RequiresCSRF() bool {
+	return false // API key auth doesn't need CSRF (matches Python)
+}
+
+// CanAccessReadAPI returns whether the user can access read APIs
+// API keys cannot access read APIs (matches Python)
+func (a *UploadApiKeyAuthMethod) CanAccessReadAPI() bool {
+	return false
+}
+
+// CanAccessTerraformAPI returns whether the user can access Terraform APIs
+func (a *UploadApiKeyAuthMethod) CanAccessTerraformAPI() bool {
+	return true // Upload API keys can access Terraform APIs
 }
 
 // CanPublishModuleVersion checks if the user can publish module versions to the given namespace
-func (u *UploadApiKeyAuthMethod) CanPublishModuleVersion(namespace string) bool {
-	// Upload API keys can publish to their allowed namespace only
-	return u.isValid && u.allowedNamespace == namespace
+func (a *UploadApiKeyAuthMethod) CanPublishModuleVersion(namespace string) bool {
+	// Upload API keys can only upload, not publish (matches Python)
+	return false
 }
 
 // CanUploadModuleVersion checks if the user can upload module versions to the given namespace
-func (u *UploadApiKeyAuthMethod) CanUploadModuleVersion(namespace string) bool {
-	// Upload API keys can upload to their allowed namespace only
-	return u.isValid && u.allowedNamespace == namespace
+func (a *UploadApiKeyAuthMethod) CanUploadModuleVersion(namespace string) bool {
+	// Upload API keys can upload to any namespace (matches Python)
+	return true
 }
 
 // CheckNamespaceAccess checks if the user has the specified permission for a namespace
-func (u *UploadApiKeyAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
-	if !u.isValid {
-		return false
-	}
-
-	// Upload API keys only work with their allowed namespace
-	if u.allowedNamespace != namespace {
-		return false
-	}
-
-	// Check permission hierarchy - upload keys have FULL access to their namespace
-	switch auth.PermissionType(permissionType) {
-	case auth.PermissionRead, auth.PermissionModify, auth.PermissionFull:
-		return true
-	default:
-		return false
-	}
+func (a *UploadApiKeyAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
+	// Upload API keys don't have namespace permissions (matches Python)
+	return false
 }
 
 // GetAllNamespacePermissions returns all namespace permissions for the user
-func (u *UploadApiKeyAuthMethod) GetAllNamespacePermissions() map[string]string {
-	// Upload API keys only have permissions for their specific namespace
-	if u.isValid && u.allowedNamespace != "" {
-		return map[string]string{
-			u.allowedNamespace: string(auth.PermissionFull),
-		}
-	}
+func (a *UploadApiKeyAuthMethod) GetAllNamespacePermissions() map[string]string {
+	// Upload API keys don't have namespace permissions (matches Python)
 	return map[string]string{}
 }
 
 // GetUsername returns the authenticated username
-func (u *UploadApiKeyAuthMethod) GetUsername() string {
-	return u.username
+func (a *UploadApiKeyAuthMethod) GetUsername() string {
+	return "Upload API Key" // Matches Python's get_username()
 }
 
 // GetUserGroupNames returns the names of all user groups
-func (u *UploadApiKeyAuthMethod) GetUserGroupNames() []string {
+func (a *UploadApiKeyAuthMethod) GetUserGroupNames() []string {
 	// API key auth doesn't use traditional user groups
-	return []string{"upload-api-key"}
-}
-
-// CanAccessReadAPI returns whether the user can access read APIs
-func (u *UploadApiKeyAuthMethod) CanAccessReadAPI() bool {
-	// Upload API keys can access read APIs for their allowed namespace
-	return u.isValid
-}
-
-// CanAccessTerraformAPI returns whether the user can access Terraform APIs
-func (u *UploadApiKeyAuthMethod) CanAccessTerraformAPI() bool {
-	return false // Upload API keys are for module uploads, not Terraform CLI access
+	return []string{}
 }
 
 // GetTerraformAuthToken returns the Terraform authentication token
-func (u *UploadApiKeyAuthMethod) GetTerraformAuthToken() string {
-	// Upload API keys don't provide Terraform tokens
+func (a *UploadApiKeyAuthMethod) GetTerraformAuthToken() string {
+	// Return first upload key (for simplicity)
+	if len(a.config.UploadApiKeys) > 0 {
+		return a.config.UploadApiKeys[0]
+	}
 	return ""
 }
 
 // GetProviderData returns provider-specific data
-func (u *UploadApiKeyAuthMethod) GetProviderData() map[string]interface{} {
+func (a *UploadApiKeyAuthMethod) GetProviderData() map[string]interface{} {
 	data := make(map[string]interface{})
-	data["api_key"] = u.apiKey
-	data["username"] = u.username
-	data["allowed_namespace"] = u.allowedNamespace
+	data["is_admin"] = false
+	data["username"] = "Upload API Key"
+	data["can_upload"] = true
+	data["can_publish"] = false
 	return data
-}
-
-// Authenticate authenticates a request using API key from headers
-func (u *UploadApiKeyAuthMethod) Authenticate(ctx context.Context, headers map[string]string, cookies map[string]string) error {
-	// Look for API key in Authorization header
-	authHeader, exists := headers["Authorization"]
-	if !exists {
-		return uploadApiKeyErr("missing authorization header")
-	}
-
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		return uploadApiKeyErr("invalid authorization header format")
-	}
-
-	apiKey := strings.TrimSpace(authHeader[7:]) // Remove "Bearer " prefix
-	if apiKey == "" {
-		return uploadApiKeyErr("empty API key")
-	}
-
-	// Validate upload API key
-	keyInfo, err := u.validateUploadAPIKey(apiKey)
-	if err != nil {
-		return err
-	}
-
-	u.apiKey = apiKey
-	u.isValid = true
-	u.username = keyInfo.Username
-	u.allowedNamespace = keyInfo.AllowedNamespace
-
-	return nil
-}
-
-// UploadAPIKeyInfo represents information about an upload API key
-type UploadAPIKeyInfo struct {
-	Username         string
-	AllowedNamespace string
-}
-
-// validateUploadAPIKey validates an upload API key and returns key information
-// This is a placeholder implementation - in a real system, you would validate against a database
-func (u *UploadApiKeyAuthMethod) validateUploadAPIKey(apiKey string) (*UploadAPIKeyInfo, error) {
-	// Simple validation for demonstration
-	// In production, this would check against a database or configuration
-	validKeys := map[string]*UploadAPIKeyInfo{
-		"upload-api-key-12345": {
-			Username:         "Upload User 1",
-			AllowedNamespace: "example",
-		},
-		"upload-api-key-67890": {
-			Username:         "Upload User 2",
-			AllowedNamespace: "my-company",
-		},
-		"upload-api-key-abcdef": {
-			Username:         "Upload User 3",
-			AllowedNamespace: "terraform-modules",
-		},
-	}
-
-	keyInfo, exists := validKeys[apiKey]
-	if !exists {
-		return nil, uploadApiKeyErr("invalid upload API key")
-	}
-
-	return keyInfo, nil
-}
-
-// uploadApiKeyErr creates a formatted error message for upload API key authentication
-func uploadApiKeyErr(message string) error {
-	return &UploadApiKeyError{Message: message}
-}
-
-// UploadApiKeyError represents an upload API key authentication error
-type UploadApiKeyError struct {
-	Message string
-}
-
-func (e *UploadApiKeyError) Error() string {
-	return "Upload API Key authentication failed: " + e.Message
 }

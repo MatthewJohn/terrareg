@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
@@ -47,7 +46,7 @@ func NewAdminLoginCommand(
 }
 
 // Execute executes the admin login command
-// Implements the complete authentication flow as defined in the plan
+// Implements the complete authentication flow using the auth factory
 func (c *AdminLoginCommand) Execute(ctx context.Context, req *AdminLoginRequest) (*AdminLoginResponse, error) {
 	// Validate request
 	if req.ApiKey == "" {
@@ -56,40 +55,36 @@ func (c *AdminLoginCommand) Execute(ctx context.Context, req *AdminLoginRequest)
 		}, fmt.Errorf("missing API key")
 	}
 
-	// Create admin API key auth method with the request API key
-	adminAuthMethod := model.NewAdminApiKeyAuthMethod(c.config)
-	adminAuthMethod.SetAPIKey(req.ApiKey)
-
-	// Verify authentication method is enabled
-	if !adminAuthMethod.IsEnabled() {
-		return &AdminLoginResponse{
-			Authenticated: false,
-		}, fmt.Errorf("admin authentication is not enabled")
+	// Use the auth factory to validate the API key
+	headers := map[string]string{
+		"X-Terrareg-ApiKey": req.ApiKey,
 	}
 
-	// Check authentication state
-	if !adminAuthMethod.CheckAuthState() {
+	response, err := c.authFactory.AuthenticateRequest(ctx, headers, nil, nil)
+	if err != nil {
 		return &AdminLoginResponse{
 			Authenticated: false,
-		}, fmt.Errorf("invalid API key")
+		}, fmt.Errorf("authentication failed: %w", err)
 	}
 
-	// Verify this is a built-in admin authentication method
-	if !adminAuthMethod.IsBuiltInAdmin() {
+	// Verify authentication succeeded and this is an admin
+	if !response.Success || !response.IsAdmin {
 		return &AdminLoginResponse{
 			Authenticated: false,
-		}, fmt.Errorf("not a built-in admin authentication method")
+		}, fmt.Errorf("not an admin authentication token")
 	}
+
 	ttl := time.Duration(c.config.AdminSessionExpiryMins) * time.Minute
 
-	// Convert adminAuthMethod to string - ADMIN_API_KEY is the auth method type for admin
-	authMethodType := string(adminAuthMethod.GetProviderType())
-
-	// Get provider data from auth method
-	providerData := adminAuthMethod.GetProviderData()
+	// Create provider data for the session
+	providerData := map[string]interface{}{
+		"auth_method": "ADMIN_API_KEY",
+		"is_admin":    true,
+		"username":    response.Username,
+	}
 	providerDataBytes, _ := json.Marshal(providerData)
 
-	session, err := c.sessionService.CreateSession(ctx, authMethodType, providerDataBytes, &ttl)
+	session, err := c.sessionService.CreateSession(ctx, "ADMIN_API_KEY", providerDataBytes, &ttl)
 	if err != nil {
 		return &AdminLoginResponse{
 			Authenticated: false,
@@ -129,7 +124,7 @@ func (c *AdminLoginCommand) ValidateRequest(req *AdminLoginRequest) error {
 		return fmt.Errorf("API key cannot be empty")
 	}
 
-	if c.config.AdminAuthenticationToken == "" {
+	if !c.IsConfigured() {
 		return fmt.Errorf("admin authentication is not configured")
 	}
 
@@ -138,5 +133,6 @@ func (c *AdminLoginCommand) ValidateRequest(req *AdminLoginRequest) error {
 
 // IsConfigured checks if admin authentication is properly configured
 func (c *AdminLoginCommand) IsConfigured() bool {
-	return c.config.AdminAuthenticationToken != "" && c.authFactory != nil && c.sessionService != nil
+	// Check if config-based admin authentication is available
+	return c.config.AdminAuthenticationToken != "" && c.sessionService != nil
 }
