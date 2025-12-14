@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,6 +11,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"os"
 	"sync"
 	"time"
 )
@@ -37,19 +39,71 @@ type JWK struct {
 	Exponent  string `json:"e"`
 }
 
-// NewOIDCKeyManager creates a new key manager with auto-generated keys
-func NewOIDCKeyManager() (*OIDCKeyManager, error) {
+// NewOIDCKeyManager creates a new key manager, loading keys from configuration if available
+func NewOIDCKeyManager(signingKeyPath string) (*OIDCKeyManager, error) {
 	manager := &OIDCKeyManager{
 		keys: make(map[string]*rsa.PrivateKey),
 	}
 
-	// Generate initial signing key
-	err := manager.generateNewKey()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate initial signing key: %w", err)
+	// Try to load key from configuration path
+	if signingKeyPath != "" {
+		err := manager.loadKeyFromFile(signingKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load signing key from %s: %w", signingKeyPath, err)
+		}
+	}
+
+	// If no key loaded, generate one (fallback for development)
+	if len(manager.keys) == 0 {
+		err := manager.generateNewKey()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate initial signing key: %w", err)
+		}
 	}
 
 	return manager, nil
+}
+
+// loadKeyFromFile loads an RSA private key from a PEM file
+func (m *OIDCKeyManager) loadKeyFromFile(keyPath string) error {
+	// Read key file
+	keyData, err := os.ReadFile(keyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read key file: %w", err)
+	}
+
+	// Decode PEM block
+	block, _ := pem.Decode(keyData)
+	if block == nil {
+		return fmt.Errorf("failed to decode PEM block")
+	}
+
+	// Parse private key
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		// Try PKCS8 format
+		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return fmt.Errorf("failed to parse private key: %w", err)
+		}
+		var ok bool
+		privateKey, ok = key.(*rsa.PrivateKey)
+		if !ok {
+			return fmt.Errorf("key is not RSA private key")
+		}
+	}
+
+	// Generate key ID based on filename and hash
+	keyID := fmt.Sprintf("config-%x", md5.Sum([]byte(keyPath)))[:16]
+
+	// Store the key
+	m.mu.Lock()
+	m.keys[keyID] = privateKey
+	m.keyIDs = append([]string{keyID}, m.keyIDs...) // Config keys first
+	m.keyCache = nil // Invalidate cache
+	m.mu.Unlock()
+
+	return nil
 }
 
 // generateNewKey generates a new RSA key for signing

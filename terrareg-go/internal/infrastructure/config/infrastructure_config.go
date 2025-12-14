@@ -63,6 +63,11 @@ type InfrastructureConfig struct {
 	SentryDSN                   string  `env:"SENTRY_DSN"`
 	SentryTracesSampleRate      float64 `env:"SENTRY_TRACES_SAMPLE_RATE"`
 
+	// Terraform OIDC settings
+	TerraformOidcIdpSigningKeyPath    string `env:"TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH"`
+	TerraformOidcIdpSubjectIdHashSalt string `env:"TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT"`
+	TerraformOidcIdpSessionExpiry     int    `env:"TERRAFORM_OIDC_IDP_SESSION_EXPIRY"`
+
 	// Additional infrastructure settings
 	// Note: Add any other infrastructure-specific settings here
 	// such as Redis connections, message queue settings, etc.

@@ -365,6 +365,8 @@ func NewContainer(
 		c.TerraformIdpAuthorizationCodeRepo,
 		c.TerraformIdpAccessTokenRepo,
 		c.TerraformIdpSubjectIdentifierRepo,
+		infraConfig.TerraformOidcIdpSigningKeyPath,
+		infraConfig.PublicURL,
 	)
 
 	// Initialize AuthFactory after TerraformIdpService is created
