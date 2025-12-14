@@ -2,10 +2,8 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -62,16 +60,16 @@ func getString(m map[string]interface{}, key string) string {
 }
 
 
-// TerraformOIDCIDP is a complete implementation of TerraformIDP interface
-type TerraformOIDCIDP struct {
+// terraformIDP is a complete implementation of TerraformIDP interface
+type terraformIDP struct {
 	terraformIDPService TerraformIDPValidator
 	logger              *zerolog.Logger
 	enabled             bool
 }
 
-// NewTerraformOIDCIDP creates a Terraform OIDC IDP implementation
-func NewTerraformOIDCIDP(terraformIDPService TerraformIDPValidator, logger *zerolog.Logger, enabled bool) *TerraformOIDCIDP {
-	return &TerraformOIDCIDP{
+// NewTerraformIDP creates a Terraform IDP implementation
+func NewTerraformIDP(terraformIDPService TerraformIDPValidator, logger *zerolog.Logger, enabled bool) TerraformIDP {
+	return &terraformIDP{
 		terraformIDPService: terraformIDPService,
 		logger:              logger,
 		enabled:             enabled,
@@ -79,12 +77,12 @@ func NewTerraformOIDCIDP(terraformIDPService TerraformIDPValidator, logger *zero
 }
 
 // IsEnabled returns whether the IDP is enabled
-func (t *TerraformOIDCIDP) IsEnabled() bool {
+func (t *terraformIDP) IsEnabled() bool {
 	return t.enabled
 }
 
 // HandleUserinfoRequest handles a userinfo request
-func (t *TerraformOIDCIDP) HandleUserinfoRequest(data []byte, headers map[string]string) (*TerraformUserinfoResponse, error) {
+func (t *terraformIDP) HandleUserinfoRequest(data []byte, headers map[string]string) (*TerraformUserinfoResponse, error) {
 	if !t.enabled {
 		return nil, fmt.Errorf("Terraform IDP is not enabled")
 	}
@@ -132,7 +130,7 @@ func (t *TerraformOIDCIDP) HandleUserinfoRequest(data []byte, headers map[string
 }
 
 // ValidateAccessToken validates an access token
-func (t *TerraformOIDCIDP) ValidateAccessToken(token string) (*TerraformTokenValidation, error) {
+func (t *terraformIDP) ValidateAccessToken(token string) (*TerraformTokenValidation, error) {
 	if !t.enabled {
 		return &TerraformTokenValidation{
 			Valid:    false,
@@ -194,7 +192,7 @@ func min(a, b int) int {
 }
 
 // SetEnabled enables or disables the IDP
-func (t *TerraformOIDCIDP) SetEnabled(enabled bool) {
+func (t *terraformIDP) SetEnabled(enabled bool) {
 	t.enabled = enabled
 	t.logger.Info().Bool("enabled", enabled).Msg("Terraform IDP status changed")
 }

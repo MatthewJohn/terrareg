@@ -13,9 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/auth"
+	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	authHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -34,27 +35,34 @@ func TestAuthenticationIntegration(t *testing.T) {
 	userGroupNamespacePermissionRepo := sqldb.NewUserGroupNamespacePermissionRepository(db.DB)
 	terraformIDPRepo := sqldb.NewTerraformIDPRepository(db.DB)
 
-	// Create handlers and commands
-	createSessionCmd := auth.NewCreateSessionCommand(sessionRepo)
-	getSessionQuery := auth.NewGetSessionQuery(sessionRepo)
-	deleteSessionCmd := auth.NewDeleteSessionCommand(sessionRepo)
+	// Create minimal services for testing
+	sessionConfig := service.DefaultSessionDatabaseConfig()
+	sessionService := service.NewSessionService(sessionRepo, sessionConfig)
+	checkSessionQuery := authQuery.NewCheckSessionQuery(sessionRepo)
 
-	// Create auth handler
+	// Create basic infrastructure config
+	infraConfig := &config.InfrastructureConfig{
+		ListenPort: 3000,
+		PublicURL:  "http://localhost:3000",
+		DomainName: "localhost",
+		Debug:      true,
+	}
+
+	// Create auth service with minimal dependencies
+	cookieService := service.NewCookieService(infraConfig)
+	authService := service.NewAuthenticationService(sessionService, cookieService)
+
 	handler := authHandler.NewAuthHandler(
-		getSessionQuery,
-		createSessionCmd,
-		deleteSessionCmd,
-		nil, // terraformIDPService
-		nil, // authMethodFactory
-		nil, // createUserGroupCmd
-		nil, // updateUserGroupCmd
-		nil, // deleteUserGroupCmd
-		nil, // getUserGroupQuery
-		nil, // getUserGroupsQuery
-		nil, // grantPermissionCmd
-		nil, // revokePermissionCmd
-		nil, // getUserGroupPermissionsQuery
-		nil, // domainConfig
+		nil, // adminLoginCmd
+		checkSessionQuery,
+		nil, // isAuthenticatedQuery
+		nil, // oidcLoginCmd
+		nil, // oidcCallbackCmd
+		nil, // samlLoginCmd
+		nil, // samlMetadataCmd
+		nil, // githubOAuthCmd
+		authService,
+		infraConfig,
 	)
 
 	t.Run("Create session", func(t *testing.T) {
