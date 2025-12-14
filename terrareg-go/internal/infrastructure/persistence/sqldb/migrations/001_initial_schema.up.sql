@@ -201,15 +201,29 @@ CREATE TABLE IF NOT EXISTS module_version_file (
 CREATE TABLE IF NOT EXISTS gpg_key (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     namespace_id INTEGER NOT NULL,
-    ascii_armor MEDIUMBLOB,
-    key_id VARCHAR(1024),
-    fingerprint VARCHAR(1024),
-    source VARCHAR(1024),
-    source_url VARCHAR(1024),
-    created_at DATETIME,
-    updated_at DATETIME,
+    ascii_armor LONGTEXT NOT NULL,
+    key_id VARCHAR(1024) NOT NULL,
+    fingerprint VARCHAR(1024) NOT NULL UNIQUE,
+    source VARCHAR(1024) DEFAULT '',
+    source_url VARCHAR(1024) NULL,
+    trust_signature TEXT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (namespace_id) REFERENCES namespace(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+-- Create indexes for efficient GPG key queries
+CREATE INDEX IF NOT EXISTS idx_gpg_key_namespace_id ON gpg_key(namespace_id);
+CREATE INDEX IF NOT EXISTS idx_gpg_key_key_id ON gpg_key(key_id);
+CREATE INDEX IF NOT EXISTS idx_gpg_key_fingerprint ON gpg_key(fingerprint);
+
+-- Create trigger to update updated_at timestamp for GPG keys
+CREATE TRIGGER IF NOT EXISTS update_gpg_key_updated_at
+    AFTER UPDATE ON gpg_key
+    FOR EACH ROW
+BEGIN
+    UPDATE gpg_key SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
 
 -- Provider source table
 CREATE TABLE IF NOT EXISTS provider_source (

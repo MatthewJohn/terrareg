@@ -139,7 +139,7 @@ func (r *dependencyGraphRepositoryImpl) getTerraformGraph(
 		Joins("INNER JOIN module_version mv ON md.id = mv.module_details_id").
 		Joins("INNER JOIN module_provider mp ON mv.module_provider_id = mp.id").
 		Joins("INNER JOIN namespace n ON mp.namespace_id = n.id").
-		Where("n.name = ? AND mp.module = ? AND mp.provider = ? AND mv.version = ?",
+		Where("n.namespace = ? AND mp.module = ? AND mp.provider = ? AND mv.version = ?",
 			namespace, moduleName, provider, version)
 
 	if err := query.First(&moduleDetails).Error; err != nil {
@@ -284,6 +284,6 @@ func (r *dependencyGraphRepositoryImpl) parseResourceInfo(node *TerraformGraphNo
 	parts := strings.Split(strings.TrimSuffix(node.Label, " (expand)"), ".")
 	if len(parts) >= 2 {
 		node.Module = parts[0] // aws_s3_bucket
-		node.Name = parts[1]  // test_bucket
+		node.Name = parts[1]   // test_bucket
 	}
 }

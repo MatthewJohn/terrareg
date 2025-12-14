@@ -2,6 +2,12 @@
 
 -- Drop tables in reverse order of dependencies
 
+-- Drop GPG key triggers and indexes first
+DROP TRIGGER IF EXISTS update_gpg_key_updated_at;
+DROP INDEX IF EXISTS idx_gpg_key_namespace_id;
+DROP INDEX IF EXISTS idx_gpg_key_key_id;
+DROP INDEX IF EXISTS idx_gpg_key_fingerprint;
+
 DROP TABLE IF EXISTS audit_history;
 DROP TABLE IF EXISTS provider_version_binary;
 DROP TABLE IF EXISTS provider_version_documentation;
