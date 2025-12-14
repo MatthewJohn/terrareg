@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
@@ -9,18 +10,37 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	infraAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	"github.com/rs/zerolog"
 )
+
+// TerraformIDPServiceAdapter wraps the domain service to implement the infrastructure interface
+type TerraformIDPServiceAdapter struct {
+	service interface{}
+}
+
+// ValidateToken implements the infrastructure interface
+func (a *TerraformIDPServiceAdapter) ValidateToken(ctx context.Context, token string) (interface{}, error) {
+	// Use type assertion to call the domain service method
+	if validator, ok := a.service.(interface {
+		ValidateToken(ctx context.Context, token string) (interface{}, error)
+	}); ok {
+		return validator.ValidateToken(ctx, token)
+	}
+	return nil, fmt.Errorf("service does not implement ValidateToken")
+}
 
 // AuthFactory implements the factory pattern for authentication methods
 // Matches Python's AuthFactory behavior with priority-ordered discovery
 type AuthFactory struct {
-	authMethods       []auth.AuthMethod
-	currentAuthMethod auth.AuthMethod
-	currentAuthCtx    *auth.AuthContext
-	mutex             sync.RWMutex
-	sessionRepo       repository.SessionRepository
-	userGroupRepo     repository.UserGroupRepository
-	config            *infraConfig.InfrastructureConfig
+	authMethods           []auth.AuthMethod
+	currentAuthMethod     auth.AuthMethod
+	currentAuthCtx         *auth.AuthContext
+	mutex                 sync.RWMutex
+	sessionRepo           repository.SessionRepository
+	userGroupRepo         repository.UserGroupRepository
+	config                *infraConfig.InfrastructureConfig
+	terraformIDPService   interface{}
+	logger                *zerolog.Logger
 }
 
 // NewAuthFactory creates a new authentication factory
@@ -28,12 +48,16 @@ func NewAuthFactory(
 	sessionRepo repository.SessionRepository,
 	userGroupRepo repository.UserGroupRepository,
 	config *infraConfig.InfrastructureConfig,
+	terraformIDPService interface{},
+	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
-		authMethods:   make([]auth.AuthMethod, 0),
-		sessionRepo:   sessionRepo,
-		userGroupRepo: userGroupRepo,
-		config:        config,
+		authMethods:         make([]auth.AuthMethod, 0),
+		sessionRepo:         sessionRepo,
+		userGroupRepo:       userGroupRepo,
+		config:              config,
+		terraformIDPService: terraformIDPService,
+		logger:              logger,
 	}
 
 	// Initialize auth methods in priority order (matching Python)
@@ -106,6 +130,22 @@ func (af *AuthFactory) initializeAuthMethods() {
 		}
 		oidcAuthMethod := infraAuth.NewOpenIDConnectAuthMethod(oidcConfig, af.userGroupRepo)
 		af.RegisterAuthMethod(oidcAuthMethod)
+	}
+
+	// Register TerraformOidcAuthMethod (9th priority)
+	// This provides OIDC authentication for Terraform CLI
+	if af.terraformIDPService != nil {
+		// Wrap the service in an adapter to bridge the interface gap
+		adapter := &TerraformIDPServiceAdapter{
+			service: af.terraformIDPService,
+		}
+		terraformIDP := infraAuth.NewTerraformIDP(
+			adapter,
+			af.logger,
+			true, // Enable by default when service is available
+		)
+		terraformOidcAuthMethod := infraAuth.NewTerraformOidcAuthMethod(terraformIDP)
+		af.RegisterAuthMethod(terraformOidcAuthMethod)
 	}
 
 	// Register fallback method

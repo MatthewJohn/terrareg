@@ -352,8 +352,6 @@ func NewContainer(
 		authservice.DefaultSessionDatabaseConfig().CleanupInterval,
 	)
 
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig) // Uses InfrastructureConfig for auth settings
-
 	// Initialize audit service
 	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
 
@@ -368,6 +366,9 @@ func NewContainer(
 		c.TerraformIdpAccessTokenRepo,
 		c.TerraformIdpSubjectIdentifierRepo,
 	)
+
+	// Initialize AuthFactory after TerraformIdpService is created
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig, c.TerraformIdpService, &c.Logger)
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
@@ -573,7 +574,7 @@ func NewContainer(
 		c.ValidateTokenCmd,
 		c.GetUserCmd,
 	)
-	c.TerraformIDPHandler = terraformHandler.NewTerraformIDPHandler(nil) // TODO: Pass actual IDP when implemented
+	c.TerraformIDPHandler = terraformHandler.NewTerraformIDPHandler(c.TerraformIdpService)
 	c.TerraformStaticTokenHandler = terraformHandler.NewTerraformStaticTokenHandler()
 
 	// Initialize middleware
