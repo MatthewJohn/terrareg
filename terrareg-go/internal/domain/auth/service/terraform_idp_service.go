@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	oidcAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
 )
 
 // TerraformIdpService manages OAuth flows for Terraform OIDC Identity Provider
@@ -16,6 +18,9 @@ type TerraformIdpService struct {
 	authCodeRepo          repository.TerraformIdpAuthorizationCodeRepository
 	accessTokenRepo       repository.TerraformIdpAccessTokenRepository
 	subjectIdentifierRepo repository.TerraformIdpSubjectIdentifierRepository
+	keyManager            *oidcAuth.OIDCKeyManager
+	tokenSigner           *oidcAuth.TokenSigner
+	issuer                string
 }
 
 // AuthorizationCodeRequest represents an OAuth authorization code request
@@ -64,10 +69,22 @@ func NewTerraformIdpService(
 	accessTokenRepo repository.TerraformIdpAccessTokenRepository,
 	subjectIdentifierRepo repository.TerraformIdpSubjectIdentifierRepository,
 ) *TerraformIdpService {
+	// Create key manager for OIDC token signing
+	keyManager, err := oidcAuth.NewOIDCKeyManager()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create OIDC key manager: %v", err))
+	}
+
+	// Create token signer
+	tokenSigner := oidcAuth.NewTokenSigner(keyManager, "http://localhost:3000")
+
 	return &TerraformIdpService{
 		authCodeRepo:          authCodeRepo,
 		accessTokenRepo:       accessTokenRepo,
 		subjectIdentifierRepo: subjectIdentifierRepo,
+		keyManager:            keyManager,
+		tokenSigner:           tokenSigner,
+		issuer:                "http://localhost:3000",
 	}
 }
 
