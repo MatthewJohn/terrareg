@@ -67,15 +67,17 @@ func NewTerraformIdpService(
 	authCodeRepo repository.TerraformIdpAuthorizationCodeRepository,
 	accessTokenRepo repository.TerraformIdpAccessTokenRepository,
 	subjectIdentifierRepo repository.TerraformIdpSubjectIdentifierRepository,
+	signingKeyPath string,
+	issuerURL string,
 ) *TerraformIdpService {
 	// Create key manager for OIDC token signing
-	keyManager, err := oidcAuth.NewOIDCKeyManager()
+	keyManager, err := oidcAuth.NewOIDCKeyManager(signingKeyPath)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create OIDC key manager: %v", err))
 	}
 
-	// Create token signer
-	tokenSigner := oidcAuth.NewTokenSigner(keyManager, "http://localhost:3000")
+	// Create token signer with configured issuer URL
+	tokenSigner := oidcAuth.NewTokenSigner(keyManager, issuerURL)
 
 	return &TerraformIdpService{
 		authCodeRepo:          authCodeRepo,
@@ -83,7 +85,7 @@ func NewTerraformIdpService(
 		subjectIdentifierRepo: subjectIdentifierRepo,
 		keyManager:            keyManager,
 		tokenSigner:           tokenSigner,
-		issuer:                "http://localhost:3000",
+		issuer:                issuerURL,
 	}
 }
 
