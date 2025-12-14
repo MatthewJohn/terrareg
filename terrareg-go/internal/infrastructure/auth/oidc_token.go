@@ -124,14 +124,14 @@ func (s *TokenSigner) VerifyIDToken(token string) (*OIDCClaims, error) {
 	}
 
 	// Get key ID from header
-	keyID, ok := header["kid"].(string)
+	_, ok := header["kid"].(string)
 	if !ok {
 		return nil, fmt.Errorf("missing key ID in header")
 	}
 
 	// Get the public key for verification
-	privateKey, exists := s.keyManager.GetSigningKey()
-	if !exists {
+	privateKey, _ := s.keyManager.GetSigningKey()
+	if privateKey == nil {
 		return nil, fmt.Errorf("signing key not found")
 	}
 

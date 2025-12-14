@@ -137,7 +137,7 @@ func (m *OIDCKeyManager) GetJWKS() ([]byte, error) {
 
 // GenerateSelfSignedCertificate creates a self-signed certificate for the OIDC provider
 func (m *OIDCKeyManager) GenerateSelfSignedCertificate() ([]byte, error) {
-	privateKey, keyID := m.GetSigningKey()
+	privateKey, _ := m.GetSigningKey()
 	if privateKey == nil {
 		return nil, fmt.Errorf("no signing key available")
 	}

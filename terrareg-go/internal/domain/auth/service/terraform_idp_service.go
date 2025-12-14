@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
