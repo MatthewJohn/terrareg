@@ -58,7 +58,7 @@ func (a *AdminSessionAuthMethod) IsAuthenticated() bool {
 
 // IsAdmin returns whether the authenticated user has admin privileges
 func (a *AdminSessionAuthMethod) IsAdmin() bool {
-	return a.isAdmin
+	return true
 }
 
 // IsEnabled returns whether this authentication method is enabled

@@ -10,8 +10,10 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/namespace"
 	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
+	auditQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/audit"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
 	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
+	graphQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/graph"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	namespaceQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/namespace"
@@ -19,28 +21,34 @@ import (
 	providerLogoQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider_logo"
 	setupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/setup"
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
+	auditRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/repository"
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
+	graphRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
+	graphService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/service"
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
-	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
-		sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	providerLogoRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_logo/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/parser"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
+	auditPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
+	graphPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/graph"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
+	sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	providerLogoRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/provider_logo"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
@@ -67,7 +75,7 @@ type Container struct {
 	NamespaceRepo                     moduleRepo.NamespaceRepository
 	ModuleProviderRepo                moduleRepo.ModuleProviderRepository
 	ModuleVersionRepo                 moduleRepo.ModuleVersionRepository
-	ModuleVersionFileRepo            moduleModel.ModuleVersionFileRepository
+	ModuleVersionFileRepo             moduleModel.ModuleVersionFileRepository
 	ModuleProviderRedirectRepo        *modulePersistence.ModuleProviderRedirectRepositoryImpl
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
@@ -77,6 +85,13 @@ type Container struct {
 	TerraformIdpAuthorizationCodeRepo authRepo.TerraformIdpAuthorizationCodeRepository
 	TerraformIdpAccessTokenRepo       authRepo.TerraformIdpAccessTokenRepository
 	TerraformIdpSubjectIdentifierRepo authRepo.TerraformIdpSubjectIdentifierRepository
+
+	// Audit
+	AuditHistoryRepo auditRepo.AuditHistoryRepository
+
+	// Graph
+	GraphRepo    graphRepo.DependencyGraphRepository
+	GraphService *graphService.GraphService
 
 	// Infrastructure Services
 	GitClient      gitService.GitClient
@@ -118,11 +133,11 @@ type Container struct {
 	DeleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand
 
 	// Authentication Commands
-	OidcLoginCmd                    *authCmd.OidcLoginCommand
-	OidcCallbackCmd                 *authCmd.OidcCallbackCommand
-	SamlLoginCmd                    *authCmd.SamlLoginCommand
-	SamlMetadataCmd                 *authCmd.SamlMetadataCommand
-	GithubOAuthCmd                  *authCmd.GithubOAuthCommand
+	OidcLoginCmd    *authCmd.OidcLoginCommand
+	OidcCallbackCmd *authCmd.OidcCallbackCommand
+	SamlLoginCmd    *authCmd.SamlLoginCommand
+	SamlMetadataCmd *authCmd.SamlMetadataCommand
+	GithubOAuthCmd  *authCmd.GithubOAuthCommand
 
 	// Terraform Authentication Commands
 	AuthenticateOIDCTokenCmd *terraformCmd.AuthenticateOIDCTokenCommand
@@ -133,49 +148,55 @@ type Container struct {
 	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
 	PublishProviderVersionCmd *providerCmd.PublishProviderVersionCommand
 	ManageGPGKeyCmd           *providerCmd.ManageGPGKeyCommand
-	GetProviderDownloadQuery   *providerCmd.GetProviderDownloadQuery
+	GetProviderDownloadQuery  *providerCmd.GetProviderDownloadQuery
+
+	// Audit Queries
+	GetAuditHistoryQuery *auditQuery.GetAuditHistoryQuery
+
+	// Graph Queries
+	GetModuleDependencyGraphQuery *graphQuery.GetModuleDependencyGraphQuery
 
 	// Provider Queries
-	GetProviderVersionQuery    *providerQuery.GetProviderVersionQuery
-	GetNamespaceGPGKeysQuery   *providerQuery.GetNamespaceGPGKeysQuery
+	GetProviderVersionQuery  *providerQuery.GetProviderVersionQuery
+	GetNamespaceGPGKeysQuery *providerQuery.GetNamespaceGPGKeysQuery
 
 	// Provider Logo Queries
 	GetProviderLogosQuery *providerLogoQuery.GetAllProviderLogosQuery
 
 	// Queries
-	ListNamespacesQuery            *module.ListNamespacesQuery
-	NamespaceDetailsQuery          *namespaceQuery.NamespaceDetailsQuery
-	ListModulesQuery               *module.ListModulesQuery
-	SearchModulesQuery             *module.SearchModulesQuery
-	GetModuleProviderQuery         *module.GetModuleProviderQuery
-	ListModuleProvidersQuery       *module.ListModuleProvidersQuery
-	GetModuleVersionQuery          *module.GetModuleVersionQuery
+	ListNamespacesQuery             *module.ListNamespacesQuery
+	NamespaceDetailsQuery           *namespaceQuery.NamespaceDetailsQuery
+	ListModulesQuery                *module.ListModulesQuery
+	SearchModulesQuery              *module.SearchModulesQuery
+	GetModuleProviderQuery          *module.GetModuleProviderQuery
+	ListModuleProvidersQuery        *module.ListModuleProvidersQuery
+	GetModuleVersionQuery           *module.GetModuleVersionQuery
 	GetModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery
-	GetModuleDownloadQuery         *module.GetModuleDownloadQuery
-	GetModuleProviderSettingsQuery *module.GetModuleProviderSettingsQuery
-	ListModuleVersionsQuery        *module.ListModuleVersionsQuery
-	GetSubmodulesQuery             *module.GetSubmodulesQuery
-	GetExamplesQuery               *module.GetExamplesQuery
-	GetIntegrationsQuery           *module.GetIntegrationsQuery
-	GetReadmeHTMLQuery             *module.GetReadmeHTMLQuery
-	GetSubmoduleDetailsQuery       *module.GetSubmoduleDetailsQuery
-	GetSubmoduleReadmeHTMLQuery    *module.GetSubmoduleReadmeHTMLQuery
-	GetExampleDetailsQuery         *module.GetExampleDetailsQuery
-	GetExampleReadmeHTMLQuery      *module.GetExampleReadmeHTMLQuery
-	GetExampleFileListQuery        *module.GetExampleFileListQuery
-	GetExampleFileQuery            *module.GetExampleFileQuery
-	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery
-	GlobalUsageStatsQuery          *analyticsQuery.GlobalUsageStatsQuery
-	GetDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
-	GetMostRecentlyPublishedQuery  *analyticsQuery.GetMostRecentlyPublishedQuery
-	GetMostDownloadedThisWeekQuery *analyticsQuery.GetMostDownloadedThisWeekQuery
-	GetTokenVersionsQuery          *analyticsQuery.GetTokenVersionsQuery
-	ListProvidersQuery             *providerQuery.ListProvidersQuery
-	SearchProvidersQuery           *providerQuery.SearchProvidersQuery
-	GetProviderQuery               *providerQuery.GetProviderQuery
-	GetProviderVersionsQuery       *providerQuery.GetProviderVersionsQuery
-	CheckSessionQuery              *authQuery.CheckSessionQuery
-	IsAuthenticatedQuery           *authQuery.IsAuthenticatedQuery
+	GetModuleDownloadQuery          *module.GetModuleDownloadQuery
+	GetModuleProviderSettingsQuery  *module.GetModuleProviderSettingsQuery
+	ListModuleVersionsQuery         *module.ListModuleVersionsQuery
+	GetSubmodulesQuery              *module.GetSubmodulesQuery
+	GetExamplesQuery                *module.GetExamplesQuery
+	GetIntegrationsQuery            *module.GetIntegrationsQuery
+	GetReadmeHTMLQuery              *module.GetReadmeHTMLQuery
+	GetSubmoduleDetailsQuery        *module.GetSubmoduleDetailsQuery
+	GetSubmoduleReadmeHTMLQuery     *module.GetSubmoduleReadmeHTMLQuery
+	GetExampleDetailsQuery          *module.GetExampleDetailsQuery
+	GetExampleReadmeHTMLQuery       *module.GetExampleReadmeHTMLQuery
+	GetExampleFileListQuery         *module.GetExampleFileListQuery
+	GetExampleFileQuery             *module.GetExampleFileQuery
+	GlobalStatsQuery                *analyticsQuery.GlobalStatsQuery
+	GlobalUsageStatsQuery           *analyticsQuery.GlobalUsageStatsQuery
+	GetDownloadSummaryQuery         *analyticsQuery.GetDownloadSummaryQuery
+	GetMostRecentlyPublishedQuery   *analyticsQuery.GetMostRecentlyPublishedQuery
+	GetMostDownloadedThisWeekQuery  *analyticsQuery.GetMostDownloadedThisWeekQuery
+	GetTokenVersionsQuery           *analyticsQuery.GetTokenVersionsQuery
+	ListProvidersQuery              *providerQuery.ListProvidersQuery
+	SearchProvidersQuery            *providerQuery.SearchProvidersQuery
+	GetProviderQuery                *providerQuery.GetProviderQuery
+	GetProviderVersionsQuery        *providerQuery.GetProviderVersionsQuery
+	CheckSessionQuery               *authQuery.CheckSessionQuery
+	IsAuthenticatedQuery            *authQuery.IsAuthenticatedQuery
 
 	// Config queries
 	GetConfigQuery  *configQuery.GetConfigQuery
@@ -190,6 +211,8 @@ type Container struct {
 	ProviderHandler            *terrareg.ProviderHandler
 	ProviderLogosHandler       *terrareg.ProviderLogosHandler
 	AuthHandler                *terrareg.AuthHandler
+	AuditHandler               *terrareg.AuditHandler
+	GraphHandler               *terrareg.GraphHandler
 	ModuleWebhookHandler       *webhook.ModuleWebhookHandler
 	TerraformV1ModuleHandler   *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 	TerraformV2ProviderHandler *v2.TerraformV2ProviderHandler
@@ -253,6 +276,8 @@ func NewContainer(
 	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
 	c.TerraformIdpAccessTokenRepo = authPersistence.NewTerraformIdpAccessTokenRepository(db.DB)
 	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepository(db.DB)
+	c.AuditHistoryRepo = auditPersistence.NewAuditHistoryRepository(db.DB)
+	c.GraphRepo = graphPersistence.NewDependencyGraphRepository(db.DB)
 
 	c.URLService = urlservice.NewURLService(infraConfig)
 
@@ -310,6 +335,13 @@ func NewContainer(
 	)
 
 	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig) // Uses InfrastructureConfig for auth settings
+
+	// Initialize audit service
+	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
+
+	// Initialize graph service
+	c.GraphService = graphService.NewGraphService(c.GraphRepo)
+
 	c.TerraformIdpService = authservice.NewTerraformIdpService(
 		c.TerraformIdpAuthorizationCodeRepo,
 		c.TerraformIdpAccessTokenRepo,
@@ -364,7 +396,7 @@ func NewContainer(
 	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
 	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
-	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
+	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo)     // Uses database instead of filesystem
 	c.GetIntegrationsQuery = moduleQuery.NewGetIntegrationsQuery(c.ModuleProviderRepo)
 	c.GetReadmeHTMLQuery = moduleQuery.NewGetReadmeHTMLQuery(c.ModuleProviderRepo, c.MarkdownService)
 	c.GetSubmoduleDetailsQuery = moduleQuery.NewGetSubmoduleDetailsQuery(c.ModuleProviderRepo, c.ModuleVersionRepo)
@@ -392,6 +424,10 @@ func NewContainer(
 	c.GetProviderDownloadQuery = providerCmd.NewGetProviderDownloadQuery(c.ProviderRepo, c.NamespaceRepo, c.AnalyticsRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
 	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery()
+	c.GetAuditHistoryQuery = auditQuery.NewGetAuditHistoryQuery(auditService)
+
+	// Graph queries
+	c.GetModuleDependencyGraphQuery = graphQuery.NewGetModuleDependencyGraphQuery(c.GraphService)
 
 	// Initialize config repository and queries
 	versionReader := version.NewVersionReader()
@@ -479,6 +515,8 @@ func NewContainer(
 		c.AuthenticationService,
 		infraConfig,
 	)
+	c.AuditHandler = terrareg.NewAuditHandler(c.GetAuditHistoryQuery)
+	c.GraphHandler = terrareg.NewGraphHandler(c.GetModuleDependencyGraphQuery)
 
 	// Initialize webhook handler with upload API keys for signature validation
 	var uploadAPIKeys []string
@@ -533,6 +571,7 @@ func NewContainer(
 		c.AnalyticsHandler,
 		c.ProviderHandler,
 		c.AuthHandler,
+		c.AuditHandler,
 		c.InitialSetupHandler,
 		c.AuthMiddleware,
 		c.TemplateRenderer,
@@ -548,6 +587,7 @@ func NewContainer(
 		c.ProviderLogosHandler,
 		c.SearchFiltersHandler,
 		c.ModuleWebhookHandler, // Add webhook handler
+		c.GraphHandler,
 	)
 
 	return c, nil
