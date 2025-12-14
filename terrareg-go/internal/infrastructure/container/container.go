@@ -6,12 +6,14 @@ import (
 
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	authCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
+	gpgkeyCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/gpgkey"
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/namespace"
 	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	auditQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/audit"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
+	gpgkeyQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/gpgkey"
 	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
 	graphQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/graph"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
@@ -27,6 +29,8 @@ import (
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
+	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
+	gpgkeyService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	graphRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
 	graphService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/service"
@@ -47,6 +51,7 @@ import (
 	auditPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	graphPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/graph"
+	gpgkeyPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/gpgkey"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	providerLogoRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/provider_logo"
@@ -92,6 +97,10 @@ type Container struct {
 	// Graph
 	GraphRepo    graphRepo.DependencyGraphRepository
 	GraphService *graphService.GraphService
+
+	// GPG Keys
+	GPGKeyRepo     gpgkeyRepo.GPGKeyRepository
+	GPGKeyService  *gpgkeyService.GPGKeyService
 
 	// Infrastructure Services
 	GitClient      gitService.GitClient
@@ -150,6 +159,9 @@ type Container struct {
 	ManageGPGKeyCmd           *providerCmd.ManageGPGKeyCommand
 	GetProviderDownloadQuery  *providerCmd.GetProviderDownloadQuery
 
+	// GPG Key Commands
+	ManageGPGKeyCmd2 *gpgkeyCmd.ManageGPGKeyCommand
+
 	// Audit Queries
 	GetAuditHistoryQuery *auditQuery.GetAuditHistoryQuery
 
@@ -159,6 +171,11 @@ type Container struct {
 	// Provider Queries
 	GetProviderVersionQuery  *providerQuery.GetProviderVersionQuery
 	GetNamespaceGPGKeysQuery *providerQuery.GetNamespaceGPGKeysQuery
+
+	// GPG Key Queries
+	GetNamespaceGPGKeysQuery2        *gpgkeyQuery.GetNamespaceGPGKeysQuery
+	GetMultipleNamespaceGPGKeysQuery *gpgkeyQuery.GetMultipleNamespaceGPGKeysQuery
+	GetGPGKeyQuery                   *gpgkeyQuery.GetGPGKeyQuery
 
 	// Provider Logo Queries
 	GetProviderLogosQuery *providerLogoQuery.GetAllProviderLogosQuery
@@ -278,6 +295,7 @@ func NewContainer(
 	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepository(db.DB)
 	c.AuditHistoryRepo = auditPersistence.NewAuditHistoryRepository(db.DB)
 	c.GraphRepo = graphPersistence.NewDependencyGraphRepository(db.DB)
+	c.GPGKeyRepo = gpgkeyPersistence.NewGPGKeyRepository(db.DB)
 
 	c.URLService = urlservice.NewURLService(infraConfig)
 
@@ -341,6 +359,9 @@ func NewContainer(
 
 	// Initialize graph service
 	c.GraphService = graphService.NewGraphService(c.GraphRepo)
+
+	// Initialize GPG key service
+	c.GPGKeyService = gpgkeyService.NewGPGKeyService(c.GPGKeyRepo, c.NamespaceRepo)
 
 	c.TerraformIdpService = authservice.NewTerraformIdpService(
 		c.TerraformIdpAuthorizationCodeRepo,
@@ -428,6 +449,12 @@ func NewContainer(
 
 	// Graph queries
 	c.GetModuleDependencyGraphQuery = graphQuery.NewGetModuleDependencyGraphQuery(c.GraphService)
+
+	// GPG key commands and queries
+	c.ManageGPGKeyCmd2 = gpgkeyCmd.NewManageGPGKeyCommand(c.GPGKeyService)
+	c.GetNamespaceGPGKeysQuery2 = gpgkeyQuery.NewGetNamespaceGPGKeysQuery(c.GPGKeyService)
+	c.GetMultipleNamespaceGPGKeysQuery = gpgkeyQuery.NewGetMultipleNamespaceGPGKeysQuery(c.GPGKeyService)
+	c.GetGPGKeyQuery = gpgkeyQuery.NewGetGPGKeyQuery(c.GPGKeyService)
 
 	// Initialize config repository and queries
 	versionReader := version.NewVersionReader()
@@ -533,7 +560,12 @@ func NewContainer(
 	// Initialize v2 handlers
 	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery, c.GetProviderDownloadQuery)
 	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(nil)) // TODO: Add proper category repo
-	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler(c.ManageGPGKeyCmd, c.GetNamespaceGPGKeysQuery)
+	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler(
+		c.ManageGPGKeyCmd2,
+		c.GetNamespaceGPGKeysQuery2,
+		c.GetMultipleNamespaceGPGKeysQuery,
+		c.GetGPGKeyQuery,
+	)
 
 	// Initialize Terraform authentication handlers
 	c.TerraformAuthHandler = terraformHandler.NewTerraformAuthHandler(

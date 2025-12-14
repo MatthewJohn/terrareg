@@ -7,25 +7,31 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
-	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
+	gpgkeyCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/gpgkey"
+	gpgkeyQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/gpgkey"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
 
 // TerraformV2GPGHandler groups all /v2/gpg-keys handlers
 type TerraformV2GPGHandler struct {
-	manageGPGKeyCmd        *providerCmd.ManageGPGKeyCommand
-	getNamespaceGPGKeysQuery *providerQuery.GetNamespaceGPGKeysQuery
+	manageGPGKeyCmd                 *gpgkeyCmd.ManageGPGKeyCommand
+	getNamespaceGPGKeysQuery        *gpgkeyQuery.GetNamespaceGPGKeysQuery
+	getMultipleNamespaceGPGKeysQuery *gpgkeyQuery.GetMultipleNamespaceGPGKeysQuery
+	getGPGKeyQuery                  *gpgkeyQuery.GetGPGKeyQuery
 }
 
 // NewTerraformV2GPGHandler creates a new TerraformV2GPGHandler
 func NewTerraformV2GPGHandler(
-	manageGPGKeyCmd *providerCmd.ManageGPGKeyCommand,
-	getNamespaceGPGKeysQuery *providerQuery.GetNamespaceGPGKeysQuery,
+	manageGPGKeyCmd *gpgkeyCmd.ManageGPGKeyCommand,
+	getNamespaceGPGKeysQuery *gpgkeyQuery.GetNamespaceGPGKeysQuery,
+	getMultipleNamespaceGPGKeysQuery *gpgkeyQuery.GetMultipleNamespaceGPGKeysQuery,
+	getGPGKeyQuery *gpgkeyQuery.GetGPGKeyQuery,
 ) *TerraformV2GPGHandler {
 	return &TerraformV2GPGHandler{
-		manageGPGKeyCmd:        manageGPGKeyCmd,
-		getNamespaceGPGKeysQuery: getNamespaceGPGKeysQuery,
+		manageGPGKeyCmd:                 manageGPGKeyCmd,
+		getNamespaceGPGKeysQuery:        getNamespaceGPGKeysQuery,
+		getMultipleNamespaceGPGKeysQuery: getMultipleNamespaceGPGKeysQuery,
+		getGPGKeyQuery:                  getGPGKeyQuery,
 	}
 }
 
@@ -40,21 +46,34 @@ func (h *TerraformV2GPGHandler) HandleListGPGKeys(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Split comma-separated namespaces
+	// Split comma-separated namespaces and trim whitespace
 	namespaces := strings.Split(namespacesStr, ",")
-
-	var allGPGKeys []providerQuery.GPGKeyResponse
-
-	// Get GPG keys for each namespace
-	for _, namespace := range namespaces {
-		if namespace = strings.TrimSpace(namespace); namespace != "" {
-			gpgKeys, err := h.getNamespaceGPGKeysQuery.Execute(ctx, namespace)
-			if err != nil {
-				// Continue with other namespaces if one fails
-				continue
-			}
-			allGPGKeys = append(allGPGKeys, gpgKeys...)
+	cleanNamespaces := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		if ns = strings.TrimSpace(ns); ns != "" {
+			cleanNamespaces = append(cleanNamespaces, ns)
 		}
+	}
+
+	if len(cleanNamespaces) == 0 {
+		terrareg.RespondError(w, http.StatusBadRequest, "No valid namespaces provided")
+		return
+	}
+
+	var allGPGKeys []gpgkeyQuery.GPGKeyResponse
+	var err error
+
+	if len(cleanNamespaces) == 1 {
+		// Use single namespace query for efficiency
+		allGPGKeys, err = h.getNamespaceGPGKeysQuery.Execute(ctx, cleanNamespaces[0])
+	} else {
+		// Use multiple namespace query
+		allGPGKeys, err = h.getMultipleNamespaceGPGKeysQuery.Execute(ctx, cleanNamespaces)
+	}
+
+	if err != nil {
+		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to retrieve GPG keys")
+		return
 	}
 
 	// Build response following Python terrareg format
@@ -76,30 +95,21 @@ func (h *TerraformV2GPGHandler) HandleGetGPGKey(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Get GPG keys for the namespace
-	gpgKeys, err := h.getNamespaceGPGKeysQuery.Execute(ctx, namespace)
+	// Get the specific GPG key
+	gpgKey, err := h.getGPGKeyQuery.Execute(ctx, namespace, keyID)
 	if err != nil {
-		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to retrieve GPG keys")
+		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to retrieve GPG key")
 		return
 	}
 
-	// Find the specific GPG key
-	var foundKey *providerQuery.GPGKeyResponse
-	for _, key := range gpgKeys {
-		if key.ID == keyID {
-			foundKey = &key
-			break
-		}
-	}
-
-	if foundKey == nil {
+	if gpgKey == nil {
 		terrareg.RespondError(w, http.StatusNotFound, "GPG key not found")
 		return
 	}
 
 	// Build response following Python terrareg format
 	response := map[string]interface{}{
-		"data": foundKey,
+		"data": gpgKey,
 	}
 
 	terrareg.RespondJSON(w, http.StatusOK, response)
@@ -112,12 +122,14 @@ func (h *TerraformV2GPGHandler) HandleCreateGPGKey(w http.ResponseWriter, r *htt
 		Data struct {
 			Type       string `json:"type"`
 			Attributes struct {
-				Namespace string `json:"namespace"`
-				KeyText    string `json:"key_text"`
-				ASCIIArmor string `json:"ascii_armor"`
-				KeyID      string `json:"key_id"`
+				Namespace      string  `json:"namespace"`
+				ASCIILArmor    string  `json:"ascii-armor"`
+				TrustSignature *string `json:"trust-signature,omitempty"`
+				Source         *string `json:"source,omitempty"`
+				SourceURL      *string `json:"source-url,omitempty"`
 			} `json:"attributes"`
 		} `json:"data"`
+		CSRFToken string `json:"csrf_token"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&createRequest); err != nil {
@@ -126,16 +138,49 @@ func (h *TerraformV2GPGHandler) HandleCreateGPGKey(w http.ResponseWriter, r *htt
 	}
 
 	// Validate required fields
-	if createRequest.Data.Attributes.Namespace == "" ||
-	   createRequest.Data.Attributes.ASCIIArmor == "" ||
-	   createRequest.Data.Attributes.KeyID == "" {
-		terrareg.RespondError(w, http.StatusBadRequest, "Missing required fields: namespace, ascii_armor, key_id")
+	if createRequest.Data.Attributes.Namespace == "" {
+		terrareg.RespondError(w, http.StatusBadRequest, "Missing required field: namespace")
+		return
+	}
+	if createRequest.Data.Attributes.ASCIILArmor == "" {
+		terrareg.RespondError(w, http.StatusBadRequest, "Missing required field: ascii-armor")
 		return
 	}
 
-	// Execute command (TODO: Create namespace-scoped GPG key management)
-	// For now, return 501 as this needs proper domain model support
-	terrareg.RespondError(w, http.StatusNotImplemented, "Namespace-scoped GPG key management not yet implemented")
+	// Convert to command request
+	cmdRequest := gpgkeyCmd.CreateGPGKeyRequest{
+		Namespace:     createRequest.Data.Attributes.Namespace,
+		ASCIILArmor:   createRequest.Data.Attributes.ASCIILArmor,
+		TrustSignature: createRequest.Data.Attributes.TrustSignature,
+		Source:        createRequest.Data.Attributes.Source,
+		SourceURL:     createRequest.Data.Attributes.SourceURL,
+	}
+
+	// Execute command
+	response, err := h.manageGPGKeyCmd.CreateGPGKey(r.Context(), cmdRequest)
+	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			terrareg.RespondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		if strings.Contains(err.Error(), "duplicate") {
+			terrareg.RespondError(w, http.StatusConflict, err.Error())
+			return
+		}
+		if strings.Contains(err.Error(), "invalid") {
+			terrareg.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to create GPG key")
+		return
+	}
+
+	// Build response following Python terrareg format
+	apiResponse := map[string]interface{}{
+		"data": response,
+	}
+
+	terrareg.RespondJSON(w, http.StatusCreated, apiResponse)
 }
 
 // HandleDeleteGPGKey handles DELETE /v2/gpg-keys/{namespace}/{key_id}
@@ -148,10 +193,27 @@ func (h *TerraformV2GPGHandler) HandleDeleteGPGKey(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// TODO: Implement GPG key deletion when domain model supports it
-	// This would involve:
-	// 1. Check if GPG key is in use by any provider versions
-	// 2. Delete GPG key if not in use
-	// 3. Return appropriate error if in use
-	terrareg.RespondError(w, http.StatusNotImplemented, "GPG key deletion not yet implemented")
+	// Convert to command request
+	cmdRequest := gpgkeyCmd.DeleteGPGKeyRequest{
+		Namespace: namespace,
+		KeyID:     keyID,
+	}
+
+	// Execute command
+	err := h.manageGPGKeyCmd.DeleteGPGKey(r.Context(), cmdRequest)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			terrareg.RespondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		if strings.Contains(err.Error(), "in use") {
+			terrareg.RespondError(w, http.StatusConflict, err.Error())
+			return
+		}
+		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to delete GPG key")
+		return
+	}
+
+	// Return empty response with 204 No Content
+	w.WriteHeader(http.StatusNoContent)
 }
