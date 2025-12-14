@@ -33,6 +33,7 @@ type Server struct {
 	analyticsHandler            *terrareg.AnalyticsHandler
 	providerHandler             *terrareg.ProviderHandler
 	authHandler                 *terrareg.AuthHandler
+	auditHandler                *terrareg.AuditHandler
 	initialSetupHandler         *terrareg.InitialSetupHandler
 	authMiddleware              *terrareg_middleware.AuthMiddleware
 	templateRenderer            *template.Renderer
@@ -48,6 +49,7 @@ type Server struct {
 	providerLogosHandler        *terrareg.ProviderLogosHandler
 	searchFiltersHandler        *terrareg.SearchFiltersHandler
 	moduleWebhookHandler        *webhook.ModuleWebhookHandler
+	graphHandler                *terrareg.GraphHandler
 }
 
 // NewServer creates a new HTTP server
@@ -62,6 +64,7 @@ func NewServer(
 	analyticsHandler *terrareg.AnalyticsHandler,
 	providerHandler *terrareg.ProviderHandler,
 	authHandler *terrareg.AuthHandler,
+	auditHandler *terrareg.AuditHandler,
 	initialSetupHandler *terrareg.InitialSetupHandler,
 	authMiddleware *terrareg_middleware.AuthMiddleware,
 	templateRenderer *template.Renderer,
@@ -77,6 +80,7 @@ func NewServer(
 	providerLogosHandler *terrareg.ProviderLogosHandler,
 	searchFiltersHandler *terrareg.SearchFiltersHandler,
 	moduleWebhookHandler *webhook.ModuleWebhookHandler,
+	graphHandler *terrareg.GraphHandler,
 ) *Server {
 	s := &Server{
 		router:                      chi.NewRouter(),
@@ -90,6 +94,7 @@ func NewServer(
 		analyticsHandler:            analyticsHandler,
 		providerHandler:             providerHandler,
 		authHandler:                 authHandler,
+		auditHandler:                auditHandler,
 		initialSetupHandler:         initialSetupHandler,
 		authMiddleware:              authMiddleware,
 		templateRenderer:            templateRenderer,
@@ -105,6 +110,7 @@ func NewServer(
 		providerLogosHandler:        providerLogosHandler,
 		searchFiltersHandler:        searchFiltersHandler,
 		moduleWebhookHandler:        moduleWebhookHandler,
+		graphHandler:                graphHandler,
 	}
 
 	s.setupMiddleware()
@@ -222,6 +228,7 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.RequireNamespacePermission("MODIFY", "{namespace}")).Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
+			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Put("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirectCreate)
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
 
 			// Module webhooks (matching Python implementation)
@@ -507,7 +514,7 @@ func (s *Server) handleNamespaceDelete(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleNamespaceModules(w, r)
 }
-func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)  {
+func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderDetails(w, r)
 }
 func (s *Server) handleTerraregModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
@@ -531,20 +538,17 @@ func (s *Server) handleModuleProviderSettings(w http.ResponseWriter, r *http.Req
 func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderSettingsUpdate(w, r)
 }
-func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request)   {
+func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetIntegrations(w, r)
 }
-func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request)      {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module provider redirects not yet implemented",
-	})
+func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderRedirectsGet(w, r)
+}
+func (s *Server) handleModuleProviderRedirectCreate(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderRedirectCreate(w, r)
 }
 func (s *Server) handleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module provider redirect delete not yet implemented",
-	})
+	s.moduleHandler.HandleModuleProviderRedirectDelete(w, r)
 }
 func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionUpload(w, r)
@@ -560,12 +564,12 @@ func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Reques
 func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionPublish(w, r)
 }
-func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request)           {
+func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request) {
 	// Delegate to the module handler following DDD principles
 	// This deletes a specific version, not the entire provider
 	s.moduleHandler.HandleModuleVersionDelete(w, r)
 }
-func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request)       {
+func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request) {
 	// Delegate to the module handler following DDD principles
 	s.moduleHandler.HandleModuleVersionReadmeHTML(w, r)
 }
@@ -573,7 +577,7 @@ func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *h
 	// Delegate to the module handler following DDD principles
 	s.moduleHandler.HandleModuleVersionVariableTemplate(w, r)
 }
-func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {
+func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request) {
 	// Delegate to the module handler following DDD principles
 	s.moduleHandler.HandleModuleFile(w, r)
 }
@@ -603,7 +607,7 @@ func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *htt
 func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetSubmodules(w, r)
 }
-func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request)    {
+func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request) {
 	s.submoduleHandler.HandleSubmoduleDetails(w, r)
 }
 func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {
@@ -612,28 +616,26 @@ func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Reques
 func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetExamples(w, r)
 }
-func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)             {
+func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request) {
 	s.exampleHandler.HandleExampleDetails(w, r)
 }
-func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)          {
+func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request) {
 	s.exampleHandler.HandleExampleReadmeHTML(w, r)
 }
-func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)            {
+func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request) {
 	s.exampleHandler.HandleExampleFileList(w, r)
 }
-func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                {
+func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request) {
 	s.exampleHandler.HandleExampleFile(w, r)
 }
-func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                  {
+func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Graph data not yet implemented",
-	})
+	s.graphHandler.HandleModuleDependencyGraph(w, r)
 }
 func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderDetails(w, r)
 }
-func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)       {
+func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request) {
 	// Provider integrations not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider integrations not yet implemented",
@@ -652,37 +654,34 @@ func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Requ
 		"message": "Provider search filters not yet implemented",
 	})
 }
-func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request)                        {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Audit history not yet implemented",
-	})
+func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request) {
+	s.auditHandler.HandleAuditHistoryGet(w, r)
 }
-func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request)                       {
+func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "User group list not yet implemented",
 	})
 }
-func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request)                     {
+func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "User group creation not yet implemented",
 	})
 }
-func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request)                    {
+func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "User group details not yet implemented",
 	})
 }
-func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request)                     {
+func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "User group deletion not yet implemented",
 	})
 }
-func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request)       {
+func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "User group namespace permissions not yet implemented",
@@ -700,49 +699,49 @@ func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleIsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleIsAuthenticated(w, r)
 }
-func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request)              {
+func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request) {
 	s.terraformV2ProviderHandler.HandleProviderDetails(w, r)
 }
-func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request)     {
+func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request) {
 	s.terraformV2ProviderHandler.HandleProviderDownloadsSummary(w, r)
 }
-func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request)                 {
+func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request) {
 	// Provider docs not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider docs not yet implemented",
 	})
 }
-func (s *Server) handleV2ProviderDoc(w http.ResponseWriter, r *http.Request)                  {
+func (s *Server) handleV2ProviderDoc(w http.ResponseWriter, r *http.Request) {
 	// Provider doc not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider doc not yet implemented",
 	})
 }
-func (s *Server) handleV2GPGKeys(w http.ResponseWriter, r *http.Request)                      {
+func (s *Server) handleV2GPGKeys(w http.ResponseWriter, r *http.Request) {
 	s.terraformV2GPGHandler.HandleListGPGKeys(w, r)
 }
-func (s *Server) handleV2GPGKeyCreate(w http.ResponseWriter, r *http.Request)                 {
+func (s *Server) handleV2GPGKeyCreate(w http.ResponseWriter, r *http.Request) {
 	s.terraformV2GPGHandler.HandleCreateGPGKey(w, r)
 }
-func (s *Server) handleV2GPGKey(w http.ResponseWriter, r *http.Request)                       {
+func (s *Server) handleV2GPGKey(w http.ResponseWriter, r *http.Request) {
 	s.terraformV2GPGHandler.HandleGetGPGKey(w, r)
 }
-func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request)                   {
+func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request) {
 	s.terraformV2CategoryHandler.HandleListCategories(w, r)
 }
-func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request)                      {
+func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleOIDCLogin(w, r)
 }
-func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request)                   {
+func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleOIDCCallback(w, r)
 }
-func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request)                      {
+func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleSAMLLogin(w, r)
 }
-func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request)                   {
+func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleSAMLMetadata(w, r)
 }
-func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request)            {
+func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request) {
 	providerSource := chi.URLParam(r, "provider_source")
 
 	// Handle GitHub OAuth
@@ -756,25 +755,25 @@ func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Reques
 		"message": "Provider source login not yet implemented",
 	})
 }
-func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request)         {
+func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request) {
 	// Provider source callback not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider source callback not yet implemented",
 	})
 }
-func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request)       {
+func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request) {
 	// Provider source auth status not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider source auth status not yet implemented",
 	})
 }
-func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request)    {
+func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request) {
 	// Provider source organizations not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider source organizations not yet implemented",
 	})
 }
-func (s *Server) handleProviderSourceRepositories(w http.ResponseWriter, r *http.Request)     {
+func (s *Server) handleProviderSourceRepositories(w http.ResponseWriter, r *http.Request) {
 	// Provider source repositories not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider source repositories not yet implemented",
@@ -786,19 +785,19 @@ func (s *Server) handleProviderSourceRefreshNamespace(w http.ResponseWriter, r *
 		"message": "Provider source refresh namespace not yet implemented",
 	})
 }
-func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request)  {
+func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request) {
 	// Provider source publish provider not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "Provider source publish provider not yet implemented",
 	})
 }
-func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request)                  {
+func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {
 	// GitHub webhook not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "GitHub webhook not yet implemented",
 	})
 }
-func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request)               {
+func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) {
 	// BitBucket webhook not yet implemented
 	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
 		"message": "BitBucket webhook not yet implemented",
@@ -1006,9 +1005,24 @@ func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "graph.html", map[string]interface{}{
-		"TEMPLATE_NAME": "graph.html",
-	}, r)
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Create template data with graph_data_url for the template
+	templateData := map[string]interface{}{
+		"TEMPLATE_NAME":  "graph.html",
+		"graph_data_url": fmt.Sprintf("/v1/terrareg/modules/%s/%s/%s/graph/data", namespace, moduleName, provider, version),
+		"namespace":      namespace,
+		"module":         moduleName,
+		"provider":       provider,
+		"version":        version,
+	}
+
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "graph.html", templateData, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render graph template")

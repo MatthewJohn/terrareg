@@ -47,32 +47,6 @@ func (m *SessionMiddleware) Session(next http.Handler) http.Handler {
 	})
 }
 
-// RequireSession requires a valid session, otherwise returns 401
-func (m *SessionMiddleware) RequireSession(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authCtx := GetAuthenticationContext(r.Context())
-		if authCtx == nil || !authCtx.IsAuthenticated {
-			http.Error(w, "Authentication required", http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// RequireAdminSession requires a valid admin session, otherwise returns 403
-func (m *SessionMiddleware) RequireAdminSession(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authCtx := GetAuthenticationContext(r.Context())
-		if authCtx == nil || !authCtx.IsAuthenticated || !authCtx.IsAdmin {
-			http.Error(w, "Admin access required", http.StatusForbidden)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 // Authentication context key type to avoid context key collisions
 type authContextKey string
 

@@ -5,66 +5,29 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/graph"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
 
 // GraphHandler handles graph-related requests
 type GraphHandler struct {
-	// Add any dependencies here as needed
+	getModuleDependencyGraphQuery *graph.GetModuleDependencyGraphQuery
 }
 
 // NewGraphHandler creates a new graph handler
-func NewGraphHandler() *GraphHandler {
-	return &GraphHandler{}
-}
-
-// HandleGraphDataGet handles GET /v1/terrareg/graph/data
-// Returns graph data for visualization
-func (h *GraphHandler) HandleGraphDataGet(w http.ResponseWriter, r *http.Request) {
-	// Parse query parameters
-	includeBeta := r.URL.Query().Get("include-beta") == "true"
-	namespace := r.URL.Query().Get("namespace")
-
-	// TODO: Implement actual graph data retrieval
-	// For now, return a sample graph structure
-	response := map[string]interface{}{
-		"nodes": []map[string]interface{}{
-			{
-				"id":        "namespace1/module1/provider1",
-				"label":     "module1/provider1",
-				"type":      "module_provider",
-				"group":     "published",
-				"namespace": "namespace1",
-			},
-			{
-				"id":        "namespace1/module2/provider1",
-				"label":     "module2/provider1",
-				"type":      "module_provider",
-				"group":     "published",
-				"namespace": "namespace1",
-			},
-		},
-		"edges": []map[string]interface{}{
-			{
-				"from":  "namespace1/module1/provider1",
-				"to":    "namespace1/module2/provider1",
-				"label": "depends on",
-			},
-		},
-		"metadata": map[string]interface{}{
-			"include_beta": includeBeta,
-			"namespace":    namespace,
-			"total_nodes":  2,
-			"total_edges":  1,
-		},
+func NewGraphHandler(
+	getModuleDependencyGraphQuery *graph.GetModuleDependencyGraphQuery,
+) *GraphHandler {
+	return &GraphHandler{
+		getModuleDependencyGraphQuery: getModuleDependencyGraphQuery,
 	}
-
-	RespondJSON(w, http.StatusOK, response)
 }
 
 // HandleModuleDependencyGraph handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/graph
 // Returns dependency graph for a specific module version
 func (h *GraphHandler) HandleModuleDependencyGraph(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// Parse path parameters
 	namespace := chi.URLParam(r, "namespace")
 	moduleName := chi.URLParam(r, "name")
@@ -80,52 +43,24 @@ func (h *GraphHandler) HandleModuleDependencyGraph(w http.ResponseWriter, r *htt
 	includeBeta := r.URL.Query().Get("include-beta") == "true"
 	includeOptional := r.URL.Query().Get("include-optional") == "true"
 
-	// TODO: Implement actual dependency graph retrieval
-	// For now, return a sample dependency graph
-	moduleID := namespace + "/" + moduleName + "/" + provider + "/" + version
-
-	response := map[string]interface{}{
-		"module": map[string]interface{}{
-			"id":        moduleID,
-			"namespace": namespace,
-			"name":      moduleName,
-			"provider":  provider,
-			"version":   version,
-		},
-		"dependencies": []map[string]interface{}{
-			{
-				"id":       "hashicorp/aws/provider",
-				"label":    "hashicorp/aws",
-				"type":     "provider",
-				"version":  ">= 4.0",
-				"optional": false,
-			},
-			{
-				"id":       "hashicorp/null/provider",
-				"label":    "hashicorp/null",
-				"type":     "provider",
-				"version":  "~> 3.0",
-				"optional": false,
-			},
-		},
-		"modules": []map[string]interface{}{
-			{
-				"id":       "hashicorp/consul/aws",
-				"label":    "hashicorp/consul/aws",
-				"type":     "module",
-				"version":  ">= 1.0",
-				"optional": includeOptional,
-			},
-		},
-		"metadata": map[string]interface{}{
-			"include_beta":       includeBeta,
-			"include_optional":   includeOptional,
-			"total_dependencies": 2,
-			"total_modules":      1,
-		},
+	// Create request
+	req := graph.GetModuleDependencyGraphRequest{
+		Namespace:       namespace,
+		ModuleName:      moduleName,
+		Provider:        provider,
+		Version:         version,
+		IncludeBeta:     includeBeta,
+		IncludeOptional: includeOptional,
 	}
 
-	RespondJSON(w, http.StatusOK, response)
+	// Execute query to get module dependency graph
+	graph, err := h.getModuleDependencyGraphQuery.Execute(ctx, req)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, graph)
 }
 
 // HandleGraphExport handles GET /v1/terrareg/graph/export

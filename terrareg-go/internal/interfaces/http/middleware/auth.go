@@ -249,7 +249,6 @@ func (m *AuthMiddleware) RequireNamespacePermission(permissionType, namespacePar
 	}
 }
 
-
 // SetAuthContextInContext sets the auth context in the request context
 func SetAuthContextInContext(ctx context.Context, authCtx *model.AuthContext) context.Context {
 	return context.WithValue(ctx, middlewareAuthContextKey, authCtx)

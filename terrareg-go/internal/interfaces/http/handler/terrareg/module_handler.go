@@ -1133,7 +1133,7 @@ func (h *ModuleHandler) HandleModuleProviderRedirectCreate(w http.ResponseWriter
 	})
 }
 
-// HandleModuleProviderRedirectDelete handles DELETE /v1/terrareg/modules/{namespace}/{name}/{provider}/redirect
+// HandleModuleProviderRedirectDelete handles DELETE /v1/terrareg/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}
 func (h *ModuleHandler) HandleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

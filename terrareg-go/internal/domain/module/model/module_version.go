@@ -864,8 +864,21 @@ func (mv *ModuleVersion) GetGraphURL() string {
 		return ""
 	}
 
-	// Format: /modules/{namespace}/{moduleName}/graph
-	return fmt.Sprintf("/modules/%s/%s/graph", namespace.Name(), moduleName)
+	// Format: /modules/{namespace}/{moduleName}/{provider}/{version}/graph (front-end page)
+	return fmt.Sprintf("/modules/%s/%s/%s/%s/graph", namespace.Name(), moduleName, mv.moduleProvider.Provider(), mv.version.String())
+}
+
+// GetGraphDataURL returns the URL for the graph data API endpoint
+func (mv *ModuleVersion) GetGraphDataURL() string {
+	namespace := mv.moduleProvider.Namespace()
+	moduleName := mv.moduleProvider.Module()
+
+	if namespace == nil {
+		return ""
+	}
+
+	// Format: /v1/terrareg/modules/{namespace}/{moduleName}/{provider}/{version}/graph/data (API endpoint)
+	return fmt.Sprintf("/v1/terrareg/modules/%s/%s/%s/%s/graph/data", namespace.Name(), moduleName, mv.moduleProvider.Provider(), mv.version.String())
 }
 
 // GetModuleExtractionUpToDate checks if module extraction is current
