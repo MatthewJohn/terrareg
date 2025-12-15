@@ -15,12 +15,15 @@ import (
 type ConfigurationService struct {
 	envLoader *config.EnvironmentLoader
 	validator *config.ConfigValidator
+	opts      ConfigurationServiceOptions
 }
 
 // ConfigurationServiceOptions provides configuration for the service
 type ConfigurationServiceOptions struct {
-	AllowHotReload bool
-	ConfigFile     string
+	AllowHotReload     bool
+	ConfigFile         string
+	SSLCertPrivateKey  string // Command-line override for SSL private key path
+	SSLCertPublicKey   string // Command-line override for SSL public key path
 }
 
 // NewConfigurationService creates a new configuration service
@@ -28,6 +31,7 @@ func NewConfigurationService(opts ConfigurationServiceOptions, versionReader *ve
 	return &ConfigurationService{
 		envLoader: config.NewEnvironmentLoader(),
 		validator: config.NewConfigValidator(),
+		opts:      opts,
 	}
 }
 
@@ -147,6 +151,17 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 
 // buildInfrastructureConfig creates infrastructure configuration from raw environment variables
 func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]string) *config.InfrastructureConfig {
+	// SSL/TLS configuration with command-line argument priority
+	sslCertPrivateKey := s.opts.SSLCertPrivateKey
+	if sslCertPrivateKey == "" {
+		sslCertPrivateKey = rawConfig["SSL_CERT_PRIVATE_KEY"]
+	}
+
+	sslCertPublicKey := s.opts.SSLCertPublicKey
+	if sslCertPublicKey == "" {
+		sslCertPublicKey = rawConfig["SSL_CERT_PUBLIC_KEY"]
+	}
+
 	return &config.InfrastructureConfig{
 		// Server settings
 		ListenPort: s.parseInt(rawConfig["LISTEN_PORT"], 5000),
@@ -208,9 +223,9 @@ func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]st
 		TerraformOidcIdpSubjectIdHashSalt: rawConfig["TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT"],
 		TerraformOidcIdpSessionExpiry:     s.parseInt(rawConfig["TERRAFORM_OIDC_IDP_SESSION_EXPIRY"], 3600),
 
-		// SSL/TLS Configuration
-		SSLCertPrivateKey: rawConfig["SSL_CERT_PRIVATE_KEY"],
-		SSLCertPublicKey:  rawConfig["SSL_CERT_PUBLIC_KEY"],
+		// SSL/TLS Configuration with command-line argument priority
+		SSLCertPrivateKey: sslCertPrivateKey,
+		SSLCertPublicKey:  sslCertPublicKey,
 
 		// Complete SAML Configuration
 		SAML2EntityID:       rawConfig["SAML2_ENTITY_ID"],

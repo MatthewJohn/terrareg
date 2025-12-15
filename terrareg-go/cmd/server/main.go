@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -14,6 +15,11 @@ import (
 )
 
 func main() {
+	// Parse command-line flags
+	sslCertPrivateKey := flag.String("ssl-cert-private-key", "", "Path to SSL private key certificate file")
+	sslCertPublicKey := flag.String("ssl-cert-public-key", "", "Path to SSL public key certificate file")
+	flag.Parse()
+
 	// Setup logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -21,7 +27,7 @@ func main() {
 	logger.Info().Msg("Starting Terrareg Go Server")
 
 	// Use new configuration service architecture
-	c, err := bootstrap(logger)
+	c, err := bootstrap(logger, *sslCertPrivateKey, *sslCertPublicKey)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to bootstrap application")
 	}
@@ -37,11 +43,14 @@ func main() {
 }
 
 // bootstrapWithConfigService bootstraps the application using the new configuration service
-func bootstrap(logger zerolog.Logger) (*container.Container, error) {
+func bootstrap(logger zerolog.Logger, sslCertPrivateKey, sslCertPublicKey string) (*container.Container, error) {
 	// Load configuration using the new configuration service
 	versionReader := version.NewVersionReader()
 	configService := domainConfigService.NewConfigurationService(
-		domainConfigService.ConfigurationServiceOptions{},
+		domainConfigService.ConfigurationServiceOptions{
+			SSLCertPrivateKey: sslCertPrivateKey,
+			SSLCertPublicKey: sslCertPublicKey,
+		},
 		versionReader,
 	)
 
