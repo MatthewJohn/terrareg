@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 )
 
 // ProviderExtractorService handles extracting provider metadata from source

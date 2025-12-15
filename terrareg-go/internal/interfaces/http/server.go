@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
@@ -380,12 +381,88 @@ func (s *Server) setupRoutes() {
 	s.router.Get("/providers/{namespace}/{provider}/{version}/docs/{category}/{slug}", s.handleProviderPage)
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server with SSL/TLS and server type configuration
 func (s *Server) Start() error {
 	addr := fmt.Sprintf(":%d", s.infraConfig.ListenPort)
-	s.logger.Info().Str("addr", addr).Msg("Starting HTTP server")
 
-	return http.ListenAndServe(addr, s.router)
+	// Determine if SSL/TLS should be enabled
+	sslEnabled := s.infraConfig.SSLCertPrivateKey != "" && s.infraConfig.SSLCertPublicKey != ""
+
+	if sslEnabled {
+		s.logger.Info().
+			Str("addr", addr).
+			Bool("ssl_enabled", true).
+			Msg("Starting HTTPS server")
+
+		return s.startHTTPS(addr)
+	} else {
+		s.logger.Info().
+			Str("addr", addr).
+			Bool("ssl_enabled", false).
+			Msg("Starting HTTP server")
+
+		return s.startHTTP(addr)
+	}
+}
+
+// startHTTP starts the HTTP server for non-SSL configuration
+func (s *Server) startHTTP(addr string) error {
+	// Use server type configuration from Python terrareg
+	switch s.infraConfig.ServerType {
+	case model.ServerTypeWaitress:
+		// For Waitress compatibility, we could add custom server implementation
+		// For now, use built-in HTTP server
+		s.logger.Warn().
+			Str("server_type", string(s.infraConfig.ServerType)).
+			Msg("Waitress server type not implemented, using built-in HTTP server")
+		fallthrough
+	case model.ServerTypeBuiltin:
+		fallthrough
+	default:
+		// Default built-in server
+		server := &http.Server{
+			Addr:         addr,
+			Handler:      s.router,
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		}
+
+		return server.ListenAndServe()
+	}
+}
+
+// startHTTPS starts the HTTPS server with SSL/TLS configuration
+func (s *Server) startHTTPS(addr string) error {
+	// Load SSL certificates
+	cert, err := tls.LoadX509KeyPair(s.infraConfig.SSLCertPublicKey, s.infraConfig.SSLCertPrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to load SSL certificates: %w", err)
+	}
+
+	// Configure TLS
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+		ServerName:   s.infraConfig.DomainName, // Use domain name from config
+	}
+
+	// Create HTTPS server
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      s.router,
+		TLSConfig:    tlsConfig,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	s.logger.Info().
+		Str("domain", s.infraConfig.DomainName).
+		Str("public_url", s.infraConfig.PublicURL).
+		Msg("HTTPS server configured with SSL certificates")
+
+	return server.ListenAndServeTLS("", "") // Certificates already loaded in TLSConfig
 }
 
 // Router returns the chi router (useful for testing)

@@ -90,7 +90,7 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 		ProviderSources: make(map[string]model.ProviderSourceConfig),
 
 		// Module Processing Configuration
-		AutoPublishModuleVersions:                 s.parseModuleVersionReindexMode(rawConfig["AUTO_PUBLISH_MODULE_VERSIONS"], model.ModuleVersionReindexModeLegacy),
+		AutoPublishModuleVersions:                 s.parseBool(rawConfig["AUTO_PUBLISH_MODULE_VERSIONS"], true),
 		ModuleVersionReindexMode:                 s.parseModuleVersionReindexMode(rawConfig["MODULE_VERSION_REINDEX_MODE"], model.ModuleVersionReindexModeLegacy),
 		ModuleVersionUseGitCommit:                s.parseBool(rawConfig["MODULE_VERSION_USE_GIT_COMMIT"], false),
 		RequiredModuleMetadataAttributes:         s.parseStringSlice(rawConfig["REQUIRED_MODULE_METADATA_ATTRIBUTES"], ","),

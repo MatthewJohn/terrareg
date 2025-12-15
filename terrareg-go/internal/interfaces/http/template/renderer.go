@@ -126,6 +126,33 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 	data["TRUSTED_NAMESPACE_LABEL"] = r.domainConfig.TrustedNamespaceLabel
 	data["CONTRIBUTED_NAMESPACE_LABEL"] = r.domainConfig.ContributedNamespaceLabel
 
+	// Additional UI configuration from domain config
+	data["OPENID_CONNECT_LOGIN_TEXT"] = r.domainConfig.OpenIDConnectLoginText
+	data["SAML2_LOGIN_TEXT"] = r.domainConfig.SAMLLoginText
+	data["ANALYTICS_TOKEN_PHRASE"] = r.domainConfig.AnalyticsTokenPhrase
+	data["ANALYTICS_TOKEN_DESCRIPTION"] = r.domainConfig.AnalyticsTokenDescription
+	data["EXAMPLE_ANALYTICS_TOKEN"] = r.domainConfig.ExampleAnalyticsToken
+	data["DISABLE_ANALYTICS"] = r.domainConfig.DisableAnalytics
+	data["AUTO_CREATE_NAMESPACE"] = r.domainConfig.AutoCreateNamespace
+	data["AUTO_CREATE_MODULE_PROVIDER"] = r.domainConfig.AutoCreateModuleProvider
+	data["DEFAULT_UI_DETAILS_VIEW"] = r.domainConfig.DefaultUiDetailsView
+	data["ADDITIONAL_MODULE_TABS"] = r.domainConfig.AdditionalModuleTabs
+	data["MODULE_LINKS"] = r.domainConfig.ModuleLinks
+
+	// Terraform configuration for UI
+	data["TERRAFORM_EXAMPLE_VERSION_TEMPLATE"] = r.domainConfig.TerraformExampleVersionTemplate
+	data["TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR"] = r.domainConfig.TerraformExampleVersionTemplatePreMajor
+	data["DEFAULT_TERRAFORM_VERSION"] = r.domainConfig.DefaultTerraformVersion
+
+	// GitHub integration configuration
+	data["GITHUB_LOGIN_TEXT"] = r.domainConfig.GithubLoginText
+	data["GITHUB_APP_CLIENT_ID"] = r.domainConfig.GithubAppClientId
+
+	// Authentication status flags for UI
+	data["OPENID_CONNECT_ENABLED"] = r.domainConfig.OpenIDConnectEnabled
+	data["SAML_ENABLED"] = r.domainConfig.SAMLEnabled
+	data["ADMIN_LOGIN_ENABLED"] = r.domainConfig.AdminLoginEnabled
+
 	// Add CSRF token from session context
 	data["csrf_token"] = middleware.GetCSRFToken(ctx)
 

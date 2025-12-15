@@ -109,11 +109,13 @@ func (af *AuthFactory) initializeAuthMethods() {
 	// Register SamlAuthMethod (3rd priority) - only if SAML is configured
 	if af.config.SAML2IDPMetadataURL != "" && af.config.SAML2IssuerEntityID != "" {
 		samlConfig := &infraAuth.SAMLConfig{
-			EntityID:    af.config.SAML2IssuerEntityID,
-			SSOURL:      af.config.SAML2IDPMetadataURL, // This might need adjustment based on actual SAML implementation
-			SLOURL:      "",                            // TODO: Add SLO URL to config if needed
-			Certificate: "",                            // TODO: Add certificate to config if needed
-			PrivateKey:  "",                            // TODO: Add private key to config if needed
+			EntityID:       af.config.SAML2EntityID,
+			SSOURL:         af.config.SAML2IDPMetadataURL,
+			SLOURL:         "", // Optional - can be added if needed
+			Certificate:     af.config.SAML2PublicKey,
+			PrivateKey:      af.config.SAML2PrivateKey,
+			GroupAttribute: af.config.SAML2GroupAttribute,
+			// Note: Debug field not available in SAMLConfig struct - would need to be added if needed
 		}
 		samlAuthMethod := infraAuth.NewSamlAuthMethod(samlConfig, af.userGroupRepo)
 		af.RegisterAuthMethod(samlAuthMethod)
@@ -121,12 +123,19 @@ func (af *AuthFactory) initializeAuthMethods() {
 
 	// Register OpenIDConnectAuthMethod (4th priority) - only if OIDC is configured
 	if af.config.OpenIDConnectClientID != "" && af.config.OpenIDConnectIssuer != "" {
+		// Use configured scopes or fall back to default scopes
+		scopes := af.config.OpenIDConnectScopes
+		if len(scopes) == 0 {
+			scopes = []string{"openid", "profile", "email"} // Default scopes
+		}
+
 		oidcConfig := &infraAuth.OIDCConfig{
 			ClientID:     af.config.OpenIDConnectClientID,
 			ClientSecret: af.config.OpenIDConnectClientSecret,
 			IssuerURL:    af.config.OpenIDConnectIssuer,
-			RedirectURI:  "",                                     // TODO: Add redirect URI to config if needed
-			Scopes:       []string{"openid", "profile", "email"}, // Default scopes
+			RedirectURI:  "", // TODO: Add redirect URI to config if needed
+			Scopes:       scopes,
+			// Note: Debug field not available in OIDCConfig struct - would need to be added if needed
 		}
 		oidcAuthMethod := infraAuth.NewOpenIDConnectAuthMethod(oidcConfig, af.userGroupRepo)
 		af.RegisterAuthMethod(oidcAuthMethod)
