@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -385,9 +386,13 @@ func generatePKCE() (string, string, error) {
 		return "", "", err
 	}
 
-	// TODO: Implement SHA256 to create code_challenge
-	// For now, return empty challenge (PKCE optional)
-	return verifier, "", nil
+	// Create SHA256 hash of verifier
+	hash := sha256.Sum256([]byte(verifier))
+
+	// Base64 URL encode the hash (without padding)
+	challenge := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(hash[:])
+
+	return verifier, challenge, nil
 }
 
 // generateRandomString generates a cryptographically secure random string

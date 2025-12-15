@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
@@ -129,11 +130,19 @@ func (af *AuthFactory) initializeAuthMethods() {
 			scopes = []string{"openid", "profile", "email"} // Default scopes
 		}
 
+		// Build redirect URI from PublicURL
+		redirectURI := ""
+		if af.config.PublicURL != "" {
+			redirectURL, _ := url.Parse(af.config.PublicURL)
+			redirectURL.Path = "/v1/terrareg/auth/oidc/callback"
+			redirectURI = redirectURL.String()
+		}
+
 		oidcConfig := &infraAuth.OIDCConfig{
 			ClientID:     af.config.OpenIDConnectClientID,
 			ClientSecret: af.config.OpenIDConnectClientSecret,
 			IssuerURL:    af.config.OpenIDConnectIssuer,
-			RedirectURI:  "", // TODO: Add redirect URI to config if needed
+			RedirectURI:  redirectURI,
 			Scopes:       scopes,
 			// Note: Debug field not available in OIDCConfig struct - would need to be added if needed
 		}
