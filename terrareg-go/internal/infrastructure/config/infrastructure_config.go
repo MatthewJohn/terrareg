@@ -72,7 +72,7 @@ type InfrastructureConfig struct {
 
 	// SSL/TLS Configuration
 	SSLCertPrivateKey string `env:"SSL_CERT_PRIVATE_KEY"`
-	SSLCertPublicKey   string `env:"SSL_CERT_PUBLIC_KEY"`
+	SSLCertPublicKey  string `env:"SSL_CERT_PUBLIC_KEY"`
 
 	// Complete SAML Configuration
 	SAML2EntityID       string `env:"SAML2_ENTITY_ID"`
@@ -94,13 +94,13 @@ type InfrastructureConfig struct {
 	UpstreamGitCredentialsPassword string `env:"UPSTREAM_GIT_CREDENTIALS_PASSWORD"`
 
 	// Server Configuration
-	ServerType      model.ServerType `env:"SERVER"`
-	Threaded        bool       `env:"THREADED"`
-	AllowedProviders []string   `env:"ALLOWED_PROVIDERS"`
+	ServerType       model.ServerType `env:"SERVER"`
+	Threaded         bool             `env:"THREADED"`
+	AllowedProviders []string         `env:"ALLOWED_PROVIDERS"`
 
 	// Terraform Presigned URL Configuration
-	TerraformPresignedUrlSecret          string `env:"TERRAFORM_PRESIGNED_URL_SECRET"`
-	TerraformPresignedUrlExpirySeconds   int    `env:"TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS"`
+	TerraformPresignedUrlSecret        string `env:"TERRAFORM_PRESIGNED_URL_SECRET"`
+	TerraformPresignedUrlExpirySeconds int    `env:"TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS"`
 
 	// Additional infrastructure settings
 	// Note: Add any other infrastructure-specific settings here

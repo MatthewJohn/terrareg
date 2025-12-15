@@ -69,18 +69,18 @@ func (f *TestDataFactory) CreateModuleProvider(namespaceID int, overrides ...Mod
 	f.moduleCounter++
 
 	module := sqldb.ModuleProviderDB{
-		NamespaceID:          namespaceID,
-		Module:               f.generateModuleName(),
-		Provider:             f.generateProviderName(),
-		Verified:             nil, // false by default
-		GitProviderID:        nil,
-		RepoBaseURLTemplate:  nil,
-		RepoCloneURLTemplate: nil,
+		NamespaceID:           namespaceID,
+		Module:                f.generateModuleName(),
+		Provider:              f.generateProviderName(),
+		Verified:              nil, // false by default
+		GitProviderID:         nil,
+		RepoBaseURLTemplate:   nil,
+		RepoCloneURLTemplate:  nil,
 		RepoBrowseURLTemplate: nil,
-		GitTagFormat:         nil,
-		GitPath:              nil,
-		ArchiveGitPath:       false,
-		LatestVersionID:      nil,
+		GitTagFormat:          nil,
+		GitPath:               nil,
+		ArchiveGitPath:        false,
+		LatestVersionID:       nil,
 	}
 
 	// Apply overrides
@@ -205,8 +205,8 @@ func WithOwner(owner string) ModuleVersionOverride {
 // CreateModuleDetails creates test module details
 func (f *TestDataFactory) CreateModuleDetails(overrides ...ModuleDetailsOverride) sqldb.ModuleDetailsDB {
 	details := sqldb.ModuleDetailsDB{
-		ReadmeContent:     []byte("# Test Module\n\nThis is a test module for testing purposes."),
-		TerraformDocs:     []byte(`{"variables": [], "outputs": [], "resources": []}`),
+		ReadmeContent:    []byte("# Test Module\n\nThis is a test module for testing purposes."),
+		TerraformDocs:    []byte(`{"variables": [], "outputs": [], "resources": []}`),
 		Tfsec:            []byte(`{"results": [], "summary": {"total": 0}}`),
 		Infracost:        []byte(`{"total_monthly_cost": 0, "projects": []}`),
 		TerraformGraph:   []byte(`{"nodes": [], "edges": []}`),
@@ -291,12 +291,12 @@ func WithMembers(members ...string) UserGroupOverride {
 // CreateAnalytics creates test analytics data
 func (f *TestDataFactory) CreateAnalytics(moduleVersionID int, overrides ...AnalyticsOverride) sqldb.AnalyticsDB {
 	analytics := sqldb.AnalyticsDB{
-		ModuleVersionID:      moduleVersionID,
-		AnalyticsToken:       f.generateAnalyticsToken(),
-		Version:              "1.0.0",
-		AuditAction:          "download",
+		ModuleVersionID:       moduleVersionID,
+		AnalyticsToken:        f.generateAnalyticsToken(),
+		Version:               "1.0.0",
+		AuditAction:           "download",
 		AdditionalInformation: nil,
-		CreatedAt:            time.Now(),
+		CreatedAt:             time.Now(),
 	}
 
 	// Apply overrides
@@ -335,10 +335,10 @@ func WithCreatedAt(createdAt time.Time) AnalyticsOverride {
 func (f *TestDataFactory) CreateSubmodule(parentModuleVersionID, moduleDetailsID int, overrides ...SubmoduleOverride) sqldb.SubmoduleDB {
 	submodule := sqldb.SubmoduleDB{
 		ParentModuleVersion: parentModuleVersionID,
-		Path:               "submodule",
-		Name:               &[]string{"Test Submodule"}[0],
-		Type:               &[]string{"module"}[0],
-		ModuleDetailsID:    &moduleDetailsID,
+		Path:                "submodule",
+		Name:                &[]string{"Test Submodule"}[0],
+		Type:                &[]string{"module"}[0],
+		ModuleDetailsID:     &moduleDetailsID,
 	}
 
 	// Apply overrides

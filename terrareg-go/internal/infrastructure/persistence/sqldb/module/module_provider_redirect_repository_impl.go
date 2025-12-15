@@ -25,10 +25,10 @@ func NewModuleProviderRedirectRepository(db *gorm.DB) *ModuleProviderRedirectRep
 // Create creates a new module provider redirect (implements command interface)
 func (r *ModuleProviderRedirectRepositoryImpl) Create(ctx context.Context, req moduleCmd.CreateModuleProviderRedirectRequest) error {
 	redirect := &repository.ModuleProviderRedirect{
-		ModuleProviderID:   req.ToModuleProviderID,
-		NamespaceID:        0, // Will need to fetch this from the module provider
-		Module:             req.FromModule,
-		Provider:           req.FromProvider,
+		ModuleProviderID: req.ToModuleProviderID,
+		NamespaceID:      0, // Will need to fetch this from the module provider
+		Module:           req.FromModule,
+		Provider:         req.FromProvider,
 	}
 
 	// First, get the namespace ID from the module provider
@@ -102,10 +102,10 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetAll(ctx context.Context) ([]*m
 	var redirects []*moduleCmd.ModuleProviderRedirect
 	for _, result := range results {
 		redirects = append(redirects, &moduleCmd.ModuleProviderRedirect{
-			ID:               result.ID,
-			FromNamespace:    result.NamespaceName,
-			FromModule:       result.FromModule,
-			FromProvider:     result.FromProvider,
+			ID:                 result.ID,
+			FromNamespace:      result.NamespaceName,
+			FromModule:         result.FromModule,
+			FromProvider:       result.FromProvider,
 			ToModuleProviderID: result.ModuleProviderID,
 		})
 	}
@@ -147,10 +147,10 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetByFrom(ctx context.Context, na
 	}
 
 	return &moduleCmd.ModuleProviderRedirect{
-		ID:               redirect.ID,
-		FromNamespace:    redirect.NamespaceName,
-		FromModule:       redirect.Module,
-		FromProvider:     redirect.Provider,
+		ID:                 redirect.ID,
+		FromNamespace:      redirect.NamespaceName,
+		FromModule:         redirect.Module,
+		FromProvider:       redirect.Provider,
 		ToModuleProviderID: redirect.ModuleProviderID,
 	}, nil
 }

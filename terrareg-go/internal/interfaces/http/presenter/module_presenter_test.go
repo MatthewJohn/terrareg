@@ -9,8 +9,8 @@ import (
 // TestModulePresenter_BasicFunctionality tests basic presenter functionality patterns
 func TestModulePresenter_BasicFunctionality(t *testing.T) {
 	tests := []struct {
-		name        string
-		testFunc    func(t *testing.T)
+		name     string
+		testFunc func(t *testing.T)
 	}{
 		{
 			name: "presenter pattern validation",
@@ -42,8 +42,8 @@ func TestModulePresenter_BasicFunctionality(t *testing.T) {
 // TestModulePresenter_DTOConversionPatterns tests DTO conversion patterns
 func TestModulePresenter_DTOConversionPatterns(t *testing.T) {
 	tests := []struct {
-		name        string
-		testFunc    func(t *testing.T)
+		name     string
+		testFunc func(t *testing.T)
 	}{
 		{
 			name: "module ID format validation",

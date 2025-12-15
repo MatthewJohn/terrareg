@@ -22,14 +22,14 @@ type ProviderModel struct {
 	UpdatedAt             time.Time `gorm:"autoUpdateTime"`
 
 	// Associations
-	Namespace    NamespaceModel    `gorm:"foreignKey:NamespaceID"`
-	Category     *ProviderCategoryModel `gorm:"foreignKey:CategoryID"`
-	Repository   *RepositoryModel  `gorm:"foreignKey:RepositoryID"`
-	LatestVersion *ProviderVersionModel `gorm:"foreignKey:LatestVersionID"`
+	Namespace     NamespaceModel         `gorm:"foreignKey:NamespaceID"`
+	Category      *ProviderCategoryModel `gorm:"foreignKey:CategoryID"`
+	Repository    *RepositoryModel       `gorm:"foreignKey:RepositoryID"`
+	LatestVersion *ProviderVersionModel  `gorm:"foreignKey:LatestVersionID"`
 
 	// Collections (loaded with eager loading or separately)
 	Versions []ProviderVersionModel `gorm:"foreignKey:ProviderID"`
-	GPGKeys  []GPGKeyModel         `gorm:"foreignKey:ProviderID"`
+	GPGKeys  []GPGKeyModel          `gorm:"foreignKey:ProviderID"`
 }
 
 // TableName specifies the table name for the ProviderModel
@@ -39,14 +39,14 @@ func (ProviderModel) TableName() string {
 
 // ProviderVersionModel represents the database model for provider versions
 type ProviderVersionModel struct {
-	ID               int      `gorm:"primaryKey;autoIncrement"`
-	ProviderID       int      `gorm:"not null;index"`
-	Version          string   `gorm:"not null;size:50;index:idx_version_provider"`
-	GitTag           *string  `gorm:"size:255"`
-	Beta             bool     `gorm:"default:false"`
+	ID               int     `gorm:"primaryKey;autoIncrement"`
+	ProviderID       int     `gorm:"not null;index"`
+	Version          string  `gorm:"not null;size:50;index:idx_version_provider"`
+	GitTag           *string `gorm:"size:255"`
+	Beta             bool    `gorm:"default:false"`
 	PublishedAt      *time.Time
-	GPGKeyID         *int     `gorm:"index"`
-	ProtocolVersions string   `gorm:"type:text"` // JSON array of protocol versions
+	GPGKeyID         *int      `gorm:"index"`
+	ProtocolVersions string    `gorm:"type:text"` // JSON array of protocol versions
 	CreatedAt        time.Time `gorm:"autoCreateTime"`
 	UpdatedAt        time.Time `gorm:"autoUpdateTime"`
 
@@ -65,14 +65,14 @@ func (ProviderVersionModel) TableName() string {
 
 // ProviderBinaryModel represents the database model for provider binaries
 type ProviderBinaryModel struct {
-	ID              int    `gorm:"primaryKey;autoIncrement"`
-	VersionID       int    `gorm:"not null;index"`
-	OperatingSystem string `gorm:"not null;size:50"`
-	Architecture    string `gorm:"not null;size:50"`
-	FileName        string `gorm:"not null;size:255"`
-	FileSize        int64  `gorm:"not null"`
-	FileHash        string `gorm:"not null;size:64;index"`
-	DownloadURL     string `gorm:"not null;size:500"`
+	ID              int       `gorm:"primaryKey;autoIncrement"`
+	VersionID       int       `gorm:"not null;index"`
+	OperatingSystem string    `gorm:"not null;size:50"`
+	Architecture    string    `gorm:"not null;size:50"`
+	FileName        string    `gorm:"not null;size:255"`
+	FileSize        int64     `gorm:"not null"`
+	FileHash        string    `gorm:"not null;size:64;index"`
+	DownloadURL     string    `gorm:"not null;size:500"`
 	CreatedAt       time.Time `gorm:"autoCreateTime"`
 	UpdatedAt       time.Time `gorm:"autoUpdateTime"`
 

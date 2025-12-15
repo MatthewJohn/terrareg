@@ -1,9 +1,9 @@
 package module
 
 import (
-	"context"
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
@@ -12,8 +12,8 @@ import (
 
 // GenerateModuleSourceCommand handles generating source archives for module versions
 type GenerateModuleSourceCommand struct {
-	moduleProviderRepo     moduleRepo.ModuleProviderRepository
-	moduleFileService      *moduleService.ModuleFileService
+	moduleProviderRepo moduleRepo.ModuleProviderRepository
+	moduleFileService  *moduleService.ModuleFileService
 }
 
 // NewGenerateModuleSourceCommand creates a new generate module source command
@@ -37,10 +37,10 @@ type GenerateModuleSourceRequest struct {
 
 // GenerateModuleSourceResponse represents the generated module source archive
 type GenerateModuleSourceResponse struct {
-	Filename     string
-	ContentType  string
-	Content      []byte
-	ContentSize  int64
+	Filename    string
+	ContentType string
+	Content     []byte
+	ContentSize int64
 }
 
 // Execute generates a source archive for the module version

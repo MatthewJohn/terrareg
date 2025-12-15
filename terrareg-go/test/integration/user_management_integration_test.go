@@ -34,12 +34,12 @@ func TestUserManagementIntegration(t *testing.T) {
 	getSessionQuery := auth.NewGetSessionQuery(sessionRepo)
 	deleteSessionCmd := auth.NewDeleteSessionCommand(sessionRepo)
 
- createUserGroupCmd := auth.NewCreateUserGroupCommand(userGroupRepo)
+	createUserGroupCmd := auth.NewCreateUserGroupCommand(userGroupRepo)
 	getUserGroupQuery := auth.NewGetUserGroupQuery(userGroupRepo)
 	updateUserGroupCmd := auth.NewUpdateUserGroupCommand(userGroupRepo)
 	deleteUserGroupCmd := auth.NewDeleteUserGroupCommand(userGroupRepo)
 
- grantPermissionCmd := auth.NewGrantUserGroupNamespacePermissionCommand(userGroupNamespacePermissionRepo)
+	grantPermissionCmd := auth.NewGrantUserGroupNamespacePermissionCommand(userGroupNamespacePermissionRepo)
 	revokePermissionCmd := auth.NewRevokeUserGroupNamespacePermissionCommand(userGroupNamespacePermissionRepo)
 	getUserGroupPermissionsQuery := auth.NewGetUserGroupNamespacePermissionsQuery(userGroupNamespacePermissionRepo)
 

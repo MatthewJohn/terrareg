@@ -8,7 +8,7 @@ import (
 // SecurityService handles security-related operations for module files
 type SecurityService struct {
 	allowedFileTypes map[string]bool
-	pathValidator     *regexp.Regexp
+	pathValidator    *regexp.Regexp
 }
 
 // NewSecurityService creates a new security service

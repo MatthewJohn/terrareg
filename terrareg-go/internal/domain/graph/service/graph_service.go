@@ -42,10 +42,10 @@ func (s *GraphService) ParseModuleDependencyGraph(
 	modelDependencies := make([]model.DependencyNode, len(dependencies))
 	for i, dep := range dependencies {
 		modelDep := model.DependencyNode{
-			ID:      dep.Source,
-			Label:   dep.Source,
-			Type:    dep.Type,
-			Version: dep.Version,
+			ID:       dep.Source,
+			Label:    dep.Source,
+			Type:     dep.Type,
+			Version:  dep.Version,
 			Optional: dep.Optional,
 		}
 		modelDependencies[i] = modelDep
@@ -55,10 +55,10 @@ func (s *GraphService) ParseModuleDependencyGraph(
 	modelModules := make([]model.DependencyNode, len(modules))
 	for i, mod := range modules {
 		modelMod := model.DependencyNode{
-			ID:      mod.Source,
-			Label:   mod.Source,
-			Type:    mod.Type,
-			Version: mod.Version,
+			ID:       mod.Source,
+			Label:    mod.Source,
+			Type:     mod.Type,
+			Version:  mod.Version,
 			Optional: mod.Optional,
 		}
 		modelModules[i] = modelMod
@@ -78,9 +78,9 @@ func (s *GraphService) ParseModuleDependencyGraph(
 	}
 
 	return &model.ModuleDependencyGraph{
-		Module:        moduleNode,
+		Module:       moduleNode,
 		Dependencies: modelDependencies,
-		Modules:       modelModules,
+		Modules:      modelModules,
 		Metadata: model.ModuleGraphMetadata{
 			IncludeBeta:       includeBeta,
 			IncludeOptional:   includeOptional,

@@ -30,10 +30,10 @@ type ModuleProviderRedirectRepository interface {
 
 // ModuleProviderRedirect represents a module provider redirect
 type ModuleProviderRedirect struct {
-	ID               int
-	FromNamespace    string
-	FromModule       string
-	FromProvider     string
+	ID                 int
+	FromNamespace      string
+	FromModule         string
+	FromProvider       string
 	ToModuleProviderID int
 }
 

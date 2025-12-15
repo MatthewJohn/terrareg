@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
-	
+	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 )
 
 // GetReadmeHTMLQuery retrieves README HTML content for a module version
 type GetReadmeHTMLQuery struct {
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
-	markdownService     *sharedService.MarkdownService
+	markdownService    *sharedService.MarkdownService
 }
 
 // NewGetReadmeHTMLQuery creates a new query
@@ -22,7 +21,7 @@ func NewGetReadmeHTMLQuery(
 ) *GetReadmeHTMLQuery {
 	return &GetReadmeHTMLQuery{
 		moduleProviderRepo: moduleProviderRepo,
-		markdownService:     markdownService,
+		markdownService:    markdownService,
 	}
 }
 

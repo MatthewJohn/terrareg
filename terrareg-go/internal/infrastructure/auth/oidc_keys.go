@@ -100,7 +100,7 @@ func (m *OIDCKeyManager) loadKeyFromFile(keyPath string) error {
 	m.mu.Lock()
 	m.keys[keyID] = privateKey
 	m.keyIDs = append([]string{keyID}, m.keyIDs...) // Config keys first
-	m.keyCache = nil // Invalidate cache
+	m.keyCache = nil                                // Invalidate cache
 	m.mu.Unlock()
 
 	return nil
@@ -124,7 +124,7 @@ func (m *OIDCKeyManager) generateNewKey() error {
 	m.mu.Lock()
 	m.keys[keyID] = privateKey
 	m.keyIDs = append([]string{keyID}, m.keyIDs...) // Newest keys first
-	m.keyCache = nil // Invalidate cache
+	m.keyCache = nil                                // Invalidate cache
 	m.mu.Unlock()
 
 	return nil

@@ -42,7 +42,6 @@ type ModuleVersionDetailsResponse struct {
 	VersionDetails
 }
 
-
 // SubmoduleResponse for submodules (uses ModuleSpecs)
 type SubmoduleResponse struct {
 	ModuleSpecs

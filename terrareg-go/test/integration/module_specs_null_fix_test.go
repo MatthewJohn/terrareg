@@ -2,8 +2,8 @@ package integration
 
 import (
 	"encoding/json"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/terrareg"
 )
@@ -82,12 +82,12 @@ func TestModuleProviderDetailsResponse_JSON_EmptyArrays(t *testing.T) {
 			Resources:            []terrareg.TerraregResource{},
 			Modules:              []terrareg.TerraregModule{},
 		},
-		Submodules: []terrareg.TerraregModuleSpecs{},
-		Providers:  []string{},
+		Submodules:  []terrareg.TerraregModuleSpecs{},
+		Providers:   []string{},
 		CustomLinks: []terrareg.TerraregCustomLink{},
 		// Initialize other slice fields that could be null
 		AdditionalTabFiles: map[string]string{},
-		SecurityResults:     []terrareg.TerraregSecurityResult{},
+		SecurityResults:    []terrareg.TerraregSecurityResult{},
 	}
 
 	// Serialize to JSON

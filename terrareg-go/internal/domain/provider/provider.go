@@ -10,14 +10,14 @@ import (
 
 // Domain errors for Provider aggregate
 var (
-	ErrInvalidVersion               = errors.New("invalid version format")
-	ErrVersionAlreadyExists         = errors.New("version already exists")
-	ErrVersionNotFound              = errors.New("version not found")
-	ErrCannotRemoveLatestVersion    = errors.New("cannot remove latest version")
-	ErrGPGKeyNotFound               = errors.New("GPG key not found")
-	ErrGPGKeyAlreadyExists          = errors.New("GPG key already exists")
-	ErrInvalidBinaryPlatform        = errors.New("invalid binary platform")
-	ErrBinaryAlreadyExists          = errors.New("binary already exists for platform")
+	ErrInvalidVersion            = errors.New("invalid version format")
+	ErrVersionAlreadyExists      = errors.New("version already exists")
+	ErrVersionNotFound           = errors.New("version not found")
+	ErrCannotRemoveLatestVersion = errors.New("cannot remove latest version")
+	ErrGPGKeyNotFound            = errors.New("GPG key not found")
+	ErrGPGKeyAlreadyExists       = errors.New("GPG key already exists")
+	ErrInvalidBinaryPlatform     = errors.New("invalid binary platform")
+	ErrBinaryAlreadyExists       = errors.New("binary already exists for platform")
 )
 
 // GPGKey represents a GPG key value object
@@ -45,9 +45,9 @@ func NewGPGKey(keyText, asciiArmor, keyID, trustSignature string) (*GPGKey, erro
 
 	now := time.Now()
 	return &GPGKey{
-		keyText:        keyText,
-		asciiArmor:     asciiArmor,
-		keyID:          keyID,
+		keyText:    keyText,
+		asciiArmor: asciiArmor,
+		keyID:      keyID,
 		trustSignature: func() *string {
 			if trustSignature != "" {
 				return &trustSignature
@@ -90,10 +90,10 @@ func (g *GPGKey) CreatedAt() time.Time    { return g.createdAt }
 func (g *GPGKey) UpdatedAt() time.Time    { return g.updatedAt }
 
 // Setters for repository operations
-func (g *GPGKey) SetID(id int)                { g.id = id }
-func (g *GPGKey) SetKeyText(keyText string)   { g.keyText = keyText }
-func (g *GPGKey) SetAsciiArmor(armor string)  { g.asciiArmor = armor }
-func (g *GPGKey) SetKeyID(keyID string)       { g.keyID = keyID }
+func (g *GPGKey) SetID(id int)               { g.id = id }
+func (g *GPGKey) SetKeyText(keyText string)  { g.keyText = keyText }
+func (g *GPGKey) SetAsciiArmor(armor string) { g.asciiArmor = armor }
+func (g *GPGKey) SetKeyID(keyID string)      { g.keyID = keyID }
 func (g *GPGKey) SetTrustSignature(sig *string) {
 	g.trustSignature = sig
 	g.updatedAt = time.Now()
@@ -169,13 +169,13 @@ func (b *ProviderBinary) FileHash() string        { return b.fileHash }
 func (b *ProviderBinary) DownloadURL() string     { return b.downloadURL }
 
 // Setters for repository operations
-func (b *ProviderBinary) SetID(id int)                    { b.id = id }
-func (b *ProviderBinary) SetVersionID(versionID int)      { b.versionID = versionID }
-func (b *ProviderBinary) SetOperatingSystem(os string)    { b.operatingSystem = os }
-func (b *ProviderBinary) SetArchitecture(arch string)     { b.architecture = arch }
-func (b *ProviderBinary) SetFileName(fileName string)     { b.fileName = fileName }
-func (b *ProviderBinary) SetFileSize(fileSize int64)      { b.fileSize = fileSize }
-func (b *ProviderBinary) SetFileHash(fileHash string)     { b.fileHash = fileHash }
+func (b *ProviderBinary) SetID(id int)                      { b.id = id }
+func (b *ProviderBinary) SetVersionID(versionID int)        { b.versionID = versionID }
+func (b *ProviderBinary) SetOperatingSystem(os string)      { b.operatingSystem = os }
+func (b *ProviderBinary) SetArchitecture(arch string)       { b.architecture = arch }
+func (b *ProviderBinary) SetFileName(fileName string)       { b.fileName = fileName }
+func (b *ProviderBinary) SetFileSize(fileSize int64)        { b.fileSize = fileSize }
+func (b *ProviderBinary) SetFileHash(fileHash string)       { b.fileHash = fileHash }
 func (b *ProviderBinary) SetDownloadURL(downloadURL string) { b.downloadURL = downloadURL }
 
 // ProviderVersion represents a provider version
@@ -251,21 +251,23 @@ func (pv *ProviderVersion) ProtocolVersions() []string  { return pv.protocolVers
 func (pv *ProviderVersion) Binaries() []*ProviderBinary { return pv.binaries }
 
 // Setters for repository operations
-func (pv *ProviderVersion) SetID(id int)                       { pv.id = id }
-func (pv *ProviderVersion) SetProviderID(providerID int)       { pv.providerID = providerID }
-func (pv *ProviderVersion) SetVersion(version string)          { pv.version = version }
-func (pv *ProviderVersion) SetGitTag(gitTag *string)           { pv.gitTag = gitTag }
-func (pv *ProviderVersion) SetBeta(beta bool)                  { pv.beta = beta }
+func (pv *ProviderVersion) SetID(id int)                          { pv.id = id }
+func (pv *ProviderVersion) SetProviderID(providerID int)          { pv.providerID = providerID }
+func (pv *ProviderVersion) SetVersion(version string)             { pv.version = version }
+func (pv *ProviderVersion) SetGitTag(gitTag *string)              { pv.gitTag = gitTag }
+func (pv *ProviderVersion) SetBeta(beta bool)                     { pv.beta = beta }
 func (pv *ProviderVersion) SetPublishedAt(publishedAt *time.Time) { pv.publishedAt = publishedAt }
-func (pv *ProviderVersion) SetGPGKeyID(gpgKeyID int)           { pv.gpgKeyID = gpgKeyID }
-func (pv *ProviderVersion) SetProtocolVersions(protocolVersions []string) { pv.protocolVersions = protocolVersions }
+func (pv *ProviderVersion) SetGPGKeyID(gpgKeyID int)              { pv.gpgKeyID = gpgKeyID }
+func (pv *ProviderVersion) SetProtocolVersions(protocolVersions []string) {
+	pv.protocolVersions = protocolVersions
+}
 
 // AddBinary adds a binary to the provider version
 func (pv *ProviderVersion) AddBinary(binary *ProviderBinary) error {
 	// Check if binary already exists for this platform
 	for _, existingBinary := range pv.binaries {
 		if existingBinary.OperatingSystem() == binary.OperatingSystem() &&
-		   existingBinary.Architecture() == binary.Architecture() {
+			existingBinary.Architecture() == binary.Architecture() {
 			return ErrBinaryAlreadyExists
 		}
 	}
@@ -563,7 +565,7 @@ func ValidateGPGKeyFormat(keyText string) error {
 
 	// Basic validation - check if it looks like a GPG key
 	if !strings.Contains(keyText, "-----BEGIN PGP") ||
-	   !strings.Contains(keyText, "-----END PGP") {
+		!strings.Contains(keyText, "-----END PGP") {
 		return fmt.Errorf("invalid GPG key format: missing PGP headers")
 	}
 

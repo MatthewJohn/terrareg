@@ -423,12 +423,12 @@ func testGitHubWebhook(t *testing.T, client *http.Client, baseURL string) {
 	payload := map[string]interface{}{
 		"ref": "refs/tags/v1.0.1",
 		"repository": map[string]interface{}{
-			"name": "terraform-test-module",
+			"name":      "terraform-test-module",
 			"full_name": "myorg/terraform-test-module",
-			"private": false,
+			"private":   false,
 		},
 		"head_commit": map[string]interface{}{
-			"id": "abc123def456",
+			"id":      "abc123def456",
 			"message": "Release v1.0.1",
 		},
 		"sender": map[string]interface{}{
@@ -464,12 +464,12 @@ func testGitLabWebhook(t *testing.T, client *http.Client, baseURL string) {
 	// Simulate GitLab push webhook for a new tag
 	payload := map[string]interface{}{
 		"object_kind": "push",
-		"ref": "refs/tags/v1.0.2",
+		"ref":         "refs/tags/v1.0.2",
 		"project": map[string]interface{}{
-			"name": "terraform-test-module",
+			"name":                "terraform-test-module",
 			"path_with_namespace": "webhook-test/terraform-test-module",
 		},
-		"checkout_sha": "def456abc123",
+		"checkout_sha":  "def456abc123",
 		"user_username": "testuser",
 	}
 
@@ -499,9 +499,9 @@ func testBitBucketWebhook(t *testing.T, client *http.Client, baseURL string) {
 			"nickname": "testuser",
 		},
 		"repository": map[string]interface{}{
-			"name": "terraform-test-module",
+			"name":     "terraform-test-module",
 			"fullName": "webhook-test/terraform-test-module",
-			"scm": "git",
+			"scm":      "git",
 		},
 		"push": map[string]interface{}{
 			"changes": []map[string]interface{}{

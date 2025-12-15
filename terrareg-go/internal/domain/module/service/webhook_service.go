@@ -19,7 +19,7 @@ type WebhookResult struct {
 type WebhookService struct {
 	moduleImporterService *ModuleImporterService
 	moduleProviderRepo    repository.ModuleProviderRepository
-	config               *infraConfig.InfrastructureConfig
+	config                *infraConfig.InfrastructureConfig
 }
 
 // NewWebhookService creates a new webhook service
@@ -31,7 +31,7 @@ func NewWebhookService(
 	return &WebhookService{
 		moduleImporterService: moduleImporterService,
 		moduleProviderRepo:    moduleProviderRepo,
-		config:               config,
+		config:                config,
 	}
 }
 

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // GitImportService handles importing modules from Git repositories

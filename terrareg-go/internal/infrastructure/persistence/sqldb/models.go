@@ -249,9 +249,9 @@ type ModuleProviderSearchResult struct {
 	LatestVersionID       *int    `gorm:"column:module_provider_latest_version_id"`
 
 	// Namespace fields
-	NamespaceName         string  `gorm:"column:namespace_namespace"`
-	NamespaceDisplayName  string  `gorm:"column:namespace_display_name"`
-	NamespaceType         string  `gorm:"column:namespace_type"`
+	NamespaceName        string `gorm:"column:namespace_namespace"`
+	NamespaceDisplayName string `gorm:"column:namespace_display_name"`
+	NamespaceType        string `gorm:"column:namespace_type"`
 
 	// Search relevance score
 	RelevanceScore *int `gorm:"column:relevance_score"`
@@ -602,15 +602,15 @@ func (AuditHistoryDB) TableName() string {
 
 // AuthenticationTokenDB represents authentication tokens for API access
 type AuthenticationTokenDB struct {
-	ID          int    `gorm:"primaryKey;autoIncrement"`
-	TokenType   string `gorm:"type:enum('admin','upload','publish');not null"`
-	TokenValue  string `gorm:"type:varchar(255);not null;uniqueIndex"`
-	NamespaceID *int   `gorm:"default:null"` // Only for publish tokens
-	Description string `gorm:"type:text;not null"`
-	CreatedAt   time.Time `gorm:"not null"`
+	ID          int        `gorm:"primaryKey;autoIncrement"`
+	TokenType   string     `gorm:"type:enum('admin','upload','publish');not null"`
+	TokenValue  string     `gorm:"type:varchar(255);not null;uniqueIndex"`
+	NamespaceID *int       `gorm:"default:null"` // Only for publish tokens
+	Description string     `gorm:"type:text;not null"`
+	CreatedAt   time.Time  `gorm:"not null"`
 	ExpiresAt   *time.Time `gorm:"default:null"`
-	IsActive    bool   `gorm:"default:true;not null"`
-	CreatedBy   string `gorm:"type:varchar(128);not null"`
+	IsActive    bool       `gorm:"default:true;not null"`
+	CreatedBy   string     `gorm:"type:varchar(128);not null"`
 
 	// Relationships
 	Namespace *NamespaceDB `gorm:"foreignKey:NamespaceID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`

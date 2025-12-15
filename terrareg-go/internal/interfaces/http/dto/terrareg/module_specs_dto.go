@@ -3,15 +3,15 @@ package terrareg
 // TerraregModuleSpecs contains Terraform module specification data.
 // This matches Python's get_api_module_specs() with additional terrareg-specific 'modules' field.
 type TerraregModuleSpecs struct {
-	Path                 string                    `json:"path"`
-	Readme               string                    `json:"readme"`            // HTML sanitized
-	Empty                bool                      `json:"empty"`
-	Inputs               []TerraregInput           `json:"inputs"`
-	Outputs              []TerraregOutput          `json:"outputs"`
-	Dependencies         []TerraregDependency      `json:"dependencies"`
-	ProviderDependencies []TerraregProviderDep     `json:"provider_dependencies"`
-	Resources            []TerraregResource        `json:"resources"`
-	Modules              []TerraregModule          `json:"modules"`            // Additional terrareg field (not in standard API)
+	Path                 string                `json:"path"`
+	Readme               string                `json:"readme"` // HTML sanitized
+	Empty                bool                  `json:"empty"`
+	Inputs               []TerraregInput       `json:"inputs"`
+	Outputs              []TerraregOutput      `json:"outputs"`
+	Dependencies         []TerraregDependency  `json:"dependencies"`
+	ProviderDependencies []TerraregProviderDep `json:"provider_dependencies"`
+	Resources            []TerraregResource    `json:"resources"`
+	Modules              []TerraregModule      `json:"modules"` // Additional terrareg field (not in standard API)
 }
 
 // TerraregInput represents a Terraform input variable with additional terrareg fields.
@@ -23,7 +23,7 @@ type TerraregInput struct {
 	Default        interface{} `json:"default"`
 	AdditionalHelp *string     `json:"additional_help"` // Terrareg-specific field
 	QuoteValue     bool        `json:"quote_value"`     // Terrareg-specific field
-	Sensitive      bool        `json:"sensitive"`      // Terrareg-specific field
+	Sensitive      bool        `json:"sensitive"`       // Terrareg-specific field
 }
 
 // TerraregOutput represents a Terraform output.

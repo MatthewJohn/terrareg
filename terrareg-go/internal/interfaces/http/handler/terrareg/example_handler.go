@@ -10,10 +10,10 @@ import (
 
 // ExampleHandler handles example-related requests
 type ExampleHandler struct {
-	getExampleDetailsQuery   *module.GetExampleDetailsQuery
+	getExampleDetailsQuery    *module.GetExampleDetailsQuery
 	getExampleReadmeHTMLQuery *module.GetExampleReadmeHTMLQuery
-	getExampleFileListQuery  *module.GetExampleFileListQuery
-	getExampleFileQuery      *module.GetExampleFileQuery
+	getExampleFileListQuery   *module.GetExampleFileListQuery
+	getExampleFileQuery       *module.GetExampleFileQuery
 }
 
 // NewExampleHandler creates a new example handler
@@ -24,10 +24,10 @@ func NewExampleHandler(
 	getExampleFileQuery *module.GetExampleFileQuery,
 ) *ExampleHandler {
 	return &ExampleHandler{
-		getExampleDetailsQuery:   getExampleDetailsQuery,
+		getExampleDetailsQuery:    getExampleDetailsQuery,
 		getExampleReadmeHTMLQuery: getExampleReadmeHTMLQuery,
-		getExampleFileListQuery:  getExampleFileListQuery,
-		getExampleFileQuery:      getExampleFileQuery,
+		getExampleFileListQuery:   getExampleFileListQuery,
+		getExampleFileQuery:       getExampleFileQuery,
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 
 // SubmoduleHandler handles submodule-related requests
 type SubmoduleHandler struct {
-	getSubmoduleDetailsQuery   *module.GetSubmoduleDetailsQuery
+	getSubmoduleDetailsQuery    *module.GetSubmoduleDetailsQuery
 	getSubmoduleReadmeHTMLQuery *module.GetSubmoduleReadmeHTMLQuery
 }
 
@@ -20,7 +20,7 @@ func NewSubmoduleHandler(
 	getSubmoduleReadmeHTMLQuery *module.GetSubmoduleReadmeHTMLQuery,
 ) *SubmoduleHandler {
 	return &SubmoduleHandler{
-		getSubmoduleDetailsQuery:   getSubmoduleDetailsQuery,
+		getSubmoduleDetailsQuery:    getSubmoduleDetailsQuery,
 		getSubmoduleReadmeHTMLQuery: getSubmoduleReadmeHTMLQuery,
 	}
 }

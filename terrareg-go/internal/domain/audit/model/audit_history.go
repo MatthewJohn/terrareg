@@ -141,10 +141,10 @@ func (a *AuditHistory) ToDBModel() *sqldb.AuditHistoryDB {
 
 // AuditHistorySearchResult represents the result of an audit history search
 type AuditHistorySearchResult struct {
-	Records     []*AuditHistory
-	TotalCount  int
+	Records       []*AuditHistory
+	TotalCount    int
 	FilteredCount int
-	Draw        int
+	Draw          int
 }
 
 // AuditHistorySearchQuery represents search criteria for audit history

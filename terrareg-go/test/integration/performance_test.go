@@ -40,9 +40,9 @@ func TestPerformanceLoadTests(t *testing.T) {
 // testConcurrentRequests tests handling of multiple concurrent requests
 func testConcurrentRequests(t *testing.T, baseURL string) {
 	const (
-		numWorkers   = 10
-		numRequests  = 50
-		maxDuration  = 5 * time.Second
+		numWorkers  = 10
+		numRequests = 50
+		maxDuration = 5 * time.Second
 	)
 
 	client := &http.Client{Timeout: maxDuration}

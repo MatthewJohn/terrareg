@@ -111,11 +111,11 @@ func (c *OidcCallbackCommand) Execute(ctx context.Context, req *OidcCallbackRequ
 	authMethod := "OIDC"
 
 	providerData := map[string]interface{}{
-		"issuer":       c.config.OpenIDConnectIssuer,
-		"client_id":    c.config.OpenIDConnectClientID,
-		"username":     username,
-		"email":        email,
-		"groups":       groups,
+		"issuer":    c.config.OpenIDConnectIssuer,
+		"client_id": c.config.OpenIDConnectClientID,
+		"username":  username,
+		"email":     email,
+		"groups":    groups,
 	}
 	providerDataBytes, _ := json.Marshal(providerData)
 

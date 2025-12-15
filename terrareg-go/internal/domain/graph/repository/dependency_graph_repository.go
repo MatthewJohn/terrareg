@@ -16,11 +16,11 @@ type DependencyGraphRepository interface {
 
 // ModuleDependency represents a dependency in the database
 type ModuleDependency struct {
-	ID         int
+	ID              int
 	ModuleVersionID int
-	Type       string // "provider" or "module"
-	Source     string // provider name or module path
-	Version    string // version constraint
-	Optional   bool
-	CreatedAt  time.Time
+	Type            string // "provider" or "module"
+	Source          string // provider name or module path
+	Version         string // version constraint
+	Optional        bool
+	CreatedAt       time.Time
 }

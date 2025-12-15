@@ -254,7 +254,7 @@ func (as *AuthenticationService) CreateSession(ctx context.Context, w http.Respo
 	// Create basic session data
 	sessionData := &SessionData{
 		SessionID:   sessionID,
-		AuthMethod:  "", // We'll extract this from provider data
+		AuthMethod:  "",    // We'll extract this from provider data
 		IsAdmin:     false, // Default to false, can be updated based on session
 		SiteAdmin:   false,
 		UserGroups:  []string{},

@@ -23,7 +23,7 @@ type ProviderHandler struct {
 	createOrUpdateProviderCmd *providerCommand.CreateOrUpdateProviderCommand
 	publishProviderVersionCmd *providerCommand.PublishProviderVersionCommand
 	manageGPGKeyCmd           *providerCommand.ManageGPGKeyCommand
-	getProviderDownloadQuery   *providerCommand.GetProviderDownloadQuery
+	getProviderDownloadQuery  *providerCommand.GetProviderDownloadQuery
 }
 
 // NewProviderHandler creates a new provider handler
@@ -47,7 +47,7 @@ func NewProviderHandler(
 		createOrUpdateProviderCmd: createOrUpdateProviderCmd,
 		publishProviderVersionCmd: publishProviderVersionCmd,
 		manageGPGKeyCmd:           manageGPGKeyCmd,
-		getProviderDownloadQuery:   getProviderDownloadQuery,
+		getProviderDownloadQuery:  getProviderDownloadQuery,
 	}
 }
 
@@ -377,12 +377,12 @@ func (h *ProviderHandler) HandleProviderDownload(w http.ResponseWriter, r *http.
 
 	// Create request
 	req := &providerCommand.GetProviderDownloadRequest{
-		Namespace:       namespace,
-		Provider:        provider,
-		Version:         version,
-		OS:              os,
-		Arch:            arch,
-		UserAgent:       userAgent,
+		Namespace:        namespace,
+		Provider:         provider,
+		Version:          version,
+		OS:               os,
+		Arch:             arch,
+		UserAgent:        userAgent,
 		TerraformVersion: terraformVersion,
 	}
 
@@ -390,8 +390,8 @@ func (h *ProviderHandler) HandleProviderDownload(w http.ResponseWriter, r *http.
 	resp, err := h.getProviderDownloadQuery.Execute(ctx, req)
 	if err != nil {
 		if err.Error() == "namespace not found" ||
-		   err.Error() == "provider not found" ||
-		   err.Error() == "provider version not found" {
+			err.Error() == "provider not found" ||
+			err.Error() == "provider version not found" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte(`{"error": "Provider version not found"}`))
 			return

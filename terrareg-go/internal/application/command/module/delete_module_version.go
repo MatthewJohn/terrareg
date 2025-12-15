@@ -10,8 +10,8 @@ import (
 
 // DeleteModuleVersionCommand handles deleting a specific module version
 type DeleteModuleVersionCommand struct {
-	moduleProviderRepo    moduleRepo.ModuleProviderRepository
-	moduleVersionRepo     moduleRepo.ModuleVersionRepository
+	moduleProviderRepo moduleRepo.ModuleProviderRepository
+	moduleVersionRepo  moduleRepo.ModuleVersionRepository
 }
 
 // NewDeleteModuleVersionCommand creates a new delete module version command

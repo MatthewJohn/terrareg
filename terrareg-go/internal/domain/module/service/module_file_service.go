@@ -139,7 +139,6 @@ func (s *ModuleFileService) validateFilePath(path string) error {
 	return nil
 }
 
-
 // processMarkdownContent processes markdown content into HTML
 func (s *ModuleFileService) processMarkdownContent(content string) string {
 	// For now, return basic HTML. In a full implementation,

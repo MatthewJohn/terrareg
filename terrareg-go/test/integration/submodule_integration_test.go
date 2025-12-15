@@ -65,7 +65,7 @@ func TestSubmoduleIntegration(t *testing.T) {
 
 	// Add submodule files
 	submoduleContent := map[string][]byte{
-		"submodule1/main.tf":     []byte(`resource "null_resource" "example" {}`),
+		"submodule1/main.tf":      []byte(`resource "null_resource" "example" {}`),
 		"submodule1/variables.tf": []byte(`variable "name" { description = "Name" }`),
 		"submodule2/main.tf":      []byte(`resource "random_pet" "example" {}`),
 	}

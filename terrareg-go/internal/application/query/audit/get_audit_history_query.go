@@ -20,9 +20,9 @@ type GetAuditHistoryRequest struct {
 
 // GetAuditHistoryResponse represents the response from get audit history query
 type GetAuditHistoryResponse struct {
-	Data           [][]interface{} `json:"data"`
-	Draw           int              `json:"draw"`
-	RecordsTotal   int              `json:"recordsTotal"`
+	Data            [][]interface{} `json:"data"`
+	Draw            int             `json:"draw"`
+	RecordsTotal    int             `json:"recordsTotal"`
 	RecordsFiltered int             `json:"recordsFiltered"`
 }
 

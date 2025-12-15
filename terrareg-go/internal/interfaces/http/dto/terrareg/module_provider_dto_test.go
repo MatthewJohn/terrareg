@@ -86,10 +86,10 @@ func TestTerraregModuleProviderDetailsResponse_WithNilFields(t *testing.T) {
 		Provider:  "provider",
 		Verified:  false,
 		Trusted:   false,
-		Version:  "1.0.0",
-		Internal: false,
+		Version:   "1.0.0",
+		Internal:  false,
 		Published: false,
-		Beta:     false,
+		Beta:      false,
 		// All optional fields left as nil/empty
 	}
 

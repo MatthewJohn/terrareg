@@ -32,15 +32,15 @@ func (a *TerraformIDPServiceAdapter) ValidateToken(ctx context.Context, token st
 // AuthFactory implements the factory pattern for authentication methods
 // Matches Python's AuthFactory behavior with priority-ordered discovery
 type AuthFactory struct {
-	authMethods           []auth.AuthMethod
-	currentAuthMethod     auth.AuthMethod
-	currentAuthCtx         *auth.AuthContext
-	mutex                 sync.RWMutex
-	sessionRepo           repository.SessionRepository
-	userGroupRepo         repository.UserGroupRepository
-	config                *infraConfig.InfrastructureConfig
-	terraformIDPService   interface{}
-	logger                *zerolog.Logger
+	authMethods         []auth.AuthMethod
+	currentAuthMethod   auth.AuthMethod
+	currentAuthCtx      *auth.AuthContext
+	mutex               sync.RWMutex
+	sessionRepo         repository.SessionRepository
+	userGroupRepo       repository.UserGroupRepository
+	config              *infraConfig.InfrastructureConfig
+	terraformIDPService interface{}
+	logger              *zerolog.Logger
 }
 
 // NewAuthFactory creates a new authentication factory
@@ -112,8 +112,8 @@ func (af *AuthFactory) initializeAuthMethods() {
 			EntityID:       af.config.SAML2EntityID,
 			SSOURL:         af.config.SAML2IDPMetadataURL,
 			SLOURL:         "", // Optional - can be added if needed
-			Certificate:     af.config.SAML2PublicKey,
-			PrivateKey:      af.config.SAML2PrivateKey,
+			Certificate:    af.config.SAML2PublicKey,
+			PrivateKey:     af.config.SAML2PrivateKey,
 			GroupAttribute: af.config.SAML2GroupAttribute,
 			// Note: Debug field not available in SAMLConfig struct - would need to be added if needed
 		}

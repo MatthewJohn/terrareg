@@ -5,26 +5,26 @@ import "fmt"
 // ProviderSourceConfig represents a provider source configuration for Terraform provider registries
 // Matches the Python PROVIDER_SOURCES configuration structure
 type ProviderSourceConfig struct {
-	Name                     string `json:"name"`
-	Type                     string `json:"type"`
-	BaseURL                  string `json:"base_url"`
-	ApiURL                   string `json:"api_url"`
-	ClientID                 string `json:"client_id"`
-	ClientSecret             string `json:"client_secret"`
-	PrivateKeyPath           string `json:"private_key_path"`
-	DefaultAccessToken       string `json:"default_access_token,omitempty"`
-	DefaultInstallationID    string `json:"default_installation_id,omitempty"`
-	LoginButtonText          string `json:"login_button_text"`
-	AutoGenerateNamespaces   bool   `json:"auto_generate_namespaces"`
+	Name                   string `json:"name"`
+	Type                   string `json:"type"`
+	BaseURL                string `json:"base_url"`
+	ApiURL                 string `json:"api_url"`
+	ClientID               string `json:"client_id"`
+	ClientSecret           string `json:"client_secret"`
+	PrivateKeyPath         string `json:"private_key_path"`
+	DefaultAccessToken     string `json:"default_access_token,omitempty"`
+	DefaultInstallationID  string `json:"default_installation_id,omitempty"`
+	LoginButtonText        string `json:"login_button_text"`
+	AutoGenerateNamespaces bool   `json:"auto_generate_namespaces"`
 }
 
 // ProviderCategory represents a provider category configuration
 // Matches the Python PROVIDER_CATEGORIES configuration structure
 type ProviderCategory struct {
-	ID              int    `json:"id"`
-	Name            string `json:"name"`
-	Slug            string `json:"slug"`
-	UserSelectable  bool   `json:"user-selectable"`
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
+	Slug           string `json:"slug"`
+	UserSelectable bool   `json:"user-selectable"`
 }
 
 // ProviderSourceConfigCollection represents a collection of provider source configurations

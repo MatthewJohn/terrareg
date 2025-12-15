@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // GetProviderGPGKeysQuery handles retrieving GPG keys for a provider

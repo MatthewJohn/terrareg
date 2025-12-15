@@ -40,7 +40,7 @@ type GetVariableTemplateRequest struct {
 // VariableTemplate represents a variable definition from the template
 type VariableTemplate struct {
 	Name           string      `json:"name"`
-	Type           string      `json:"type"`           // text, boolean, number, list, select
+	Type           string      `json:"type"` // text, boolean, number, list, select
 	AdditionalHelp string      `json:"additional_help"`
 	QuoteValue     bool        `json:"quote_value"`
 	Required       bool        `json:"required"`
@@ -118,8 +118,8 @@ func (q *GetVariableTemplateQuery) getVariableTemplateFromVersion(ctx context.Co
 	for _, file := range files {
 		// Check for common variable template filenames
 		if strings.EqualFold(file.Path(), "variables.json") ||
-		   strings.EqualFold(file.Path(), "variable_template.json") ||
-		   strings.EqualFold(file.Path(), "variables.tf") {
+			strings.EqualFold(file.Path(), "variable_template.json") ||
+			strings.EqualFold(file.Path(), "variables.tf") {
 			templateContent = file.Content()
 			break
 		}

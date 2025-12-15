@@ -9,8 +9,8 @@ import (
 // ListUserGroupsQuery retrieves all user groups
 // Matches Python terrareg.models.UserGroup.get_all_user_groups()
 type ListUserGroupsQuery struct {
-	groupRepo             repository.UserGroupRepository
-	permissionRepo        repository.UserGroupNamespacePermissionRepository
+	groupRepo      repository.UserGroupRepository
+	permissionRepo repository.UserGroupNamespacePermissionRepository
 }
 
 // NewListUserGroupsQuery creates a new ListUserGroupsQuery
@@ -52,8 +52,8 @@ func (q *ListUserGroupsQuery) Execute(ctx context.Context) ([]map[string]interfa
 
 		// Create group entry matching Python API
 		result[i] = map[string]interface{}{
-			"name":                group.Name(),
-			"site_admin":          group.SiteAdmin(),
+			"name":                  group.Name(),
+			"site_admin":            group.SiteAdmin(),
 			"namespace_permissions": namespacePermissions,
 		}
 	}

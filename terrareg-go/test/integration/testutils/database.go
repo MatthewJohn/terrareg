@@ -66,10 +66,10 @@ func CreateTestDomainConfig(t *testing.T) *model.DomainConfig {
 		TrustedNamespaces:        []string{"test"},
 		VerifiedModuleNamespaces: []string{"verified"},
 		AllowModuleHosting:       model.ModuleHostingModeAllow,
-		SecretKeySet:            true,
-		OpenIDConnectEnabled:    true,
-		SAMLEnabled:             true,
-		AdminLoginEnabled:       true,
+		SecretKeySet:             true,
+		OpenIDConnectEnabled:     true,
+		SAMLEnabled:              true,
+		AdminLoginEnabled:        true,
 	}
 }
 
@@ -181,10 +181,10 @@ func CreateModuleDetails(t *testing.T, db *sqldb.Database, readmeContent string)
 func CreateSubmodule(t *testing.T, db *sqldb.Database, moduleVersionID int, path, name, submoduleType string, moduleDetailsID *int) sqldb.SubmoduleDB {
 	submodule := sqldb.SubmoduleDB{
 		ParentModuleVersion: moduleVersionID,
-		Path:               path,
-		Name:               &name,
-		Type:               &submoduleType,
-		ModuleDetailsID:    moduleDetailsID,
+		Path:                path,
+		Name:                &name,
+		Type:                &submoduleType,
+		ModuleDetailsID:     moduleDetailsID,
 	}
 
 	err := db.DB.Create(&submodule).Error

@@ -12,9 +12,9 @@ import (
 
 func TestAuthenticationTokenType_String(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		tokenType AuthenticationTokenType
-		expected string
+		expected  string
 	}{
 		{"Admin", AuthenticationTokenTypeAdmin, "admin"},
 		{"Upload", AuthenticationTokenTypeUpload, "upload"},
@@ -31,9 +31,9 @@ func TestAuthenticationTokenType_String(t *testing.T) {
 
 func TestAuthenticationTokenType_ToAuthMethodType(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		tokenType AuthenticationTokenType
-		expected auth.AuthMethodType
+		expected  auth.AuthMethodType
 	}{
 		{"Admin", AuthenticationTokenTypeAdmin, auth.AuthMethodAdminApiKey},
 		{"Upload", AuthenticationTokenTypeUpload, auth.AuthMethodUploadApiKey},

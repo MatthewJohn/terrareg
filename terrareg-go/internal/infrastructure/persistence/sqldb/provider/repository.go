@@ -463,11 +463,11 @@ func (r *ProviderRepository) versionModelToDomain(model *ProviderVersionModel) (
 		model.Beta,
 		model.PublishedAt,
 		func() int {
-		if model.GPGKeyID != nil {
-			return *model.GPGKeyID
-		}
-		return 0
-	}(),
+			if model.GPGKeyID != nil {
+				return *model.GPGKeyID
+			}
+			return 0
+		}(),
 		protocolVersions,
 	), nil
 }
@@ -477,13 +477,13 @@ func (r *ProviderRepository) versionDomainToModel(version *provider.ProviderVers
 	protocolVersionsJSON, _ := json.Marshal(version.ProtocolVersions())
 
 	return &ProviderVersionModel{
-		ID:               version.ID(),
-		ProviderID:       version.ProviderID(),
-		Version:          version.Version(),
-		GitTag:           version.GitTag(),
-		Beta:             version.Beta(),
-		PublishedAt:      version.PublishedAt(),
-		GPGKeyID:         func() *int {
+		ID:          version.ID(),
+		ProviderID:  version.ProviderID(),
+		Version:     version.Version(),
+		GitTag:      version.GitTag(),
+		Beta:        version.Beta(),
+		PublishedAt: version.PublishedAt(),
+		GPGKeyID: func() *int {
 			if version.GPGKeyID() > 0 {
 				id := version.GPGKeyID()
 				return &id

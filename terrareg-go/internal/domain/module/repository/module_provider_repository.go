@@ -62,9 +62,9 @@ type ModuleProviderRedirectRepository interface {
 // ModuleProviderRedirect represents a redirect from old module provider details to new ones
 // Matches Python ModuleProviderRedirect model
 type ModuleProviderRedirect struct {
-	ID                 int
-	ModuleProviderID   int
-	NamespaceID        int
-	Module             string
-	Provider           string
+	ID               int
+	ModuleProviderID int
+	NamespaceID      int
+	Module           string
+	Provider         string
 }

@@ -4,17 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	analytics "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
-	analytics "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 )
 
 // GetProviderDownloadQuery handles getting provider download information
 type GetProviderDownloadQuery struct {
-	providerRepo        providerRepo.ProviderRepository
-	namespaceRepo       namespaceRepo.NamespaceRepository
-	analyticsRepo       analytics.AnalyticsRepository
+	providerRepo  providerRepo.ProviderRepository
+	namespaceRepo namespaceRepo.NamespaceRepository
+	analyticsRepo analytics.AnalyticsRepository
 }
 
 // NewGetProviderDownloadQuery creates a new get provider download query
@@ -32,26 +32,26 @@ func NewGetProviderDownloadQuery(
 
 // GetProviderDownloadRequest represents a request for provider download information
 type GetProviderDownloadRequest struct {
-	Namespace string
-	Provider  string
-	Version   string
-	OS        string
-	Arch      string
-	UserAgent string
+	Namespace        string
+	Provider         string
+	Version          string
+	OS               string
+	Arch             string
+	UserAgent        string
 	TerraformVersion string
 }
 
 // ProviderDownloadResponse represents the provider download metadata
 type ProviderDownloadResponse struct {
-	Protocols               []string               `json:"protocols"`
-	OS                      string                  `json:"os"`
-	Arch                    string                  `json:"arch"`
-	Filename                string                  `json:"filename"`
-	DownloadURL             string                  `json:"download_url"`
-	ShasumsURL             string                  `json:"shasums_url"`
-	ShasumsSignatureURL    string                  `json:"shasums_signature_url"`
-	Shasum                  string                  `json:"shasum"`
-	SigningKeys             *SigningKeysResponse    `json:"signing_keys"`
+	Protocols           []string             `json:"protocols"`
+	OS                  string               `json:"os"`
+	Arch                string               `json:"arch"`
+	Filename            string               `json:"filename"`
+	DownloadURL         string               `json:"download_url"`
+	ShasumsURL          string               `json:"shasums_url"`
+	ShasumsSignatureURL string               `json:"shasums_signature_url"`
+	Shasum              string               `json:"shasum"`
+	SigningKeys         *SigningKeysResponse `json:"signing_keys"`
 }
 
 // SigningKeysResponse represents signing key information
@@ -61,11 +61,11 @@ type SigningKeysResponse struct {
 
 // GPGPublicKey represents a GPG public key
 type GPGPublicKey struct {
-	KeyID         string `json:"key_id"`
-	ASCIIArmor    string `json:"ascii_armor"`
+	KeyID          string `json:"key_id"`
+	ASCIIArmor     string `json:"ascii_armor"`
 	TrustSignature string `json:"trust_signature"`
-	Source        string `json:"source"`
-	SourceURL     string `json:"source_url"`
+	Source         string `json:"source"`
+	SourceURL      string `json:"source_url"`
 }
 
 // Execute retrieves provider download metadata
@@ -165,14 +165,14 @@ func (q *GetProviderDownloadQuery) recordDownloadAnalytics(ctx context.Context, 
 // convertToResponse converts the domain binary to response format
 func (q *GetProviderDownloadQuery) convertToResponse(binary *provider.ProviderBinary) *ProviderDownloadResponse {
 	response := &ProviderDownloadResponse{
-		Protocols:               []string{"5.0"},
-		OS:                      binary.OS(),
-		Arch:                    binary.Architecture(),
-		Filename:                binary.Filename(),
-		DownloadURL:             binary.DownloadURL(),
-		ShasumsURL:             "", // TODO: Generate from provider version
-		ShasumsSignatureURL:    "", // TODO: Generate from provider version
-		Shasum:                  binary.FileHash(),
+		Protocols:           []string{"5.0"},
+		OS:                  binary.OS(),
+		Arch:                binary.Architecture(),
+		Filename:            binary.Filename(),
+		DownloadURL:         binary.DownloadURL(),
+		ShasumsURL:          "", // TODO: Generate from provider version
+		ShasumsSignatureURL: "", // TODO: Generate from provider version
+		Shasum:              binary.FileHash(),
 	}
 
 	// TODO: Add signing keys if available when GPG key support is implemented

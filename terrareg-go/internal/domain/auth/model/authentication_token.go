@@ -89,8 +89,8 @@ func NewAuthenticationToken(
 ) (*AuthenticationToken, error) {
 	// Validate token type
 	if tokenType != AuthenticationTokenTypeAdmin &&
-	   tokenType != AuthenticationTokenTypeUpload &&
-	   tokenType != AuthenticationTokenTypePublish {
+		tokenType != AuthenticationTokenTypeUpload &&
+		tokenType != AuthenticationTokenTypePublish {
 		return nil, ErrInvalidTokenType
 	}
 
@@ -232,15 +232,15 @@ func (t *AuthenticationToken) Revoke() error {
 
 // Getters
 
-func (t *AuthenticationToken) ID() int                        { return t.id }
+func (t *AuthenticationToken) ID() int                            { return t.id }
 func (t *AuthenticationToken) TokenType() AuthenticationTokenType { return t.tokenType }
-func (t *AuthenticationToken) TokenValue() string              { return t.tokenValue }
-func (t *AuthenticationToken) Namespace() *model.Namespace     { return t.namespace }
-func (t *AuthenticationToken) Description() string             { return t.description }
-func (t *AuthenticationToken) CreatedAt() time.Time            { return t.createdAt }
-func (t *AuthenticationToken) ExpiresAt() *time.Time           { return t.expiresAt }
-func (t *AuthenticationToken) IsActive() bool                  { return t.isActive }
-func (t *AuthenticationToken) CreatedBy() string               { return t.createdBy }
+func (t *AuthenticationToken) TokenValue() string                 { return t.tokenValue }
+func (t *AuthenticationToken) Namespace() *model.Namespace        { return t.namespace }
+func (t *AuthenticationToken) Description() string                { return t.description }
+func (t *AuthenticationToken) CreatedAt() time.Time               { return t.createdAt }
+func (t *AuthenticationToken) ExpiresAt() *time.Time              { return t.expiresAt }
+func (t *AuthenticationToken) IsActive() bool                     { return t.isActive }
+func (t *AuthenticationToken) CreatedBy() string                  { return t.createdBy }
 
 // HasNamespace returns true if the token has an associated namespace
 func (t *AuthenticationToken) HasNamespace() bool {

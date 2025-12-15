@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
-	)
+)
 
 // GetExamplesQuery retrieves examples for a module version
 type GetExamplesQuery struct {

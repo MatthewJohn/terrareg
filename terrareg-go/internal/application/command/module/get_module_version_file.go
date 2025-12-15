@@ -31,10 +31,10 @@ type GetModuleVersionFileRequest struct {
 
 // GetModuleVersionFileResponse represents the response for getting a module version file
 type GetModuleVersionFileResponse struct {
-	File         *ModuleFileResponse
-	Content      string
-	ContentType  string
-	ContentHTML  string // For display purposes (processed markdown, etc.)
+	File        *ModuleFileResponse
+	Content     string
+	ContentType string
+	ContentHTML string // For display purposes (processed markdown, etc.)
 }
 
 // Execute executes the query to get a module version file

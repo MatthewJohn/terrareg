@@ -294,7 +294,6 @@ func TestMarkdownService_ComplexMarkdown(t *testing.T) {
 
 	result := service.ConvertToHTML(complexMarkdown, WithFileName("README.md"))
 
-	
 	// Check that key elements are present
 	if result == "" {
 		t.Error("ConvertToHTML() returned empty string")
