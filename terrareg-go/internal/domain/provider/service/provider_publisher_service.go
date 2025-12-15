@@ -238,7 +238,7 @@ func (s *ProviderPublisherService) publishBinaries(ctx context.Context, version 
 }
 
 // PublishBinary publishes a single binary for an existing version
-func (s *ProviderPublisherService) PublishBinary(ctx context.Context, versionID int, binaryPath, os, arch string) (*PublishedBinary, error) {
+func (s *ProviderPublisherService) PublishBinary(ctx context.Context, versionID int, binaryPath, operatingSystem, arch string) (*PublishedBinary, error) {
 	// Get version
 	version, err := s.providerRepo.FindVersionByID(ctx, versionID)
 	if err != nil {
@@ -285,7 +285,7 @@ func (s *ProviderPublisherService) PublishBinary(ctx context.Context, versionID 
 	// Create provider binary entity
 	providerBinary := provider.NewProviderBinary(
 		versionID,
-		os,
+		operatingSystem,
 		arch,
 		filename,
 		checksum,
@@ -305,7 +305,7 @@ func (s *ProviderPublisherService) PublishBinary(ctx context.Context, versionID 
 
 	return &PublishedBinary{
 		BinaryID:    providerBinary.ID(),
-		OS:          os,
+		OS:          operatingSystem,
 		Arch:        arch,
 		Filename:    filename,
 		Size:        fileInfo.Size(),

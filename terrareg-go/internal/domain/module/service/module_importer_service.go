@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service" // Added import with alias
@@ -50,6 +51,30 @@ type ImportModuleVersionRequest struct {
 	Provider  string
 	Version   *string
 	GitTag    *string
+	// Optional configuration overrides for this import
+	AutoPublish *bool
+	UseGitCommit *bool
+}
+
+// shouldAutoPublish determines if a module version should be auto-published based on configuration
+func (s *ModuleImporterService) shouldAutoPublish(req ImportModuleVersionRequest, isReindex bool) bool {
+	// If request explicitly sets auto-publish, use that
+	if req.AutoPublish != nil {
+		return *req.AutoPublish
+	}
+
+	// Use domain configuration
+	switch s.domainConfig.ModuleVersionReindexMode {
+	case domainConfig.ModuleVersionReindexModeAutoPublish:
+		return true // Auto-publish mode always publishes
+	case domainConfig.ModuleVersionReindexModeProhibit:
+		return !isReindex // Only allow first-time publishing
+	case domainConfig.ModuleVersionReindexModeLegacy:
+		fallthrough
+	default:
+		// Legacy mode: use AUTO_PUBLISH_MODULE_VERSIONS boolean setting
+		return s.domainConfig.AutoPublishModuleVersions
+	}
 }
 
 // ImportModuleVersion imports a module version from Git.
@@ -123,7 +148,20 @@ func (s *ModuleImporterService) ImportModuleVersion(ctx context.Context, req Imp
 		}
 	}()
 
-	if err := s.gitClient.Clone(ctx, cloneURL, tmpDir); err != nil {
+	// Prepare clone options with timeout and credentials
+	cloneOptions := gitService.CloneOptions{
+		Timeout: time.Duration(s.infraConfig.GitCloneTimeout) * time.Second,
+	}
+
+	// Add upstream credentials if configured
+	if s.infraConfig.UpstreamGitCredentialsUsername != "" && s.infraConfig.UpstreamGitCredentialsPassword != "" {
+		cloneOptions.Credentials = &gitService.GitCredentials{
+			Username: s.infraConfig.UpstreamGitCredentialsUsername,
+			Password: s.infraConfig.UpstreamGitCredentialsPassword,
+		}
+	}
+
+	if err := s.gitClient.CloneWithOptions(ctx, cloneURL, tmpDir, cloneOptions); err != nil {
 		return fmt.Errorf("failed to clone git repository: %w", err)
 	}
 
@@ -139,8 +177,9 @@ func (s *ModuleImporterService) ImportModuleVersion(ctx context.Context, req Imp
 		srcDir = filepath.Join(tmpDir, *gitPath)
 	}
 
-	// Destination directory for module files
-	destDir := filepath.Join(s.infraConfig.DataDirectory, "modules", req.Namespace, req.Module, req.Provider, *resolvedVersion)
+	// Destination directory for module files using configured modules directory
+	modulesBaseDir := filepath.Join(s.infraConfig.DataDirectory, s.domainConfig.ModulesDirectory)
+	destDir := filepath.Join(modulesBaseDir, req.Namespace, req.Module, req.Provider, *resolvedVersion)
 	if err := s.storageService.MkdirAll(destDir, 0755); err != nil { // Ensure destination directory exists
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
@@ -165,10 +204,13 @@ func (s *ModuleImporterService) ImportModuleVersion(ctx context.Context, req Imp
 		// TODO: Add other details like variables, outputs, resources, provider versions
 	}
 
-	// Get or create ModuleVersion
-	// This part assumes that ModuleProvider has methods to manage its versions
-	// and that the repository can update the ModuleProvider aggregate.
+	// Determine if this is a re-index (version already exists)
 	moduleVersion, err := moduleProvider.GetVersion(*resolvedVersion)
+	isReindex := err == nil
+
+	// Use domain configuration for auto-publishing decision
+	shouldPublish := s.shouldAutoPublish(req, isReindex)
+
 	if err != nil {
 		// Version not found, create new
 		moduleVersion, err = moduleProvider.PublishVersion(*resolvedVersion, details, false) // Assuming not beta for initial import
@@ -186,8 +228,8 @@ func (s *ModuleImporterService) ImportModuleVersion(ctx context.Context, req Imp
 		}
 	}
 
-	// Ensure the version is marked as published (if not already)
-	if !moduleVersion.IsPublished() {
+	// Ensure the version is marked as published (if configured to do so)
+	if !moduleVersion.IsPublished() && shouldPublish {
 		if err := moduleVersion.Publish(); err != nil {
 			return fmt.Errorf("failed to mark version as published: %w", err)
 		}

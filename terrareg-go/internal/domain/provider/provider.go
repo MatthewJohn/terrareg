@@ -260,6 +260,20 @@ func (pv *ProviderVersion) SetPublishedAt(publishedAt *time.Time) { pv.published
 func (pv *ProviderVersion) SetGPGKeyID(gpgKeyID int)           { pv.gpgKeyID = gpgKeyID }
 func (pv *ProviderVersion) SetProtocolVersions(protocolVersions []string) { pv.protocolVersions = protocolVersions }
 
+// AddBinary adds a binary to the provider version
+func (pv *ProviderVersion) AddBinary(binary *ProviderBinary) error {
+	// Check if binary already exists for this platform
+	for _, existingBinary := range pv.binaries {
+		if existingBinary.OperatingSystem() == binary.OperatingSystem() &&
+		   existingBinary.Architecture() == binary.Architecture() {
+			return ErrBinaryAlreadyExists
+		}
+	}
+
+	pv.binaries = append(pv.binaries, binary)
+	return nil
+}
+
 // Provider represents a Terraform provider aggregate root
 type Provider struct {
 	id                    int

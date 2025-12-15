@@ -47,7 +47,7 @@ type DomainConfig struct {
 	ProviderSources map[string]ProviderSourceConfig
 
 	// Module Processing Configuration
-	AutoPublishModuleVersions                 ModuleVersionReindexMode `env:"AUTO_PUBLISH_MODULE_VERSIONS"`
+	AutoPublishModuleVersions                 bool                     `env:"AUTO_PUBLISH_MODULE_VERSIONS"`
 	ModuleVersionReindexMode                 ModuleVersionReindexMode `env:"MODULE_VERSION_REINDEX_MODE"`
 	ModuleVersionUseGitCommit                bool                     `env:"MODULE_VERSION_USE_GIT_COMMIT"`
 	RequiredModuleMetadataAttributes         []string                 `env:"REQUIRED_MODULE_METADATA_ATTRIBUTES"`
