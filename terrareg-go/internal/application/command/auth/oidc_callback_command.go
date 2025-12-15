@@ -17,6 +17,7 @@ type OidcCallbackCommand struct {
 	sessionService *service.SessionService
 	config         *infraConfig.InfrastructureConfig
 	oidcService    *service.OIDCService
+	loginCommand   *OidcLoginCommand // Reference to login command for session access
 }
 
 // OidcCallbackRequest represents the input for OIDC callback
@@ -54,18 +55,15 @@ func NewOidcCallbackCommand(
 	authFactory *service.AuthFactory,
 	sessionService *service.SessionService,
 	config *infraConfig.InfrastructureConfig,
+	oidcService *service.OIDCService,
+	loginCommand *OidcLoginCommand,
 ) *OidcCallbackCommand {
-	// Initialize OIDC service
-	var oidcService *service.OIDCService
-	if config != nil && config.OpenIDConnectIssuer != "" {
-		oidcService, _ = service.NewOIDCService(context.Background(), config)
-	}
-
 	return &OidcCallbackCommand{
 		authFactory:    authFactory,
 		sessionService: sessionService,
 		config:         config,
 		oidcService:    oidcService,
+		loginCommand:   loginCommand,
 	}
 }
 
@@ -102,12 +100,21 @@ func (c *OidcCallbackCommand) Execute(ctx context.Context, req *OidcCallbackRequ
 
 	// Use real OIDC service if available
 	if c.oidcService != nil {
-		// TODO: Implement proper session storage and retrieval for OIDC state validation
-		// For now, we'll create a minimal OIDC session for the callback
-		oidcSession := &service.OIDCSession{
-			State:     req.State,
-			CreatedAt: time.Now(),
-			ExpiresAt: time.Now().Add(10 * time.Minute),
+		// Retrieve stored OIDC session for state validation
+		var oidcSession *service.OIDCSession
+		if c.loginCommand != nil {
+			oidcSession, _ = c.loginCommand.GetOIDCSession(req.State)
+			// Clean up the session after retrieval
+			defer c.loginCommand.RemoveOIDCSession(req.State)
+		}
+
+		// If no stored session found, create a minimal one for compatibility
+		if oidcSession == nil {
+			oidcSession = &service.OIDCSession{
+				State:     req.State,
+				CreatedAt: time.Now(),
+				ExpiresAt: time.Now().Add(10 * time.Minute),
+			}
 		}
 
 		// Exchange code for user information
@@ -153,39 +160,10 @@ func (c *OidcCallbackCommand) Execute(ctx context.Context, req *OidcCallbackRequ
 		}, nil
 	}
 
-	// Fallback to placeholder response if OIDC service is not available
-	username := "oidc-user"
-	email := "user@example.com"
-	groups := []string{"oidc-users"}
-
-	// Create session with a default TTL
-	ttl := 24 * time.Hour
-	authMethod := "OIDC"
-
-	providerData := map[string]interface{}{
-		"issuer":    c.config.OpenIDConnectIssuer,
-		"client_id": c.config.OpenIDConnectClientID,
-		"username":  username,
-		"email":     email,
-		"groups":    groups,
-	}
-	providerDataBytes, _ := json.Marshal(providerData)
-
-	session, err := c.sessionService.CreateSession(ctx, authMethod, providerDataBytes, &ttl)
-	if err != nil {
-		return &OidcCallbackResponse{
-			Authenticated: false,
-			ErrorMessage:  fmt.Sprintf("Failed to create session: %v", err),
-		}, nil
-	}
-
+	// OIDC service must be available for proper OIDC authentication
 	return &OidcCallbackResponse{
-		Authenticated: true,
-		SessionID:     session.ID,
-		Expiry:        session.Expiry,
-		Username:      username,
-		Email:         email,
-		Groups:        groups,
+		Authenticated: false,
+		ErrorMessage:  "OIDC service is not properly configured - please check OIDC configuration settings",
 	}, nil
 }
 
@@ -218,5 +196,6 @@ func (c *OidcCallbackCommand) IsConfigured() bool {
 		c.config.OpenIDConnectClientID != "" &&
 		c.config.OpenIDConnectClientSecret != "" &&
 		c.authFactory != nil &&
-		c.sessionService != nil
+		c.sessionService != nil &&
+		c.oidcService != nil
 }

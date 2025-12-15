@@ -16,6 +16,9 @@ type OidcLoginCommand struct {
 	sessionService *service.SessionService
 	config         *infraConfig.InfrastructureConfig
 	oidcService    *service.OIDCService
+	// Temporary in-memory storage for OIDC sessions
+	// In production, this should be replaced with Redis or database storage
+	oidcSessions   map[string]*service.OIDCSession
 }
 
 // OidcLoginRequest represents the input for OIDC login
@@ -39,18 +42,14 @@ func NewOidcLoginCommand(
 	authFactory *service.AuthFactory,
 	sessionService *service.SessionService,
 	config *infraConfig.InfrastructureConfig,
+	oidcService *service.OIDCService,
 ) *OidcLoginCommand {
-	// Initialize OIDC service
-	var oidcService *service.OIDCService
-	if config != nil && config.OpenIDConnectIssuer != "" {
-		oidcService, _ = service.NewOIDCService(context.Background(), config)
-	}
-
 	return &OidcLoginCommand{
 		authFactory:    authFactory,
 		sessionService: sessionService,
 		config:         config,
 		oidcService:    oidcService,
+		oidcSessions:   make(map[string]*service.OIDCSession),
 	}
 }
 
@@ -69,13 +68,14 @@ func (c *OidcLoginCommand) Execute(ctx context.Context, req *OidcLoginRequest) (
 
 	// Use the real OIDC service if available
 	if c.oidcService != nil {
-		authURL, _, err := c.oidcService.GetAuthURL(ctx, req.State, req.RedirectURL)
+		authURL, oidcSession, err := c.oidcService.GetAuthURL(ctx, req.State, req.RedirectURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate OIDC authorization URL: %w", err)
 		}
 
-		// TODO: Store OIDC session in secure storage (Redis/database)
-		// For now, we'll rely on the state parameter validation in the callback
+		// Store OIDC session for state validation in callback
+		// In production, this should be stored in Redis or database
+		c.oidcSessions[req.State] = oidcSession
 
 		return &OidcLoginResponse{
 			AuthURL: authURL,
@@ -83,19 +83,8 @@ func (c *OidcLoginCommand) Execute(ctx context.Context, req *OidcLoginRequest) (
 		}, nil
 	}
 
-	// Fallback to basic URL construction if OIDC service is not available
-	authURL := fmt.Sprintf("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
-		c.config.OpenIDConnectIssuer,
-		url.QueryEscape(c.config.OpenIDConnectClientID),
-		url.QueryEscape(req.RedirectURL),
-		url.QueryEscape("openid profile email"),
-		url.QueryEscape(req.State),
-	)
-
-	return &OidcLoginResponse{
-		AuthURL: authURL,
-		State:   req.State,
-	}, nil
+	// OIDC service must be available for proper OIDC authentication
+	return nil, fmt.Errorf("OIDC service is not properly configured - please check OIDC configuration settings")
 }
 
 // ValidateRequest validates the OIDC login request before execution
@@ -120,6 +109,17 @@ func (c *OidcLoginCommand) ValidateRequest(req *OidcLoginRequest) error {
 	return nil
 }
 
+// GetOIDCSession retrieves stored OIDC session by state
+func (c *OidcLoginCommand) GetOIDCSession(state string) (*service.OIDCSession, bool) {
+	session, exists := c.oidcSessions[state]
+	return session, exists
+}
+
+// RemoveOIDCSession removes a stored OIDC session
+func (c *OidcLoginCommand) RemoveOIDCSession(state string) {
+	delete(c.oidcSessions, state)
+}
+
 // IsConfigured checks if OIDC authentication is properly configured
 func (c *OidcLoginCommand) IsConfigured() bool {
 	return c.config != nil &&
@@ -127,5 +127,6 @@ func (c *OidcLoginCommand) IsConfigured() bool {
 		c.config.OpenIDConnectClientID != "" &&
 		c.config.OpenIDConnectClientSecret != "" &&
 		c.authFactory != nil &&
-		c.sessionService != nil
+		c.sessionService != nil &&
+		c.oidcService != nil
 }
