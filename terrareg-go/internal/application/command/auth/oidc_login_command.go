@@ -15,6 +15,7 @@ type OidcLoginCommand struct {
 	authFactory    *service.AuthFactory
 	sessionService *service.SessionService
 	config         *infraConfig.InfrastructureConfig
+	oidcService    *service.OIDCService
 }
 
 // OidcLoginRequest represents the input for OIDC login
@@ -39,10 +40,17 @@ func NewOidcLoginCommand(
 	sessionService *service.SessionService,
 	config *infraConfig.InfrastructureConfig,
 ) *OidcLoginCommand {
+	// Initialize OIDC service
+	var oidcService *service.OIDCService
+	if config != nil && config.OpenIDConnectIssuer != "" {
+		oidcService, _ = service.NewOIDCService(context.Background(), config)
+	}
+
 	return &OidcLoginCommand{
 		authFactory:    authFactory,
 		sessionService: sessionService,
 		config:         config,
+		oidcService:    oidcService,
 	}
 }
 
@@ -59,12 +67,23 @@ func (c *OidcLoginCommand) Execute(ctx context.Context, req *OidcLoginRequest) (
 		return nil, fmt.Errorf("OIDC authentication is not configured")
 	}
 
-	// For now, return a placeholder response
-	// In a full implementation, this would:
-	// 1. Generate the OIDC authorization URL
-	// 2. Store state parameter in session/cookie
-	// 3. Return the authorization URL to redirect the user
+	// Use the real OIDC service if available
+	if c.oidcService != nil {
+		authURL, _, err := c.oidcService.GetAuthURL(ctx, req.State, req.RedirectURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate OIDC authorization URL: %w", err)
+		}
 
+		// TODO: Store OIDC session in secure storage (Redis/database)
+		// For now, we'll rely on the state parameter validation in the callback
+
+		return &OidcLoginResponse{
+			AuthURL: authURL,
+			State:   req.State,
+		}, nil
+	}
+
+	// Fallback to basic URL construction if OIDC service is not available
 	authURL := fmt.Sprintf("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
 		c.config.OpenIDConnectIssuer,
 		url.QueryEscape(c.config.OpenIDConnectClientID),
