@@ -29,23 +29,71 @@ type DomainConfig struct {
 
 	// Authentication status (domain-level only - no secrets)
 	OpenIDConnectEnabled   bool
-	OpenIDConnectLoginText string
 	SAMLEnabled            bool
-	SAMLLoginText          string
 	AdminLoginEnabled      bool
 
 	// UI configuration
-	AdditionalModuleTabs     []string
 	AutoCreateNamespace      bool
 	AutoCreateModuleProvider bool
-	DefaultUiDetailsView     DefaultUiInputOutputView
+	DefaultUiDetailsView     DefaultUiInputOutputView `env:"DEFAULT_UI_DETAILS_VIEW"`
+	AdditionalModuleTabs     []string                 `env:"ADDITIONAL_MODULE_TABS"`
+	ModuleLinks              []string                 `env:"MODULE_LINKS"`
 
 	// Terraform example version templates
-	TerraformExampleVersionTemplate          string
-	TerraformExampleVersionTemplatePreMajor string
+	TerraformExampleVersionTemplate          string `env:"TERRAFORM_EXAMPLE_VERSION_TEMPLATE"`
+	TerraformExampleVersionTemplatePreMajor string `env:"TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR"`
 
 	// Provider sources (domain configuration)
 	ProviderSources map[string]ProviderSourceConfig
+
+	// Module Processing Configuration
+	AutoPublishModuleVersions                 ModuleVersionReindexMode `env:"AUTO_PUBLISH_MODULE_VERSIONS"`
+	ModuleVersionReindexMode                 ModuleVersionReindexMode `env:"MODULE_VERSION_REINDEX_MODE"`
+	ModuleVersionUseGitCommit                bool                     `env:"MODULE_VERSION_USE_GIT_COMMIT"`
+	RequiredModuleMetadataAttributes         []string                 `env:"REQUIRED_MODULE_METADATA_ATTRIBUTES"`
+	DeleteExternallyHostedArtifacts          bool                     `env:"DELETE_EXTERNALLY_HOSTED_ARTIFACTS"`
+	AutogenerateModuleProviderDescription    bool                     `env:"AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION"`
+	AutogenerateUsageBuilderVariables        bool                     `env:"AUTOGENERATE_USAGE_BUILDER_VARIABLES"`
+
+	// Terraform Integration Configuration
+	Product                    Product  `env:"PRODUCT"`
+	DefaultTerraformVersion    string   `env:"DEFAULT_TERRAFORM_VERSION"`
+	TerraformArchiveMirror     string   `env:"TERRAFORM_ARCHIVE_MIRROR"`
+	ManageTerraformRcFile      bool     `env:"MANAGE_TERRAFORM_RC_FILE"`
+	ModulesDirectory           string   `env:"MODULES_DIRECTORY"`
+	ExamplesDirectory          string   `env:"EXAMPLES_DIRECTORY"`
+
+	// UI Enhancement Configuration
+	OpenIDConnectLoginText string `env:"OPENID_CONNECT_LOGIN_TEXT"`
+	SAMLLoginText          string `env:"SAML2_LOGIN_TEXT"`
+
+	// Analytics and Access Configuration
+	InternalExtractionAnalyticsToken    string   `env:"INTERNAL_EXTRACTION_ANALYTICS_TOKEN"`
+	IgnoreAnalyticsTokenAuthKeys        []string `env:"IGNORE_ANALYTICS_TOKEN_AUTH_KEYS"`
+	AnalyticsAuthKeys                   []string `env:"ANALYTICS_AUTH_KEYS"`
+	AllowUnidentifiedDownloads          bool     `env:"ALLOW_UNIDENTIFIED_DOWNLOADS"`
+
+	// Redirect Deletion Configuration
+	AllowForcefulModuleProviderRedirectDeletion bool `env:"ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION"`
+	RedirectDeletionLookbackDays               int  `env:"REDIRECT_DELETION_LOOKBACK_DAYS"`
+
+	// Example Configuration
+	ExampleFileExtensions []string `env:"EXAMPLE_FILE_EXTENSIONS"`
+
+	// Provider Registry Configuration
+	ProviderSourcesJSON     string `env:"PROVIDER_SOURCES"`
+	ProviderCategories      string `env:"PROVIDER_CATEGORIES"`
+
+	// GitHub Integration Configuration
+	GithubURL                                    string `env:"GITHUB_URL"`
+	GithubApiUrl                                 string `env:"GITHUB_API_URL"`
+	GithubAppClientId                            string `env:"GITHUB_APP_CLIENT_ID"`
+	GithubAppClientSecret                        string `env:"GITHUB_APP_CLIENT_SECRET"`
+	GithubLoginText                              string `env:"GITHUB_LOGIN_TEXT"`
+	AutoGenerateGithubOrganisationNamespaces     bool   `env:"AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES"`
+
+	// Additional Infracost Configuration
+	InfracostTlsInsecureSkipVerify bool `env:"INFRACOST_TLS_INSECURE_SKIP_VERIFY"`
 }
 
 // ProviderSource represents an external provider source configuration (for UI compatibility)
@@ -55,32 +103,7 @@ type ProviderSource struct {
 	LoginButtonText string
 }
 
-// ProviderSourceConfig holds configuration for external provider sources (domain configuration)
-type ProviderSourceConfig struct {
-	Type         string
-	APIName      string
-	ClientID     string
-	ClientSecret string
-	LoginURL     string
-	CallbackURL  string
-}
 
-// ModuleHostingMode represents the module hosting mode (from Python enum)
-type ModuleHostingMode string
-
-const (
-	ModuleHostingModeAllow    ModuleHostingMode = "true"
-	ModuleHostingModeDisallow ModuleHostingMode = "false"
-	ModuleHostingModeEnforce  ModuleHostingMode = "enforce"
-)
-
-// DefaultUiInputOutputView represents the default UI view (from Python enum)
-type DefaultUiInputOutputView string
-
-const (
-	DefaultUiInputOutputViewTable    DefaultUiInputOutputView = "table"
-	DefaultUiInputOutputViewExpanded DefaultUiInputOutputView = "expanded"
-)
 
 // UIConfig represents the configuration that is safe to expose to the UI
 // This is a read-only view of domain configuration optimized for presentation

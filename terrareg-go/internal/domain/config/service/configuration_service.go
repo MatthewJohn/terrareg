@@ -70,26 +70,78 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 		VerifiedModuleLabel:       s.getEnvStringWithDefault(rawConfig, "VERIFIED_MODULE_LABEL", "Verified"),
 
 		// Analytics configuration
-		AnalyticsTokenPhrase:      s.getEnvStringWithDefault(rawConfig, "ANALYTICS_TOKEN_PHRASE", ""),
+		AnalyticsTokenPhrase:      s.getEnvStringWithDefault(rawConfig, "ANALYTICS_TOKEN_PHRASE", "analytics token"),
 		AnalyticsTokenDescription: s.getEnvStringWithDefault(rawConfig, "ANALYTICS_TOKEN_DESCRIPTION", ""),
 		ExampleAnalyticsToken:     s.getEnvStringWithDefault(rawConfig, "EXAMPLE_ANALYTICS_TOKEN", "my-tf-application"),
 		DisableAnalytics:          s.parseBool(rawConfig["DISABLE_ANALYTICS"], false),
 
-		// Additional UI settings
-		AdditionalModuleTabs: s.parseAdditionalModuleTabs(rawConfig["ADDITIONAL_MODULE_TABS"]),
-		DefaultUiDetailsView: s.getDefaultUiView(rawConfig["DEFAULT_UI_DETAILS_VIEW"]),
-		AutoCreateNamespace:  s.parseBool(rawConfig["AUTO_CREATE_NAMESPACE"], true),
+		// UI configuration
+		AutoCreateNamespace:      s.parseBool(rawConfig["AUTO_CREATE_NAMESPACE"], true),
 		AutoCreateModuleProvider: s.parseBool(rawConfig["AUTO_CREATE_MODULE_PROVIDER"], true),
+		DefaultUiDetailsView:     s.getDefaultUiView(rawConfig["DEFAULT_UI_DETAILS_VIEW"]),
+		AdditionalModuleTabs:     s.parseAdditionalModuleTabs(rawConfig["ADDITIONAL_MODULE_TABS"]),
+		ModuleLinks:              s.parseStringSlice(rawConfig["MODULE_LINKS"], ","),
 
-		// Authentication status (derived from infrastructure)
-		OpenIDConnectEnabled:   rawConfig["OPENID_CONNECT_CLIENT_ID"] != "" && rawConfig["OPENID_CONNECT_ISSUER"] != "",
-		OpenIDConnectLoginText: s.getEnvStringWithDefault(rawConfig, "OPENID_CONNECT_LOGIN_TEXT", "Login with OpenID"),
-		SAMLEnabled:            rawConfig["SAML2_IDP_METADATA_URL"] != "",
-		SAMLLoginText:          s.getEnvStringWithDefault(rawConfig, "SAML2_LOGIN_TEXT", "Login with SAML"),
-		AdminLoginEnabled:      rawConfig["ADMIN_AUTHENTICATION_TOKEN"] != "",
+		// Terraform example version templates
+		TerraformExampleVersionTemplate:          s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE", "{major}.{minor}.{patch}"),
+		TerraformExampleVersionTemplatePreMajor: s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR", s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE", "{major}.{minor}.{patch}")),
 
 		// Provider sources (empty for now, would need more complex parsing)
 		ProviderSources: make(map[string]model.ProviderSourceConfig),
+
+		// Module Processing Configuration
+		AutoPublishModuleVersions:                 s.parseModuleVersionReindexMode(rawConfig["AUTO_PUBLISH_MODULE_VERSIONS"], model.ModuleVersionReindexModeLegacy),
+		ModuleVersionReindexMode:                 s.parseModuleVersionReindexMode(rawConfig["MODULE_VERSION_REINDEX_MODE"], model.ModuleVersionReindexModeLegacy),
+		ModuleVersionUseGitCommit:                s.parseBool(rawConfig["MODULE_VERSION_USE_GIT_COMMIT"], false),
+		RequiredModuleMetadataAttributes:         s.parseStringSlice(rawConfig["REQUIRED_MODULE_METADATA_ATTRIBUTES"], ","),
+		DeleteExternallyHostedArtifacts:          s.parseBool(rawConfig["DELETE_EXTERNALLY_HOSTED_ARTIFACTS"], false),
+		AutogenerateModuleProviderDescription:    s.parseBool(rawConfig["AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION"], true),
+		AutogenerateUsageBuilderVariables:        s.parseBool(rawConfig["AUTOGENERATE_USAGE_BUILDER_VARIABLES"], true),
+
+		// Terraform Integration Configuration
+		Product:                 s.parseProduct(rawConfig["PRODUCT"], model.ProductTerraform),
+		DefaultTerraformVersion: s.getEnvStringWithDefault(rawConfig, "DEFAULT_TERRAFORM_VERSION", "1.3.6"),
+		TerraformArchiveMirror:  rawConfig["TERRAFORM_ARCHIVE_MIRROR"],
+		ManageTerraformRcFile:   s.parseBool(rawConfig["MANAGE_TERRAFORM_RC_FILE"], false),
+		ModulesDirectory:        s.getEnvStringWithDefault(rawConfig, "MODULES_DIRECTORY", "modules"),
+		ExamplesDirectory:       s.getEnvStringWithDefault(rawConfig, "EXAMPLES_DIRECTORY", "examples"),
+
+		// UI Enhancement Configuration
+		OpenIDConnectLoginText: s.getEnvStringWithDefault(rawConfig, "OPENID_CONNECT_LOGIN_TEXT", "Login using OpenID Connect"),
+		SAMLLoginText:          s.getEnvStringWithDefault(rawConfig, "SAML2_LOGIN_TEXT", "Login using SAML"),
+
+		// Analytics and Access Configuration
+		InternalExtractionAnalyticsToken: s.getEnvStringWithDefault(rawConfig, "INTERNAL_EXTRACTION_ANALYTICS_TOKEN", "internal-terrareg-analytics-token"),
+		IgnoreAnalyticsTokenAuthKeys:     s.parseStringSlice(rawConfig["IGNORE_ANALYTICS_TOKEN_AUTH_KEYS"], ","),
+		AnalyticsAuthKeys:                s.parseStringSlice(rawConfig["ANALYTICS_AUTH_KEYS"], ","),
+		AllowUnidentifiedDownloads:       s.parseBool(rawConfig["ALLOW_UNIDENTIFIED_DOWNLOADS"], false),
+
+		// Redirect Deletion Configuration
+		AllowForcefulModuleProviderRedirectDeletion: s.parseBool(rawConfig["ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION"], false),
+		RedirectDeletionLookbackDays:               s.parseInt(rawConfig["REDIRECT_DELETION_LOOKBACK_DAYS"], -1),
+
+		// Example Configuration
+		ExampleFileExtensions: s.parseStringSlice(rawConfig["EXAMPLE_FILE_EXTENSIONS"], ","),
+
+		// Provider Registry Configuration
+		ProviderSourcesJSON: s.getEnvStringWithDefault(rawConfig, "PROVIDER_SOURCES", "[]"),
+		ProviderCategories:  s.getEnvStringWithDefault(rawConfig, "PROVIDER_CATEGORIES", `[{"id": 1, "name": "Example Category", "slug": "example-category", "user-selectable": true}]`),
+
+		// GitHub Integration Configuration
+		GithubURL:                                s.getEnvStringWithDefault(rawConfig, "GITHUB_URL", "https://github.com"),
+		GithubApiUrl:                             s.getEnvStringWithDefault(rawConfig, "GITHUB_API_URL", "https://api.github.com"),
+		GithubAppClientId:                        rawConfig["GITHUB_APP_CLIENT_ID"],
+		GithubAppClientSecret:                    rawConfig["GITHUB_APP_CLIENT_SECRET"],
+		GithubLoginText:                          s.getEnvStringWithDefault(rawConfig, "GITHUB_LOGIN_TEXT", "Login with Github"),
+		AutoGenerateGithubOrganisationNamespaces: s.parseBool(rawConfig["AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES"], false),
+
+		// Additional Infracost Configuration
+		InfracostTlsInsecureSkipVerify: s.parseBool(rawConfig["INFRACOST_TLS_INSECURE_SKIP_VERIFY"], false),
+
+		// Authentication status (derived from infrastructure)
+		OpenIDConnectEnabled: rawConfig["OPENID_CONNECT_CLIENT_ID"] != "" && rawConfig["OPENID_CONNECT_ISSUER"] != "",
+		SAMLEnabled:          rawConfig["SAML2_IDP_METADATA_URL"] != "",
+		AdminLoginEnabled:    rawConfig["ADMIN_AUTHENTICATION_TOKEN"] != "",
 	}
 }
 
@@ -149,7 +201,44 @@ func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]st
 		InfracostAPIKey:             rawConfig["INFRACOST_API_KEY"],
 		InfracostPricingAPIEndpoint: rawConfig["INFRACOST_PRICING_API_ENDPOINT"],
 		SentryDSN:                   rawConfig["SENTRY_DSN"],
-		SentryTracesSampleRate:      s.parseFloat(rawConfig["SENTRY_TRACES_SAMPLE_RATE"], 0.1),
+		SentryTracesSampleRate:      s.parseFloat(rawConfig["SENTRY_TRACES_SAMPLE_RATE"], 1.0),
+
+		// Terraform OIDC settings
+		TerraformOidcIdpSigningKeyPath:    s.getEnvStringWithDefault(rawConfig, "TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH", "signing_key.pem"),
+		TerraformOidcIdpSubjectIdHashSalt: rawConfig["TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT"],
+		TerraformOidcIdpSessionExpiry:     s.parseInt(rawConfig["TERRAFORM_OIDC_IDP_SESSION_EXPIRY"], 3600),
+
+		// SSL/TLS Configuration
+		SSLCertPrivateKey: rawConfig["SSL_CERT_PRIVATE_KEY"],
+		SSLCertPublicKey:   rawConfig["SSL_CERT_PUBLIC_KEY"],
+
+		// Complete SAML Configuration
+		SAML2EntityID:       rawConfig["SAML2_ENTITY_ID"],
+		SAML2PublicKey:      rawConfig["SAML2_PUBLIC_KEY"],
+		SAML2PrivateKey:     rawConfig["SAML2_PRIVATE_KEY"],
+		SAML2GroupAttribute: s.getEnvStringWithDefault(rawConfig, "SAML2_GROUP_ATTRIBUTE", "groups"),
+		SAML2Debug:          s.parseBool(rawConfig["SAML2_DEBUG"], false),
+
+		// Enhanced OpenID Connect Configuration
+		OpenIDConnectScopes: s.parseStringSlice(rawConfig["OPENID_CONNECT_SCOPES"], ","),
+		OpenIDConnectDebug:  s.parseBool(rawConfig["OPENID_CONNECT_DEBUG"], false),
+
+		// Access Control Configuration
+		AllowUnauthenticatedAccess: s.parseBool(rawConfig["ALLOW_UNAUTHENTICATED_ACCESS"], true),
+
+		// Git Provider Configuration
+		GitCloneTimeout:                s.parseInt(rawConfig["GIT_CLONE_TIMEOUT"], 300),
+		UpstreamGitCredentialsUsername: rawConfig["UPSTREAM_GIT_CREDENTIALS_USERNAME"],
+		UpstreamGitCredentialsPassword: rawConfig["UPSTREAM_GIT_CREDENTIALS_PASSWORD"],
+
+		// Server Configuration
+		ServerType:      s.parseServerType(rawConfig["SERVER"], model.ServerTypeBuiltin),
+		Threaded:        s.parseBool(rawConfig["THREADED"], true),
+		AllowedProviders: s.parseStringSlice(rawConfig["ALLOWED_PROVIDERS"], ","),
+
+		// Terraform Presigned URL Configuration
+		TerraformPresignedUrlSecret:        rawConfig["TERRAFORM_PRESIGNED_URL_SECRET"],
+		TerraformPresignedUrlExpirySeconds: s.parseInt(rawConfig["TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS"], 10),
 	}
 }
 
@@ -264,4 +353,43 @@ func (s *ConfigurationService) getDefaultUiView(value string) model.DefaultUiInp
 	default:
 		return model.DefaultUiInputOutputViewTable
 	}
+}
+
+// parseModuleVersionReindexMode parses the MODULE_VERSION_REINDEX_MODE or AUTO_PUBLISH_MODULE_VERSIONS environment variable
+func (s *ConfigurationService) parseModuleVersionReindexMode(value string, defaultValue model.ModuleVersionReindexMode) model.ModuleVersionReindexMode {
+	if value == "" {
+		return defaultValue
+	}
+
+	mode := model.ModuleVersionReindexMode(strings.ToLower(value))
+	if mode.IsValid() {
+		return mode
+	}
+	return defaultValue
+}
+
+// parseProduct parses the PRODUCT environment variable
+func (s *ConfigurationService) parseProduct(value string, defaultValue model.Product) model.Product {
+	if value == "" {
+		return defaultValue
+	}
+
+	product := model.Product(strings.ToLower(value))
+	if product.IsValid() {
+		return product
+	}
+	return defaultValue
+}
+
+// parseServerType parses the SERVER environment variable
+func (s *ConfigurationService) parseServerType(value string, defaultValue model.ServerType) model.ServerType {
+	if value == "" {
+		return defaultValue
+	}
+
+	serverType := model.ServerType(strings.ToLower(value))
+	if serverType.IsValid() {
+		return serverType
+	}
+	return defaultValue
 }
