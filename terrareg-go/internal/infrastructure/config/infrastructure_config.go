@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 )
 
 // InfrastructureConfig contains all infrastructure-related configuration
@@ -67,6 +69,38 @@ type InfrastructureConfig struct {
 	TerraformOidcIdpSigningKeyPath    string `env:"TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH"`
 	TerraformOidcIdpSubjectIdHashSalt string `env:"TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT"`
 	TerraformOidcIdpSessionExpiry     int    `env:"TERRAFORM_OIDC_IDP_SESSION_EXPIRY"`
+
+	// SSL/TLS Configuration
+	SSLCertPrivateKey string `env:"SSL_CERT_PRIVATE_KEY"`
+	SSLCertPublicKey   string `env:"SSL_CERT_PUBLIC_KEY"`
+
+	// Complete SAML Configuration
+	SAML2EntityID       string `env:"SAML2_ENTITY_ID"`
+	SAML2PublicKey      string `env:"SAML2_PUBLIC_KEY"`
+	SAML2PrivateKey     string `env:"SAML2_PRIVATE_KEY"`
+	SAML2GroupAttribute string `env:"SAML2_GROUP_ATTRIBUTE"`
+	SAML2Debug          bool   `env:"SAML2_DEBUG"`
+
+	// Enhanced OpenID Connect Configuration
+	OpenIDConnectScopes []string `env:"OPENID_CONNECT_SCOPES"`
+	OpenIDConnectDebug  bool     `env:"OPENID_CONNECT_DEBUG"`
+
+	// Access Control Configuration
+	AllowUnauthenticatedAccess bool `env:"ALLOW_UNAUTHENTICATED_ACCESS"`
+
+	// Git Provider Configuration
+	GitCloneTimeout                int    `env:"GIT_CLONE_TIMEOUT"`
+	UpstreamGitCredentialsUsername string `env:"UPSTREAM_GIT_CREDENTIALS_USERNAME"`
+	UpstreamGitCredentialsPassword string `env:"UPSTREAM_GIT_CREDENTIALS_PASSWORD"`
+
+	// Server Configuration
+	ServerType      model.ServerType `env:"SERVER"`
+	Threaded        bool       `env:"THREADED"`
+	AllowedProviders []string   `env:"ALLOWED_PROVIDERS"`
+
+	// Terraform Presigned URL Configuration
+	TerraformPresignedUrlSecret          string `env:"TERRAFORM_PRESIGNED_URL_SECRET"`
+	TerraformPresignedUrlExpirySeconds   int    `env:"TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS"`
 
 	// Additional infrastructure settings
 	// Note: Add any other infrastructure-specific settings here
