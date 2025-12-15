@@ -13,8 +13,8 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
@@ -41,13 +41,13 @@ func TestWebhookIntegration(t *testing.T) {
 	// Set up git configuration for the module provider
 	cloneURL := "https://github.com/{namespace}/{name}.git"
 	moduleProvider.SetGitConfiguration(
-		nil, // gitProviderID
-		nil, // repoBaseURL
+		nil,       // gitProviderID
+		nil,       // repoBaseURL
 		&cloneURL, // repoCloneURL
-		nil, // repoBrowseURL
-		nil, // gitTagFormat
-		nil, // gitPath
-		false, // archiveGitPath
+		nil,       // repoBrowseURL
+		nil,       // gitTagFormat
+		nil,       // gitPath
+		false,     // archiveGitPath
 	)
 
 	err = moduleProviderRepo.Save(context.Background(), moduleProvider)
@@ -259,7 +259,7 @@ func TestWebhookIntegration(t *testing.T) {
 
 // MockModuleImporterService is a mock implementation of ModuleImporterService
 type MockModuleImporterService struct {
-	callCount    int
+	callCount   int
 	lastGitTag  string
 	lastRequest service.ImportModuleVersionRequest
 }

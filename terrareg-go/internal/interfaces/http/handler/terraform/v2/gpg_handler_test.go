@@ -40,8 +40,8 @@ func (m *MockManageGPGKeyCommand) Execute(ctx context.Context, req interface{}) 
 // TestTerraformV2GPGHandler_GPGKeyQueries tests GPG key query execution
 func TestTerraformV2GPGHandler_GPGKeyQueries(t *testing.T) {
 	tests := []struct {
-		name        string
-		testFunc    func(t *testing.T)
+		name     string
+		testFunc func(t *testing.T)
 	}{
 		{
 			name: "get namespace GPG keys query execution",
@@ -51,11 +51,11 @@ func TestTerraformV2GPGHandler_GPGKeyQueries(t *testing.T) {
 
 				expectedGPGKeys := []providerQuery.GPGKeyResponse{
 					{
-						ID:           "key1",
-						Namespace:    "hashicorp",
-						KeyID:        "ABCD1234",
-						ASCIIArmor:   "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----",
-						CreatedAt:    "2023-01-01T00:00:00Z",
+						ID:         "key1",
+						Namespace:  "hashicorp",
+						KeyID:      "ABCD1234",
+						ASCIIArmor: "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+						CreatedAt:  "2023-01-01T00:00:00Z",
 					},
 				}
 				mockQuery.On("Execute", ctx, "hashicorp").Return(expectedGPGKeys, nil)

@@ -14,10 +14,10 @@ import (
 
 // TerraformV2GPGHandler groups all /v2/gpg-keys handlers
 type TerraformV2GPGHandler struct {
-	manageGPGKeyCmd                 *gpgkeyCmd.ManageGPGKeyCommand
-	getNamespaceGPGKeysQuery        *gpgkeyQuery.GetNamespaceGPGKeysQuery
+	manageGPGKeyCmd                  *gpgkeyCmd.ManageGPGKeyCommand
+	getNamespaceGPGKeysQuery         *gpgkeyQuery.GetNamespaceGPGKeysQuery
 	getMultipleNamespaceGPGKeysQuery *gpgkeyQuery.GetMultipleNamespaceGPGKeysQuery
-	getGPGKeyQuery                  *gpgkeyQuery.GetGPGKeyQuery
+	getGPGKeyQuery                   *gpgkeyQuery.GetGPGKeyQuery
 }
 
 // NewTerraformV2GPGHandler creates a new TerraformV2GPGHandler
@@ -28,10 +28,10 @@ func NewTerraformV2GPGHandler(
 	getGPGKeyQuery *gpgkeyQuery.GetGPGKeyQuery,
 ) *TerraformV2GPGHandler {
 	return &TerraformV2GPGHandler{
-		manageGPGKeyCmd:                 manageGPGKeyCmd,
-		getNamespaceGPGKeysQuery:        getNamespaceGPGKeysQuery,
+		manageGPGKeyCmd:                  manageGPGKeyCmd,
+		getNamespaceGPGKeysQuery:         getNamespaceGPGKeysQuery,
 		getMultipleNamespaceGPGKeysQuery: getMultipleNamespaceGPGKeysQuery,
-		getGPGKeyQuery:                  getGPGKeyQuery,
+		getGPGKeyQuery:                   getGPGKeyQuery,
 	}
 }
 
@@ -149,11 +149,11 @@ func (h *TerraformV2GPGHandler) HandleCreateGPGKey(w http.ResponseWriter, r *htt
 
 	// Convert to command request
 	cmdRequest := gpgkeyCmd.CreateGPGKeyRequest{
-		Namespace:     createRequest.Data.Attributes.Namespace,
-		ASCIILArmor:   createRequest.Data.Attributes.ASCIILArmor,
+		Namespace:      createRequest.Data.Attributes.Namespace,
+		ASCIILArmor:    createRequest.Data.Attributes.ASCIILArmor,
 		TrustSignature: createRequest.Data.Attributes.TrustSignature,
-		Source:        createRequest.Data.Attributes.Source,
-		SourceURL:     createRequest.Data.Attributes.SourceURL,
+		Source:         createRequest.Data.Attributes.Source,
+		SourceURL:      createRequest.Data.Attributes.SourceURL,
 	}
 
 	// Execute command

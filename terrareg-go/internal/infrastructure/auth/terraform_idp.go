@@ -36,7 +36,7 @@ func convertUserInfo(userInfo interface{}) (*TerraformUserInfo, error) {
 	}
 
 	// Handle struct conversion with reflection-like approach
-	if user, ok := userInfo.(struct{Sub, Name, Email, Issuer, Audience string}); ok {
+	if user, ok := userInfo.(struct{ Sub, Name, Email, Issuer, Audience string }); ok {
 		return &TerraformUserInfo{
 			Sub:      user.Sub,
 			Name:     user.Name,
@@ -58,7 +58,6 @@ func getString(m map[string]interface{}, key string) string {
 	}
 	return ""
 }
-
 
 // terraformIDP is a complete implementation of TerraformIDP interface
 type terraformIDP struct {

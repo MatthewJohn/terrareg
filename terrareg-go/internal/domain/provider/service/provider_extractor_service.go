@@ -234,11 +234,11 @@ func (s *ProviderExtractorService) extractPlatformFromFilename(filename string) 
 
 	// Common architecture patterns
 	archPatterns := map[string]string{
-		"amd64": "amd64",
+		"amd64":  "amd64",
 		"x86_64": "amd64",
-		"386":   "386",
-		"arm":   "arm",
-		"arm64": "arm64",
+		"386":    "386",
+		"arm":    "arm",
+		"arm64":  "arm64",
 	}
 
 	var detectedOS, detectedArch string

@@ -70,8 +70,8 @@ func TestExampleIntegration(t *testing.T) {
 			"outputs.tf":   []byte(`output "id" { value = "example" }`),
 		},
 		"advanced": {
-			"main.tf":     []byte(`module "test_advanced" { source = "./../" count = 2 }`),
-			"README.md":   []byte("# Advanced Example\n\nThis shows advanced usage."),
+			"main.tf":   []byte(`module "test_advanced" { source = "./../" count = 2 }`),
+			"README.md": []byte("# Advanced Example\n\nThis shows advanced usage."),
 		},
 		"minimal": {
 			"main.tf": []byte(`module "minimal" { source = "./../" }`),

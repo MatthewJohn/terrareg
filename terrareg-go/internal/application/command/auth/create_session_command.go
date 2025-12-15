@@ -57,13 +57,13 @@ func (c *CreateSessionCommand) Execute(ctx context.Context, req *CreateSessionRe
 
 // CreateSessionRequest represents a session creation request
 type CreateSessionRequest struct {
-	AuthMethod    string          `json:"auth_method"`
-	Username      string          `json:"username,omitempty"`
-	IsAdmin       bool            `json:"is_admin,omitempty"`
-	SiteAdmin     bool            `json:"site_admin,omitempty"`
-	UserGroups    []string        `json:"user_groups,omitempty"`
-	ProviderData  json.RawMessage `json:"provider_data,omitempty"`
-	TTL           *time.Duration  `json:"ttl,omitempty"`
+	AuthMethod   string          `json:"auth_method"`
+	Username     string          `json:"username,omitempty"`
+	IsAdmin      bool            `json:"is_admin,omitempty"`
+	SiteAdmin    bool            `json:"site_admin,omitempty"`
+	UserGroups   []string        `json:"user_groups,omitempty"`
+	ProviderData json.RawMessage `json:"provider_data,omitempty"`
+	TTL          *time.Duration  `json:"ttl,omitempty"`
 }
 
 // CreateSessionResponse represents a session creation response

@@ -65,8 +65,8 @@ func (r *ModuleVersionFileRepositoryImpl) FindByModuleVersionID(ctx context.Cont
 func (r *ModuleVersionFileRepositoryImpl) Save(ctx context.Context, file *model.ModuleVersionFile) error {
 	fileDB := &sqldb.ModuleVersionFileDB{
 		ModuleVersionID: file.ModuleVersion().ID(),
-		Path:           file.Path(),
-		Content:        []byte(file.Content()),
+		Path:            file.Path(),
+		Content:         []byte(file.Content()),
 	}
 
 	// Check if file already exists

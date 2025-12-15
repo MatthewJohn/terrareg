@@ -9,7 +9,7 @@ import (
 
 // GetExampleDetailsQuery retrieves details for a specific example
 type GetExampleDetailsQuery struct {
-	moduleProviderRepo  repository.ModuleProviderRepository
+	moduleProviderRepo repository.ModuleProviderRepository
 	moduleVersionRepo  repository.ModuleVersionRepository
 }
 
@@ -19,17 +19,17 @@ func NewGetExampleDetailsQuery(
 	moduleVersionRepo repository.ModuleVersionRepository,
 ) *GetExampleDetailsQuery {
 	return &GetExampleDetailsQuery{
-		moduleProviderRepo:  moduleProviderRepo,
+		moduleProviderRepo: moduleProviderRepo,
 		moduleVersionRepo:  moduleVersionRepo,
 	}
 }
 
 // ExampleDetails represents example details
 type ExampleDetails struct {
-	Path        string        `json:"path"`
-	Description string        `json:"description,omitempty"`
-	Readme      string        `json:"readme,omitempty"`
-	Files       []ModuleFile   `json:"files,omitempty"`
+	Path        string       `json:"path"`
+	Description string       `json:"description,omitempty"`
+	Readme      string       `json:"readme,omitempty"`
+	Files       []ModuleFile `json:"files,omitempty"`
 }
 
 // ModuleFile represents a file in an example

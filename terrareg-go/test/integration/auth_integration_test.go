@@ -91,10 +91,10 @@ func TestAuthenticationIntegration(t *testing.T) {
 	t.Run("Get session", func(t *testing.T) {
 		// First create a session
 		session := &model.Session{
-			ID:        "test-session-id",
+			ID:         "test-session-id",
 			AuthMethod: "anonymous",
-			CreatedAt: time.Now(),
-			ExpiresAt: time.Now().Add(24 * time.Hour),
+			CreatedAt:  time.Now(),
+			ExpiresAt:  time.Now().Add(24 * time.Hour),
 		}
 
 		ctx := context.Background()
@@ -119,10 +119,10 @@ func TestAuthenticationIntegration(t *testing.T) {
 	t.Run("Delete session", func(t *testing.T) {
 		// First create a session
 		session := &model.Session{
-			ID:        "test-session-id-2",
+			ID:         "test-session-id-2",
 			AuthMethod: "anonymous",
-			CreatedAt: time.Now(),
-			ExpiresAt: time.Now().Add(24 * time.Hour),
+			CreatedAt:  time.Now(),
+			ExpiresAt:  time.Now().Add(24 * time.Hour),
 		}
 
 		ctx := context.Background()
@@ -145,10 +145,10 @@ func TestAuthenticationIntegration(t *testing.T) {
 	t.Run("Handle expired session", func(t *testing.T) {
 		// Create an expired session
 		session := &model.Session{
-			ID:        "expired-session-id",
+			ID:         "expired-session-id",
 			AuthMethod: "anonymous",
-			CreatedAt: time.Now().Add(-25 * time.Hour),
-			ExpiresAt: time.Now().Add(-1 * time.Hour), // Expired
+			CreatedAt:  time.Now().Add(-25 * time.Hour),
+			ExpiresAt:  time.Now().Add(-1 * time.Hour), // Expired
 		}
 
 		ctx := context.Background()
@@ -201,10 +201,10 @@ func TestAuthenticationIntegration(t *testing.T) {
 	t.Run("Test session token validation", func(t *testing.T) {
 		// Create a session with valid characters
 		session := &model.Session{
-			ID:        "valid-session-token-123",
+			ID:         "valid-session-token-123",
 			AuthMethod: "anonymous",
-			CreatedAt: time.Now(),
-			ExpiresAt: time.Now().Add(24 * time.Hour),
+			CreatedAt:  time.Now(),
+			ExpiresAt:  time.Now().Add(24 * time.Hour),
 		}
 
 		ctx := context.Background()
@@ -230,10 +230,10 @@ func TestAuthenticationIntegration(t *testing.T) {
 		sessions := make([]*model.Session, 5)
 		for i := 0; i < 5; i++ {
 			sessions[i] = &model.Session{
-				ID:        fmt.Sprintf("concurrent-session-%d", i),
+				ID:         fmt.Sprintf("concurrent-session-%d", i),
 				AuthMethod: "anonymous",
-				CreatedAt: time.Now(),
-				ExpiresAt: time.Now().Add(24 * time.Hour),
+				CreatedAt:  time.Now(),
+				ExpiresAt:  time.Now().Add(24 * time.Hour),
 			}
 
 			ctx := context.Background()

@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	configmodule "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 

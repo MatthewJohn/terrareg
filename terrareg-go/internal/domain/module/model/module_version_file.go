@@ -8,12 +8,12 @@ import (
 
 // ModuleVersionFile represents a file within a module version
 type ModuleVersionFile struct {
-	id             int
-	moduleVersion  *ModuleVersion
-	path           string
-	content        string
-	fileName       string
-	contentType    string
+	id            int
+	moduleVersion *ModuleVersion
+	path          string
+	content       string
+	fileName      string
+	contentType   string
 }
 
 // NewModuleVersionFile creates a new module version file

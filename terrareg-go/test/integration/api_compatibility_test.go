@@ -17,8 +17,8 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
-	moduleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
+	moduleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
 
@@ -227,9 +227,9 @@ func TestAPICompatibility(t *testing.T) {
 
 		// Create redirect
 		redirect := &model.ModuleProviderRedirect{
-			FromNamespace:     namespace1.Name(),
-			FromModule:        fromProvider.Module(),
-			FromProvider:      fromProvider.Provider(),
+			FromNamespace:      namespace1.Name(),
+			FromModule:         fromProvider.Module(),
+			FromProvider:       fromProvider.Provider(),
 			ToModuleProviderID: toProvider.ID(),
 		}
 

@@ -59,9 +59,9 @@ func (p *TerraformGraphParser) ParseModuleDependencyGraph(
 	}
 
 	return &model.ModuleDependencyGraph{
-		Module:        moduleNode,
+		Module:       moduleNode,
 		Dependencies: dependencies,
-		Modules:       modules,
+		Modules:      modules,
 		Metadata: model.ModuleGraphMetadata{
 			IncludeBeta:       includeBeta,
 			IncludeOptional:   includeOptional,

@@ -24,19 +24,19 @@ type GraphNode struct {
 
 // GraphEdge represents an edge in the dependency graph
 type GraphEdge struct {
-	ID       string `json:"id"`
-	Source   string `json:"source"`
-	Target   string `json:"target"`
-	Label    string `json:"label,omitempty"`
-	Classes  []string `json:"classes,omitempty"`
-	Style    map[string]string `json:"style,omitempty"`
+	ID      string            `json:"id"`
+	Source  string            `json:"source"`
+	Target  string            `json:"target"`
+	Label   string            `json:"label,omitempty"`
+	Classes []string          `json:"classes,omitempty"`
+	Style   map[string]string `json:"style,omitempty"`
 }
 
 // DependencyGraph represents the complete dependency graph
 type DependencyGraph struct {
-	Nodes    []GraphNode          `json:"nodes"`
-	Edges    []GraphEdge          `json:"edges"`
-	Metadata GraphMetadata       `json:"metadata"`
+	Nodes    []GraphNode   `json:"nodes"`
+	Edges    []GraphEdge   `json:"edges"`
+	Metadata GraphMetadata `json:"metadata"`
 }
 
 // GraphMetadata contains metadata about the graph
@@ -51,10 +51,10 @@ type GraphMetadata struct {
 
 // ModuleDependencyGraph represents a dependency graph for a specific module
 type ModuleDependencyGraph struct {
-	Module        ModuleNode         `json:"module"`
-	Dependencies []DependencyNode  `json:"dependencies"`
-	Modules       []DependencyNode  `json:"modules"`
-	Metadata      ModuleGraphMetadata `json:"metadata"`
+	Module       ModuleNode          `json:"module"`
+	Dependencies []DependencyNode    `json:"dependencies"`
+	Modules      []DependencyNode    `json:"modules"`
+	Metadata     ModuleGraphMetadata `json:"metadata"`
 }
 
 // ModuleNode represents the module at the root of the dependency graph
@@ -77,10 +77,10 @@ type DependencyNode struct {
 
 // ModuleGraphMetadata contains metadata for a module dependency graph
 type ModuleGraphMetadata struct {
-	IncludeBeta       bool `json:"include_beta"`
-	IncludeOptional   bool `json:"include_optional"`
-	TotalDependencies int  `json:"total_dependencies"`
-	TotalModules      int  `json:"total_modules"`
+	IncludeBeta       bool   `json:"include_beta"`
+	IncludeOptional   bool   `json:"include_optional"`
+	TotalDependencies int    `json:"total_dependencies"`
+	TotalModules      int    `json:"total_modules"`
 	GeneratedAt       string `json:"generated_at"`
 }
 

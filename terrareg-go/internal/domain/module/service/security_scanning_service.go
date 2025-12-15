@@ -40,12 +40,12 @@ type SecurityScanRequest struct {
 
 // SecurityScanResult represents a tfsec scan result
 type SecurityScanResult struct {
-	RuleID      string                  `json:"rule_id"`
-	Severity    string                  `json:"severity"`
-	Title       string                  `json:"title"`
-	Description string                  `json:"description"`
-	Location    SecurityScanLocation    `json:"location"`
-	Links       []string                `json:"links,omitempty"`
+	RuleID      string               `json:"rule_id"`
+	Severity    string               `json:"severity"`
+	Title       string               `json:"title"`
+	Description string               `json:"description"`
+	Location    SecurityScanLocation `json:"location"`
+	Links       []string             `json:"links,omitempty"`
 }
 
 // SecurityScanLocation represents the location of a security issue

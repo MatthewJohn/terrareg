@@ -61,7 +61,7 @@ type userGroup struct {
 	siteAdmin bool
 }
 
-func (g *userGroup) ID() int        { return g.id }
+func (g *userGroup) ID() int         { return g.id }
 func (g *userGroup) Name() string    { return g.name }
 func (g *userGroup) SiteAdmin() bool { return g.siteAdmin }
 

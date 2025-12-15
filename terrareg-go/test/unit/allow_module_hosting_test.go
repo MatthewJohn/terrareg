@@ -50,24 +50,24 @@ func TestModuleVersionUpload_ConfigValidation(t *testing.T) {
 	// This is a simplified test focusing on config validation rather than full upload flow
 
 	tests := []struct {
-		name                 string
-		allowModuleHosting   model.ModuleHostingMode
-		expectedShouldAllow  bool
+		name                string
+		allowModuleHosting  model.ModuleHostingMode
+		expectedShouldAllow bool
 	}{
 		{
-			name:                 "Allow mode - upload should be allowed",
-			allowModuleHosting:   model.ModuleHostingModeAllow,
-			expectedShouldAllow:  true,
+			name:                "Allow mode - upload should be allowed",
+			allowModuleHosting:  model.ModuleHostingModeAllow,
+			expectedShouldAllow: true,
 		},
 		{
-			name:                 "Enforce mode - upload should be allowed",
-			allowModuleHosting:   model.ModuleHostingModeEnforce,
-			expectedShouldAllow:  true,
+			name:                "Enforce mode - upload should be allowed",
+			allowModuleHosting:  model.ModuleHostingModeEnforce,
+			expectedShouldAllow: true,
 		},
 		{
-			name:                 "Disallow mode - upload should be blocked",
-			allowModuleHosting:   model.ModuleHostingModeDisallow,
-			expectedShouldAllow:  false,
+			name:                "Disallow mode - upload should be blocked",
+			allowModuleHosting:  model.ModuleHostingModeDisallow,
+			expectedShouldAllow: false,
 		},
 	}
 
@@ -80,7 +80,7 @@ func TestModuleVersionUpload_ConfigValidation(t *testing.T) {
 
 			// Simple validation check based on config
 			shouldAllow := cfg.AllowModuleHosting == model.ModuleHostingModeAllow ||
-						  cfg.AllowModuleHosting == model.ModuleHostingModeEnforce
+				cfg.AllowModuleHosting == model.ModuleHostingModeEnforce
 
 			assert.Equal(t, tt.expectedShouldAllow, shouldAllow)
 			assert.Equal(t, tt.allowModuleHosting, cfg.AllowModuleHosting)

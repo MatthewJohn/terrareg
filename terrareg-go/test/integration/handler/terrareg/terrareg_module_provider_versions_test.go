@@ -138,7 +138,6 @@ func TestTerraregModuleProviderVersions_EndpointLogic(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	
 	// Should contain published versions + published beta versions (not unpublished beta)
 	assert.Len(t, response, 3, "Should contain 3 versions when including beta (published non-beta + published beta)")
 

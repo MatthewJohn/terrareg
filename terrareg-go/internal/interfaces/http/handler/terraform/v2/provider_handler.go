@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
 
@@ -130,12 +130,12 @@ func (h *TerraformV2ProviderHandler) HandleProviderDownload(w http.ResponseWrite
 
 	// Create download request (similar to V1)
 	req := &providerCmd.GetProviderDownloadRequest{
-		Namespace:       namespace,
-		Provider:        providerName,
-		Version:         version,
-		OS:              os,
-		Arch:            arch,
-		UserAgent:       userAgent,
+		Namespace:        namespace,
+		Provider:         providerName,
+		Version:          version,
+		OS:               os,
+		Arch:             arch,
+		UserAgent:        userAgent,
 		TerraformVersion: terraformVersion,
 	}
 
@@ -144,7 +144,7 @@ func (h *TerraformV2ProviderHandler) HandleProviderDownload(w http.ResponseWrite
 	if err != nil {
 		// Handle errors consistently with V1 handler
 		if err.Error() == "provider not found" ||
-		   err.Error() == "provider version not found" {
+			err.Error() == "provider version not found" {
 			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider version %s/%s/%s not found", namespace, providerName, version))
 			return
 		}
@@ -194,21 +194,21 @@ func (h *TerraformV2ProviderHandler) buildV2ProviderResponse(namespace, provider
 			"type": "providers",
 			"id":   provider.ID(),
 			"attributes": map[string]interface{}{
-				"alias":         "", // TODO: Implement when alias is added to domain model
-				"description":   provider.Description(),
-				"downloads":     0, // TODO: Implement analytics integration
-				"featured":      false, // TODO: Implement when featured is added to domain model
-				"full-name":     fmt.Sprintf("%s/%s", namespace, providerName),
-				"logo-url":      "", // TODO: Implement when logo URL is added to domain model
-				"name":          provider.Name(),
-				"namespace":     namespace,
-				"owner-name":    "", // TODO: Implement when owner name is added to domain model
-				"repository-id": provider.RepositoryID(),
+				"alias":          "", // TODO: Implement when alias is added to domain model
+				"description":    provider.Description(),
+				"downloads":      0,     // TODO: Implement analytics integration
+				"featured":       false, // TODO: Implement when featured is added to domain model
+				"full-name":      fmt.Sprintf("%s/%s", namespace, providerName),
+				"logo-url":       "", // TODO: Implement when logo URL is added to domain model
+				"name":           provider.Name(),
+				"namespace":      namespace,
+				"owner-name":     "", // TODO: Implement when owner name is added to domain model
+				"repository-id":  provider.RepositoryID(),
 				"robots-noindex": false, // TODO: Implement when robots noindex is added to domain model
-				"source":        "", // TODO: Implement when source URL is added to domain model
-				"tier":          provider.Tier(),
-				"unlisted":      false, // TODO: Implement when unlisted is added to domain model
-				"warning":       "", // TODO: Implement when warning is added to domain model
+				"source":         "",    // TODO: Implement when source URL is added to domain model
+				"tier":           provider.Tier(),
+				"unlisted":       false, // TODO: Implement when unlisted is added to domain model
+				"warning":        "",    // TODO: Implement when warning is added to domain model
 			},
 			"links": map[string]interface{}{
 				"self": fmt.Sprintf("/v2/providers/%d", provider.ID()),
@@ -228,14 +228,14 @@ func (h *TerraformV2ProviderHandler) buildV2VersionsResponse(namespace, provider
 
 	for _, version := range versions {
 		versionData := map[string]interface{}{
-			"id": version.ID(),
+			"id":   version.ID(),
 			"type": "provider-versions",
 			"attributes": map[string]interface{}{
-				"description": "", // TODO: Implement when description is added to provider version
-				"downloads":     0, // TODO: Implement analytics integration
-				"published-at":  "", // TODO: Implement when published_at is added to provider version
-				"tag":           "", // TODO: Implement when git tag is added to provider version
-				"version":       version.Version(),
+				"description":  "", // TODO: Implement when description is added to provider version
+				"downloads":    0,  // TODO: Implement analytics integration
+				"published-at": "", // TODO: Implement when published_at is added to provider version
+				"tag":          "", // TODO: Implement when git tag is added to provider version
+				"version":      version.Version(),
 			},
 			"links": map[string]interface{}{
 				"self": fmt.Sprintf("/v2/provider-versions/%d", version.ID()),
@@ -277,11 +277,11 @@ func (h *TerraformV2ProviderHandler) buildV2VersionResponse(namespace, providerN
 			"type": "provider-versions",
 			"id":   version.ID(),
 			"attributes": map[string]interface{}{
-				"description": "", // TODO: Implement when description is added to provider version
-				"downloads":     0, // TODO: Implement analytics integration
-				"published-at":  "", // TODO: Implement when published_at is added to provider version
-				"tag":           "", // TODO: Implement when git tag is added to provider version
-				"version":       version.Version(),
+				"description":  "", // TODO: Implement when description is added to provider version
+				"downloads":    0,  // TODO: Implement analytics integration
+				"published-at": "", // TODO: Implement when published_at is added to provider version
+				"tag":          "", // TODO: Implement when git tag is added to provider version
+				"version":      version.Version(),
 			},
 			"links": map[string]interface{}{
 				"self": fmt.Sprintf("/v2/provider-versions/%d", version.ID()),

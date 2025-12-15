@@ -10,7 +10,7 @@ import (
 // GetSubmoduleDetailsQuery retrieves details for a specific submodule
 type GetSubmoduleDetailsQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
-	moduleVersionRepo repository.ModuleVersionRepository
+	moduleVersionRepo  repository.ModuleVersionRepository
 }
 
 // NewGetSubmoduleDetailsQuery creates a new query
@@ -19,16 +19,16 @@ func NewGetSubmoduleDetailsQuery(
 	moduleVersionRepo repository.ModuleVersionRepository,
 ) *GetSubmoduleDetailsQuery {
 	return &GetSubmoduleDetailsQuery{
-		moduleProviderRepo:  moduleProviderRepo,
+		moduleProviderRepo: moduleProviderRepo,
 		moduleVersionRepo:  moduleVersionRepo,
 	}
 }
 
 // SubmoduleDetails represents submodule details
 type SubmoduleDetails struct {
-	Path        string            `json:"path"`
-	Description string            `json:"description,omitempty"`
-	Readme      string            `json:"readme,omitempty"`
+	Path        string          `json:"path"`
+	Description string          `json:"description,omitempty"`
+	Readme      string          `json:"readme,omitempty"`
 	Files       []SubmoduleFile `json:"files,omitempty"`
 }
 

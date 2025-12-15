@@ -109,8 +109,8 @@ func (h *AuthTestHelper) CreateTestUserGroupNamespacePermission(
 	permissionType sqldb.UserGroupNamespacePermissionType,
 ) sqldb.UserGroupNamespacePermissionDB {
 	permission := sqldb.UserGroupNamespacePermissionDB{
-		UserGroupID:     userGroupID,
-		NamespaceID:     namespaceID,
+		UserGroupID:    userGroupID,
+		NamespaceID:    namespaceID,
 		PermissionType: permissionType,
 	}
 

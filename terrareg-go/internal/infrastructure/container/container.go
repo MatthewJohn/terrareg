@@ -13,8 +13,8 @@ import (
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	auditQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/audit"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
-	gpgkeyQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/gpgkey"
 	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
+	gpgkeyQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/gpgkey"
 	graphQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/graph"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
@@ -29,9 +29,9 @@ import (
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
+	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 	gpgkeyService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/service"
-	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	graphRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
 	graphService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/service"
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
@@ -50,8 +50,8 @@ import (
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
 	auditPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
-	graphPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/graph"
 	gpgkeyPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/gpgkey"
+	graphPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/graph"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	providerLogoRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/provider_logo"
@@ -99,8 +99,8 @@ type Container struct {
 	GraphService *graphService.GraphService
 
 	// GPG Keys
-	GPGKeyRepo     gpgkeyRepo.GPGKeyRepository
-	GPGKeyService  *gpgkeyService.GPGKeyService
+	GPGKeyRepo    gpgkeyRepo.GPGKeyRepository
+	GPGKeyService *gpgkeyService.GPGKeyService
 
 	// Infrastructure Services
 	GitClient      gitService.GitClient

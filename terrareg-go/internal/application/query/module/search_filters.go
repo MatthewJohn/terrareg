@@ -14,11 +14,11 @@ type SearchFiltersQuery struct {
 }
 
 type SearchFilterCounts struct {
-	Verified         int            `json:"verified"`
+	Verified          int            `json:"verified"`
 	TrustedNamespaces int            `json:"trusted_namespaces"`
-	Contributed      int            `json:"contributed"`
-	Providers        map[string]int `json:"providers"`
-	Namespaces       map[string]int `json:"namespaces"`
+	Contributed       int            `json:"contributed"`
+	Providers         map[string]int `json:"providers"`
+	Namespaces        map[string]int `json:"namespaces"`
 }
 
 func NewSearchFiltersQuery(moduleProviderRepo repository.ModuleProviderRepository, domainConfig *configModel.DomainConfig) *SearchFiltersQuery {

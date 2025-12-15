@@ -11,7 +11,7 @@ import (
 type GlobalStatsQuery struct {
 	namespaceRepo      moduleRepo.NamespaceRepository
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
-	analyticsRepo     analyticsCmd.AnalyticsRepository
+	analyticsRepo      analyticsCmd.AnalyticsRepository
 }
 
 // NewGlobalStatsQuery creates a new global stats query
@@ -23,7 +23,7 @@ func NewGlobalStatsQuery(
 	return &GlobalStatsQuery{
 		namespaceRepo:      namespaceRepo,
 		moduleProviderRepo: moduleProviderRepo,
-		analyticsRepo:     analyticsRepo,
+		analyticsRepo:      analyticsRepo,
 	}
 }
 

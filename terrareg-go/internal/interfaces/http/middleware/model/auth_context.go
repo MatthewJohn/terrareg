@@ -7,10 +7,10 @@ import (
 // AuthContext consolidates all authentication-related context values
 type AuthContext struct {
 	// Authentication details
-	AuthMethod     auth.AuthMethodType `json:"auth_method"`
-	Username       string              `json:"username"`
-	IsAdmin        bool                `json:"is_admin"`
-	SessionID      string              `json:"session_id,omitempty"`
+	AuthMethod auth.AuthMethodType `json:"auth_method"`
+	Username   string              `json:"username"`
+	IsAdmin    bool                `json:"is_admin"`
+	SessionID  string              `json:"session_id,omitempty"`
 
 	// Authorization details
 	Permissions map[string]string `json:"permissions,omitempty"`

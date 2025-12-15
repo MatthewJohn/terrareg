@@ -56,8 +56,8 @@ func (m *MockGetProviderVersionsQuery) Execute(ctx context.Context, namespace, n
 // TestTerraformV2ProviderHandler_QueryExecution tests provider query execution
 func TestTerraformV2ProviderHandler_QueryExecution(t *testing.T) {
 	tests := []struct {
-		name        string
-		testFunc    func(t *testing.T)
+		name     string
+		testFunc func(t *testing.T)
 	}{
 		{
 			name: "get provider query execution",
@@ -136,27 +136,27 @@ func TestTerraformV2ProviderHandler_QueryExecution(t *testing.T) {
 // TestTerraformV2ProviderHandler_URLParsing tests URL parameter parsing for provider endpoints
 func TestTerraformV2ProviderHandler_URLParsing(t *testing.T) {
 	tests := []struct {
-		name        string
-		url         string
-		expectedNS  string
+		name         string
+		url          string
+		expectedNS   string
 		expectedProv string
 	}{
 		{
-			name:        "provider details URL",
-			url:         "/v2/providers/hashicorp/aws",
-			expectedNS:  "hashicorp",
+			name:         "provider details URL",
+			url:          "/v2/providers/hashicorp/aws",
+			expectedNS:   "hashicorp",
 			expectedProv: "aws",
 		},
 		{
-			name:        "provider versions URL",
-			url:         "/v2/providers/hashicorp/aws/versions",
-			expectedNS:  "hashicorp",
+			name:         "provider versions URL",
+			url:          "/v2/providers/hashicorp/aws/versions",
+			expectedNS:   "hashicorp",
 			expectedProv: "aws",
 		},
 		{
-			name:        "provider version download URL",
-			url:         "/v2/providers/hashicorp/aws/1.0.0/download",
-			expectedNS:  "hashicorp",
+			name:         "provider version download URL",
+			url:          "/v2/providers/hashicorp/aws/1.0.0/download",
+			expectedNS:   "hashicorp",
 			expectedProv: "aws",
 		},
 	}

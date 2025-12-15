@@ -13,8 +13,8 @@ import (
 
 // ConfigurationService is the single source of truth for all configuration loading
 type ConfigurationService struct {
-	envLoader  *config.EnvironmentLoader
-	validator  *config.ConfigValidator
+	envLoader *config.EnvironmentLoader
+	validator *config.ConfigValidator
 }
 
 // ConfigurationServiceOptions provides configuration for the service
@@ -83,20 +83,20 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 		ModuleLinks:              s.parseStringSlice(rawConfig["MODULE_LINKS"], ","),
 
 		// Terraform example version templates
-		TerraformExampleVersionTemplate:          s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE", "{major}.{minor}.{patch}"),
+		TerraformExampleVersionTemplate:         s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE", "{major}.{minor}.{patch}"),
 		TerraformExampleVersionTemplatePreMajor: s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR", s.getEnvStringWithDefault(rawConfig, "TERRAFORM_EXAMPLE_VERSION_TEMPLATE", "{major}.{minor}.{patch}")),
 
 		// Provider sources (empty for now, would need more complex parsing)
 		ProviderSources: make(map[string]model.ProviderSourceConfig),
 
 		// Module Processing Configuration
-		AutoPublishModuleVersions:                 s.parseBool(rawConfig["AUTO_PUBLISH_MODULE_VERSIONS"], true),
-		ModuleVersionReindexMode:                 s.parseModuleVersionReindexMode(rawConfig["MODULE_VERSION_REINDEX_MODE"], model.ModuleVersionReindexModeLegacy),
-		ModuleVersionUseGitCommit:                s.parseBool(rawConfig["MODULE_VERSION_USE_GIT_COMMIT"], false),
-		RequiredModuleMetadataAttributes:         s.parseStringSlice(rawConfig["REQUIRED_MODULE_METADATA_ATTRIBUTES"], ","),
-		DeleteExternallyHostedArtifacts:          s.parseBool(rawConfig["DELETE_EXTERNALLY_HOSTED_ARTIFACTS"], false),
-		AutogenerateModuleProviderDescription:    s.parseBool(rawConfig["AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION"], true),
-		AutogenerateUsageBuilderVariables:        s.parseBool(rawConfig["AUTOGENERATE_USAGE_BUILDER_VARIABLES"], true),
+		AutoPublishModuleVersions:             s.parseBool(rawConfig["AUTO_PUBLISH_MODULE_VERSIONS"], true),
+		ModuleVersionReindexMode:              s.parseModuleVersionReindexMode(rawConfig["MODULE_VERSION_REINDEX_MODE"], model.ModuleVersionReindexModeLegacy),
+		ModuleVersionUseGitCommit:             s.parseBool(rawConfig["MODULE_VERSION_USE_GIT_COMMIT"], false),
+		RequiredModuleMetadataAttributes:      s.parseStringSlice(rawConfig["REQUIRED_MODULE_METADATA_ATTRIBUTES"], ","),
+		DeleteExternallyHostedArtifacts:       s.parseBool(rawConfig["DELETE_EXTERNALLY_HOSTED_ARTIFACTS"], false),
+		AutogenerateModuleProviderDescription: s.parseBool(rawConfig["AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION"], true),
+		AutogenerateUsageBuilderVariables:     s.parseBool(rawConfig["AUTOGENERATE_USAGE_BUILDER_VARIABLES"], true),
 
 		// Terraform Integration Configuration
 		Product:                 s.parseProduct(rawConfig["PRODUCT"], model.ProductTerraform),
@@ -118,7 +118,7 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 
 		// Redirect Deletion Configuration
 		AllowForcefulModuleProviderRedirectDeletion: s.parseBool(rawConfig["ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION"], false),
-		RedirectDeletionLookbackDays:               s.parseInt(rawConfig["REDIRECT_DELETION_LOOKBACK_DAYS"], -1),
+		RedirectDeletionLookbackDays:                s.parseInt(rawConfig["REDIRECT_DELETION_LOOKBACK_DAYS"], -1),
 
 		// Example Configuration
 		ExampleFileExtensions: s.parseStringSlice(rawConfig["EXAMPLE_FILE_EXTENSIONS"], ","),
@@ -210,7 +210,7 @@ func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]st
 
 		// SSL/TLS Configuration
 		SSLCertPrivateKey: rawConfig["SSL_CERT_PRIVATE_KEY"],
-		SSLCertPublicKey:   rawConfig["SSL_CERT_PUBLIC_KEY"],
+		SSLCertPublicKey:  rawConfig["SSL_CERT_PUBLIC_KEY"],
 
 		// Complete SAML Configuration
 		SAML2EntityID:       rawConfig["SAML2_ENTITY_ID"],
@@ -232,8 +232,8 @@ func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]st
 		UpstreamGitCredentialsPassword: rawConfig["UPSTREAM_GIT_CREDENTIALS_PASSWORD"],
 
 		// Server Configuration
-		ServerType:      s.parseServerType(rawConfig["SERVER"], model.ServerTypeBuiltin),
-		Threaded:        s.parseBool(rawConfig["THREADED"], true),
+		ServerType:       s.parseServerType(rawConfig["SERVER"], model.ServerTypeBuiltin),
+		Threaded:         s.parseBool(rawConfig["THREADED"], true),
 		AllowedProviders: s.parseStringSlice(rawConfig["ALLOWED_PROVIDERS"], ","),
 
 		// Terraform Presigned URL Configuration
@@ -316,7 +316,7 @@ func (s *ConfigurationService) parseDuration(value string, defaultMinutes int) t
 }
 
 // parseStringSlice parses a comma-separated string into a slice
-// This matches the Python pattern: [attr for attr in os.environ.get(..., '').split(',') if attr]
+// This matches the Python pattern: [attr for attr in os.environ.get(..., ”).split(',') if attr]
 func (s *ConfigurationService) parseStringSlice(value, separator string) []string {
 	if value == "" {
 		return []string{}

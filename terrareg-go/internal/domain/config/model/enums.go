@@ -5,9 +5,9 @@ package model
 type ModuleVersionReindexMode string
 
 const (
-	ModuleVersionReindexModeLegacy     ModuleVersionReindexMode = "legacy"
+	ModuleVersionReindexModeLegacy      ModuleVersionReindexMode = "legacy"
 	ModuleVersionReindexModeAutoPublish ModuleVersionReindexMode = "auto-publish"
-	ModuleVersionReindexModeProhibit   ModuleVersionReindexMode = "prohibit"
+	ModuleVersionReindexModeProhibit    ModuleVersionReindexMode = "prohibit"
 )
 
 // IsValid validates the module version reindex mode

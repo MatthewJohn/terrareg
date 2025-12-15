@@ -10,11 +10,11 @@ import (
 func TestModuleSpecs_StandardAPIFields(t *testing.T) {
 	// Test that standard ModuleSpecs has correct fields (no 'modules' field)
 	specs := ModuleSpecs{
-		Path:     "",
-		Readme:   "# Test Readme",
-		Empty:    false,
-		Inputs:   []TerraformInput{},
-		Outputs:  []TerraformOutput{},
+		Path:    "",
+		Readme:  "# Test Readme",
+		Empty:   false,
+		Inputs:  []TerraformInput{},
+		Outputs: []TerraformOutput{},
 		Dependencies: []TerraformDependency{
 			{
 				Module:  "vpc",

@@ -10,7 +10,7 @@ import (
 // GlobalUsageStatsQuery handles getting global usage statistics
 type GlobalUsageStatsQuery struct {
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
-	analyticsRepo     analyticsCmd.AnalyticsRepository
+	analyticsRepo      analyticsCmd.AnalyticsRepository
 }
 
 // NewGlobalUsageStatsQuery creates a new global usage stats query
@@ -20,17 +20,17 @@ func NewGlobalUsageStatsQuery(
 ) *GlobalUsageStatsQuery {
 	return &GlobalUsageStatsQuery{
 		moduleProviderRepo: moduleProviderRepo,
-		analyticsRepo:     analyticsRepo,
+		analyticsRepo:      analyticsRepo,
 	}
 }
 
 // GlobalUsageStats represents global usage statistics
 type GlobalUsageStats struct {
-	ModuleProviderCount                               int                           `json:"module_provider_count"`
-	ModuleProviderUsageBreakdownWithAuthToken          map[string]int                 `json:"module_provider_usage_breakdown_with_auth_token"`
-	ModuleProviderUsageCountWithAuthToken             int                            `json:"module_provider_usage_count_with_auth_token"`
-	ModuleProviderUsageIncludingEmptyAuthToken         map[string]int                 `json:"module_provider_usage_including_empty_auth_token"`
-	ModuleProviderUsageCountIncludingEmptyAuthToken    int                            `json:"module_provider_usage_count_including_empty_auth_token"`
+	ModuleProviderCount                             int            `json:"module_provider_count"`
+	ModuleProviderUsageBreakdownWithAuthToken       map[string]int `json:"module_provider_usage_breakdown_with_auth_token"`
+	ModuleProviderUsageCountWithAuthToken           int            `json:"module_provider_usage_count_with_auth_token"`
+	ModuleProviderUsageIncludingEmptyAuthToken      map[string]int `json:"module_provider_usage_including_empty_auth_token"`
+	ModuleProviderUsageCountIncludingEmptyAuthToken int            `json:"module_provider_usage_count_including_empty_auth_token"`
 }
 
 // Execute executes the query
@@ -65,11 +65,11 @@ func (q *GlobalUsageStatsQuery) Execute(ctx context.Context) (*GlobalUsageStats,
 	}
 
 	result := &GlobalUsageStats{
-		ModuleProviderCount:                               len(moduleProviders.Modules),
-		ModuleProviderUsageBreakdownWithAuthToken:          usageWithAuth,
-		ModuleProviderUsageCountWithAuthToken:             totalWithAuth,
-		ModuleProviderUsageIncludingEmptyAuthToken:         usageIncludingEmpty,
-		ModuleProviderUsageCountIncludingEmptyAuthToken:    totalIncludingEmpty,
+		ModuleProviderCount:                             len(moduleProviders.Modules),
+		ModuleProviderUsageBreakdownWithAuthToken:       usageWithAuth,
+		ModuleProviderUsageCountWithAuthToken:           totalWithAuth,
+		ModuleProviderUsageIncludingEmptyAuthToken:      usageIncludingEmpty,
+		ModuleProviderUsageCountIncludingEmptyAuthToken: totalIncludingEmpty,
 	}
 
 	return result, nil

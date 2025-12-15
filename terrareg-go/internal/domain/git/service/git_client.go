@@ -13,7 +13,7 @@ type GitCredentials struct {
 
 // CloneOptions represents options for cloning a repository
 type CloneOptions struct {
-	Timeout    time.Duration
+	Timeout     time.Duration
 	Credentials *GitCredentials
 }
 

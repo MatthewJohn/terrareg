@@ -20,18 +20,18 @@ import (
 // ModuleProviderRepositoryImpl implements ModuleProviderRepository using GORM
 type ModuleProviderRepositoryImpl struct {
 	db              *gorm.DB
-	namespaceRepo    repository.NamespaceRepository
-	domainConfig     *configModel.DomainConfig
-	submoduleLoader  *SubmoduleLoader
+	namespaceRepo   repository.NamespaceRepository
+	domainConfig    *configModel.DomainConfig
+	submoduleLoader *SubmoduleLoader
 }
 
 // NewModuleProviderRepository creates a new module provider repository
 func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, domainConfig *configModel.DomainConfig) repository.ModuleProviderRepository {
 	return &ModuleProviderRepositoryImpl{
 		db:              db,
-		namespaceRepo:    namespaceRepo,
-		domainConfig:     domainConfig,
-		submoduleLoader:  NewSubmoduleLoader(db),
+		namespaceRepo:   namespaceRepo,
+		domainConfig:    domainConfig,
+		submoduleLoader: NewSubmoduleLoader(db),
 	}
 }
 

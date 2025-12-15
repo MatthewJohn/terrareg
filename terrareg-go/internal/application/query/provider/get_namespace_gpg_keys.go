@@ -35,12 +35,12 @@ func (q *GetNamespaceGPGKeysQuery) Execute(ctx context.Context, namespace string
 
 // GPGKeyResponse represents a GPG key in the API response
 type GPGKeyResponse struct {
-	ID            string `json:"id"`
-	Namespace     string `json:"namespace"`
-	KeyID         string `json:"key_id"`
-	ASCIIArmor    string `json:"ascii_armor"`
+	ID             string `json:"id"`
+	Namespace      string `json:"namespace"`
+	KeyID          string `json:"key_id"`
+	ASCIIArmor     string `json:"ascii_armor"`
 	TrustSignature string `json:"trust_signature,omitempty"`
-	Source        string `json:"source,omitempty"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
+	Source         string `json:"source,omitempty"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
 }

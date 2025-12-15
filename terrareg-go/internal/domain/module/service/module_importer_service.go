@@ -52,7 +52,7 @@ type ImportModuleVersionRequest struct {
 	Version   *string
 	GitTag    *string
 	// Optional configuration overrides for this import
-	AutoPublish *bool
+	AutoPublish  *bool
 	UseGitCommit *bool
 }
 

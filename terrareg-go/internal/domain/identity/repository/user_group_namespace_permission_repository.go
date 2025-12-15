@@ -13,8 +13,8 @@ type UserGroupNamespacePermissionRepository interface {
 // UserGroupNamespacePermission represents namespace permissions for user groups
 // Matches Python UserGroupNamespacePermission model
 type UserGroupNamespacePermission struct {
-	UserGroupID     int
-	NamespaceID     int
-	NamespaceName   string // Added for convenience (joined from namespace table)
+	UserGroupID    int
+	NamespaceID    int
+	NamespaceName  string // Added for convenience (joined from namespace table)
 	PermissionType PermissionType
 }
