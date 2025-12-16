@@ -6,10 +6,10 @@ import (
 	"time"
 
 	analytics "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 )
 
 // GetProviderDownloadQuery handles getting provider download information
@@ -185,17 +185,17 @@ func (q *GetProviderDownloadQuery) recordDownloadAnalytics(ctx context.Context, 
 		// Create provider download analytics event
 		providerDownloadEvent := analytics.ProviderDownloadEvent{
 			ProviderVersionID: providerVersion.ID(),
-			Timestamp:        &now,
-			TerraformVersion: &req.TerraformVersion,
-			AnalyticsToken:   nil, // TODO: Extract from request if available
-			AuthToken:        nil, // TODO: Extract from request if available
-			Environment:      nil, // TODO: Extract from request if available
-			NamespaceName:    &req.Namespace,
-			ProviderName:     &req.Provider,
-			Version:          &req.Version,
-			OS:               &req.OS,
-			Architecture:     &req.Arch,
-			UserAgent:        &req.UserAgent,
+			Timestamp:         &now,
+			TerraformVersion:  &req.TerraformVersion,
+			AnalyticsToken:    nil, // TODO: Extract from request if available
+			AuthToken:         nil, // TODO: Extract from request if available
+			Environment:       nil, // TODO: Extract from request if available
+			NamespaceName:     &req.Namespace,
+			ProviderName:      &req.Provider,
+			Version:           &req.Version,
+			OS:                &req.OS,
+			Architecture:      &req.Arch,
+			UserAgent:         &req.UserAgent,
 		}
 
 		// Record the provider download event asynchronously

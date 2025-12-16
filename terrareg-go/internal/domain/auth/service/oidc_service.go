@@ -18,45 +18,45 @@ import (
 
 // OIDCService handles OpenID Connect authentication
 type OIDCService struct {
-	config      *config.InfrastructureConfig
-	provider    *oidc.Provider
+	config       *config.InfrastructureConfig
+	provider     *oidc.Provider
 	oauth2Config *oauth2.Config
-	verifier    *oidc.IDTokenVerifier
+	verifier     *oidc.IDTokenVerifier
 }
 
 // OIDCUserInfo represents user information extracted from OIDC tokens
 type OIDCUserInfo struct {
-	Subject           string   `json:"sub"`
-	Name              string   `json:"name,omitempty"`
-	Username          string   `json:"preferred_username,omitempty"`
-	Email             string   `json:"email"`
-	EmailVerified     bool     `json:"email_verified"`
-	Groups            []string `json:"groups,omitempty"`
-	Picture           string   `json:"picture,omitempty"`
-	GivenName         string   `json:"given_name,omitempty"`
-	FamilyName        string   `json:"family_name,omitempty"`
-	MiddleName        string   `json:"middle_name,omitempty"`
-	Nickname          string   `json:"nickname,omitempty"`
-	Profile           string   `json:"profile,omitempty"`
-	Website           string   `json:"website,omitempty"`
-	ZoneInfo          string   `json:"zoneinfo,omitempty"`
-	Locale            string   `json:"locale,omitempty"`
-	UpdatedAt         int64    `json:"updated_at,omitempty"`
-	Birthdate         string   `json:"birthdate,omitempty"`
-	Gender            string   `json:"gender,omitempty"`
-	PhoneNumber       string   `json:"phone_number,omitempty"`
-	PhoneNumberVerified bool    `json:"phone_number_verified"`
-	Address           map[string]string `json:"address,omitempty"`
-	RawClaims         map[string]interface{} `json:"-"`
+	Subject             string                 `json:"sub"`
+	Name                string                 `json:"name,omitempty"`
+	Username            string                 `json:"preferred_username,omitempty"`
+	Email               string                 `json:"email"`
+	EmailVerified       bool                   `json:"email_verified"`
+	Groups              []string               `json:"groups,omitempty"`
+	Picture             string                 `json:"picture,omitempty"`
+	GivenName           string                 `json:"given_name,omitempty"`
+	FamilyName          string                 `json:"family_name,omitempty"`
+	MiddleName          string                 `json:"middle_name,omitempty"`
+	Nickname            string                 `json:"nickname,omitempty"`
+	Profile             string                 `json:"profile,omitempty"`
+	Website             string                 `json:"website,omitempty"`
+	ZoneInfo            string                 `json:"zoneinfo,omitempty"`
+	Locale              string                 `json:"locale,omitempty"`
+	UpdatedAt           int64                  `json:"updated_at,omitempty"`
+	Birthdate           string                 `json:"birthdate,omitempty"`
+	Gender              string                 `json:"gender,omitempty"`
+	PhoneNumber         string                 `json:"phone_number,omitempty"`
+	PhoneNumberVerified bool                   `json:"phone_number_verified"`
+	Address             map[string]string      `json:"address,omitempty"`
+	RawClaims           map[string]interface{} `json:"-"`
 }
 
 // OIDCSession represents an OIDC authentication session
 type OIDCSession struct {
-	State      string    `json:"state"`
-	Nonce      string    `json:"nonce"`
-	CodeVerifier string  `json:"code_verifier"`
-	CreatedAt  time.Time `json:"created_at"`
-	ExpiresAt  time.Time `json:"expires_at"`
+	State        string    `json:"state"`
+	Nonce        string    `json:"nonce"`
+	CodeVerifier string    `json:"code_verifier"`
+	CreatedAt    time.Time `json:"created_at"`
+	ExpiresAt    time.Time `json:"expires_at"`
 }
 
 // NewOIDCService creates a new OIDC service

@@ -65,15 +65,15 @@ type ArchiveGenerationRequest struct {
 
 // ArchiveGenerationResult represents the result of archive generation
 type ArchiveGenerationResult struct {
-	Success              bool                     `json:"success"`
-	GeneratedArchives    []GeneratedArchive        `json:"generated_archives,omitempty"`
-	FailedFormats        []ArchiveFormat           `json:"failed_formats,omitempty"`
-	Error               *string                   `json:"error,omitempty"`
-	GenerationDuration  time.Duration             `json:"generation_duration"`
-	SourceFilesCount    int                      `json:"source_files_count"`
-	TotalArchiveSize    int64                    `json:"total_archive_size"`
-	Timestamp           time.Time                `json:"timestamp"`
-	SavepointRolledBack bool                     `json:"savepoint_rolled_back"`
+	Success             bool               `json:"success"`
+	GeneratedArchives   []GeneratedArchive `json:"generated_archives,omitempty"`
+	FailedFormats       []ArchiveFormat    `json:"failed_formats,omitempty"`
+	Error               *string            `json:"error,omitempty"`
+	GenerationDuration  time.Duration      `json:"generation_duration"`
+	SourceFilesCount    int                `json:"source_files_count"`
+	TotalArchiveSize    int64              `json:"total_archive_size"`
+	Timestamp           time.Time          `json:"timestamp"`
+	SavepointRolledBack bool               `json:"savepoint_rolled_back"`
 }
 
 // GeneratedArchive represents information about a generated archive
@@ -88,33 +88,33 @@ type GeneratedArchive struct {
 
 // ArchiveFile represents a file to be included in an archive
 type ArchiveFile struct {
-	Path         string `json:"path"`
-	Content      []byte `json:"content"`
-	Size         int64  `json:"size"`
+	Path         string    `json:"path"`
+	Content      []byte    `json:"content"`
+	Size         int64     `json:"size"`
 	LastModified time.Time `json:"last_modified"`
 }
 
 // MultiFormatResult represents the result of generating multiple archive formats
 type MultiFormatResult struct {
-	OverallStatus      string                    `json:"overall_status"`
-	Formats            map[string]*ArchiveResult `json:"formats"`
-	HasFailures        bool                      `json:"has_failures"`
-	FailureSummary     string                    `json:"failure_summary,omitempty"`
-	TotalFormats       int                       `json:"total_formats"`
-	SuccessCount       int                       `json:"success_count"`
-	FailureCount       int                       `json:"failure_count"`
-	OverallDuration    time.Duration             `json:"overall_duration"`
+	OverallStatus   string                    `json:"overall_status"`
+	Formats         map[string]*ArchiveResult `json:"formats"`
+	HasFailures     bool                      `json:"has_failures"`
+	FailureSummary  string                    `json:"failure_summary,omitempty"`
+	TotalFormats    int                       `json:"total_formats"`
+	SuccessCount    int                       `json:"success_count"`
+	FailureCount    int                       `json:"failure_count"`
+	OverallDuration time.Duration             `json:"overall_duration"`
 }
 
 // ArchiveResult represents the result of generating a single archive format
 type ArchiveResult struct {
-	Format      ArchiveFormat `json:"format"`
-	Success     bool          `json:"success"`
-	Path        string        `json:"path,omitempty"`
-	Size        int64         `json:"size,omitempty"`
-	FileCount   int           `json:"file_count,omitempty"`
-	Error       *string       `json:"error,omitempty"`
-	Duration    time.Duration `json:"duration"`
+	Format    ArchiveFormat `json:"format"`
+	Success   bool          `json:"success"`
+	Path      string        `json:"path,omitempty"`
+	Size      int64         `json:"size,omitempty"`
+	FileCount int           `json:"file_count,omitempty"`
+	Error     *string       `json:"error,omitempty"`
+	Duration  time.Duration `json:"duration"`
 }
 
 // GenerateArchivesWithTransaction generates multiple archive formats with transaction safety
@@ -125,11 +125,11 @@ func (s *ArchiveGenerationTransactionService) GenerateArchivesWithTransaction(
 	startTime := time.Now()
 
 	result := &ArchiveGenerationResult{
-		Success:              false,
-		GeneratedArchives:    []GeneratedArchive{},
-		FailedFormats:        []ArchiveFormat{},
-		SavepointRolledBack:  false,
-		Timestamp:            startTime,
+		Success:             false,
+		GeneratedArchives:   []GeneratedArchive{},
+		FailedFormats:       []ArchiveFormat{},
+		SavepointRolledBack: false,
+		Timestamp:           startTime,
 	}
 
 	// Use provided savepoint name or create new one
@@ -204,12 +204,12 @@ func (s *ArchiveGenerationTransactionService) GenerateMultipleFormats(
 	startTime := time.Now()
 
 	result := &MultiFormatResult{
-		OverallStatus:   "Success",
-		Formats:         make(map[string]*ArchiveResult),
-		HasFailures:     false,
-		TotalFormats:    len(formats),
-		SuccessCount:    0,
-		FailureCount:    0,
+		OverallStatus: "Success",
+		Formats:       make(map[string]*ArchiveResult),
+		HasFailures:   false,
+		TotalFormats:  len(formats),
+		SuccessCount:  0,
+		FailureCount:  0,
 	}
 
 	// Scan source files once
@@ -226,9 +226,9 @@ func (s *ArchiveGenerationTransactionService) GenerateMultipleFormats(
 			archiveResult, err := s.generateArchiveFormat(ctx, sourcePath, archivePath, format, sourceFiles)
 			if err != nil {
 				result.Formats[format.String()] = &ArchiveResult{
-					Format: format,
-					Success: false,
-					Error:   func() *string { e := err.Error(); return &e }(),
+					Format:   format,
+					Success:  false,
+					Error:    func() *string { e := err.Error(); return &e }(),
 					Duration: 0,
 				}
 				result.FailureCount++
@@ -250,9 +250,9 @@ func (s *ArchiveGenerationTransactionService) GenerateMultipleFormats(
 		if err != nil {
 			// Savepoint creation failed
 			result.Formats[format.String()] = &ArchiveResult{
-				Format: format,
-				Success: false,
-				Error:   func() *string { e := err.Error(); return &e }(),
+				Format:   format,
+				Success:  false,
+				Error:    func() *string { e := err.Error(); return &e }(),
 				Duration: 0,
 			}
 			result.FailureCount++

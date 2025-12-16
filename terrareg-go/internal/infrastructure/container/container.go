@@ -120,23 +120,23 @@ type Container struct {
 	MarkdownService       *sharedService.MarkdownService
 
 	// Transaction Services
-	SavepointHelper                       *transaction.SavepointHelper
-	SecurityScanningTransactionService    *moduleService.SecurityScanningTransactionService
-	ModuleCreationWrapper                *moduleService.ModuleCreationWrapperService
-	ArchiveGenerationTransactionService   *moduleService.ArchiveGenerationTransactionService
-	MetadataProcessingService              *moduleService.MetadataProcessingService
-	TerraformExecutorService              *moduleService.TerraformExecutorService
-	TransactionProcessingOrchestrator      *moduleService.TransactionProcessingOrchestrator
-	AuthFactory           *authservice.AuthFactory
-	SessionService        *authservice.SessionService
-	CookieService         *authservice.CookieService
-	AuthenticationService *authservice.AuthenticationService
-	SessionCleanupService *authservice.SessionCleanupService
-	TerraformIdpService   *authservice.TerraformIdpService
-	OIDCService           *authservice.OIDCService
-	SAMLService           *authservice.SAMLService
-	StateStorageService   *authservice.StateStorageService
-	URLService            *urlservice.URLService
+	SavepointHelper                     *transaction.SavepointHelper
+	SecurityScanningTransactionService  *moduleService.SecurityScanningTransactionService
+	ModuleCreationWrapper               *moduleService.ModuleCreationWrapperService
+	ArchiveGenerationTransactionService *moduleService.ArchiveGenerationTransactionService
+	MetadataProcessingService           *moduleService.MetadataProcessingService
+	TerraformExecutorService            *moduleService.TerraformExecutorService
+	TransactionProcessingOrchestrator   *moduleService.TransactionProcessingOrchestrator
+	AuthFactory                         *authservice.AuthFactory
+	SessionService                      *authservice.SessionService
+	CookieService                       *authservice.CookieService
+	AuthenticationService               *authservice.AuthenticationService
+	SessionCleanupService               *authservice.SessionCleanupService
+	TerraformIdpService                 *authservice.TerraformIdpService
+	OIDCService                         *authservice.OIDCService
+	SAMLService                         *authservice.SAMLService
+	StateStorageService                 *authservice.StateStorageService
+	URLService                          *urlservice.URLService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -356,15 +356,15 @@ func NewContainer(
 
 	// Initialize terraform executor service with tfswitch config
 	tfswitchConfig := &moduleService.TfswitchConfig{
-		DefaultTerraformVersion: "1.5.7", // TODO: configure from domain config
-		TerraformProduct:        "terraform", // TODO: configure from domain config
-		ArchiveMirror:          "", // TODO: configure from infra config
-		BinaryPath:             "bin/terraform", // TODO: configure from infra config
+		DefaultTerraformVersion: "1.5.7",         // TODO: configure from domain config
+		TerraformProduct:        "terraform",     // TODO: configure from domain config
+		ArchiveMirror:           "",              // TODO: configure from infra config
+		BinaryPath:              "bin/terraform", // TODO: configure from infra config
 	}
 	terraformExecutorService := moduleService.NewTerraformExecutorService(
 		savepointHelper,
 		"bin/terraform", // TODO: configure terraform binary path
-		30*time.Second, // TODO: configure lock timeout
+		30*time.Second,  // TODO: configure lock timeout
 		tfswitchConfig,
 	)
 	c.TerraformExecutorService = terraformExecutorService

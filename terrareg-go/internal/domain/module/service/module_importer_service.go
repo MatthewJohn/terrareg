@@ -19,7 +19,6 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
-
 // ModuleImporterService handles module importing with comprehensive
 // transaction processing and rollback capabilities using all core services
 type ModuleImporterService struct {
@@ -70,39 +69,39 @@ type ModuleImportRequest struct {
 	ProcessingOptions ProcessingOptions
 
 	// Source information
-	SourcePath     string // Path to source files (if already extracted)
-	ArchivePath    string // Path to archive file (if applicable)
-	SourceType     string // "git", "upload", "archive"
+	SourcePath  string // Path to source files (if already extracted)
+	ArchivePath string // Path to archive file (if applicable)
+	SourceType  string // "git", "upload", "archive"
 
 	// Archive generation options
-	GenerateArchives     bool
-	ArchiveFormats      []ArchiveFormat
-	PathspecFilter      *PathspecFilter
+	GenerateArchives bool
+	ArchiveFormats   []ArchiveFormat
+	PathspecFilter   *PathspecFilter
 
 	// Security and analysis options
-	EnableSecurityScan  bool
-	EnableInfracost     bool
-	EnableExamples      bool
+	EnableSecurityScan bool
+	EnableInfracost    bool
+	EnableExamples     bool
 
 	// Transaction options
-	UseTransaction      bool
-	EnableRollback      bool
-	SavepointName      string
+	UseTransaction bool
+	EnableRollback bool
+	SavepointName  string
 }
 
 // ModuleImportResult represents the result of enhanced module import
 type ModuleImportResult struct {
-	Success             bool                        `json:"success"`
-	ModuleVersionID     *int                        `json:"module_version_id,omitempty"`
-	Version             string                      `json:"version"`
-	ProcessingResult    *ProcessingResult           `json:"processing_result,omitempty"`
-	ImportDuration      time.Duration               `json:"import_duration"`
-	GeneratedArchives   []GeneratedArchive          `json:"generated_archives,omitempty"`
-	SecurityResults     *SecurityScanResponse       `json:"security_results,omitempty"`
-	FileStatistics      *FileStatistics             `json:"file_statistics,omitempty"`
-	Error              *string                     `json:"error,omitempty"`
-	SavepointRolledBack bool                        `json:"savepoint_rolled_back"`
-	Timestamp          time.Time                   `json:"timestamp"`
+	Success             bool                  `json:"success"`
+	ModuleVersionID     *int                  `json:"module_version_id,omitempty"`
+	Version             string                `json:"version"`
+	ProcessingResult    *ProcessingResult     `json:"processing_result,omitempty"`
+	ImportDuration      time.Duration         `json:"import_duration"`
+	GeneratedArchives   []GeneratedArchive    `json:"generated_archives,omitempty"`
+	SecurityResults     *SecurityScanResponse `json:"security_results,omitempty"`
+	FileStatistics      *FileStatistics       `json:"file_statistics,omitempty"`
+	Error               *string               `json:"error,omitempty"`
+	SavepointRolledBack bool                  `json:"savepoint_rolled_back"`
+	Timestamp           time.Time             `json:"timestamp"`
 }
 
 // ImportModuleVersionWithTransaction performs a complete module import with transaction safety
@@ -141,15 +140,15 @@ func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 
 		// Phase 3: Execute complete processing pipeline
 		processingReq := ProcessingRequest{
-			Namespace:  req.Namespace,
-			ModuleName: req.Module,
-			Provider:   req.Provider,
-			Version:    req.getVersion(),
-			GitTag:     req.GitTag,
-			ModulePath: sourcePath,
+			Namespace:   req.Namespace,
+			ModuleName:  req.Module,
+			Provider:    req.Provider,
+			Version:     req.getVersion(),
+			GitTag:      req.GitTag,
+			ModulePath:  sourcePath,
 			ArchivePath: req.ArchivePath,
-			SourceType: req.SourceType,
-			Options:    req.ProcessingOptions,
+			SourceType:  req.SourceType,
+			Options:     req.ProcessingOptions,
 		}
 
 		processingResult, err := s.processingOrchestrator.ProcessModuleWithTransaction(ctx, processingReq)
@@ -209,12 +208,12 @@ func (s *ModuleImporterService) ImportBatchModules(
 	startTime := time.Now()
 
 	result := &BatchModuleImportResult{
-		TotalModules:    len(requests),
+		TotalModules:      len(requests),
 		SuccessfulImports: []ModuleImportResult{},
-		FailedImports:   []ModuleImportResult{},
-		PartialSuccess:  false,
-		OverallSuccess:  true,
-		Timestamp:       startTime,
+		FailedImports:     []ModuleImportResult{},
+		PartialSuccess:    false,
+		OverallSuccess:    true,
+		Timestamp:         startTime,
 	}
 
 	for _, req := range requests {
@@ -222,10 +221,10 @@ func (s *ModuleImporterService) ImportBatchModules(
 		if err != nil {
 			// This should rarely happen since we handle errors within ImportModuleVersionWithTransaction
 			errorResult := ModuleImportResult{
-				Success:     false,
-				Version:     req.getVersion(),
-				Error:       func() *string { e := err.Error(); return &e }(),
-				Timestamp:   time.Now(),
+				Success:             false,
+				Version:             req.getVersion(),
+				Error:               func() *string { e := err.Error(); return &e }(),
+				Timestamp:           time.Now(),
 				SavepointRolledBack: true,
 			}
 			result.FailedImports = append(result.FailedImports, errorResult)
@@ -290,10 +289,10 @@ func (s *ModuleImporterService) ImportFromArchive(
 			Version:   &version,
 		},
 		ProcessingOptions: options,
-		ArchivePath:      archivePath,
-		SourceType:       "archive",
-		UseTransaction:   true,
-		EnableRollback:   true,
+		ArchivePath:       archivePath,
+		SourceType:        "archive",
+		UseTransaction:    true,
+		EnableRollback:    true,
 	}
 
 	return s.ImportModuleVersionWithTransaction(ctx, req)
@@ -459,13 +458,13 @@ func (req ModuleImportRequest) getVersion() string {
 
 // BatchModuleImportResult represents the result of batch enhanced imports
 type BatchModuleImportResult struct {
-	TotalModules      int                    `json:"total_modules"`
+	TotalModules      int                  `json:"total_modules"`
 	SuccessfulImports []ModuleImportResult `json:"successful_imports"`
 	FailedImports     []ModuleImportResult `json:"failed_imports"`
-	PartialSuccess    bool                   `json:"partial_success"`
-	OverallSuccess    bool                   `json:"overall_success"`
-	OverallDuration   time.Duration          `json:"overall_duration"`
-	Timestamp         time.Time             `json:"timestamp"`
+	PartialSuccess    bool                 `json:"partial_success"`
+	OverallSuccess    bool                 `json:"overall_success"`
+	OverallDuration   time.Duration        `json:"overall_duration"`
+	Timestamp         time.Time            `json:"timestamp"`
 }
 
 // validateBasicImportRequest validates the basic import request using base importer logic

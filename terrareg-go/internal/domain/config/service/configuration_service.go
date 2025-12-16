@@ -20,9 +20,9 @@ type ConfigurationService struct {
 
 // ConfigurationServiceOptions provides configuration for the service
 type ConfigurationServiceOptions struct {
-	AllowHotReload     bool
-	SSLCertPrivateKey  string // Command-line override for SSL private key path
-	SSLCertPublicKey   string // Command-line override for SSL public key path
+	AllowHotReload    bool
+	SSLCertPrivateKey string // Command-line override for SSL private key path
+	SSLCertPublicKey  string // Command-line override for SSL public key path
 }
 
 // NewConfigurationService creates a new configuration service

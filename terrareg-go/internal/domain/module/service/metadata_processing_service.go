@@ -15,34 +15,34 @@ import (
 
 // TerraregMetadata represents terrareg.json metadata
 type TerraregMetadata struct {
-	Owner           *string            `json:"owner"`
-	Description     *string            `json:"description"`
-	RepoCloneURL    *string            `json:"repo_clone_url"`
-	RepoBrowseURL   *string            `json:"repo_browse_url"`
-	IssuesURL       *string            `json:"issues_url"`
-	License        *string            `json:"license"`
-	Provider       map[string]*string  `json:"provider"`
+	Owner            *string                `json:"owner"`
+	Description      *string                `json:"description"`
+	RepoCloneURL     *string                `json:"repo_clone_url"`
+	RepoBrowseURL    *string                `json:"repo_browse_url"`
+	IssuesURL        *string                `json:"issues_url"`
+	License          *string                `json:"license"`
+	Provider         map[string]*string     `json:"provider"`
 	VariableTemplate map[string]interface{} `json:"variable_template"`
 }
 
 // MetadataProcessingRequest represents a request to process metadata
 type MetadataProcessingRequest struct {
-	ModuleVersionID  int
-	MetadataPath     string
-	ModulePath       string
-	TransactionCtx   context.Context
+	ModuleVersionID    int
+	MetadataPath       string
+	ModulePath         string
+	TransactionCtx     context.Context
 	RequiredAttributes []string
 }
 
 // MetadataProcessingResult represents the result of metadata processing
 type MetadataProcessingResult struct {
-	Success          bool          `json:"success"`
-	Metadata         *TerraregMetadata `json:"metadata,omitempty"`
-	MetadataFound    bool          `json:"metadata_found"`
-	Validated        bool          `json:"validated"`
-	Error            *string       `json:"error,omitempty"`
-	MissingAttributes []string      `json:"missing_attributes,omitempty"`
-	Duration         time.Duration `json:"duration"`
+	Success           bool              `json:"success"`
+	Metadata          *TerraregMetadata `json:"metadata,omitempty"`
+	MetadataFound     bool              `json:"metadata_found"`
+	Validated         bool              `json:"validated"`
+	Error             *string           `json:"error,omitempty"`
+	MissingAttributes []string          `json:"missing_attributes,omitempty"`
+	Duration          time.Duration     `json:"duration"`
 }
 
 // PathspecFilter represents pathspec filtering rules
@@ -69,11 +69,11 @@ func (s *MetadataProcessingService) ProcessMetadataWithTransaction(
 ) (*MetadataProcessingResult, error) {
 	startTime := time.Now()
 	result := &MetadataProcessingResult{
-		Success:          false,
-		MetadataFound:    false,
-		Validated:        false,
+		Success:           false,
+		MetadataFound:     false,
+		Validated:         false,
 		MissingAttributes: req.RequiredAttributes,
-		Duration:         0,
+		Duration:          0,
 	}
 
 	savepointName := fmt.Sprintf("metadata_processing_%d", startTime.UnixNano())
@@ -130,10 +130,10 @@ func (s *MetadataProcessingService) ProcessTerraregMetadata(
 ) (*MetadataProcessingResult, error) {
 	// This is a convenience method for processing terrareg.json specifically
 	req := MetadataProcessingRequest{
-		ModuleVersionID:  moduleVersionID,
-		MetadataPath:     metadataPath,
+		ModuleVersionID:    moduleVersionID,
+		MetadataPath:       metadataPath,
 		RequiredAttributes: []string{}, // Would pass configured required attributes
-		TransactionCtx:   ctx,
+		TransactionCtx:     ctx,
 	}
 
 	return s.ProcessMetadataWithTransaction(ctx, req)

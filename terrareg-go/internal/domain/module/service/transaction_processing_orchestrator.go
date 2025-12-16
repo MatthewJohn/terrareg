@@ -16,19 +16,19 @@ import (
 // with comprehensive transaction management and rollback capabilities
 type TransactionProcessingOrchestrator struct {
 	// Core processing services with transaction safety
-	archiveService    *ArchiveExtractionService
-	terraformService  *TerraformProcessingService
-	metadataService   *MetadataProcessingService
-	securityService   *SecurityScanningTransactionService
+	archiveService     *ArchiveExtractionService
+	terraformService   *TerraformProcessingService
+	metadataService    *MetadataProcessingService
+	securityService    *SecurityScanningTransactionService
 	fileContentService *FileContentTransactionService
-	archiveGenService *ArchiveGenerationTransactionService
+	archiveGenService  *ArchiveGenerationTransactionService
 
 	// Foundation services
 	moduleCreationWrapper *ModuleCreationWrapperService
 	savepointHelper       *transaction.SavepointHelper
 
 	// Repositories
-	moduleVersionRepo repository.ModuleVersionRepository
+	moduleVersionRepo  repository.ModuleVersionRepository
 	moduleProviderRepo repository.ModuleProviderRepository
 }
 
@@ -61,15 +61,15 @@ func NewTransactionProcessingOrchestrator(
 
 // ProcessingRequest represents a complete module processing request
 type ProcessingRequest struct {
-	Namespace     string
-	ModuleName    string
-	Provider      string
-	Version       string
-	GitTag        *string
-	ModulePath    string // Path to extracted module files
-	ArchivePath   string // Path to module archive (if applicable)
-	SourceType    string // "git" or "upload"
-	Options       ProcessingOptions
+	Namespace   string
+	ModuleName  string
+	Provider    string
+	Version     string
+	GitTag      *string
+	ModulePath  string // Path to extracted module files
+	ArchivePath string // Path to module archive (if applicable)
+	SourceType  string // "git" or "upload"
+	Options     ProcessingOptions
 }
 
 // ProcessingOptions represents options for module processing
@@ -80,34 +80,34 @@ type ProcessingOptions struct {
 	SkipSecurityScanning    bool
 	SkipFileContentStorage  bool
 	SkipArchiveGeneration   bool
-	RequiredMetadataFields []string
+	RequiredMetadataFields  []string
 	SecurityScanEnabled     bool
 	FileProcessingEnabled   bool
 	GenerateArchives        bool
-	PublishModule          bool
-	ArchiveFormats         []ArchiveFormat
+	PublishModule           bool
+	ArchiveFormats          []ArchiveFormat
 }
 
 // ProcessingResult represents the result of complete module processing
 type ProcessingResult struct {
-	Success              bool                        `json:"success"`
-	ModuleVersion        *model.ModuleVersion         `json:"module_version,omitempty"`
-	PhaseResults         map[string]*PhaseResult      `json:"phase_results,omitempty"`
-	OverallDuration      time.Duration                `json:"overall_duration"`
-	Error               *string                      `json:"error,omitempty"`
-	SavepointRolledBack bool                         `json:"savepoint_rolled_back"`
-	ProcessedFiles      int                          `json:"processed_files"`
-	SecurityIssues      int                          `json:"security_issues"`
-	GeneratedArchives   []string                     `json:"generated_archives,omitempty"`
-	Timestamp           time.Time                    `json:"timestamp"`
+	Success             bool                    `json:"success"`
+	ModuleVersion       *model.ModuleVersion    `json:"module_version,omitempty"`
+	PhaseResults        map[string]*PhaseResult `json:"phase_results,omitempty"`
+	OverallDuration     time.Duration           `json:"overall_duration"`
+	Error               *string                 `json:"error,omitempty"`
+	SavepointRolledBack bool                    `json:"savepoint_rolled_back"`
+	ProcessedFiles      int                     `json:"processed_files"`
+	SecurityIssues      int                     `json:"security_issues"`
+	GeneratedArchives   []string                `json:"generated_archives,omitempty"`
+	Timestamp           time.Time               `json:"timestamp"`
 }
 
 // PhaseResult represents the result of a processing phase
 type PhaseResult struct {
-	Success      bool          `json:"success"`
-	Duration     time.Duration `json:"duration"`
-	Error       *string       `json:"error,omitempty"`
-	Data        interface{}   `json:"data,omitempty"`
+	Success  bool          `json:"success"`
+	Duration time.Duration `json:"duration"`
+	Error    *string       `json:"error,omitempty"`
+	Data     interface{}   `json:"data,omitempty"`
 }
 
 // ProcessModuleWithTransaction executes the complete module processing pipeline
@@ -119,10 +119,10 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 	startTime := time.Now()
 
 	result := &ProcessingResult{
-		Success:              false,
-		PhaseResults:         make(map[string]*PhaseResult),
-		SavepointRolledBack:  false,
-		Timestamp:            startTime,
+		Success:             false,
+		PhaseResults:        make(map[string]*PhaseResult),
+		SavepointRolledBack: false,
+		Timestamp:           startTime,
 	}
 
 	// Create main savepoint for the entire processing pipeline
@@ -132,12 +132,12 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 	err := o.savepointHelper.WithSavepointNamed(ctx, mainSavepoint, func(tx *gorm.DB) error {
 		// Use module creation wrapper for atomic module creation and publishing
 		prepareReq := PrepareModuleRequest{
-			Namespace:        req.Namespace,
-			ModuleName:       req.ModuleName,
-			Provider:         req.Provider,
-			Version:          req.Version,
-			GitTag:           req.GitTag,
-			SourceGitTag:     req.GitTag,
+			Namespace:    req.Namespace,
+			ModuleName:   req.ModuleName,
+			Provider:     req.Provider,
+			Version:      req.Version,
+			GitTag:       req.GitTag,
+			SourceGitTag: req.GitTag,
 		}
 
 		return o.moduleCreationWrapper.WithModuleCreationWrapper(ctx, prepareReq,
@@ -361,10 +361,10 @@ func (o *TransactionProcessingOrchestrator) executeFileContentPhase(
 
 	storageReq := FileStorageRequest{
 		ModuleVersionID: moduleVersion.ID(),
-		Files:          o.convertArchiveFilesToFileItems(archiveFiles),
-		TransactionCtx: ctx,
-		ProcessContent: req.Options.FileProcessingEnabled,
-		ValidatePaths:  true,
+		Files:           o.convertArchiveFilesToFileItems(archiveFiles),
+		TransactionCtx:  ctx,
+		ProcessContent:  req.Options.FileProcessingEnabled,
+		ValidatePaths:   true,
 	}
 
 	storageResult, err := o.fileContentService.StoreFilesWithTransaction(ctx, storageReq)
@@ -466,12 +466,12 @@ func (o *TransactionProcessingOrchestrator) ProcessBatchModules(
 	startTime := time.Now()
 
 	result := &BatchProcessingResult{
-		TotalModules:    len(requests),
+		TotalModules:      len(requests),
 		SuccessfulModules: []ProcessingResult{},
-		FailedModules:   []ProcessingResult{},
-		PartialSuccess:  false,
-		OverallSuccess:  true,
-		Timestamp:       startTime,
+		FailedModules:     []ProcessingResult{},
+		PartialSuccess:    false,
+		OverallSuccess:    true,
+		Timestamp:         startTime,
 	}
 
 	for _, req := range requests {
@@ -479,9 +479,9 @@ func (o *TransactionProcessingOrchestrator) ProcessBatchModules(
 		if err != nil {
 			// This should rarely happen since we handle errors within ProcessModuleWithTransaction
 			errorResult := ProcessingResult{
-				Success:     false,
-				Error:       func() *string { e := err.Error(); return &e }(),
-				Timestamp:   time.Now(),
+				Success:             false,
+				Error:               func() *string { e := err.Error(); return &e }(),
+				Timestamp:           time.Now(),
 				SavepointRolledBack: true,
 			}
 			result.FailedModules = append(result.FailedModules, errorResult)
@@ -511,13 +511,13 @@ func (o *TransactionProcessingOrchestrator) ProcessBatchModules(
 
 // BatchProcessingResult represents the result of batch module processing
 type BatchProcessingResult struct {
-	TotalModules     int                `json:"total_modules"`
+	TotalModules      int                `json:"total_modules"`
 	SuccessfulModules []ProcessingResult `json:"successful_modules"`
-	FailedModules    []ProcessingResult `json:"failed_modules"`
-	PartialSuccess   bool              `json:"partial_success"`
-	OverallSuccess   bool              `json:"overall_success"`
-	OverallDuration  time.Duration     `json:"overall_duration"`
-	Timestamp        time.Time         `json:"timestamp"`
+	FailedModules     []ProcessingResult `json:"failed_modules"`
+	PartialSuccess    bool               `json:"partial_success"`
+	OverallSuccess    bool               `json:"overall_success"`
+	OverallDuration   time.Duration      `json:"overall_duration"`
+	Timestamp         time.Time          `json:"timestamp"`
 }
 
 // convertArchiveFilesToFileItems converts archive file map to file content items
@@ -574,14 +574,14 @@ func (o *TransactionProcessingOrchestrator) GetProcessingStatus(
 // ProcessingStatus represents the processing status of a module version
 type ProcessingStatus struct {
 	ModuleVersionID     int       `json:"module_version_id"`
-	Version            string    `json:"version"`
-	Published          bool      `json:"published"`
-	HasReadme          bool      `json:"has_readme"`
-	HasTerraformDocs   bool      `json:"has_terraform_docs"`
-	HasTerraformGraph  bool      `json:"has_terraform_graph"`
-	HasTfsecResults    bool      `json:"has_tfsec_results"`
-	HasInfracostResults bool     `json:"has_infracost_results"`
-	HasTerraformModules bool     `json:"has_terraform_modules"`
-	TerraformVersion   string    `json:"terraform_version"`
-	Timestamp          time.Time `json:"timestamp"`
+	Version             string    `json:"version"`
+	Published           bool      `json:"published"`
+	HasReadme           bool      `json:"has_readme"`
+	HasTerraformDocs    bool      `json:"has_terraform_docs"`
+	HasTerraformGraph   bool      `json:"has_terraform_graph"`
+	HasTfsecResults     bool      `json:"has_tfsec_results"`
+	HasInfracostResults bool      `json:"has_infracost_results"`
+	HasTerraformModules bool      `json:"has_terraform_modules"`
+	TerraformVersion    string    `json:"terraform_version"`
+	Timestamp           time.Time `json:"timestamp"`
 }

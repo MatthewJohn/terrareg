@@ -16,7 +16,7 @@ import (
 // This matches the Python module_create_extraction_wrapper context manager
 type ModuleCreationWrapperService struct {
 	moduleVersionRepo repository.ModuleVersionRepository
-	savepointHelper  *transaction.SavepointHelper
+	savepointHelper   *transaction.SavepointHelper
 }
 
 // NewModuleCreationWrapperService creates a new module creation wrapper service
@@ -26,7 +26,7 @@ func NewModuleCreationWrapperService(
 ) *ModuleCreationWrapperService {
 	return &ModuleCreationWrapperService{
 		moduleVersionRepo: moduleVersionRepo,
-		savepointHelper:  savepointHelper,
+		savepointHelper:   savepointHelper,
 	}
 }
 

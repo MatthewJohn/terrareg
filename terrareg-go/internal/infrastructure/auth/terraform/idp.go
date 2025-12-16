@@ -21,7 +21,7 @@ type TerraformIDPConfig struct {
 
 // TerraformIDP implements Terrareg as an OIDC Identity Provider for Terraform Cloud/Enterprise
 type TerraformIDP struct {
-	config    TerraformIDPConfig
+	config     TerraformIDPConfig
 	privateKey *rsa.PrivateKey
 	keyID      string
 }

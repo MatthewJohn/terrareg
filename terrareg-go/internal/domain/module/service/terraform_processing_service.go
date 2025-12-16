@@ -22,7 +22,7 @@ type TerraformOperation struct {
 	Command     []string
 	WorkingDir  string
 	Timeout     time.Duration
-	Description  string
+	Description string
 }
 
 // TerraformProcessingRequest represents a request to process terraform files
@@ -45,38 +45,38 @@ type TerraformInitResult struct {
 
 // TerraformGraphResult represents the result of terraform graph generation
 type TerraformGraphResult struct {
-	Success    bool          `json:"success"`
-	GraphData  string        `json:"graph_data"`
-	Error      *string       `json:"error,omitempty"`
-	Duration   time.Duration `json:"duration"`
+	Success   bool          `json:"success"`
+	GraphData string        `json:"graph_data"`
+	Error     *string       `json:"error,omitempty"`
+	Duration  time.Duration `json:"duration"`
 }
 
 // TerraformVersionResult represents terraform version information
 type TerraformVersionResult struct {
-	Success    bool          `json:"success"`
-	Version    string        `json:"version"`
-	Output     string        `json:"output"`
-	Error      *string       `json:"error,omitempty"`
-	Duration   time.Duration `json:"duration"`
+	Success  bool          `json:"success"`
+	Version  string        `json:"version"`
+	Output   string        `json:"output"`
+	Error    *string       `json:"error,omitempty"`
+	Duration time.Duration `json:"duration"`
 }
 
 // TerraformModulesResult represents parsed terraform modules
 type TerraformModulesResult struct {
-	Success    bool          `json:"success"`
-	Modules    string        `json:"modules"` // JSON string of modules.json content
-	Error      *string       `json:"error,omitempty"`
-	Duration   time.Duration `json:"duration"`
+	Success  bool          `json:"success"`
+	Modules  string        `json:"modules"` // JSON string of modules.json content
+	Error    *string       `json:"error,omitempty"`
+	Duration time.Duration `json:"duration"`
 }
 
 // TerraformProcessingResult represents the result of terraform processing
 type TerraformProcessingResult struct {
-	InitResult     *TerraformInitResult     `json:"init_result,omitempty"`
-	GraphResult    *TerraformGraphResult    `json:"graph_result,omitempty"`
-	VersionResult  *TerraformVersionResult  `json:"version_result,omitempty"`
-	ModulesResult  *TerraformModulesResult  `json:"modules_result,omitempty"`
-	OverallSuccess bool                     `json:"overall_success"`
-	Duration       time.Duration            `json:"duration"`
-	FailedStep     string                    `json:"failed_step,omitempty"`
+	InitResult     *TerraformInitResult    `json:"init_result,omitempty"`
+	GraphResult    *TerraformGraphResult   `json:"graph_result,omitempty"`
+	VersionResult  *TerraformVersionResult `json:"version_result,omitempty"`
+	ModulesResult  *TerraformModulesResult `json:"modules_result,omitempty"`
+	OverallSuccess bool                    `json:"overall_success"`
+	Duration       time.Duration           `json:"duration"`
+	FailedStep     string                  `json:"failed_step,omitempty"`
 }
 
 // Global terraform lock to prevent concurrent terraform operations (matching Python implementation)
@@ -86,16 +86,16 @@ var terraformGlobalLock sync.Mutex
 type TfswitchConfig struct {
 	DefaultTerraformVersion string
 	TerraformProduct        string
-	ArchiveMirror          string
-	BinaryPath             string
+	ArchiveMirror           string
+	BinaryPath              string
 }
 
 // TerraformExecutorService handles terraform operations with transaction safety
 type TerraformExecutorService struct {
 	savepointHelper *transaction.SavepointHelper
-	terraformBin   string
+	terraformBin    string
 	lockTimeout     time.Duration
-	tfswitchConfig *TfswitchConfig
+	tfswitchConfig  *TfswitchConfig
 }
 
 // NewTerraformExecutorService creates a new terraform executor service
@@ -114,9 +114,9 @@ func NewTerraformExecutorService(
 
 	return &TerraformExecutorService{
 		savepointHelper: savepointHelper,
-		terraformBin:   terraformBin,
+		terraformBin:    terraformBin,
 		lockTimeout:     lockTimeout,
-		tfswitchConfig: tfswitchConfig,
+		tfswitchConfig:  tfswitchConfig,
 	}
 }
 

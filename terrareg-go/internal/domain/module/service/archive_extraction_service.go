@@ -31,26 +31,26 @@ type ArchiveExtractionRequest struct {
 
 // ArchiveExtractionResult represents the result of archive extraction and processing
 type ArchiveExtractionResult struct {
-	Success       bool          `json:"success"`
+	Success        bool          `json:"success"`
 	FilesExtracted int           `json:"files_extracted"`
-	Duration      time.Duration `json:"duration"`
-	Error         *string       `json:"error,omitempty"`
+	Duration       time.Duration `json:"duration"`
+	Error          *string       `json:"error,omitempty"`
 }
 
 // ArchiveRequest represents a single archive processing request
 type ArchiveRequest struct {
-	ID        string
+	ID string
 	ArchiveExtractionRequest
 }
 
 // BatchArchiveResult represents the result of processing multiple archives
 type BatchArchiveResult struct {
-	TotalArchives   int                             `json:"total_archives"`
-	SuccessfulArchives []ArchiveExtractionResult      `json:"successful_archives"`
-	FailedArchives    []ArchiveExtractionResult      `json:"failed_archives"`
-	PartialSuccess    bool                            `json:"partial_success"`
-	OverallSuccess    bool                            `json:"overall_success"`
-	Duration         time.Duration                    `json:"duration"`
+	TotalArchives      int                       `json:"total_archives"`
+	SuccessfulArchives []ArchiveExtractionResult `json:"successful_archives"`
+	FailedArchives     []ArchiveExtractionResult `json:"failed_archives"`
+	PartialSuccess     bool                      `json:"partial_success"`
+	OverallSuccess     bool                      `json:"overall_success"`
+	Duration           time.Duration             `json:"duration"`
 }
 
 // ArchiveProcessor interface for archive processing operations
@@ -93,7 +93,7 @@ func (s *ArchiveExtractionService) ExtractAndProcessWithTransaction(
 
 	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
 		// Detect archive type
-	archiveType, err := s.archiveProcessor.DetectArchiveType(req.ArchivePath)
+		archiveType, err := s.archiveProcessor.DetectArchiveType(req.ArchivePath)
 		if err != nil {
 			return fmt.Errorf("failed to detect archive type: %w", err)
 		}
@@ -138,12 +138,12 @@ func (s *ArchiveExtractionService) ProcessBatchArchives(
 	archives []ArchiveRequest,
 ) (*BatchArchiveResult, error) {
 	batchResult := &BatchArchiveResult{
-		TotalArchives:        len(archives),
-		SuccessfulArchives:  []ArchiveExtractionResult{},
-		FailedArchives:      []ArchiveExtractionResult{},
-		PartialSuccess:       false,
-		OverallSuccess:       true,
-		Duration:             0,
+		TotalArchives:      len(archives),
+		SuccessfulArchives: []ArchiveExtractionResult{},
+		FailedArchives:     []ArchiveExtractionResult{},
+		PartialSuccess:     false,
+		OverallSuccess:     true,
+		Duration:           0,
 	}
 
 	startTime := time.Now()
