@@ -20,11 +20,18 @@ const (
 	ArchiveTypeTarGZ
 )
 
+type SourceType string
+
+const (
+	SourceTypeArchive = "archive"
+	SourceTypeGit     = "git"
+)
+
 // ArchiveExtractionRequest represents a request to extract and process an archive
 type ArchiveExtractionRequest struct {
 	ModuleVersionID int
 	ArchivePath     string
-	SourceType      string // "git" or "upload"
+	SourceType      SourceType
 	TargetDirectory string
 	TransactionCtx  context.Context
 }

@@ -34,7 +34,7 @@ type ImportModuleVersionRequest struct {
 func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req ImportModuleVersionRequest) error {
 	// Create comprehensive import request with all processing options
 	importReq := moduleService.ModuleImportRequest{
-		ImportModuleVersionRequest: moduleService.ImportModuleVersionRequest{
+		ImportModuleVersionRequest: ImportModuleVersionRequest{
 			Namespace: req.Namespace,
 			Module:    req.Module,
 			Provider:  req.Provider,
@@ -57,7 +57,7 @@ func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req ImportModu
 				moduleService.ArchiveFormatTarGz,
 			},
 		},
-		SourceType:         "git",
+		SourceType:         moduleService.SourceTypeGit,
 		UseTransaction:     true,
 		EnableRollback:     true,
 		EnableSecurityScan: true,

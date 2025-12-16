@@ -68,7 +68,7 @@ type ProcessingRequest struct {
 	GitTag      *string
 	ModulePath  string // Path to extracted module files
 	ArchivePath string // Path to module archive (if applicable)
-	SourceType  string // "git" or "upload"
+	SourceType  SourceType
 	Options     ProcessingOptions
 }
 
