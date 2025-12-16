@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 )
 
 // TemporaryDirectoryManagerImpl manages temporary directories
@@ -90,56 +88,6 @@ func (m *TemporaryDirectoryManagerImpl) CleanupTemporaryDirectory(ctx context.Co
 	return nil
 }
 
-// GetTemporaryDirectoryStats returns statistics about temporary directories
-func (m *TemporaryDirectoryManagerImpl) GetTemporaryDirectoryStats(ctx context.Context) (*service.TemporaryDirectoryStats, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	stats := &service.TemporaryDirectoryStats{
-		TotalDirectories: len(m.directories),
-		Directories:      []service.DirectoryInfo{},
-	}
-
-	for path, createdAt := range m.directories {
-		info, err := os.Stat(path)
-		if err != nil {
-			continue // Skip directories we can't stat
-		}
-
-		var size int64
-		var files []string
-
-		// Walk directory to get size and files
-		filepath.Walk(path, func(filePath string, file os.FileInfo, err error) error {
-			if err != nil {
-				return nil // Skip errors
-			}
-			if !file.IsDir() {
-				size += file.Size()
-				relPath, _ := filepath.Rel(path, filePath)
-				files = append(files, relPath)
-			}
-			return nil
-		})
-
-		dirInfo := service.DirectoryInfo{
-			Path:      path,
-			Size:      size,
-			CreatedAt: createdAt,
-			Age:       time.Since(createdAt),
-			Files:     files,
-		}
-
-		stats.Directories = append(stats.Directories, dirInfo)
-		stats.TotalSize += size
-
-		if stats.OldestDirectory.IsZero() || createdAt.Before(stats.OldestDirectory) {
-			stats.OldestDirectory = createdAt
-		}
-	}
-
-	return stats, nil
-}
 
 // CleanupOldDirectories removes temporary directories older than maxAge
 func (m *TemporaryDirectoryManagerImpl) CleanupOldDirectories(ctx context.Context, maxAge time.Duration) error {
