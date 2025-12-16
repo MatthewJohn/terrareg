@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
@@ -44,6 +45,7 @@ import (
 	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
 	providerLogoRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_logo/repository"
@@ -116,6 +118,15 @@ type Container struct {
 	ModuleFileService     *moduleService.ModuleFileService
 	WebhookService        *moduleService.WebhookService
 	MarkdownService       *sharedService.MarkdownService
+
+	// Transaction Services
+	SavepointHelper                       *transaction.SavepointHelper
+	SecurityScanningTransactionService    *moduleService.SecurityScanningTransactionService
+	ModuleCreationWrapper                *moduleService.ModuleCreationWrapperService
+	ArchiveGenerationTransactionService   *moduleService.ArchiveGenerationTransactionService
+	MetadataProcessingService              *moduleService.MetadataProcessingService
+	TerraformExecutorService              *moduleService.TerraformExecutorService
+	TransactionProcessingOrchestrator      *moduleService.TransactionProcessingOrchestrator
 	AuthFactory           *authservice.AuthFactory
 	SessionService        *authservice.SessionService
 	CookieService         *authservice.CookieService
@@ -309,8 +320,75 @@ func NewContainer(
 	c.StorageService = storage.NewLocalStorage()
 	c.ModuleParser = parser.NewModuleParserImpl(c.StorageService)
 
-	// Initialize domain services
+	// Initialize foundation transaction services
+	savepointHelper := transaction.NewSavepointHelper(db.DB)
+	c.SavepointHelper = savepointHelper
+
+	// Initialize security service for transaction scanning
+	securityService := moduleService.NewSecurityScanningService(
+		c.ModuleFileService,
+		c.ModuleVersionRepo,
+	)
+	c.SecurityScanningService = securityService
+
+	// Initialize security scanning transaction service
+	securityTransactionService := moduleService.NewSecurityScanningTransactionService(
+		securityService,
+		c.ModuleVersionRepo,
+		savepointHelper,
+	)
+	c.SecurityScanningTransactionService = securityTransactionService
+
+	// Initialize module creation wrapper for atomic module creation
+	moduleCreationWrapper := moduleService.NewModuleCreationWrapperService(
+		c.ModuleVersionRepo,
+		savepointHelper,
+	)
+	c.ModuleCreationWrapper = moduleCreationWrapper
+
+	// Initialize archive generation transaction service
+	archiveGenService := moduleService.NewArchiveGenerationTransactionService(savepointHelper)
+	c.ArchiveGenerationTransactionService = archiveGenService
+
+	// Initialize metadata processing service
+	metadataService := moduleService.NewMetadataProcessingService(savepointHelper)
+	c.MetadataProcessingService = metadataService
+
+	// Initialize terraform executor service with tfswitch config
+	tfswitchConfig := &moduleService.TfswitchConfig{
+		DefaultTerraformVersion: "1.5.7", // TODO: configure from domain config
+		TerraformProduct:        "terraform", // TODO: configure from domain config
+		ArchiveMirror:          "", // TODO: configure from infra config
+		BinaryPath:             "bin/terraform", // TODO: configure from infra config
+	}
+	terraformExecutorService := moduleService.NewTerraformExecutorService(
+		savepointHelper,
+		"bin/terraform", // TODO: configure terraform binary path
+		30*time.Second, // TODO: configure lock timeout
+		tfswitchConfig,
+	)
+	c.TerraformExecutorService = terraformExecutorService
+
+	// Initialize transaction processing orchestrator (simplified for now)
+	processingOrchestrator := moduleService.NewTransactionProcessingOrchestrator(
+		nil, // archiveService - TODO: implement ArchiveProcessor
+		terraformExecutorService,
+		metadataService,
+		securityTransactionService,
+		nil, // fileContentService - TODO: implement FileStorage/FileProcessing services
+		archiveGenService,
+		moduleCreationWrapper,
+		savepointHelper,
+		c.ModuleVersionRepo,
+		c.ModuleProviderRepo,
+	)
+	c.TransactionProcessingOrchestrator = processingOrchestrator
+
+	// Initialize updated module importer service with transaction support
 	c.ModuleImporterService = moduleService.NewModuleImporterService(
+		processingOrchestrator,
+		moduleCreationWrapper,
+		savepointHelper,
 		c.ModuleProviderRepo,
 		c.GitClient,
 		c.StorageService,
@@ -318,10 +396,12 @@ func NewContainer(
 		domainConfig,
 		infraConfig,
 	)
+
+	// Initialize existing domain services
 	c.NamespaceService = moduleService.NewNamespaceService(domainConfig) // Uses DomainConfig for business logic
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, c.NamespaceRepo, c.NamespaceService)
 
-	// Initialize security and module file services
+	// Initialize security and module file services (legacy - can be gradually phased out)
 	c.SecurityService = moduleService.NewSecurityService()
 	c.MarkdownService = sharedService.NewMarkdownService()
 	c.ModuleFileService = moduleService.NewModuleFileService(
@@ -331,11 +411,13 @@ func NewContainer(
 		c.SecurityService,
 	)
 
-	// Initialize webhook service
+	// Initialize webhook service (updated to use transaction-aware services)
 	c.WebhookService = moduleService.NewWebhookService(
 		c.ModuleImporterService,
 		c.ModuleProviderRepo,
 		infraConfig,
+		savepointHelper,
+		moduleCreationWrapper,
 	)
 
 	// Initialize auth services
