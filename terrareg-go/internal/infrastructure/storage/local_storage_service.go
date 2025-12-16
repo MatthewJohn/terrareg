@@ -1,15 +1,14 @@
 package storage
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 )
 
@@ -44,178 +43,63 @@ func (s *LocalStorageService) generatePath(path string) string {
 
 // UploadFile uploads a file from source path to destination
 // This replicates Python's upload_file method
-func (s *LocalStorageService) UploadFile(ctx context.Context, sourcePath string, destDirectory string, destFilename string) (*model.UploadResult, error) {
-	startTime := time.Now()
-
+func (s *LocalStorageService) UploadFile(ctx context.Context, sourcePath string, destDirectory string, destFilename string) error {
 	// Generate full destination path
 	fullDestPath := s.generatePath(s.pathBuilder.SafeJoinPaths(destDirectory, destFilename))
 
 	// Create destination directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(fullDestPath), 0755); err != nil {
-		errorMsg := fmt.Sprintf("failed to create destination directory: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
+		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
 	// Copy file
 	sourceFile, err := os.Open(sourcePath)
 	if err != nil {
-		errorMsg := fmt.Sprintf("failed to open source file: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
+		return fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer sourceFile.Close()
 
 	destFile, err := os.Create(fullDestPath)
 	if err != nil {
-		errorMsg := fmt.Sprintf("failed to create destination file: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
+		return fmt.Errorf("failed to create destination file: %w", err)
 	}
 	defer destFile.Close()
 
-	size, err := io.Copy(destFile, sourceFile)
+	_, err = io.Copy(destFile, sourceFile)
 	if err != nil {
-		errorMsg := fmt.Sprintf("failed to copy file: %v", err)
 		os.Remove(fullDestPath) // Clean up on failure
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
+		return fmt.Errorf("failed to copy file: %w", err)
 	}
 
-	// Get file info for etag
-	info, err := os.Stat(fullDestPath)
-	if err != nil {
-		errorMsg := fmt.Sprintf("failed to get file info: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
-	}
-
-	return &model.UploadResult{
-		Success:    true,
-		Path:       fullDestPath,
-		Size:       size,
-		ETag:       fmt.Sprintf("%d-%d", info.ModTime().Unix(), info.Size()),
-		UploadTime: startTime,
-	}, nil
+	return nil
 }
 
-// UploadFileContent uploads file content directly
-func (s *LocalStorageService) UploadFileContent(ctx context.Context, content []byte, destDirectory string, destFilename string, contentType string) (*model.UploadResult, error) {
-	startTime := time.Now()
-
-	fullDestPath := s.generatePath(s.pathBuilder.SafeJoinPaths(destDirectory, destFilename))
-
-	// Create destination directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(fullDestPath), 0755); err != nil {
-		errorMsg := fmt.Sprintf("failed to create destination directory: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
-	}
-
-	// Write content to file
-	if err := os.WriteFile(fullDestPath, content, 0644); err != nil {
-		errorMsg := fmt.Sprintf("failed to write file: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
-	}
-
-	info, err := os.Stat(fullDestPath)
-	if err != nil {
-		errorMsg := fmt.Sprintf("failed to get file info: %v", err)
-		return &model.UploadResult{
-			Success:    false,
-			Error:      &errorMsg,
-			UploadTime: startTime,
-		}, nil
-	}
-
-	return &model.UploadResult{
-		Success:    true,
-		Path:       fullDestPath,
-		Size:       int64(len(content)),
-		ETag:       fmt.Sprintf("%d-%d", info.ModTime().Unix(), info.Size()),
-		UploadTime: startTime,
-	}, nil
-}
-
-// DownloadFile downloads a file and returns a reader
-func (s *LocalStorageService) DownloadFile(ctx context.Context, path string) (io.ReadCloser, *model.FileInfo, error) {
+// ReadFile reads a file and returns its contents
+// This replicates Python's read_file method
+func (s *LocalStorageService) ReadFile(ctx context.Context, path string, bytesMode bool) ([]byte, error) {
 	fullPath := s.generatePath(path)
 
-	info, err := os.Stat(fullPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil, model.ErrFileNotFound
-		}
-		return nil, nil, fmt.Errorf("failed to get file info: %w", err)
-	}
-
-	file, err := os.Open(fullPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open file: %w", err)
-	}
-
-	fileInfo := &model.FileInfo{
-		Path:         path,
-		Size:         info.Size(),
-		LastModified: info.ModTime(),
-		ContentType:  s.getContentType(fullPath),
-		StorageType:  model.StorageTypeLocal,
-	}
-
-	return file, fileInfo, nil
-}
-
-// ReadFile reads file content
-func (s *LocalStorageService) ReadFile(ctx context.Context, path string, bytesMode bool) ([]byte, *model.FileInfo, error) {
-	fullPath := s.generatePath(path)
-
-	info, err := os.Stat(fullPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil, model.ErrFileNotFound
-		}
-		return nil, nil, fmt.Errorf("failed to get file info: %w", err)
+	// Check if file exists
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", fullPath)
 	}
 
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read file: %w", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	fileInfo := &model.FileInfo{
-		Path:         path,
-		Size:         info.Size(),
-		LastModified: info.ModTime(),
-		ContentType:  s.getContentType(fullPath),
-		StorageType:  model.StorageTypeLocal,
+	if !bytesMode {
+		// For text mode, just return the bytes as-is
+		// Python's text mode handles encoding differently
+		return content, nil
 	}
 
-	return content, fileInfo, nil
+	return content, nil
 }
 
 // WriteFile writes content to a file
+// This replicates Python's write_file method
 func (s *LocalStorageService) WriteFile(ctx context.Context, path string, content any, binary bool) error {
 	fullPath := s.generatePath(path)
 
@@ -224,31 +108,45 @@ func (s *LocalStorageService) WriteFile(ctx context.Context, path string, conten
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	var data []byte
+	var file *os.File
 	var err error
+
+	if binary {
+		file, err = os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	} else {
+		file, err = os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to open file for writing: %w", err)
+	}
+	defer file.Close()
 
 	switch v := content.(type) {
 	case []byte:
-		data = v
+		_, err = file.Write(v)
 	case string:
-		data = []byte(v)
-	case io.Reader:
-		data, err = io.ReadAll(v)
-		if err != nil {
-			return fmt.Errorf("failed to read content: %w", err)
-		}
+		_, err = file.Write([]byte(v))
 	default:
 		return fmt.Errorf("unsupported content type: %T", content)
 	}
 
-	if err := os.WriteFile(fullPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed to write content: %w", err)
 	}
 
 	return nil
 }
 
+// MakeDirectory creates a directory
+// This replicates Python's make_directory method
+func (s *LocalStorageService) MakeDirectory(ctx context.Context, directory string) error {
+	fullPath := s.generatePath(directory)
+	return os.MkdirAll(fullPath, 0755)
+}
+
 // FileExists checks if a file exists
+// This replicates Python's file_exists method
 func (s *LocalStorageService) FileExists(ctx context.Context, path string) (bool, error) {
 	fullPath := s.generatePath(path)
 
@@ -264,6 +162,7 @@ func (s *LocalStorageService) FileExists(ctx context.Context, path string) (bool
 }
 
 // DirectoryExists checks if a directory exists
+// This replicates Python's directory_exists method
 func (s *LocalStorageService) DirectoryExists(ctx context.Context, path string) (bool, error) {
 	fullPath := s.generatePath(path)
 
@@ -278,149 +177,144 @@ func (s *LocalStorageService) DirectoryExists(ctx context.Context, path string) 
 	return info.IsDir(), nil
 }
 
-// MakeDirectory creates a directory
-func (s *LocalStorageService) MakeDirectory(ctx context.Context, directory string) error {
-	fullPath := s.generatePath(directory)
-	return os.MkdirAll(fullPath, 0755)
-}
-
-// ListDirectory lists files in a directory
-func (s *LocalStorageService) ListDirectory(ctx context.Context, directory string) ([]*model.FileInfo, error) {
-	fullPath := s.generatePath(directory)
-
-	entries, err := os.ReadDir(fullPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, model.ErrDirectoryNotFound
-		}
-		return nil, fmt.Errorf("failed to read directory: %w", err)
-	}
-
-	var files []*model.FileInfo
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			continue // Skip entries we can't get info for
-		}
-
-		filePath := s.pathBuilder.SafeJoinPaths(directory, entry.Name())
-		files = append(files, &model.FileInfo{
-			Path:         filePath,
-			Size:         info.Size(),
-			LastModified: info.ModTime(),
-			ContentType:  s.getContentType(filePath),
-			StorageType:  model.StorageTypeLocal,
-		})
-	}
-
-	return files, nil
-}
-
 // DeleteFile deletes a file
+// This replicates Python's delete_file method
 func (s *LocalStorageService) DeleteFile(ctx context.Context, path string) error {
 	fullPath := s.generatePath(path)
 
-	if err := os.Remove(fullPath); err != nil {
-		if os.IsNotExist(err) {
-			return model.ErrFileNotFound
-		}
-		return fmt.Errorf("failed to delete file: %w", err)
+	// Check if file exists
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return nil // File doesn't exist, nothing to delete
 	}
 
-	return nil
+	return os.Remove(fullPath)
 }
 
 // DeleteDirectory deletes a directory and all its contents
+// This replicates Python's delete_directory method
 func (s *LocalStorageService) DeleteDirectory(ctx context.Context, path string) error {
 	fullPath := s.generatePath(path)
 
-	if err := os.RemoveAll(fullPath); err != nil {
-		if os.IsNotExist(err) {
-			return model.ErrDirectoryNotFound
+	// Check if directory exists
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return nil // Directory doesn't exist, nothing to delete
+	}
+
+	return os.RemoveAll(fullPath)
+}
+
+// CopyDir recursively copies a directory from source to destination
+// Merged from duplicate LocalStorage implementation
+func (s *LocalStorageService) CopyDir(src, dest string) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(dest, info.Mode()); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dest, entry.Name())
+
+		if entry.IsDir() {
+			if err := s.CopyDir(srcPath, destPath); err != nil {
+				return err
+			}
+		} else {
+			// Prevent symlink traversal
+			if entry.Type()&os.ModeSymlink != 0 {
+				continue
+			}
+			if err := copyFileHelper(srcPath, destPath); err != nil {
+				return err
+			}
 		}
-		return fmt.Errorf("failed to delete directory: %w", err)
+	}
+	return nil
+}
+
+// ExtractArchive extracts a ZIP archive from src to dest
+// Merged from duplicate LocalStorage implementation
+func (s *LocalStorageService) ExtractArchive(src, dest string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	// Create destination directory
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return err
+	}
+
+	// Extract each file
+	for _, f := range r.File {
+		// Prevent path traversal attacks
+		if strings.Contains(f.Name, "..") {
+			continue
+		}
+
+		filePath := filepath.Join(dest, f.Name)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(filePath, 0755)
+			continue
+		}
+
+		// Create parent directories
+		if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+			return err
+		}
+
+		// Create the file
+		outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			outFile.Close()
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// BatchUpload uploads multiple files
-func (s *LocalStorageService) BatchUpload(ctx context.Context, files []service.BatchUploadRequest) (*model.BatchUploadResult, error) {
-	result := &model.BatchUploadResult{
-		TotalFiles: len(files),
-		SuccessfulFiles: []model.UploadResult{},
-		FailedFiles:    []model.UploadResult{},
-		OverallSuccess: true,
-		PartialSuccess: false,
+// copyFileHelper copies a file from src to dest
+// Helper function from duplicate LocalStorage implementation
+func copyFileHelper(src, dest string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
 	}
+	defer in.Close()
 
-	for _, req := range files {
-		var uploadResult *model.UploadResult
-		var err error
-
-		if req.IsContent {
-			uploadResult, err = s.UploadFileContent(ctx, req.Content, req.DestDirectory, req.DestFilename, req.ContentType)
-		} else {
-			uploadResult, err = s.UploadFile(ctx, req.SourcePath, req.DestDirectory, req.DestFilename)
-		}
-
-		if err != nil || !uploadResult.Success {
-			result.FailedFiles = append(result.FailedFiles, *uploadResult)
-			result.OverallSuccess = false
-			result.PartialSuccess = true
-		} else {
-			result.SuccessfulFiles = append(result.SuccessfulFiles, *uploadResult)
-		}
+	out, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
 	}
+	defer out.Close()
 
-	return result, nil
-}
-
-// GeneratePath generates a path from components
-func (s *LocalStorageService) GeneratePath(pathComponents ...string) string {
-	return s.pathBuilder.SafeJoinPaths(pathComponents...)
-}
-
-// ValidatePath validates a path
-func (s *LocalStorageService) ValidatePath(path string) error {
-	return s.pathBuilder.ValidatePath(path)
-}
-
-// GetStorageType returns the storage type
-func (s *LocalStorageService) GetStorageType() model.StorageType {
-	return model.StorageTypeLocal
-}
-
-// GetStorageStats returns storage statistics
-func (s *LocalStorageService) GetStorageStats(ctx context.Context) (*model.StorageStats, error) {
-	// Implementation would scan the base path and calculate stats
-	// For now, return empty stats
-	return &model.StorageStats{
-		TotalFiles:     0,
-		TotalSize:      0,
-		UploadCount:    0,
-		DownloadCount:  0,
-		LastUploadTime: time.Time{},
-	}, nil
-}
-
-// getContentType determines content type based on file extension
-func (s *LocalStorageService) getContentType(path string) string {
-	ext := strings.ToLower(filepath.Ext(path))
-	switch ext {
-	case ".tar", ".gz", ".zip":
-		return "application/gzip"
-	case ".json":
-		return "application/json"
-	case ".md":
-		return "text/markdown"
-	case ".txt":
-		return "text/plain"
-	case ".tf":
-		return "text/plain"
-	case ".yaml", ".yml":
-		return "text/yaml"
-	default:
-		return "application/octet-stream"
+	if _, err := io.Copy(out, in); err != nil {
+		return err
 	}
+	return out.Close()
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -170,8 +171,7 @@ func GetDefaultPathConfig(dataDirectory string) *StoragePathConfig {
 		ModulesPath:   tempPathBuilder.SafeJoinPaths(dataDirectory, "modules"),
 		ProvidersPath: tempPathBuilder.SafeJoinPaths(dataDirectory, "providers"),
 		UploadPath:    tempPathBuilder.SafeJoinPaths(dataDirectory, "upload"),
-		ArchivePrefix: "source",
-		SourcePrefix:  "source",
+		TempPath:      tempPathBuilder.SafeJoinPaths(os.TempDir(), "terrareg"),
 	}
 }
 

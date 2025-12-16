@@ -3,9 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
-	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
@@ -46,35 +44,17 @@ func (s *S3StorageService) generateKey(path string) string {
 }
 
 // UploadFile uploads a file to S3
-func (s *S3StorageService) UploadFile(ctx context.Context, sourcePath string, destDirectory string, destFilename string) (*model.UploadResult, error) {
+// This replicates Python's upload_file method
+func (s *S3StorageService) UploadFile(ctx context.Context, sourcePath string, destDirectory string, destFilename string) error {
 	// S3 implementation would go here using AWS SDK
 	// For now, return error as S3 storage is not fully implemented
-	errorMsg := "S3 storage not implemented"
-	return &model.UploadResult{
-		Success:    false,
-		Error:      &errorMsg,
-		UploadTime: time.Now(),
-	}, nil
-}
-
-// UploadFileContent uploads file content to S3
-func (s *S3StorageService) UploadFileContent(ctx context.Context, content []byte, destDirectory string, destFilename string, contentType string) (*model.UploadResult, error) {
-	errorMsg := "S3 storage not implemented"
-	return &model.UploadResult{
-		Success:    false,
-		Error:      &errorMsg,
-		UploadTime: time.Now(),
-	}, nil
-}
-
-// DownloadFile downloads a file from S3
-func (s *S3StorageService) DownloadFile(ctx context.Context, path string) (io.ReadCloser, *model.FileInfo, error) {
-	return nil, nil, fmt.Errorf("S3 storage not implemented")
+	return fmt.Errorf("S3 storage not implemented")
 }
 
 // ReadFile reads file content from S3
-func (s *S3StorageService) ReadFile(ctx context.Context, path string, bytesMode bool) ([]byte, *model.FileInfo, error) {
-	return nil, nil, fmt.Errorf("S3 storage not implemented")
+// This replicates Python's read_file method
+func (s *S3StorageService) ReadFile(ctx context.Context, path string, bytesMode bool) ([]byte, error) {
+	return nil, fmt.Errorf("S3 storage not implemented")
 }
 
 // WriteFile writes content to S3
@@ -97,42 +77,14 @@ func (s *S3StorageService) MakeDirectory(ctx context.Context, directory string) 
 	return nil // Directories are implicit in S3
 }
 
-// ListDirectory lists objects in S3 with prefix
-func (s *S3StorageService) ListDirectory(ctx context.Context, directory string) ([]*model.FileInfo, error) {
-	return nil, fmt.Errorf("S3 storage not implemented")
-}
-
 // DeleteFile deletes a file from S3
+// This replicates Python's delete_file method
 func (s *S3StorageService) DeleteFile(ctx context.Context, path string) error {
 	return fmt.Errorf("S3 storage not implemented")
 }
 
 // DeleteDirectory is a no-op for S3
+// This replicates Python's delete_directory method
 func (s *S3StorageService) DeleteDirectory(ctx context.Context, path string) error {
 	return nil // Directories don't exist in S3
-}
-
-// BatchUpload uploads multiple files to S3
-func (s *S3StorageService) BatchUpload(ctx context.Context, files []service.BatchUploadRequest) (*model.BatchUploadResult, error) {
-	return nil, fmt.Errorf("S3 storage not implemented")
-}
-
-// GeneratePath generates a path from components
-func (s *S3StorageService) GeneratePath(pathComponents ...string) string {
-	return s.pathBuilder.SafeJoinPaths(pathComponents...)
-}
-
-// ValidatePath validates a path
-func (s *S3StorageService) ValidatePath(path string) error {
-	return s.pathBuilder.ValidatePath(path)
-}
-
-// GetStorageType returns the storage type
-func (s *S3StorageService) GetStorageType() model.StorageType {
-	return model.StorageTypeS3
-}
-
-// GetStorageStats returns storage statistics
-func (s *S3StorageService) GetStorageStats(ctx context.Context) (*model.StorageStats, error) {
-	return nil, fmt.Errorf("S3 storage not implemented")
 }

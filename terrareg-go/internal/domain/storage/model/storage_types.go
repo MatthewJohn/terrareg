@@ -41,13 +41,11 @@ type S3Config struct {
 	SecretKey string `json:"secret_key,omitempty"`
 }
 
-// FileInfo represents information about a stored file
+// FileInfo represents basic information about a stored file (simplified)
 type FileInfo struct {
 	Path         string    `json:"path"`
 	Size         int64     `json:"size"`
-	ContentType  string    `json:"content_type,omitempty"`
 	LastModified time.Time `json:"last_modified"`
-	ETag         string    `json:"etag,omitempty"`
 	StorageType  StorageType `json:"storage_type"`
 }
 
@@ -74,33 +72,6 @@ type ArchivePath struct {
 	ArchiveName string `json:"archive_name"` // e.g., "source.tar.gz", "source.zip"
 }
 
-// UploadResult represents the result of a file upload
-type UploadResult struct {
-	Success    bool      `json:"success"`
-	Path       string    `json:"path"`
-	Size       int64     `json:"size"`
-	ETag       string    `json:"etag,omitempty"`
-	UploadTime time.Time `json:"upload_time"`
-	Error      *string   `json:"error,omitempty"`
-}
-
-// BatchUploadResult represents the result of a batch upload
-type BatchUploadResult struct {
-	TotalFiles     int           `json:"total_files"`
-	SuccessfulFiles []UploadResult `json:"successful_files"`
-	FailedFiles    []UploadResult `json:"failed_files"`
-	OverallSuccess bool          `json:"overall_success"`
-	PartialSuccess bool          `json:"partial_success"`
-}
-
-// StorageStats represents storage statistics
-type StorageStats struct {
-	TotalFiles     int64 `json:"total_files"`
-	TotalSize      int64 `json:"total_size"`
-	UploadCount    int64 `json:"upload_count"`
-	DownloadCount  int64 `json:"download_count"`
-	LastUploadTime time.Time `json:"last_upload_time"`
-}
 
 // StorageError represents storage-specific errors
 type StorageError struct {
