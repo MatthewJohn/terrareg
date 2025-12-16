@@ -66,6 +66,15 @@ type StoragePath struct {
 	Version   string `json:"version"`
 }
 
+// StoragePathConfig represents path configuration matching Python implementation
+type StoragePathConfig struct {
+	BasePath      string `json:"base_path"`
+	ModulesPath   string `json:"modules_path"`
+	ProvidersPath string `json:"providers_path"`
+	UploadPath    string `json:"upload_path"`
+	TempPath      string `json:"temp_path"`
+}
+
 // ArchivePath represents archive-specific path information
 type ArchivePath struct {
 	StoragePath `json:"storage_path"`
