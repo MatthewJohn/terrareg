@@ -71,7 +71,7 @@ type ModuleImportRequest struct {
 	// Source information
 	SourcePath  string // Path to source files (if already extracted)
 	ArchivePath string // Path to archive file (if applicable)
-	SourceType  string // "git", "upload", "archive"
+	SourceType  SourceType
 
 	// Archive generation options
 	GenerateArchives bool
