@@ -1,6 +1,8 @@
 package container
 
 import (
+	"context"
+
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
@@ -120,6 +122,9 @@ type Container struct {
 	AuthenticationService *authservice.AuthenticationService
 	SessionCleanupService *authservice.SessionCleanupService
 	TerraformIdpService   *authservice.TerraformIdpService
+	OIDCService           *authservice.OIDCService
+	SAMLService           *authservice.SAMLService
+	StateStorageService   *authservice.StateStorageService
 	URLService            *urlservice.URLService
 
 	// Commands
@@ -372,6 +377,14 @@ func NewContainer(
 	// Initialize AuthFactory after TerraformIdpService is created
 	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig, c.TerraformIdpService, &c.Logger)
 
+	// Initialize OIDC and SAML services (these may return nil if not configured)
+	ctx := context.Background()
+	c.OIDCService, _ = authservice.NewOIDCService(ctx, infraConfig)
+	c.SAMLService, _ = authservice.NewSAMLService(infraConfig)
+
+	// Initialize StateStorageService
+	c.StateStorageService = authservice.NewStateStorageService(c.SessionService)
+
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
 	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo)
@@ -397,9 +410,9 @@ func NewContainer(
 	c.GetModuleProviderRedirectsQuery = moduleQuery.NewGetModuleProviderRedirectsQuery(c.ModuleProviderRedirectRepo)
 
 	// Initialize authentication commands
-	c.OidcLoginCmd = authCmd.NewOidcLoginCommand(c.AuthFactory, c.SessionService, infraConfig)
-	c.OidcCallbackCmd = authCmd.NewOidcCallbackCommand(c.AuthFactory, c.SessionService, infraConfig)
-	c.SamlLoginCmd = authCmd.NewSamlLoginCommand(c.AuthFactory, c.SessionService, infraConfig)
+	c.OidcLoginCmd = authCmd.NewOidcLoginCommand(c.AuthFactory, c.SessionService, infraConfig, c.OIDCService)
+	c.OidcCallbackCmd = authCmd.NewOidcCallbackCommand(c.AuthFactory, c.SessionService, infraConfig, c.OIDCService, c.OidcLoginCmd)
+	c.SamlLoginCmd = authCmd.NewSamlLoginCommand(c.AuthFactory, c.SessionService, infraConfig, c.SAMLService)
 	c.SamlMetadataCmd = authCmd.NewSamlMetadataCommand(c.AuthFactory, c.SessionService, infraConfig)
 	c.GithubOAuthCmd = authCmd.NewGithubOAuthCommand(c.AuthFactory, c.SessionService, infraConfig)
 
@@ -543,6 +556,7 @@ func NewContainer(
 		c.SamlMetadataCmd,
 		c.GithubOAuthCmd,
 		c.AuthenticationService,
+		c.StateStorageService,
 		infraConfig,
 	)
 	c.AuditHandler = terrareg.NewAuditHandler(c.GetAuditHistoryQuery)
