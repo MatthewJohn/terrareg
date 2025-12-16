@@ -370,12 +370,12 @@ func getOIDCScopes(configuredScopes []string) []string {
 func getOIDCRedirectURL(config *config.InfrastructureConfig) string {
 	if config.PublicURL != "" {
 		redirectURL, _ := url.Parse(config.PublicURL)
-		redirectURL.Path = "/v1/terrareg/auth/oidc/callback"
+		redirectURL.Path = "/openid/callback"
 		return redirectURL.String()
 	}
 
 	// Fallback URL
-	return "http://localhost:5000/v1/terrareg/auth/oidc/callback"
+	return "http://localhost:5000/openid/callback"
 }
 
 // generatePKCE generates PKCE code verifier and challenge for enhanced security
