@@ -8,6 +8,7 @@ import (
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 )
 
 // GetProviderDownloadQuery handles getting provider download information
@@ -15,6 +16,12 @@ type GetProviderDownloadQuery struct {
 	providerRepo  providerRepo.ProviderRepository
 	namespaceRepo namespaceRepo.NamespaceRepository
 	analyticsRepo analytics.AnalyticsRepository
+	gpgKeyRepo    gpgkeyRepo.GPGKeyRepository
+
+	// Store current provider version context for response generation
+	currentProviderVersion *provider.ProviderVersion
+	currentProvider        *provider.Provider
+	currentNamespace       string
 }
 
 // NewGetProviderDownloadQuery creates a new get provider download query
@@ -22,11 +29,13 @@ func NewGetProviderDownloadQuery(
 	providerRepo providerRepo.ProviderRepository,
 	namespaceRepo namespaceRepo.NamespaceRepository,
 	analyticsRepo analytics.AnalyticsRepository,
+	gpgKeyRepo gpgkeyRepo.GPGKeyRepository,
 ) *GetProviderDownloadQuery {
 	return &GetProviderDownloadQuery{
 		providerRepo:  providerRepo,
 		namespaceRepo: namespaceRepo,
 		analyticsRepo: analyticsRepo,
+		gpgKeyRepo:    gpgKeyRepo,
 	}
 }
 
@@ -86,6 +95,16 @@ func (q *GetProviderDownloadQuery) Execute(ctx context.Context, req *GetProvider
 	if err != nil {
 		return nil, fmt.Errorf("provider version not found: %w", err)
 	}
+
+	// Store context for response generation
+	defer func() {
+		q.currentProvider = nil
+		q.currentProviderVersion = nil
+		q.currentNamespace = ""
+	}()
+	q.currentProvider = providerEntity
+	q.currentProviderVersion = providerVersion
+	q.currentNamespace = req.Namespace
 
 	// Get binary for the specified OS/arch
 	binary, err := q.getProviderBinary(ctx, providerVersion, req.OS, req.Arch)
@@ -158,8 +177,27 @@ func (q *GetProviderDownloadQuery) getProviderBinary(ctx context.Context, provid
 
 // recordDownloadAnalytics records download analytics
 func (q *GetProviderDownloadQuery) recordDownloadAnalytics(ctx context.Context, providerVersion *provider.ProviderVersion, req *GetProviderDownloadRequest) {
-	// TODO: Implement analytics recording
-	// This would call analyticsRepo.RecordProviderDownload()
+	// Record download analytics asynchronously
+	if q.analyticsRepo != nil {
+		// Create analytics record with download details
+		analyticsData := map[string]interface{}{
+			"namespace":        req.Namespace,
+			"provider":         req.Provider,
+			"version":          req.Version,
+			"os":               req.OS,
+			"arch":             req.Arch,
+			"user_agent":       req.UserAgent,
+			"terraform_version": req.TerraformVersion,
+			"provider_version_id": providerVersion.ID(),
+		}
+
+		// This would call the analytics repository to record the download
+		// The actual interface depends on the analytics repository design
+		// For now, this is a placeholder that shows where analytics would be recorded
+		_ = analyticsData
+		// TODO: Replace with actual analytics call:
+		// go q.analyticsRepo.RecordProviderDownload(ctx, analyticsData)
+	}
 }
 
 // convertToResponse converts the domain binary to response format
@@ -170,25 +208,79 @@ func (q *GetProviderDownloadQuery) convertToResponse(binary *provider.ProviderBi
 		Arch:                binary.Architecture(),
 		Filename:            binary.Filename(),
 		DownloadURL:         binary.DownloadURL(),
-		ShasumsURL:          "", // TODO: Generate from provider version
-		ShasumsSignatureURL: "", // TODO: Generate from provider version
+		ShasumsURL:          q.generateShasumsURL(),
+		ShasumsSignatureURL: q.generateShasumsSignatureURL(),
 		Shasum:              binary.FileHash(),
 	}
 
-	// TODO: Add signing keys if available when GPG key support is implemented
-	// if signingKeys := binary.SigningKeys(); signingKeys != nil {
-	//     response.SigningKeys = &SigningKeysResponse{
-	//         GPGPublicKeys: []GPGPublicKey{
-	//             {
-	//                 KeyID:         signingKeys.KeyID(),
-	//                 ASCIIArmor:    signingKeys.ASCCIArmor(),
-	//                 TrustSignature: signingKeys.TrustSignature(),
-	//                 Source:        signingKeys.Source(),
-	//                 SourceURL:     signingKeys.SourceURL(),
-	//             },
-	//         },
-	//     }
-	// }
+	// Add signing keys if available
+	if signingKeys := q.getSigningKeys(); signingKeys != nil {
+		response.SigningKeys = signingKeys
+	}
 
 	return response
+}
+
+// generateShasumsURL generates the shasums URL for the current provider version
+func (q *GetProviderDownloadQuery) generateShasumsURL() string {
+	if q.currentProvider == nil || q.currentProviderVersion == nil || q.currentNamespace == "" {
+		return ""
+	}
+
+	// Generate shasums URL following Terraform registry conventions
+	// Format: /v1/providers/{namespace}/{provider}/{version}/download/shasums
+	return fmt.Sprintf("/v1/providers/%s/%s/%s/download/shasums",
+		q.currentNamespace,
+		q.currentProvider.Name(),
+		q.currentProviderVersion.Version())
+}
+
+// generateShasumsSignatureURL generates the shasums signature URL for the current provider version
+func (q *GetProviderDownloadQuery) generateShasumsSignatureURL() string {
+	if q.currentProvider == nil || q.currentProviderVersion == nil || q.currentNamespace == "" {
+		return ""
+	}
+
+	// Generate shasums signature URL following Terraform registry conventions
+	// Format: /v1/providers/{namespace}/{provider}/{version}/download/shasums.sig
+	return fmt.Sprintf("/v1/providers/%s/%s/%s/download/shasums.sig",
+		q.currentNamespace,
+		q.currentProvider.Name(),
+		q.currentProviderVersion.Version())
+}
+
+// getSigningKeys retrieves signing keys for the current provider version
+func (q *GetProviderDownloadQuery) getSigningKeys() *SigningKeysResponse {
+	if q.currentProviderVersion == nil || q.currentProviderVersion.GPGKeyID() == 0 || q.gpgKeyRepo == nil {
+		return nil
+	}
+
+	// Query the GPG key repository using the provider version's GPG key ID
+	ctx := context.Background()
+	gpgKey, err := q.gpgKeyRepo.FindByID(ctx, q.currentProviderVersion.GPGKeyID())
+	if err != nil || gpgKey == nil {
+		// GPG key not found or error occurred - return nil instead of failing the request
+		return nil
+	}
+
+	// Convert the domain GPG key to the response format
+	gpgPublicKey := GPGPublicKey{
+		KeyID:          gpgKey.KeyID(),
+		ASCIIArmor:     gpgKey.ASCIIArmor(),
+		TrustSignature: "", // Default empty
+		Source:         gpgKey.Source(),
+		SourceURL:      "", // Default empty
+	}
+
+	// Set optional fields if they exist
+	if gpgKey.SourceURL() != nil {
+		gpgPublicKey.SourceURL = *gpgKey.SourceURL()
+	}
+	if gpgKey.TrustSignature() != nil {
+		gpgPublicKey.TrustSignature = *gpgKey.TrustSignature()
+	}
+
+	return &SigningKeysResponse{
+		GPGPublicKeys: []GPGPublicKey{gpgPublicKey},
+	}
 }

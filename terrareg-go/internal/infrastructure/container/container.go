@@ -458,7 +458,7 @@ func NewContainer(
 	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
-	c.GetProviderDownloadQuery = providerCmd.NewGetProviderDownloadQuery(c.ProviderRepo, c.NamespaceRepo, c.AnalyticsRepo)
+	c.GetProviderDownloadQuery = providerCmd.NewGetProviderDownloadQuery(c.ProviderRepo, c.NamespaceRepo, c.AnalyticsRepo, c.GPGKeyRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
 	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery()
 	c.GetAuditHistoryQuery = auditQuery.NewGetAuditHistoryQuery(auditService)
