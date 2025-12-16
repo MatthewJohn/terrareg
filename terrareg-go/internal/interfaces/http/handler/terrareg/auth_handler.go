@@ -3,6 +3,7 @@ package terrareg
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 
 	"github.com/rs/zerolog/log"
@@ -25,6 +26,7 @@ type AuthHandler struct {
 	samlMetadataCmd      *authCmd.SamlMetadataCommand
 	githubOAuthCmd       *authCmd.GithubOAuthCommand
 	authService          *service.AuthenticationService
+	stateStorageService  *service.StateStorageService
 	infraConfig          *config.InfrastructureConfig
 }
 
@@ -39,18 +41,20 @@ func NewAuthHandler(
 	samlMetadataCmd *authCmd.SamlMetadataCommand,
 	githubOAuthCmd *authCmd.GithubOAuthCommand,
 	authService *service.AuthenticationService,
+	stateStorageService *service.StateStorageService,
 	infraConfig *config.InfrastructureConfig,
 ) *AuthHandler {
 	return &AuthHandler{
 		adminLoginCmd:        adminLoginCmd,
 		checkSessionQuery:    checkSessionQuery,
 		isAuthenticatedQuery: isAuthenticatedQuery,
-		oidcLoginCmd:         oidcLoginCmd,
+	oidcLoginCmd:         oidcLoginCmd,
 		oidcCallbackCmd:      oidcCallbackCmd,
 		samlLoginCmd:         samlLoginCmd,
 		samlMetadataCmd:      samlMetadataCmd,
 		githubOAuthCmd:       githubOAuthCmd,
 		authService:          authService,
+		stateStorageService:  stateStorageService,
 		infraConfig:          infraConfig,
 	}
 }
@@ -163,8 +167,19 @@ func (h *AuthHandler) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Store state in session
-	// TODO: Implement secure state storage
+	// Store state using secure state storage
+	if h.stateStorageService != nil {
+		// Generate and store secure state for CSRF protection
+		redirectURL := getRedirectURL(r)
+		stateParam, err := h.stateStorageService.GenerateAndStoreState(ctx, redirectURL, "oidc")
+		if err != nil {
+			RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to generate secure state: %v", err))
+			return
+		}
+
+		// Use the generated state instead of the one from response
+		response.State = stateParam
+	}
 
 	// Redirect to OIDC provider
 	http.Redirect(w, r, response.AuthURL, http.StatusFound)
@@ -271,8 +286,19 @@ func (h *AuthHandler) HandleGitHubOAuth(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Store state in session
-	// TODO: Implement secure state storage
+	// Store state using secure state storage
+	if h.stateStorageService != nil {
+		// Generate and store secure state for CSRF protection
+		redirectURL := getRedirectURL(r)
+		stateParam, err := h.stateStorageService.GenerateAndStoreState(ctx, redirectURL, "github")
+		if err != nil {
+			RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to generate secure state: %v", err))
+			return
+		}
+
+		// Use the generated state instead of the one from response
+		response.State = stateParam
+	}
 
 	// Redirect to GitHub OAuth provider
 	http.Redirect(w, r, response.AuthURL, http.StatusFound)
@@ -299,4 +325,13 @@ func generateRandomState() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)
+}
+
+// getRedirectURL extracts the redirect URL from the request
+func getRedirectURL(r *http.Request) string {
+	redirectURL := r.URL.Query().Get("redirect_url")
+	if redirectURL == "" {
+		redirectURL = "/"
+	}
+	return redirectURL
 }
