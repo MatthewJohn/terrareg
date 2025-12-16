@@ -3,48 +3,49 @@ package storage
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/smithy-go"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
-	"github.com/rs/zerolog"
 )
 
 // S3StorageService implements StorageService for S3
-// This replicates the Python S3FileStorage class
+// This provides real S3 functionality using AWS SDK v2
 type S3StorageService struct {
 	s3Config    *model.S3Config
 	pathBuilder service.PathBuilder
 	s3Client    *s3.Client
-	logger      *zerolog.Logger
+	awsConfig   *aws.Config
 }
 
 // NewS3StorageService creates a new S3 storage service
-func NewS3StorageService(
-	s3Config *model.S3Config,
-	pathBuilder service.PathBuilder,
-	logger *zerolog.Logger,
-) (*S3StorageService, error) {
-	if s3Config == nil {
-		return nil, fmt.Errorf("S3 config must not be nil")
-	}
+func NewS3StorageService(s3Config *model.S3Config, pathBuilder service.PathBuilder) (*S3StorageService, error) {
 	if s3Config.Bucket == "" {
 		return nil, fmt.Errorf("S3 bucket is required")
 	}
 
+	// Load AWS configuration
+	awsConfig, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(s3Config.Region),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	// Create S3 client
+	s3Client := s3.NewFromConfig(awsConfig)
+
 	return &S3StorageService{
 		s3Config:    s3Config,
 		pathBuilder: pathBuilder,
-		logger:      logger,
+		s3Client:    s3Client,
+		awsConfig:   &awsConfig,
 	}, nil
 }
 
@@ -66,37 +67,35 @@ func (s *S3StorageService) generateKey(path string) string {
 // UploadFile uploads a file to S3
 // This replicates Python's upload_file method
 func (s *S3StorageService) UploadFile(ctx context.Context, sourcePath string, destDirectory string, destFilename string) error {
-	file, err := os.Open(sourcePath)
+	// Open source file
+	sourceFile, err := os.Open(sourcePath)
 	if err != nil {
-		log.Printf("Couldn't open file %v to upload. Here's why: %v\n", fileName, err)
-		return err
+		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer file.Close()
+	defer sourceFile.Close()
 
-	objectKey := fmt.Sprintf("%s/%s/%s", s.s3Config.KeyPrefix, destDirectory, destFilename)
+	// Generate S3 key
+	key := s.generateKey(s.pathBuilder.SafeJoinPaths(destDirectory, destFilename))
+
+	// Get file info for content length
+	fileInfo, err := sourceFile.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	// Upload to S3
 	_, err = s.s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.s3Config.Bucket),
-		Key:    aws.String(objectKey),
-		Body:   file,
+		Bucket:        aws.String(s.s3Config.Bucket),
+		Key:           aws.String(key),
+		Body:          sourceFile,
+		ContentLength: aws.Int64(fileInfo.Size()),
+		ContentType:   aws.String("application/octet-stream"),
 	})
 	if err != nil {
-		var apiErr smithy.APIError
-		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "EntityTooLarge" {
-			log.Printf("Error while uploading object to %s. The object is too large.\n"+
-				"To upload objects larger than 5GB, use the S3 console (160GB max)\n"+
-				"or the multipart upload API (5TB max).", s.s3Config.Bucket)
-		} else {
-			log.Printf("Couldn't upload file %v to %v:%v. Here's why: %v\n",
-				sourcePath, s.s3Config.Bucket, objectKey, err)
-		}
-		return err
+		return fmt.Errorf("failed to upload file to S3: %w", err)
 	}
-	err = s3.NewObjectExistsWaiter(s.s3Client).Wait(
-		ctx, &s3.HeadObjectInput{Bucket: aws.String(s.s3Config.Bucket), Key: aws.String(objectKey)}, time.Minute)
-	if err != nil {
-		log.Printf("Failed attempt to wait for object %s to exist.\n", objectKey)
-	}
-	return err
+
+	return nil
 }
 
 // ReadFile reads file content from S3
@@ -104,78 +103,107 @@ func (s *S3StorageService) UploadFile(ctx context.Context, sourcePath string, de
 func (s *S3StorageService) ReadFile(ctx context.Context, path string, bytesMode bool) ([]byte, error) {
 	key := s.generateKey(path)
 
-	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
+	// Get object from S3
+	result, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.s3Config.Bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return nil, err
+		// Handle not found error
+		if strings.Contains(err.Error(), "NoSuchKey") {
+			return nil, fmt.Errorf("file not found: %s", path)
+		}
+		return nil, fmt.Errorf("failed to read file from S3: %w", err)
 	}
-	defer resp.Body.Close()
+	defer result.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	// Read the content
+	content, err := io.ReadAll(result.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read S3 object content: %w", err)
 	}
 
-	// bytesMode has no behavioral difference in Go since []byte is native
-	return data, nil
+	return content, nil
 }
 
 // WriteFile writes content to S3
 func (s *S3StorageService) WriteFile(ctx context.Context, path string, content any, binary bool) error {
-	key := s.generateKey(path)
-
-	var body io.Reader
+	var body io.ReadSeeker
 
 	switch v := content.(type) {
 	case []byte:
 		body = bytes.NewReader(v)
 	case string:
 		body = strings.NewReader(v)
-	case io.Reader:
+	case io.ReadSeeker:
 		body = v
 	default:
-		return fmt.Errorf("unsupported content type %T", content)
+		return fmt.Errorf("unsupported content type: %T", content)
 	}
 
+	key := s.generateKey(path)
+
+	// Upload to S3
 	_, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.s3Config.Bucket),
-		Key:    aws.String(key),
-		Body:   body,
+		Bucket:      aws.String(s.s3Config.Bucket),
+		Key:         aws.String(key),
+		Body:        body,
+		ContentType: aws.String("application/octet-stream"),
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to write file to S3: %w", err)
+	}
+
+	return nil
 }
 
 // FileExists checks if a file exists in S3
 func (s *S3StorageService) FileExists(ctx context.Context, path string) (bool, error) {
 	key := s.generateKey(path)
 
+	// Use HeadObject to check if file exists
 	_, err := s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(s.s3Config.Bucket),
 		Key:    aws.String(key),
 	})
-
-	if err == nil {
-		return true, nil
+	if err != nil {
+		// Handle not found error
+		if strings.Contains(err.Error(), "NotFound") || strings.Contains(err.Error(), "NoSuchKey") {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check file existence in S3: %w", err)
 	}
 
-	var apiErr smithy.APIError
-	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NotFound" {
-		return false, nil
-	}
-
-	return false, err
+	return true, nil
 }
 
 // DirectoryExists is a no-op for S3 (S3 doesn't have directories)
 func (s *S3StorageService) DirectoryExists(ctx context.Context, path string) (bool, error) {
-	return true, nil // Directories don't exist in S3
+	// In S3, directories don't exist - only files do
+	// However, we can check if there are any objects with this prefix
+	key := s.generateKey(path)
+	if !strings.HasSuffix(key, "/") {
+		key += "/"
+	}
+
+	// Use ListObjects to check for any objects with this prefix
+	result, err := s.s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket:  aws.String(s.s3Config.Bucket),
+		Prefix:  aws.String(key),
+		MaxKeys: aws.Int32(1), // We only need to know if at least one exists
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to check directory existence in S3: %w", err)
+	}
+
+	return len(result.Contents) > 0, nil
 }
 
 // MakeDirectory is a no-op for S3
 func (s *S3StorageService) MakeDirectory(ctx context.Context, directory string) error {
-	return nil // Directories are implicit in S3
+	// Directories are implicit in S3, so this is a no-op
+	// We just return success to match Python behavior
+	return nil
 }
 
 // DeleteFile deletes a file from S3
@@ -183,27 +211,22 @@ func (s *S3StorageService) MakeDirectory(ctx context.Context, directory string) 
 func (s *S3StorageService) DeleteFile(ctx context.Context, path string) error {
 	key := s.generateKey(path)
 
+	// Delete object from S3
 	_, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.s3Config.Bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete file from S3: %w", err)
 	}
 
-	// Wait until the object is actually deleted
-	return s3.NewObjectNotExistsWaiter(s.s3Client).Wait(
-		ctx,
-		&s3.HeadObjectInput{
-			Bucket: aws.String(s.s3Config.Bucket),
-			Key:    aws.String(key),
-		},
-		time.Minute,
-	)
+	return nil
 }
 
 // DeleteDirectory is a no-op for S3
 // This replicates Python's delete_directory method
 func (s *S3StorageService) DeleteDirectory(ctx context.Context, path string) error {
-	return nil // Directories don't exist in S3
+	// Directories don't exist in S3, so this is a no-op
+	// In Python, this is used to clean up directory structures but S3 handles this implicitly
+	return nil
 }
