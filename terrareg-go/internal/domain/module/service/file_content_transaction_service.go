@@ -17,13 +17,12 @@ import (
 
 // FileContentTransactionService handles file content operations with transaction safety
 // and rollback capabilities for partial failures during file processing
+// Note: File content is stored in database, not filesystem storage
 type FileContentTransactionService struct {
 	moduleVersionFileRepo model.ModuleVersionFileRepository
 	moduleVersionRepo     repository.ModuleVersionRepository
-	storageService        storageService.StorageService
 	fileProcessingService model.FileProcessingService
 	pathBuilder           storageService.PathBuilder
-	tempDirManager        storageService.TemporaryDirectoryManager
 	savepointHelper       *transaction.SavepointHelper
 }
 
@@ -31,19 +30,15 @@ type FileContentTransactionService struct {
 func NewFileContentTransactionService(
 	moduleVersionFileRepo model.ModuleVersionFileRepository,
 	moduleVersionRepo repository.ModuleVersionRepository,
-	storageService storageService.StorageService,
 	fileProcessingService model.FileProcessingService,
 	pathBuilder storageService.PathBuilder,
-	tempDirManager storageService.TemporaryDirectoryManager,
 	savepointHelper *transaction.SavepointHelper,
 ) *FileContentTransactionService {
 	return &FileContentTransactionService{
 		moduleVersionFileRepo: moduleVersionFileRepo,
 		moduleVersionRepo:     moduleVersionRepo,
-		storageService:        storageService,
 		fileProcessingService: fileProcessingService,
 		pathBuilder:           pathBuilder,
-		tempDirManager:        tempDirManager,
 		savepointHelper:       savepointHelper,
 	}
 }

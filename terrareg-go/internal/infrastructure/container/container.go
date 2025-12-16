@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -33,6 +34,9 @@ import (
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
+	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
+	storageModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
+	storageInfrastructure "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 	gpgkeyService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/service"
 	graphRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
@@ -107,9 +111,15 @@ type Container struct {
 	GPGKeyService *gpgkeyService.GPGKeyService
 
 	// Infrastructure Services
-	GitClient      gitService.GitClient
-	StorageService moduleService.StorageService
-	ModuleParser   moduleService.ModuleParser
+	GitClient               gitService.GitClient
+	DomainStorageService    storageService.StorageService  // Core domain storage (8 methods)
+	ModuleStorageService    moduleService.StorageService  // Module-specific storage with filesystem ops
+	PathBuilder             storageService.PathBuilder
+	TempDirManager          storageService.TemporaryDirectoryManager
+	StorageWorkflowService  storageService.StorageWorkflowService
+	GitService              gitService.GitService
+	ModuleIndexingService   moduleService.ModuleIndexingService
+	ModuleParser            moduleService.ModuleParser
 
 	// Domain Services
 	ModuleImporterService *moduleService.ModuleImporterService
@@ -317,8 +327,58 @@ func NewContainer(
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
-	c.StorageService = storage.NewLocalStorage()
-	c.ModuleParser = parser.NewModuleParserImpl(c.StorageService)
+
+	// Initialize consolidated storage services
+	pathConfig := storageService.GetDefaultPathConfig(infraConfig.DataDirectory)
+	c.PathBuilder = storageService.NewPathBuilderService(pathConfig)
+
+	// Initialize domain storage service (8 core methods)
+	domainStorageService, err := storageInfrastructure.NewLocalStorageService(infraConfig.DataDirectory, c.PathBuilder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create domain storage service: %w", err)
+	}
+	c.DomainStorageService = domainStorageService
+
+	// Initialize temporary directory manager
+	tempDirManager, err := storageInfrastructure.NewTemporaryDirectoryManager()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary directory manager: %w", err)
+	}
+	c.TempDirManager = tempDirManager
+
+	// Initialize storage workflow service - convert pathConfig type
+	pathConfigModel := &storageModel.StoragePathConfig{
+		BasePath:      pathConfig.BasePath,
+		ModulesPath:   pathConfig.ModulesPath,
+		ProvidersPath: pathConfig.ProvidersPath,
+		UploadPath:    pathConfig.UploadPath,
+		TempPath:      pathConfig.TempPath,
+	}
+	c.StorageWorkflowService = storageService.NewStorageWorkflowServiceImpl(
+		c.DomainStorageService,
+		c.PathBuilder,
+		tempDirManager,
+		pathConfigModel,
+	)
+
+	// Initialize git service for workflow
+	c.GitService = gitService.NewGitService()
+
+	// Create adapter for module-specific storage operations (CopyDir, ExtractArchive, etc.)
+	moduleStorageAdapter := storageInfrastructure.NewModuleStorageAdapter(c.DomainStorageService, c.PathBuilder)
+	c.ModuleStorageService = moduleStorageAdapter
+
+	// Initialize module indexing service (pending ModuleProcessorService and ArchiveGenerationService)
+	// TODO: Implement ModuleProcessorService and ArchiveGenerationService
+	// c.ModuleIndexingService = moduleService.NewModuleIndexingServiceImpl(
+	//     c.GitService,
+	//     c.StorageWorkflowService,
+	//     c.ModuleProcessorService, // TODO: Create this service
+	//     c.ArchiveGenerationService, // TODO: Create this service
+	//     c.Logger,
+	// )
+
+	c.ModuleParser = parser.NewModuleParserImpl(c.ModuleStorageService)
 
 	// Initialize foundation transaction services
 	savepointHelper := transaction.NewSavepointHelper(db.DB)
@@ -391,7 +451,7 @@ func NewContainer(
 		savepointHelper,
 		c.ModuleProviderRepo,
 		c.GitClient,
-		c.StorageService,
+		c.ModuleStorageService,
 		c.ModuleParser,
 		domainConfig,
 		infraConfig,
@@ -475,7 +535,7 @@ func NewContainer(
 	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
-	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, infraConfig) // Uses InfrastructureConfig for file operations
+	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.ModuleStorageService, infraConfig) // Uses InfrastructureConfig for file operations
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)

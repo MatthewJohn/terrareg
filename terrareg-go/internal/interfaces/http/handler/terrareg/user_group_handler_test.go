@@ -18,7 +18,6 @@ import (
 
 	userGroupCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/user_group"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	usergroupdto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/user_group_dto"
 )
 
 // MockListUserGroupsQuery is a mock for ListUserGroupsQuery
