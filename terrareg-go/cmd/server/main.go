@@ -49,7 +49,7 @@ func bootstrap(logger zerolog.Logger, sslCertPrivateKey, sslCertPublicKey string
 	configService := domainConfigService.NewConfigurationService(
 		domainConfigService.ConfigurationServiceOptions{
 			SSLCertPrivateKey: sslCertPrivateKey,
-			SSLCertPublicKey: sslCertPublicKey,
+			SSLCertPublicKey:  sslCertPublicKey,
 		},
 		versionReader,
 	)

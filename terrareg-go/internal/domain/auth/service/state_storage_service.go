@@ -129,4 +129,3 @@ func (s *StateStorageService) generateSecureState() (string, error) {
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
 }
-

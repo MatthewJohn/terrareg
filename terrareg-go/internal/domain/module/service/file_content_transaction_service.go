@@ -44,11 +44,11 @@ func NewFileContentTransactionService(
 // FileStorageRequest represents a request to store files with transaction safety
 type FileStorageRequest struct {
 	ModuleVersionID int
-	Files          []FileContentItem
-	TransactionCtx context.Context
-	SavepointName  string
-	ProcessContent bool // Whether to process content (markdown, etc.)
-	ValidatePaths  bool // Whether to validate file paths
+	Files           []FileContentItem
+	TransactionCtx  context.Context
+	SavepointName   string
+	ProcessContent  bool // Whether to process content (markdown, etc.)
+	ValidatePaths   bool // Whether to validate file paths
 }
 
 // FileContentItem represents a file to be stored
@@ -61,15 +61,15 @@ type FileContentItem struct {
 
 // FileStorageResult represents the result of file storage operation
 type FileStorageResult struct {
-	Success              bool                      `json:"success"`
-	StoredFiles         []StoredFileInfo          `json:"stored_files,omitempty"`
-	FailedFiles         []FailedFileInfo          `json:"failed_files,omitempty"`
-	Error               *string                   `json:"error,omitempty"`
-	StorageDuration     time.Duration             `json:"storage_duration"`
-	Timestamp           time.Time                 `json:"timestamp"`
-	SavepointRolledBack bool                     `json:"savepoint_rolled_back"`
-	TotalFiles          int                      `json:"total_files"`
-	ProcessedFiles      int                      `json:"processed_files"`
+	Success             bool             `json:"success"`
+	StoredFiles         []StoredFileInfo `json:"stored_files,omitempty"`
+	FailedFiles         []FailedFileInfo `json:"failed_files,omitempty"`
+	Error               *string          `json:"error,omitempty"`
+	StorageDuration     time.Duration    `json:"storage_duration"`
+	Timestamp           time.Time        `json:"timestamp"`
+	SavepointRolledBack bool             `json:"savepoint_rolled_back"`
+	TotalFiles          int              `json:"total_files"`
+	ProcessedFiles      int              `json:"processed_files"`
 }
 
 // StoredFileInfo represents information about a successfully stored file
@@ -84,9 +84,9 @@ type StoredFileInfo struct {
 
 // FailedFileInfo represents information about a failed file storage
 type FailedFileInfo struct {
-	Path        string `json:"path"`
-	Error       string `json:"error"`
-	Reason      string `json:"reason"` // "validation", "storage", "processing"
+	Path   string `json:"path"`
+	Error  string `json:"error"`
+	Reason string `json:"reason"` // "validation", "storage", "processing"
 }
 
 // ExampleFile represents an example file to be processed
@@ -99,21 +99,21 @@ type ExampleFile struct {
 
 // ExampleProcessingResult represents the result of example file processing
 type ExampleProcessingResult struct {
-	Success           bool                 `json:"success"`
-	ProcessedExamples []ProcessedExample   `json:"processed_examples,omitempty"`
-	FailedExamples    []FailedExample      `json:"failed_examples,omitempty"`
-	Error             *string              `json:"error,omitempty"`
-	ProcessingDuration time.Duration       `json:"processing_duration"`
-	Timestamp         time.Time            `json:"timestamp"`
+	Success            bool               `json:"success"`
+	ProcessedExamples  []ProcessedExample `json:"processed_examples,omitempty"`
+	FailedExamples     []FailedExample    `json:"failed_examples,omitempty"`
+	Error              *string            `json:"error,omitempty"`
+	ProcessingDuration time.Duration      `json:"processing_duration"`
+	Timestamp          time.Time          `json:"timestamp"`
 }
 
 // ProcessedExample represents a successfully processed example
 type ProcessedExample struct {
-	Path         string `json:"path"`
-	FileID       int    `json:"file_id"`
-	IsMain       bool   `json:"is_main"`
-	Directory    string `json:"directory"`
-	HasTerraform bool   `json:"has_terraform"`
+	Path         string                `json:"path"`
+	FileID       int                   `json:"file_id"`
+	IsMain       bool                  `json:"is_main"`
+	Directory    string                `json:"directory"`
+	HasTerraform bool                  `json:"has_terraform"`
 	SecurityScan *SecurityScanResponse `json:"security_scan,omitempty"`
 }
 
@@ -130,12 +130,12 @@ func (s *FileContentTransactionService) StoreFilesWithTransaction(
 ) (*FileStorageResult, error) {
 	startTime := time.Now()
 	result := &FileStorageResult{
-		Success:              false,
-		StoredFiles:          []StoredFileInfo{},
-		FailedFiles:          []FailedFileInfo{},
-		SavepointRolledBack:  false,
-		Timestamp:            startTime,
-		TotalFiles:           len(req.Files),
+		Success:             false,
+		StoredFiles:         []StoredFileInfo{},
+		FailedFiles:         []FailedFileInfo{},
+		SavepointRolledBack: false,
+		Timestamp:           startTime,
+		TotalFiles:          len(req.Files),
 	}
 
 	// Use provided savepoint name or create new one
@@ -234,10 +234,10 @@ func (s *FileContentTransactionService) ProcessExampleFiles(
 ) (*ExampleProcessingResult, error) {
 	startTime := time.Now()
 	result := &ExampleProcessingResult{
-		Success:            false,
-		ProcessedExamples:  []ProcessedExample{},
-		FailedExamples:     []FailedExample{},
-		Timestamp:          startTime,
+		Success:           false,
+		ProcessedExamples: []ProcessedExample{},
+		FailedExamples:    []FailedExample{},
+		Timestamp:         startTime,
 	}
 
 	for _, example := range examples {
@@ -259,11 +259,11 @@ func (s *FileContentTransactionService) ProcessExampleFiles(
 
 			storageReq := FileStorageRequest{
 				ModuleVersionID: moduleVersionID,
-				Files:          []FileContentItem{fileItem},
-				TransactionCtx: ctx,
-				SavepointName:  savepointName,
-				ProcessContent: true,
-				ValidatePaths:  true,
+				Files:           []FileContentItem{fileItem},
+				TransactionCtx:  ctx,
+				SavepointName:   savepointName,
+				ProcessContent:  true,
+				ValidatePaths:   true,
 			}
 
 			storageResult, err := s.StoreFilesWithTransaction(ctx, storageReq)
@@ -328,10 +328,10 @@ func (s *FileContentTransactionService) StoreModuleArchiveContents(
 
 	storageReq := FileStorageRequest{
 		ModuleVersionID: moduleVersionID,
-		Files:          files,
-		TransactionCtx: ctx,
-		ProcessContent: true,
-		ValidatePaths:  true,
+		Files:           files,
+		TransactionCtx:  ctx,
+		ProcessContent:  true,
+		ValidatePaths:   true,
 	}
 
 	return s.StoreFilesWithTransaction(ctx, storageReq)
@@ -539,9 +539,9 @@ func (s *FileContentTransactionService) GetFileStatistics(
 	}
 
 	stats := &FileStatistics{
-		TotalFiles:    len(files),
-		TotalSize:     0,
-		FileTypes:     make(map[string]int),
+		TotalFiles:     len(files),
+		TotalSize:      0,
+		FileTypes:      make(map[string]int),
 		ProcessedTypes: make(map[string]int),
 	}
 

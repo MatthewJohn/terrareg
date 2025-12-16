@@ -95,12 +95,12 @@ func (c *SamlCallbackCommand) Execute(ctx context.Context, req *SamlCallbackRequ
 		authMethod := "SAML"
 
 		providerData := map[string]interface{}{
-			"entity_id": c.config.SAML2EntityID,
-			"name_id":   userInfo.NameID,
-			"username":  userInfo.Username,
-			"email":     userInfo.Email,
-			"name":      userInfo.Name,
-			"groups":    userInfo.Groups,
+			"entity_id":  c.config.SAML2EntityID,
+			"name_id":    userInfo.NameID,
+			"username":   userInfo.Username,
+			"email":      userInfo.Email,
+			"name":       userInfo.Name,
+			"groups":     userInfo.Groups,
 			"attributes": userInfo.Attributes,
 		}
 		providerDataBytes, _ := json.Marshal(providerData)

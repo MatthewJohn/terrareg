@@ -56,25 +56,25 @@ func TestNewTerraformIDP(t *testing.T) {
 
 func TestNewTerraformIDP_InvalidConfig(t *testing.T) {
 	tests := []struct {
-		name      string
-		config    TerraformIDPConfig
+		name       string
+		config     TerraformIDPConfig
 		privateKey *rsa.PrivateKey
-		expectErr bool
-		errMsg    string
+		expectErr  bool
+		errMsg     string
 	}{
 		{
-			name:      "nil private key",
-			config:    TerraformIDPConfig{IssuerURL: "https://example.com"},
+			name:       "nil private key",
+			config:     TerraformIDPConfig{IssuerURL: "https://example.com"},
 			privateKey: nil,
-			expectErr: true,
-			errMsg:    "private key is required",
+			expectErr:  true,
+			errMsg:     "private key is required",
 		},
 		{
-			name:      "empty issuer URL",
-			config:    TerraformIDPConfig{IssuerURL: ""},
+			name:       "empty issuer URL",
+			config:     TerraformIDPConfig{IssuerURL: ""},
 			privateKey: generateTestRSAKey(t),
-			expectErr: true,
-			errMsg:    "issuer URL is required",
+			expectErr:  true,
+			errMsg:     "issuer URL is required",
 		},
 	}
 
@@ -213,7 +213,7 @@ func TestTerraformIDP_HandleTokenRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	tokenRequest := map[string]interface{}{
-		"subject": "terraform-user",
+		"subject":   "terraform-user",
 		"client_id": "test-client",
 	}
 
@@ -413,8 +413,8 @@ func TestTerraformIDP_GenerateIDToken(t *testing.T) {
 
 	subject := "terraform-user"
 	additionalClaims := map[string]interface{}{
-		"name":  "Terraform User",
-		"email": "terraform@example.com",
+		"name":   "Terraform User",
+		"email":  "terraform@example.com",
 		"groups": []string{"developers", "admins"},
 	}
 

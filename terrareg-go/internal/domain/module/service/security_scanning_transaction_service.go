@@ -16,9 +16,9 @@ import (
 // SecurityScanningTransactionService handles security scanning with transaction safety
 // and result persistence using the module details system
 type SecurityScanningTransactionService struct {
-	securityService  *SecurityScanningService
+	securityService   *SecurityScanningService
 	moduleVersionRepo repository.ModuleVersionRepository
-	savepointHelper  *transaction.SavepointHelper
+	savepointHelper   *transaction.SavepointHelper
 }
 
 // NewSecurityScanningTransactionService creates a new security scanning transaction service
@@ -28,32 +28,32 @@ func NewSecurityScanningTransactionService(
 	savepointHelper *transaction.SavepointHelper,
 ) *SecurityScanningTransactionService {
 	return &SecurityScanningTransactionService{
-		securityService:  securityService,
+		securityService:   securityService,
 		moduleVersionRepo: moduleVersionRepo,
-		savepointHelper:  savepointHelper,
+		savepointHelper:   savepointHelper,
 	}
 }
 
 // SecurityScanTransactionRequest represents a request to scan with transaction context
 type SecurityScanTransactionRequest struct {
-	ModuleVersionID  int
-	ModulePath       string
-	Namespace        string
-	Module           string
-	Provider         string
-	Version          string
-	TransactionCtx   context.Context
-	SavepointName    string
+	ModuleVersionID int
+	ModulePath      string
+	Namespace       string
+	Module          string
+	Provider        string
+	Version         string
+	TransactionCtx  context.Context
+	SavepointName   string
 }
 
 // SecurityScanTransactionResult represents the result of a security scan within a transaction
 type SecurityScanTransactionResult struct {
-	Success           bool               `json:"success"`
-	SecurityResponse  *SecurityScanResponse `json:"security_response,omitempty"`
-	Error             *string            `json:"error,omitempty"`
-	ScanDuration      time.Duration      `json:"scan_duration"`
-	Timestamp         time.Time          `json:"timestamp"`
-	SavepointRolledBack bool            `json:"savepoint_rolled_back"`
+	Success             bool                  `json:"success"`
+	SecurityResponse    *SecurityScanResponse `json:"security_response,omitempty"`
+	Error               *string               `json:"error,omitempty"`
+	ScanDuration        time.Duration         `json:"scan_duration"`
+	Timestamp           time.Time             `json:"timestamp"`
+	SavepointRolledBack bool                  `json:"savepoint_rolled_back"`
 }
 
 // BatchSecurityScanRequest represents a batch security scan request
@@ -68,11 +68,11 @@ type BatchSecurityScanRequest struct {
 
 // BatchSecurityScanResult represents the result of batch security scanning
 type BatchSecurityScanResult struct {
-	TotalScans     int                                        `json:"total_scans"`
-	SuccessfulScans []SecurityScanTransactionResult          `json:"successful_scans"`
-	FailedScans    []SecurityScanTransactionResult          `json:"failed_scans"`
-	PartialSuccess bool                                      `json:"partial_success"`
-	OverallSuccess bool                                      `json:"overall_success"`
+	TotalScans      int                             `json:"total_scans"`
+	SuccessfulScans []SecurityScanTransactionResult `json:"successful_scans"`
+	FailedScans     []SecurityScanTransactionResult `json:"failed_scans"`
+	PartialSuccess  bool                            `json:"partial_success"`
+	OverallSuccess  bool                            `json:"overall_success"`
 }
 
 // ScanWithTransaction executes a security scan within a transaction savepoint
@@ -83,9 +83,9 @@ func (s *SecurityScanningTransactionService) ScanWithTransaction(
 ) (*SecurityScanTransactionResult, error) {
 	startTime := time.Now()
 	result := &SecurityScanTransactionResult{
-		Success:            false,
+		Success:             false,
 		SavepointRolledBack: false,
-		Timestamp:          startTime,
+		Timestamp:           startTime,
 	}
 
 	// Use the provided savepoint name or create a new one
@@ -141,11 +141,11 @@ func (s *SecurityScanningTransactionService) ScanBatchModules(
 	modules []BatchSecurityScanRequest,
 ) (*BatchSecurityScanResult, error) {
 	result := &BatchSecurityScanResult{
-		TotalScans:       len(modules),
-		SuccessfulScans:  []SecurityScanTransactionResult{},
-		FailedScans:      []SecurityScanTransactionResult{},
-		PartialSuccess:   false,
-		OverallSuccess:   true,
+		TotalScans:      len(modules),
+		SuccessfulScans: []SecurityScanTransactionResult{},
+		FailedScans:     []SecurityScanTransactionResult{},
+		PartialSuccess:  false,
+		OverallSuccess:  true,
 	}
 
 	for _, module := range modules {
@@ -164,10 +164,10 @@ func (s *SecurityScanningTransactionService) ScanBatchModules(
 		if err != nil {
 			// This should rarely happen since we handle errors within ScanWithTransaction
 			errorResult := SecurityScanTransactionResult{
-				Success:     false,
-				Error:       func() *string { e := err.Error(); return &e }(),
-				ScanDuration: 0,
-				Timestamp:    time.Now(),
+				Success:             false,
+				Error:               func() *string { e := err.Error(); return &e }(),
+				ScanDuration:        0,
+				Timestamp:           time.Now(),
 				SavepointRolledBack: true,
 			}
 			result.FailedScans = append(result.FailedScans, errorResult)

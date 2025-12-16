@@ -103,10 +103,10 @@ type BatchResult struct {
 
 // BatchOperationResult represents the result of a single batch operation
 type BatchOperationResult struct {
-	ID        string
-	Success   bool
-	Error     error
-	Duration  time.Duration
+	ID       string
+	Success  bool
+	Error    error
+	Duration time.Duration
 }
 
 // ProcessBatchWithSavepoints processes multiple operations with individual savepoints

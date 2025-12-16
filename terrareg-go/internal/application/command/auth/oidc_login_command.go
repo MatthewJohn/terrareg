@@ -18,7 +18,7 @@ type OidcLoginCommand struct {
 	oidcService    *service.OIDCService
 	// Temporary in-memory storage for OIDC sessions
 	// In production, this should be replaced with Redis or database storage
-	oidcSessions   map[string]*service.OIDCSession
+	oidcSessions map[string]*service.OIDCSession
 }
 
 // OidcLoginRequest represents the input for OIDC login

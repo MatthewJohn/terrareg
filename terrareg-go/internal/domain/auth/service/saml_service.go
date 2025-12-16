@@ -18,8 +18,8 @@ import (
 
 // SAMLService handles SAML 2.0 authentication using crewjam/saml
 type SAMLService struct {
-	config    *config.InfrastructureConfig
-	sp        *saml.ServiceProvider
+	config      *config.InfrastructureConfig
+	sp          *saml.ServiceProvider
 	idpMetadata *saml.EntityDescriptor
 }
 
@@ -66,8 +66,8 @@ func NewSAMLService(config *config.InfrastructureConfig) (*SAMLService, error) {
 	}
 
 	return &SAMLService{
-		config:     config,
-		sp:         sp,
+		config:      config,
+		sp:          sp,
 		idpMetadata: idpMetadata,
 	}, nil
 }

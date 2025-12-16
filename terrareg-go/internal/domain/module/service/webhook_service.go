@@ -22,11 +22,11 @@ type WebhookResult struct {
 
 // WebhookService handles webhook processing for modules
 type WebhookService struct {
-	moduleImporterService     *ModuleImporterService
-	moduleProviderRepo       repository.ModuleProviderRepository
-	config                   *infraConfig.InfrastructureConfig
-	savepointHelper          *transaction.SavepointHelper
-	moduleCreationWrapper    *ModuleCreationWrapperService
+	moduleImporterService *ModuleImporterService
+	moduleProviderRepo    repository.ModuleProviderRepository
+	config                *infraConfig.InfrastructureConfig
+	savepointHelper       *transaction.SavepointHelper
+	moduleCreationWrapper *ModuleCreationWrapperService
 }
 
 // NewWebhookService creates a new webhook service
@@ -38,11 +38,11 @@ func NewWebhookService(
 	moduleCreationWrapper *ModuleCreationWrapperService,
 ) *WebhookService {
 	return &WebhookService{
-		moduleImporterService:     moduleImporterService,
-		moduleProviderRepo:       moduleProviderRepo,
-		config:                   config,
-		savepointHelper:          savepointHelper,
-		moduleCreationWrapper:    moduleCreationWrapper,
+		moduleImporterService: moduleImporterService,
+		moduleProviderRepo:    moduleProviderRepo,
+		config:                config,
+		savepointHelper:       savepointHelper,
+		moduleCreationWrapper: moduleCreationWrapper,
 	}
 }
 
@@ -120,23 +120,23 @@ type VersionImportRequest struct {
 
 // VersionImportResult represents the result of importing a single version
 type VersionImportResult struct {
-	Version        string        `json:"version"`
-	Status         string        `json:"status"`         // "Success" or "Failed"
-	ModuleVersionID *int         `json:"module_version_id,omitempty"`
-	Error          *string       `json:"error,omitempty"`
-	Duration       time.Duration `json:"duration"`
-	Timestamp      time.Time     `json:"timestamp"`
+	Version         string        `json:"version"`
+	Status          string        `json:"status"` // "Success" or "Failed"
+	ModuleVersionID *int          `json:"module_version_id,omitempty"`
+	Error           *string       `json:"error,omitempty"`
+	Duration        time.Duration `json:"duration"`
+	Timestamp       time.Time     `json:"timestamp"`
 }
 
 // MultiVersionResult represents the result of processing multiple versions (matches Python format)
 type MultiVersionResult struct {
-	OverallStatus   string                           `json:"overall_status"`   // "Success" or "Error"
-	VersionsProcessed map[string]*VersionImportResult `json:"tags"`              // Maps version to result
-	HasFailures     bool                             `json:"has_failures"`
-	FailureSummary  string                           `json:"failure_summary,omitempty"`
-	TotalVersions   int                              `json:"total_versions"`
-	SuccessCount    int                              `json:"success_count"`
-	FailureCount    int                              `json:"failure_count"`
+	OverallStatus     string                          `json:"overall_status"` // "Success" or "Error"
+	VersionsProcessed map[string]*VersionImportResult `json:"tags"`           // Maps version to result
+	HasFailures       bool                            `json:"has_failures"`
+	FailureSummary    string                          `json:"failure_summary,omitempty"`
+	TotalVersions     int                             `json:"total_versions"`
+	SuccessCount      int                             `json:"success_count"`
+	FailureCount      int                             `json:"failure_count"`
 }
 
 // ProcessMultipleVersionsWithSavepoints processes multiple versions with individual savepoints
@@ -147,12 +147,12 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 	versionRequests []VersionImportRequest,
 ) (*MultiVersionResult, error) {
 	result := &MultiVersionResult{
-		OverallStatus:    "Success",
+		OverallStatus:     "Success",
 		VersionsProcessed: make(map[string]*VersionImportResult),
-		HasFailures:      false,
-		TotalVersions:    len(versionRequests),
-		SuccessCount:     0,
-		FailureCount:     0,
+		HasFailures:       false,
+		TotalVersions:     len(versionRequests),
+		SuccessCount:      0,
+		FailureCount:      0,
 	}
 
 	// Process each version with its own savepoint for isolation
@@ -171,11 +171,11 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 		err := ws.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
 			// Use module creation wrapper for this version
 			prepareReq := PrepareModuleRequest{
-				Namespace: namespace,
+				Namespace:  namespace,
 				ModuleName: moduleName,
-				Provider:  provider,
-				Version:   versionReq.Version,
-				GitTag:    versionReq.Request.GitTag,
+				Provider:   provider,
+				Version:    versionReq.Version,
+				GitTag:     versionReq.Request.GitTag,
 			}
 
 			return ws.moduleCreationWrapper.WithModuleCreationWrapper(

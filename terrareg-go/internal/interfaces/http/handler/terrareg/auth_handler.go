@@ -48,7 +48,7 @@ func NewAuthHandler(
 		adminLoginCmd:        adminLoginCmd,
 		checkSessionQuery:    checkSessionQuery,
 		isAuthenticatedQuery: isAuthenticatedQuery,
-	oidcLoginCmd:         oidcLoginCmd,
+		oidcLoginCmd:         oidcLoginCmd,
 		oidcCallbackCmd:      oidcCallbackCmd,
 		samlLoginCmd:         samlLoginCmd,
 		samlMetadataCmd:      samlMetadataCmd,

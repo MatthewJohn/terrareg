@@ -47,18 +47,18 @@ type AnalyticsEvent struct {
 
 // ProviderDownloadEvent represents a provider download analytics event
 type ProviderDownloadEvent struct {
-	ProviderVersionID     int
-	Timestamp             *time.Time
-	TerraformVersion      *string
-	AnalyticsToken        *string
-	AuthToken             *string
-	Environment           *string
-	NamespaceName         *string
-	ProviderName          *string
-	Version               *string
-	OS                    *string
-	Architecture          *string
-	UserAgent             *string
+	ProviderVersionID int
+	Timestamp         *time.Time
+	TerraformVersion  *string
+	AnalyticsToken    *string
+	AuthToken         *string
+	Environment       *string
+	NamespaceName     *string
+	ProviderName      *string
+	Version           *string
+	OS                *string
+	Architecture      *string
+	UserAgent         *string
 }
 
 // DownloadStats represents download statistics

@@ -51,8 +51,8 @@ func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req ImportModu
 			SecurityScanEnabled:     true,
 			FileProcessingEnabled:   true,
 			GenerateArchives:        true,
-			PublishModule:          true,
-			ArchiveFormats:        []moduleService.ArchiveFormat{
+			PublishModule:           true,
+			ArchiveFormats: []moduleService.ArchiveFormat{
 				moduleService.ArchiveFormatZIP,
 				moduleService.ArchiveFormatTarGz,
 			},
