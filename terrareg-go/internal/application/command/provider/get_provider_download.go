@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
 
 	analytics "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
@@ -179,24 +180,37 @@ func (q *GetProviderDownloadQuery) getProviderBinary(ctx context.Context, provid
 func (q *GetProviderDownloadQuery) recordDownloadAnalytics(ctx context.Context, providerVersion *provider.ProviderVersion, req *GetProviderDownloadRequest) {
 	// Record download analytics asynchronously
 	if q.analyticsRepo != nil {
-		// Create analytics record with download details
-		analyticsData := map[string]interface{}{
-			"namespace":        req.Namespace,
-			"provider":         req.Provider,
-			"version":          req.Version,
-			"os":               req.OS,
-			"arch":             req.Arch,
-			"user_agent":       req.UserAgent,
-			"terraform_version": req.TerraformVersion,
-			"provider_version_id": providerVersion.ID(),
+		now := time.Now()
+
+		// Create provider download analytics event
+		providerDownloadEvent := analytics.ProviderDownloadEvent{
+			ProviderVersionID: providerVersion.ID(),
+			Timestamp:        &now,
+			TerraformVersion: &req.TerraformVersion,
+			AnalyticsToken:   nil, // TODO: Extract from request if available
+			AuthToken:        nil, // TODO: Extract from request if available
+			Environment:      nil, // TODO: Extract from request if available
+			NamespaceName:    &req.Namespace,
+			ProviderName:     &req.Provider,
+			Version:          &req.Version,
+			OS:               &req.OS,
+			Architecture:     &req.Arch,
+			UserAgent:        &req.UserAgent,
 		}
 
-		// This would call the analytics repository to record the download
-		// The actual interface depends on the analytics repository design
-		// For now, this is a placeholder that shows where analytics would be recorded
-		_ = analyticsData
-		// TODO: Replace with actual analytics call:
-		// go q.analyticsRepo.RecordProviderDownload(ctx, analyticsData)
+		// Record the provider download event asynchronously
+		go func() {
+			// Use a new context with timeout for the analytics operation
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			err := q.analyticsRepo.RecordProviderDownload(ctx, providerDownloadEvent)
+			if err != nil {
+				// Log error but don't fail the download request
+				// In production, you'd want proper logging here
+				_ = err
+			}
+		}()
 	}
 }
 

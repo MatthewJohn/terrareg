@@ -10,6 +10,9 @@ type AnalyticsRepository interface {
 	// RecordDownload records a module download event
 	RecordDownload(ctx context.Context, event AnalyticsEvent) error
 
+	// RecordProviderDownload records a provider download event
+	RecordProviderDownload(ctx context.Context, event ProviderDownloadEvent) error
+
 	// GetDownloadStats retrieves download statistics for a module provider
 	GetDownloadStats(ctx context.Context, namespace, module, provider string) (*DownloadStats, error)
 
@@ -40,6 +43,22 @@ type AnalyticsEvent struct {
 	NamespaceName         *string
 	ModuleName            *string
 	ProviderName          *string
+}
+
+// ProviderDownloadEvent represents a provider download analytics event
+type ProviderDownloadEvent struct {
+	ProviderVersionID     int
+	Timestamp             *time.Time
+	TerraformVersion      *string
+	AnalyticsToken        *string
+	AuthToken             *string
+	Environment           *string
+	NamespaceName         *string
+	ProviderName          *string
+	Version               *string
+	OS                    *string
+	Architecture          *string
+	UserAgent             *string
 }
 
 // DownloadStats represents download statistics

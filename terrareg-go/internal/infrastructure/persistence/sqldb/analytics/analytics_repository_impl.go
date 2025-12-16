@@ -46,6 +46,28 @@ func (r *AnalyticsRepositoryImpl) RecordDownload(ctx context.Context, event anal
 	return r.db.WithContext(ctx).Create(&analytics).Error
 }
 
+// RecordProviderDownload records a provider download event
+func (r *AnalyticsRepositoryImpl) RecordProviderDownload(ctx context.Context, event analyticsCmd.ProviderDownloadEvent) error {
+	// Note: For now, we'll reuse the existing AnalyticsDB table with ProviderVersionID
+	// In the future, we might want to create a separate ProviderAnalyticsDB table
+	analytics := sqldb.AnalyticsDB{
+		ParentModuleVersion: event.ProviderVersionID, // Reuse field for provider version ID
+		Timestamp:           event.Timestamp,
+		TerraformVersion:    event.TerraformVersion,
+		AnalyticsToken:      event.AnalyticsToken,
+		AuthToken:           event.AuthToken,
+		Environment:         event.Environment,
+		NamespaceName:       event.NamespaceName,
+		ModuleName:          nil, // Not applicable for provider downloads
+		ProviderName:        event.ProviderName,
+	}
+
+	// Store additional provider-specific data in the analytics text fields if needed
+	// For now, this provides basic tracking that can be enhanced later
+
+	return r.db.WithContext(ctx).Create(&analytics).Error
+}
+
 // GetDownloadStats retrieves download statistics for a module provider
 func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespace, module, provider string) (*analyticsCmd.DownloadStats, error) {
 	var totalCount int64

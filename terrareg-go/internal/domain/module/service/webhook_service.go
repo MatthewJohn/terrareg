@@ -3,9 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"gorm.io/gorm"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
 // WebhookResult represents the result of webhook processing
@@ -17,9 +22,11 @@ type WebhookResult struct {
 
 // WebhookService handles webhook processing for modules
 type WebhookService struct {
-	moduleImporterService *ModuleImporterService
-	moduleProviderRepo    repository.ModuleProviderRepository
-	config                *infraConfig.InfrastructureConfig
+	moduleImporterService     *ModuleImporterService
+	moduleProviderRepo       repository.ModuleProviderRepository
+	config                   *infraConfig.InfrastructureConfig
+	savepointHelper          *transaction.SavepointHelper
+	moduleCreationWrapper    *ModuleCreationWrapperService
 }
 
 // NewWebhookService creates a new webhook service
@@ -27,11 +34,15 @@ func NewWebhookService(
 	moduleImporterService *ModuleImporterService,
 	moduleProviderRepo repository.ModuleProviderRepository,
 	config *infraConfig.InfrastructureConfig,
+	savepointHelper *transaction.SavepointHelper,
+	moduleCreationWrapper *ModuleCreationWrapperService,
 ) *WebhookService {
 	return &WebhookService{
-		moduleImporterService: moduleImporterService,
-		moduleProviderRepo:    moduleProviderRepo,
-		config:                config,
+		moduleImporterService:     moduleImporterService,
+		moduleProviderRepo:       moduleProviderRepo,
+		config:                   config,
+		savepointHelper:          savepointHelper,
+		moduleCreationWrapper:    moduleCreationWrapper,
 	}
 }
 
@@ -99,4 +110,108 @@ func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namesp
 		Message:      fmt.Sprintf("Successfully imported module version %s for %s/%s/%s", version, namespace, moduleName, provider),
 		TriggerBuild: true,
 	}, nil
+}
+
+// VersionImportRequest represents a request to import a specific version
+type VersionImportRequest struct {
+	Version string
+	Request ImportModuleVersionRequest
+}
+
+// VersionImportResult represents the result of importing a single version
+type VersionImportResult struct {
+	Version        string        `json:"version"`
+	Status         string        `json:"status"`         // "Success" or "Failed"
+	ModuleVersionID *int         `json:"module_version_id,omitempty"`
+	Error          *string       `json:"error,omitempty"`
+	Duration       time.Duration `json:"duration"`
+	Timestamp      time.Time     `json:"timestamp"`
+}
+
+// MultiVersionResult represents the result of processing multiple versions (matches Python format)
+type MultiVersionResult struct {
+	OverallStatus   string                           `json:"overall_status"`   // "Success" or "Error"
+	VersionsProcessed map[string]*VersionImportResult `json:"tags"`              // Maps version to result
+	HasFailures     bool                             `json:"has_failures"`
+	FailureSummary  string                           `json:"failure_summary,omitempty"`
+	TotalVersions   int                              `json:"total_versions"`
+	SuccessCount    int                              `json:"success_count"`
+	FailureCount    int                              `json:"failure_count"`
+}
+
+// ProcessMultipleVersionsWithSavepoints processes multiple versions with individual savepoints
+// This matches the Python Bitbucket webhook pattern where each version gets its own savepoint
+func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
+	ctx context.Context,
+	namespace, moduleName, provider string,
+	versionRequests []VersionImportRequest,
+) (*MultiVersionResult, error) {
+	result := &MultiVersionResult{
+		OverallStatus:    "Success",
+		VersionsProcessed: make(map[string]*VersionImportResult),
+		HasFailures:      false,
+		TotalVersions:    len(versionRequests),
+		SuccessCount:     0,
+		FailureCount:     0,
+	}
+
+	// Process each version with its own savepoint for isolation
+	for _, versionReq := range versionRequests {
+		startTime := time.Now()
+
+		versionResult := &VersionImportResult{
+			Version:   versionReq.Version,
+			Status:    "Failed",
+			Timestamp: startTime,
+		}
+
+		// Create savepoint for this version
+		savepointName := fmt.Sprintf("webhook_version_%s_%d", versionReq.Version, startTime.UnixNano())
+
+		err := ws.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+			// Use module creation wrapper for this version
+			prepareReq := PrepareModuleRequest{
+				Namespace: namespace,
+				ModuleName: moduleName,
+				Provider:  provider,
+				Version:   versionReq.Version,
+				GitTag:    versionReq.Request.GitTag,
+			}
+
+			return ws.moduleCreationWrapper.WithModuleCreationWrapper(
+				ctx,
+				prepareReq,
+				func(ctx context.Context, moduleVersion *model.ModuleVersion) error {
+					// Execute the actual module import
+					return ws.moduleImporterService.ImportModuleVersion(ctx, versionReq.Request)
+				},
+			)
+		})
+
+		versionResult.Duration = time.Since(startTime)
+
+		if err != nil {
+			// Version processing failed
+			errorMsg := err.Error()
+			versionResult.Error = &errorMsg
+			versionResult.Status = "Failed"
+			result.FailureCount++
+			result.HasFailures = true
+		} else {
+			// Version processing succeeded
+			versionResult.Status = "Success"
+			versionResult.ModuleVersionID = nil // Would be set if we could get the ID from the wrapper
+			result.SuccessCount++
+		}
+
+		result.VersionsProcessed[versionReq.Version] = versionResult
+	}
+
+	// Set overall status and failure summary
+	if result.HasFailures {
+		result.OverallStatus = "Error"
+		result.FailureSummary = fmt.Sprintf("%d of %d versions failed to import", result.FailureCount, result.TotalVersions)
+	}
+
+	return result, nil
 }
