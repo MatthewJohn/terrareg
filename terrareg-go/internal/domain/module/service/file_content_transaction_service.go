@@ -11,6 +11,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
@@ -19,8 +20,10 @@ import (
 type FileContentTransactionService struct {
 	moduleVersionFileRepo model.ModuleVersionFileRepository
 	moduleVersionRepo     repository.ModuleVersionRepository
-	fileStorageService    model.FileStorageService
+	storageService        storageService.StorageService
 	fileProcessingService model.FileProcessingService
+	pathBuilder           storageService.PathBuilder
+	tempDirManager        storageService.TemporaryDirectoryManager
 	savepointHelper       *transaction.SavepointHelper
 }
 
@@ -28,15 +31,19 @@ type FileContentTransactionService struct {
 func NewFileContentTransactionService(
 	moduleVersionFileRepo model.ModuleVersionFileRepository,
 	moduleVersionRepo repository.ModuleVersionRepository,
-	fileStorageService model.FileStorageService,
+	storageService storageService.StorageService,
 	fileProcessingService model.FileProcessingService,
+	pathBuilder storageService.PathBuilder,
+	tempDirManager storageService.TemporaryDirectoryManager,
 	savepointHelper *transaction.SavepointHelper,
 ) *FileContentTransactionService {
 	return &FileContentTransactionService{
 		moduleVersionFileRepo: moduleVersionFileRepo,
 		moduleVersionRepo:     moduleVersionRepo,
-		fileStorageService:    fileStorageService,
+		storageService:        storageService,
 		fileProcessingService: fileProcessingService,
+		pathBuilder:           pathBuilder,
+		tempDirManager:        tempDirManager,
 		savepointHelper:       savepointHelper,
 	}
 }
@@ -409,56 +416,23 @@ func (s *FileContentTransactionService) DeleteFilesWithTransaction(
 
 // validateFilePath validates that a file path is safe and allowed
 func (s *FileContentTransactionService) validateFilePath(path string) error {
-	// Use the file storage service for validation if available
-	if s.fileStorageService != nil {
-		return s.fileStorageService.ValidateFilePath(path)
-	}
-
-	// Basic validation
-	if path == "" {
-		return fmt.Errorf("file path cannot be empty")
-	}
-
-	// Check for path traversal attempts
-	if strings.Contains(path, "..") {
-		return fmt.Errorf("path traversal not allowed: %s", path)
-	}
-
-	// Check absolute paths (not allowed in module context)
-	if filepath.IsAbs(path) {
-		return fmt.Errorf("absolute paths not allowed: %s", path)
-	}
-
-	// Check for forbidden file types
-	forbiddenExtensions := []string{".exe", ".bat", ".cmd", ".scr", ".dll", ".so"}
-	ext := strings.ToLower(filepath.Ext(path))
-	for _, forbidden := range forbiddenExtensions {
-		if ext == forbidden {
-			return fmt.Errorf("forbidden file type: %s", ext)
-		}
-	}
-
-	return nil
+	return s.pathBuilder.ValidatePath(path)
 }
 
 // processFileContent processes file content based on its type
 func (s *FileContentTransactionService) processFileContent(path, content string) (string, error) {
 	// Use file processing service if available
 	if s.fileProcessingService != nil {
-		// Sanitize content first
+		// Process based on content type
 		contentType := s.getContentType(path)
-		sanitizedContent, err := s.fileStorageService.SanitizeContent(content, contentType)
-		if err != nil {
-			return "", fmt.Errorf("failed to sanitize content: %w", err)
-		}
 
 		// Process based on content type
 		switch contentType {
 		case "text/markdown":
-			return s.fileProcessingService.ProcessMarkdownContent(sanitizedContent)
+			return s.fileProcessingService.ProcessMarkdownContent(content)
 		default:
-			// For other content types, return sanitized content
-			return sanitizedContent, nil
+			// For other content types, return content as-is
+			return content, nil
 		}
 	}
 
