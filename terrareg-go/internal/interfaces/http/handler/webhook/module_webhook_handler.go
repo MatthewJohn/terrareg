@@ -197,7 +197,7 @@ func (h *ModuleWebhookHandler) processGitHubWebhook(ctx context.Context, namespa
 	return h.triggerModuleVersionCreation(ctx, namespace, moduleName, provider, version)
 }
 
-// processBitbucketWebhook processes Bitbucket webhook events (tag changes only, matching Python)
+// processBitbucketWebhook processes Bitbucket webhook events with savepoint isolation (matching Python pattern)
 func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, namespace, moduleName, provider string, body []byte) (*moduleService.WebhookResult, error) {
 	var payload BitbucketPushWebhookPayload
 	if err := json.Unmarshal(body, &payload); err != nil {
@@ -207,10 +207,8 @@ func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, name
 		}, nil
 	}
 
-	// Process all tag changes (matching Python behavior)
-	var processedTags []string
-	var errors []string
-
+	// Collect all versions to process
+	var versionRequests []moduleService.VersionImportRequest
 	for _, change := range payload.Push.Changes {
 		// Only process TAG type changes with ADD or UPDATE
 		if change.Type != "TAG" {
@@ -224,42 +222,46 @@ func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, name
 
 		if change.New.Type == "TAG" && change.New.Name != "" {
 			version := change.New.Name
-			fmt.Printf("Bitbucket webhook: Processing tag %s for module %s/%s/%s\n", version, namespace, moduleName, provider)
-
-			result, err := h.triggerModuleVersionCreation(ctx, namespace, moduleName, provider, version)
-			if err != nil {
-				errors = append(errors, fmt.Sprintf("Failed to process tag %s: %v", version, err))
-				continue
+			importRequest := moduleService.ImportModuleVersionRequest{
+				Namespace: namespace,
+				Module:    moduleName,
+				Provider:  provider,
+				GitTag:    &version,
 			}
-
-			if !result.Success {
-				errors = append(errors, fmt.Sprintf("Tag %s: %s", version, result.Message))
-				continue
-			}
-
-			processedTags = append(processedTags, version)
+			versionRequests = append(versionRequests, moduleService.VersionImportRequest{
+				Version: version,
+				Request: importRequest,
+			})
 		}
 	}
 
-	// Return aggregate results
-	if len(processedTags) > 0 {
-		message := fmt.Sprintf("Successfully processed %d tags: %s", len(processedTags), strings.Join(processedTags, ", "))
-		if len(errors) > 0 {
-			message += fmt.Sprintf(" (%d errors: %s)", len(errors), strings.Join(errors, "; "))
-		}
+	if len(versionRequests) == 0 {
 		return &moduleService.WebhookResult{
 			Success: true,
-			Message: message,
+			Message: "No tag changes found to process",
 		}, nil
-	} else if len(errors) > 0 {
+	}
+
+	// Process versions with savepoint isolation using the enhanced webhook service
+	multiResult, err := h.webhookService.ProcessMultipleVersionsWithSavepoints(
+		ctx, namespace, moduleName, provider, versionRequests)
+	if err != nil {
 		return &moduleService.WebhookResult{
 			Success: false,
-			Message: fmt.Sprintf("All tag processing failed: %s", strings.Join(errors, "; ")),
+			Message: fmt.Sprintf("Failed to process versions: %v", err),
+		}, nil
+	}
+
+	// Convert MultiVersionResult to WebhookResult for backward compatibility
+	if multiResult.HasFailures {
+		return &moduleService.WebhookResult{
+			Success: false,
+			Message: multiResult.FailureSummary,
 		}, nil
 	} else {
 		return &moduleService.WebhookResult{
 			Success: true,
-			Message: "No tag changes found to process",
+			Message: fmt.Sprintf("Successfully processed all %d versions", multiResult.SuccessCount),
 		}, nil
 	}
 }
