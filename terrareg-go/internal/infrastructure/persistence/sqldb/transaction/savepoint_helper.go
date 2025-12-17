@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,6 +12,32 @@ import (
 // SavepointHelper provides savepoint functionality for nested transactions
 type SavepointHelper struct {
 	db *gorm.DB
+}
+
+// sanitizeSavepointName converts a string to a SQL-safe identifier
+// Replaces invalid characters with underscores and ensures it starts with a letter/underscore
+func sanitizeSavepointName(name string) string {
+	// Replace invalid SQL identifier characters with underscores
+	// Valid characters: letters, digits, underscores (cannot start with digit)
+	re := regexp.MustCompile(`[^a-zA-Z0-9_]`)
+	sanitized := re.ReplaceAllString(name, "_")
+
+	// Ensure it doesn't start with a digit (SQL identifiers can't start with digits)
+	if len(sanitized) > 0 && sanitized[0] >= '0' && sanitized[0] <= '9' {
+		sanitized = "sp_" + sanitized
+	}
+
+	// Ensure it's not empty
+	if sanitized == "" {
+		sanitized = fmt.Sprintf("sp_%d", time.Now().UnixNano())
+	}
+
+	// Truncate if too long (SQL identifiers have length limits)
+	if len(sanitized) > 64 {
+		sanitized = sanitized[:61] + fmt.Sprintf("_%d", time.Now().UnixNano()%1000)
+	}
+
+	return sanitized
 }
 
 // NewSavepointHelper creates a new savepoint helper
@@ -38,8 +65,8 @@ func (h *SavepointHelper) WithTransaction(ctx context.Context, fn func(*gorm.DB)
 func (h *SavepointHelper) WithSavepoint(ctx context.Context, fn func(*gorm.DB) error) error {
 	savepointName := fmt.Sprintf("sp_%d", time.Now().UnixNano())
 
-	// Create savepoint using raw SQL
-	if err := h.db.WithContext(ctx).Exec(fmt.Sprintf("SAVEPOINT %s", savepointName)).Error; err != nil {
+	// Create savepoint using raw SQL with proper quoting for cross-database compatibility
+	if err := h.db.WithContext(ctx).Exec(fmt.Sprintf("SAVEPOINT `%s`", savepointName)).Error; err != nil {
 		return fmt.Errorf("failed to create savepoint %s: %w", savepointName, err)
 	}
 
@@ -48,14 +75,14 @@ func (h *SavepointHelper) WithSavepoint(ctx context.Context, fn func(*gorm.DB) e
 
 	if err != nil {
 		// Rollback to savepoint on error
-		if rollbackErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT %s", savepointName)).Error; rollbackErr != nil {
+		if rollbackErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT `%s`", savepointName)).Error; rollbackErr != nil {
 			return fmt.Errorf("failed to rollback to savepoint %s: %w (original error: %v)", savepointName, rollbackErr, err)
 		}
 		return err
 	}
 
 	// Release the savepoint on success
-	if releaseErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT %s", savepointName)).Error; releaseErr != nil {
+	if releaseErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT `%s`", savepointName)).Error; releaseErr != nil {
 		return fmt.Errorf("failed to release savepoint %s: %w", savepointName, releaseErr)
 	}
 
@@ -64,9 +91,16 @@ func (h *SavepointHelper) WithSavepoint(ctx context.Context, fn func(*gorm.DB) e
 
 // WithSavepointNamed creates a savepoint with a specific name
 func (h *SavepointHelper) WithSavepointNamed(ctx context.Context, savepointName string, fn func(*gorm.DB) error) error {
-	// Create savepoint using raw SQL
-	if err := h.db.WithContext(ctx).Exec(fmt.Sprintf("SAVEPOINT %s", savepointName)).Error; err != nil {
-		return fmt.Errorf("failed to create savepoint %s: %w", savepointName, err)
+	// Sanitize savepoint name to be SQL-safe across all databases (SQLite, MySQL, PostgreSQL)
+	safeName := sanitizeSavepointName(savepointName)
+
+	// Create savepoint using raw SQL with proper quoting for cross-database compatibility
+	// Different databases have different quoting rules:
+	// - PostgreSQL and MySQL: `identifier` or "identifier"
+	// - SQLite: `identifier` or "identifier" or [identifier]
+	// We'll use backticks for MySQL/SQLite and PostgreSQL compatibility
+	if err := h.db.WithContext(ctx).Exec(fmt.Sprintf("SAVEPOINT `%s`", safeName)).Error; err != nil {
+		return fmt.Errorf("failed to create savepoint %s: %w", safeName, err)
 	}
 
 	// Execute the function
@@ -74,15 +108,15 @@ func (h *SavepointHelper) WithSavepointNamed(ctx context.Context, savepointName 
 
 	if err != nil {
 		// Rollback to savepoint on error
-		if rollbackErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT %s", savepointName)).Error; rollbackErr != nil {
-			return fmt.Errorf("failed to rollback to savepoint %s: %w (original error: %v)", savepointName, rollbackErr, err)
+		if rollbackErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT `%s`", safeName)).Error; rollbackErr != nil {
+			return fmt.Errorf("failed to rollback to savepoint %s: %w (original error: %v)", safeName, rollbackErr, err)
 		}
 		return err
 	}
 
 	// Release the savepoint on success
-	if releaseErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT %s", savepointName)).Error; releaseErr != nil {
-		return fmt.Errorf("failed to release savepoint %s: %w", savepointName, releaseErr)
+	if releaseErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT `%s`", safeName)).Error; releaseErr != nil {
+		return fmt.Errorf("failed to release savepoint %s: %w", safeName, releaseErr)
 	}
 
 	return nil

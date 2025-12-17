@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,6 +13,31 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
+
+// sanitizeSavepointName converts a string to a SQL-safe identifier
+// This is a local copy to avoid circular dependencies
+func sanitizeSavepointNameForSecurity(name string) string {
+	// Replace invalid SQL identifier characters with underscores
+	re := regexp.MustCompile(`[^a-zA-Z0-9_]`)
+	sanitized := re.ReplaceAllString(name, "_")
+
+	// Ensure it doesn't start with a digit
+	if len(sanitized) > 0 && sanitized[0] >= '0' && sanitized[0] <= '9' {
+		sanitized = "sp_" + sanitized
+	}
+
+	// Ensure it's not empty
+	if sanitized == "" {
+		sanitized = fmt.Sprintf("sp_%d", time.Now().UnixNano())
+	}
+
+	// Truncate if too long
+	if len(sanitized) > 64 {
+		sanitized = sanitized[:61] + fmt.Sprintf("_%d", time.Now().UnixNano()%1000)
+	}
+
+	return sanitized
+}
 
 // SecurityScanningTransactionService handles security scanning with transaction safety
 // and result persistence using the module details system
@@ -346,9 +372,12 @@ func (s *SecurityScanningTransactionService) RollbackSecurityScan(
 	moduleVersionID int,
 	savepointName string,
 ) error {
-	// Rollback to the specified savepoint
-	if err := s.savepointHelper.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT %s", savepointName)).Error; err != nil {
-		return fmt.Errorf("failed to rollback to savepoint %s: %w", savepointName, err)
+	// Sanitize savepoint name for SQL safety
+	safeName := sanitizeSavepointNameForSecurity(savepointName)
+
+	// Rollback to the specified savepoint with proper quoting
+	if err := s.savepointHelper.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT `%s`", safeName)).Error; err != nil {
+		return fmt.Errorf("failed to rollback to savepoint %s: %w", safeName, err)
 	}
 
 	return nil
