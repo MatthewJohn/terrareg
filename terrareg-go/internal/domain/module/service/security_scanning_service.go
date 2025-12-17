@@ -379,7 +379,8 @@ func (s *SecurityScanningService) ScanWithTransaction(
 		Timestamp:           startTime,
 	}
 
-	// Use the provided savepoint name or create a new one
+	// Check if we're already in a transaction by attempting to create a savepoint
+	// If savepoint creation fails due to existing transaction, execute directly
 	savepointName := req.SavepointName
 	if savepointName == "" {
 		savepointName = fmt.Sprintf("security_scan_%d_%d", req.ModuleVersionID, startTime.UnixNano())
@@ -421,6 +422,52 @@ func (s *SecurityScanningService) ScanWithTransaction(
 		result.Error = &errorMsg
 		return result, nil
 	}
+
+	return result, nil
+}
+
+// ScanWithinExistingTransaction executes a security scan within an existing transaction context
+// This method is used when the service is called from within another transaction
+func (s *SecurityScanningService) ScanWithinExistingTransaction(
+	ctx context.Context,
+	req SecurityScanTransactionRequest,
+) (*SecurityScanTransactionResult, error) {
+	startTime := time.Now()
+	result := &SecurityScanTransactionResult{
+		Success:             false,
+		SavepointRolledBack: false,
+		Timestamp:           startTime,
+	}
+
+	// Execute the security scan directly without creating a savepoint
+	scanReq := &SecurityScanRequest{
+		Namespace:  req.Namespace,
+		Module:     req.Module,
+		Provider:   req.Provider,
+		Version:    req.Version,
+		ModulePath: req.ModulePath,
+	}
+
+	securityResponse, err := s.ExecuteSecurityScan(ctx, scanReq)
+	if err != nil {
+		errorMsg := err.Error()
+		result.Error = &errorMsg
+		result.ScanDuration = time.Since(startTime)
+		return result, fmt.Errorf("failed to execute security scan: %w", err)
+	}
+
+	// Store the results in the module version details
+	if err := s.storeSecurityResultsInTransaction(ctx, req.ModuleVersionID, securityResponse); err != nil {
+		errorMsg := err.Error()
+		result.Error = &errorMsg
+		result.ScanDuration = time.Since(startTime)
+		return result, fmt.Errorf("failed to store security results: %w", err)
+	}
+
+	// Set successful result
+	result.Success = true
+	result.SecurityResponse = securityResponse
+	result.ScanDuration = time.Since(startTime)
 
 	return result, nil
 }

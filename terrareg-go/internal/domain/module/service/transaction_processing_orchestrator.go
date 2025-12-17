@@ -412,7 +412,8 @@ func (o *TransactionProcessingOrchestrator) executeSecurityScanningPhase(
 		TransactionCtx:  ctx,
 	}
 
-	scanResult, err := o.securityService.ScanWithTransaction(ctx, scanReq)
+	// Use ScanWithinExistingTransaction to avoid nested savepoints
+	scanResult, err := o.securityService.ScanWithinExistingTransaction(ctx, scanReq)
 	phaseResult.Duration = time.Since(startTime)
 
 	if err != nil {
