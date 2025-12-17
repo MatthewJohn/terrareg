@@ -353,7 +353,6 @@ type SecurityScanTransactionRequest struct {
 	Provider        string
 	Version         string
 	TransactionCtx  context.Context
-	SavepointName   string
 }
 
 type BatchSecurityScanRequest struct {
@@ -379,13 +378,7 @@ func (s *SecurityScanningService) ScanWithTransaction(
 		Timestamp:           startTime,
 	}
 
-	// Use the context-aware transaction wrapper
-	savepointName := req.SavepointName
-	if savepointName == "" {
-		savepointName = fmt.Sprintf("security_scan_%d_%d", req.ModuleVersionID, startTime.UnixNano())
-	}
-
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Execute the security scan
 		scanReq := &SecurityScanRequest{
 			Namespace:  req.Namespace,

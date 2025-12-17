@@ -122,10 +122,7 @@ func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 	}
 
 	// Use smart transaction wrapper for the entire import process
-	savepointName := fmt.Sprintf("domain_import_%s_%s_%s_%d",
-		req.Input.Namespace, req.Input.Module, req.Input.Provider, startTime.UnixNano())
-
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Phase 1: Pre-import setup and validation
 		if err := s.validateImportRequest(ctx, req); err != nil {
 			return fmt.Errorf("import validation failed: %w", err)

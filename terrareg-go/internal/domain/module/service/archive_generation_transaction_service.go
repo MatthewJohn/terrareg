@@ -59,7 +59,6 @@ type ArchiveGenerationRequest struct {
 	Formats                       []ArchiveFormat
 	PathspecFilter                *PathspecFilter // For filtering files (from .terraformignore)
 	TransactionCtx                context.Context
-	SavepointName                string
 	// Archive hosting configuration
 	GitCloneURL                   string              // Module's git clone URL (empty if not externally hosted)
 	DeleteExternallyHostedArtifacts bool                // Whether to skip archive generation for externally hosted modules
@@ -144,13 +143,7 @@ func (s *ArchiveGenerationTransactionService) GenerateArchivesWithTransaction(
 		return result, nil
 	}
 
-	// Use provided savepoint name or create new one
-	savepointName := req.SavepointName
-	if savepointName == "" {
-		savepointName = fmt.Sprintf("archive_generation_%d_%d", req.ModuleVersionID, startTime.UnixNano())
-	}
-
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Scan source files
 		sourceFiles, err := s.scanSourceFiles(req.SourcePath, req.PathspecFilter)
 		if err != nil {
@@ -232,9 +225,8 @@ func (s *ArchiveGenerationTransactionService) GenerateMultipleFormats(
 
 	// Generate each format with its own savepoint
 	for _, format := range formats {
-		savepointName := fmt.Sprintf("archive_format_%s_%d", format.String(), time.Now().UnixNano())
 
-		err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+		err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 			archiveResult, err := s.generateArchiveFormat(ctx, sourcePath, archivePath, format, sourceFiles)
 			if err != nil {
 				result.Formats[format.String()] = &ArchiveResult{
