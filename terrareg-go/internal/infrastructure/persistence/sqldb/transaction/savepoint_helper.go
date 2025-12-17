@@ -71,29 +71,7 @@ func (h *SavepointHelper) WithTransaction(ctx context.Context, fn func(*gorm.DB)
 // If successful, the savepoint is committed
 func (h *SavepointHelper) WithSavepoint(ctx context.Context, fn func(*gorm.DB) error) error {
 	savepointName := fmt.Sprintf("sp_%d", time.Now().UnixNano())
-
-	// Create savepoint using raw SQL with proper quoting for cross-database compatibility
-	if err := h.db.WithContext(ctx).Exec(fmt.Sprintf("SAVEPOINT `%s`", savepointName)).Error; err != nil {
-		return fmt.Errorf("failed to create savepoint %s: %w", savepointName, err)
-	}
-
-	// Execute the function
-	err := fn(h.db.WithContext(ctx))
-
-	if err != nil {
-		// Rollback to savepoint on error
-		if rollbackErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT `%s`", savepointName)).Error; rollbackErr != nil {
-			return fmt.Errorf("failed to rollback to savepoint %s: %w (original error: %v)", savepointName, rollbackErr, err)
-		}
-		return err
-	}
-
-	// Release the savepoint on success
-	if releaseErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT `%s`", savepointName)).Error; releaseErr != nil {
-		return fmt.Errorf("failed to release savepoint %s: %w", savepointName, releaseErr)
-	}
-
-	return nil
+	return h.WithSmartSavepointOrTransaction(ctx, savepointName, fn)
 }
 
 // WithSavepointNamed creates a savepoint with a specific name
@@ -197,17 +175,20 @@ func (h *SavepointHelper) WithTransactionContext(ctx context.Context, fn func(co
 // Otherwise, creates a new transaction
 func (h *SavepointHelper) WithSavepointOrTransaction(ctx context.Context, savepointName string, fn func(context.Context, *gorm.DB) error) error {
 	// Check if transaction already exists in context
-	if _, exists := h.getTransactionFromContext(ctx); exists {
+	if tx, exists := h.getTransactionFromContext(ctx); exists {
 		// Use existing transaction and create savepoint
-		return h.WithSavepointNamed(ctx, savepointName, func(txDB *gorm.DB) error {
-			return fn(ctx, txDB)
+	// IMPORTANT: Ensure the context has the transaction stored for consistency
+		// Even though tx exists in ctx, we double-verify for nested calls
+		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
+		return h.withSavepointAndTx(tx, savepointName, func(txDB *gorm.DB) error {
+			return fn(ctxWithTx, txDB)
 		})
 	}
 
 	// Create new transaction with savepoint
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
-		return h.WithSavepointNamed(ctxWithTx, savepointName, func(txDB *gorm.DB) error {
+		return h.withSavepointAndTx(tx, savepointName, func(txDB *gorm.DB) error {
 			return fn(ctxWithTx, txDB)
 		})
 	})
@@ -269,7 +250,8 @@ func (h *SavepointHelper) WithSmartSavepointOrTransaction(ctx context.Context, s
 
 	// Create new transaction with savepoint
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
-		return h.WithSavepointNamed(ctxWithTx, savepointName, fn)
+		// Store transaction in context for nested calls
+		_ = context.WithValue(ctx, TransactionDBKey, tx)
+		return h.withSavepointAndTx(tx, savepointName, fn) // tx already has the transaction context
 	})
 }
