@@ -174,6 +174,7 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 }
 
 // mapToPersistenceModel converts domain model to persistence model using centralized mapper
-func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model.ModuleVersion) (sqldb.ModuleVersionDB, error) {
-	return toDBModuleVersion(moduleVersion), nil
+func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model.ModuleVersion) (*sqldb.ModuleVersionDB, error) {
+	dbVersion := toDBModuleVersion(moduleVersion)
+	return &dbVersion, nil
 }
