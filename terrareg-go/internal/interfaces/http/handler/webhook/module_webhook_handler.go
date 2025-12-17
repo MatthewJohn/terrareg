@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
@@ -222,7 +223,7 @@ func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, name
 
 		if change.New.Type == "TAG" && change.New.Name != "" {
 			version := change.New.Name
-			importRequest := moduleService.ImportModuleVersionRequest{
+			importRequest := module.ImportModuleVersionRequest{
 				Namespace: namespace,
 				Module:    moduleName,
 				Provider:  provider,

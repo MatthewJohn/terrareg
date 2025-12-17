@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
@@ -36,15 +37,6 @@ func NewGitImportService(
 	}
 }
 
-// ImportModuleVersionRequest represents a Git import request
-type ImportModuleVersionRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   *string // Optional - derived from git tag if not provided
-	GitTag    *string // Optional - conflicts with Version
-}
-
 // ImportModuleVersionResult represents the result of a Git import
 type ImportModuleVersionResult struct {
 	Version    string
@@ -54,7 +46,7 @@ type ImportModuleVersionResult struct {
 }
 
 // Execute imports a module version from Git
-func (s *GitImportService) Execute(ctx context.Context, req ImportModuleVersionRequest) (*ImportModuleVersionResult, error) {
+func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleVersionRequest) (*ImportModuleVersionResult, error) {
 	// Find the module provider
 	moduleProvider, err := s.moduleProviderRepo.FindByNamespaceModuleProvider(
 		ctx, req.Namespace, req.Module, req.Provider,
