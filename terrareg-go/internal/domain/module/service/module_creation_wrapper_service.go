@@ -55,7 +55,7 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 	savepointName := fmt.Sprintf("prepare_module_%s_%d", req.Version, time.Now().UnixNano())
 
 	var result *PrepareModuleResult
-	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 		// Create module version entity
 		moduleVersion, err := model.NewModuleVersion(req.Version, nil, false)
 		if err != nil {

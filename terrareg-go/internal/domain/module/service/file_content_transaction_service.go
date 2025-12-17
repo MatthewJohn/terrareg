@@ -146,7 +146,7 @@ func (s *FileContentTransactionService) StoreFilesWithTransaction(
 		savepointName = fmt.Sprintf("file_storage_%d_%d", req.ModuleVersionID, startTime.UnixNano())
 	}
 
-	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 		for _, fileItem := range req.Files {
 			fileStart := time.Now()
 
@@ -246,7 +246,7 @@ func (s *FileContentTransactionService) ProcessExampleFiles(
 		// Each example gets its own savepoint for isolation
 		savepointName := fmt.Sprintf("example_processing_%s_%d", strings.ReplaceAll(example.Path, "/", "_"), time.Now().UnixNano())
 
-		err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+		err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 			// Validate example file
 			if err := s.validateExampleFile(example); err != nil {
 				return fmt.Errorf("example validation failed: %w", err)
@@ -348,7 +348,7 @@ func (s *FileContentTransactionService) UpdateFileContent(
 ) error {
 	savepointName := fmt.Sprintf("update_file_%s_%d", strings.ReplaceAll(filePath, "/", "_"), time.Now().UnixNano())
 
-	return s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+	return s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 		// Find existing file
 		existingFile, err := s.moduleVersionFileRepo.FindByPath(ctx, moduleVersionID, filePath)
 		if err != nil {
@@ -387,7 +387,7 @@ func (s *FileContentTransactionService) DeleteFilesWithTransaction(
 ) error {
 	savepointName := fmt.Sprintf("delete_files_%d_%d", moduleVersionID, time.Now().UnixNano())
 
-	return s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+	return s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 		for _, filePath := range filePaths {
 			// Find the file
 			file, err := s.moduleVersionFileRepo.FindByPath(ctx, moduleVersionID, filePath)

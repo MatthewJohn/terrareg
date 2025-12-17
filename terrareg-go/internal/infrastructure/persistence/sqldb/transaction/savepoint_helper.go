@@ -9,6 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Context key for storing transaction state
+type contextKey string
+
+const (
+	TransactionDBKey contextKey = "transaction_db"
+)
+
 // SavepointHelper provides savepoint functionality for nested transactions
 type SavepointHelper struct {
 	db *gorm.DB
@@ -182,4 +189,73 @@ func (h *SavepointHelper) ProcessBatchWithSavepoints(ctx context.Context, operat
 // WithContext returns the database instance for raw SQL execution
 func (h *SavepointHelper) WithContext(ctx context.Context) *gorm.DB {
 	return h.db.WithContext(ctx)
+}
+
+// WithTransactionContext executes a function within a transaction context
+// If a transaction is already active in the context, it uses that transaction
+// Otherwise, it creates a new transaction
+func (h *SavepointHelper) WithTransactionContext(ctx context.Context, fn func(context.Context, *gorm.DB) error) error {
+	// Check if transaction already exists in context
+	if tx, exists := h.getTransactionFromContext(ctx); exists {
+		// Use existing transaction
+		return fn(ctx, tx)
+	}
+
+	// Create new transaction
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Store transaction in context
+		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
+		return fn(ctxWithTx, tx)
+	})
+}
+
+// WithSavepointOrTransaction executes a function within a savepoint or transaction
+// If a transaction exists in context, creates a savepoint
+// Otherwise, creates a new transaction
+func (h *SavepointHelper) WithSavepointOrTransaction(ctx context.Context, savepointName string, fn func(context.Context, *gorm.DB) error) error {
+	// Check if transaction already exists in context
+	if _, exists := h.getTransactionFromContext(ctx); exists {
+		// Use existing transaction and create savepoint
+		return h.WithSavepointNamed(ctx, savepointName, func(txDB *gorm.DB) error {
+			return fn(ctx, txDB)
+		})
+	}
+
+	// Create new transaction with savepoint
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
+		return h.WithSavepointNamed(ctxWithTx, savepointName, func(txDB *gorm.DB) error {
+			return fn(ctxWithTx, txDB)
+		})
+	})
+}
+
+// getTransactionFromContext retrieves the transaction from context
+func (h *SavepointHelper) getTransactionFromContext(ctx context.Context) (*gorm.DB, bool) {
+	if tx, ok := ctx.Value(TransactionDBKey).(*gorm.DB); ok {
+		return tx, true
+	}
+	return nil, false
+}
+
+// IsTransactionActive checks if a transaction is active in the context
+func (h *SavepointHelper) IsTransactionActive(ctx context.Context) bool {
+	_, exists := h.getTransactionFromContext(ctx)
+	return exists
+}
+
+// WithSmartSavepointOrTransaction is a helper for services to use
+// It automatically detects if a transaction is active and uses the appropriate wrapper
+// This is a simplified wrapper that doesn't modify the function signature for existing services
+func (h *SavepointHelper) WithSmartSavepointOrTransaction(ctx context.Context, savepointName string, fn func(*gorm.DB) error) error {
+	if h.IsTransactionActive(ctx) {
+		// Use existing transaction with savepoint
+		return h.WithSavepointNamed(ctx, savepointName, fn)
+	}
+
+	// Create new transaction with savepoint
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
+		return h.WithSavepointNamed(ctxWithTx, savepointName, fn)
+	})
 }

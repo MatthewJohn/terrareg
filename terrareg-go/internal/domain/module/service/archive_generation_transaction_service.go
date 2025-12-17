@@ -150,7 +150,7 @@ func (s *ArchiveGenerationTransactionService) GenerateArchivesWithTransaction(
 		savepointName = fmt.Sprintf("archive_generation_%d_%d", req.ModuleVersionID, startTime.UnixNano())
 	}
 
-	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 		// Scan source files
 		sourceFiles, err := s.scanSourceFiles(req.SourcePath, req.PathspecFilter)
 		if err != nil {
@@ -234,7 +234,7 @@ func (s *ArchiveGenerationTransactionService) GenerateMultipleFormats(
 	for _, format := range formats {
 		savepointName := fmt.Sprintf("archive_format_%s_%d", format.String(), time.Now().UnixNano())
 
-		err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+		err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 			archiveResult, err := s.generateArchiveFormat(ctx, sourcePath, archivePath, format, sourceFiles)
 			if err != nil {
 				result.Formats[format.String()] = &ArchiveResult{

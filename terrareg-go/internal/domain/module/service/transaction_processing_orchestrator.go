@@ -131,11 +131,15 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 		Timestamp:           startTime,
 	}
 
-	// Create main savepoint for the entire processing pipeline
+	// Create main transaction for the entire processing pipeline
 	mainSavepoint := fmt.Sprintf("module_processing_%s_%s_%s_%d",
 		req.Namespace, req.ModuleName, req.Provider, startTime.UnixNano())
 
-	err := o.savepointHelper.WithSavepointNamed(ctx, mainSavepoint, func(tx *gorm.DB) error {
+	// Use the smart transaction wrapper that properly handles nested transactions
+	err := o.savepointHelper.WithSmartSavepointOrTransaction(ctx, mainSavepoint, func(tx *gorm.DB) error {
+		// Store transaction in context for nested services to detect
+		ctxWithTx := context.WithValue(ctx, transaction.TransactionDBKey, tx)
+
 		// Use module creation wrapper for atomic module creation and publishing
 		prepareReq := PrepareModuleRequest{
 			Namespace:    req.Namespace,
@@ -146,7 +150,8 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 			SourceGitTag: req.GitTag,
 		}
 
-		return o.moduleCreationWrapper.WithModuleCreationWrapper(ctx, prepareReq,
+		// Execute within the transaction context
+		err := o.moduleCreationWrapper.WithModuleCreationWrapper(ctxWithTx, prepareReq,
 			func(ctx context.Context, moduleVersion *model.ModuleVersion) error {
 				// Execute all processing phases
 				if err := o.executeProcessingPhases(ctx, req, moduleVersion, result); err != nil {
@@ -157,6 +162,16 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 				result.ModuleVersion = moduleVersion
 				return nil
 			})
+
+		if err != nil {
+			return fmt.Errorf("module creation failed: %w", err)
+		}
+
+		// Mark overall success
+		result.Success = true
+		result.ModuleVersion = result.ModuleVersion
+
+		return nil
 	})
 
 	result.OverallDuration = time.Since(startTime)
@@ -412,8 +427,8 @@ func (o *TransactionProcessingOrchestrator) executeSecurityScanningPhase(
 		TransactionCtx:  ctx,
 	}
 
-	// Use ScanWithinExistingTransaction to avoid nested savepoints
-	scanResult, err := o.securityService.ScanWithinExistingTransaction(ctx, scanReq)
+	// Use the context-aware transaction method
+	scanResult, err := o.securityService.ScanWithTransaction(ctx, scanReq)
 	phaseResult.Duration = time.Since(startTime)
 
 	if err != nil {

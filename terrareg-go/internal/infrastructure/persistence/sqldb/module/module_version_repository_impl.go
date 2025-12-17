@@ -8,6 +8,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
 // ModuleVersionRepositoryImpl implements the module version repository using GORM
@@ -24,10 +25,20 @@ func NewModuleVersionRepository(db *gorm.DB) *ModuleVersionRepositoryImpl {
 	}
 }
 
+// getDBFromContext returns the database instance from context or the default db
+// This allows repositories to participate in transactions created by the service layer
+func (r *ModuleVersionRepositoryImpl) getDBFromContext(ctx context.Context) *gorm.DB {
+	if tx, exists := ctx.Value(transaction.TransactionDBKey).(*gorm.DB); exists {
+		return tx
+	}
+	return r.db.WithContext(ctx)
+}
+
 // FindByModuleProvider retrieves module versions for a specific module provider
 func (r *ModuleVersionRepositoryImpl) FindByModuleProvider(ctx context.Context, moduleProviderID int, includeBeta, includeUnpublished bool) ([]*model.ModuleVersion, error) {
 	var moduleVersionDBs []sqldb.ModuleVersionDB
-	query := r.db.WithContext(ctx).Where("module_provider_id = ?", moduleProviderID)
+	db := r.getDBFromContext(ctx)
+	query := db.Where("module_provider_id = ?", moduleProviderID)
 
 	// Apply filters based on parameters
 	if !includeBeta {
@@ -58,6 +69,8 @@ func (r *ModuleVersionRepositoryImpl) FindByModuleProvider(ctx context.Context, 
 }
 
 // Save persists a module version
+// Note: This should NOT create its own transaction - it should participate in a transaction
+// created by the service layer
 func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *model.ModuleVersion) error {
 	if moduleVersion == nil {
 		return fmt.Errorf("module version cannot be nil")
@@ -68,13 +81,17 @@ func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *m
 		return fmt.Errorf("failed to map module version: %w", err)
 	}
 
-	return r.db.WithContext(ctx).Save(dbVersion).Error
+	// Get the database instance from context (participate in existing transaction) or use default
+	db := r.getDBFromContext(ctx)
+
+	return db.Save(dbVersion).Error
 }
 
 // FindByID retrieves a module version by ID
 func (r *ModuleVersionRepositoryImpl) FindByID(ctx context.Context, id int) (*model.ModuleVersion, error) {
 	var dbVersion sqldb.ModuleVersionDB
-	err := r.db.WithContext(ctx).First(&dbVersion, id).Error
+	db := r.getDBFromContext(ctx)
+	err := db.First(&dbVersion, id).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil

@@ -57,17 +57,11 @@ func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleV
 
 	// Find or create the module version
 	var moduleVersion *model.ModuleVersion
-	if req.Version != nil {
-		// Use explicit version
-		moduleVersion, err = moduleProvider.GetVersion(*req.Version)
-		if err != nil {
-			// Create new version if it doesn't exist
-			moduleVersion, err = moduleProvider.PublishVersion(*req.Version, nil, false)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create module version: %w", err)
-			}
+
+	if req.Version == nil {
+		if req.GitTag == nil {
+			return nil, fmt.Errorf("either version or git_tag must be provided")
 		}
-	} else if req.GitTag != nil {
 		// Derive version from git tag
 		version, err := s.deriveVersionFromGitTag(*req.GitTag, moduleProvider)
 		if err != nil {
@@ -76,16 +70,16 @@ func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleV
 		if version == "" {
 			return nil, fmt.Errorf("could not derive version from git tag: %s", *req.GitTag)
 		}
-		moduleVersion, err = moduleProvider.GetVersion(version)
+		req.Version = &version
+	}
+
+	moduleVersion, err = moduleProvider.GetVersion(*req.Version)
+	if err != nil {
+		// Create new version if it doesn't exist
+		moduleVersion, err = moduleProvider.PublishVersion(*req.Version, nil, false)
 		if err != nil {
-			// Create new version if it doesn't exist
-			moduleVersion, err = moduleProvider.PublishVersion(version, nil, false)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create module version: %w", err)
-			}
+			return nil, fmt.Errorf("failed to create module version: %w", err)
 		}
-	} else {
-		return nil, fmt.Errorf("either version or git_tag must be provided")
 	}
 
 	// Ensure that module provider has a repository URL configured
