@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"github.com/rs/zerolog"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -35,6 +36,9 @@ type ModuleImporterService struct {
 	moduleParser       ModuleParser
 	domainConfig       *domainConfig.DomainConfig
 	infraConfig        *infraConfig.InfrastructureConfig
+
+	// Logging
+	logger zerolog.Logger
 }
 
 // NewModuleImporterService creates a new module importer service with transaction capabilities
@@ -48,6 +52,7 @@ func NewModuleImporterService(
 	moduleParser ModuleParser,
 	domainConfig *domainConfig.DomainConfig,
 	infraConfig *infraConfig.InfrastructureConfig,
+	logger zerolog.Logger,
 ) *ModuleImporterService {
 	return &ModuleImporterService{
 		processingOrchestrator: processingOrchestrator,
@@ -59,6 +64,7 @@ func NewModuleImporterService(
 		moduleParser:           moduleParser,
 		domainConfig:           domainConfig,
 		infraConfig:            infraConfig,
+		logger:                 logger,
 	}
 }
 
@@ -380,28 +386,60 @@ func (s *ModuleImporterService) prepareGitSource(
 
 	// Clone and checkout - using domain git operations
 	cloneURL := s.buildCloneURL(req, moduleProvider)
+	s.logger.Debug().Str("clone_url", cloneURL).Msg("Built clone URL")
 
 	tmpDir, err := s.storageService.MkdirTemp("", "terrareg-git-")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp dir: %w", err)
 	}
+	s.logger.Debug().Str("temp_dir", tmpDir).Msg("Created temp directory")
 
 	// Clone repository
 	cloneOptions := gitService.CloneOptions{
 		Timeout: time.Duration(s.infraConfig.GitCloneTimeout) * time.Second,
 	}
 
+	s.logger.Debug().Str("clone_url", cloneURL).Int("timeout_seconds", s.infraConfig.GitCloneTimeout).Msg("Cloning repository")
 	if err := s.gitClient.CloneWithOptions(ctx, cloneURL, tmpDir, cloneOptions); err != nil {
+		s.logger.Debug().Err(err).Str("clone_url", cloneURL).Msg("Git clone failed")
 		s.storageService.RemoveAll(tmpDir)
 		return "", fmt.Errorf("failed to clone git repository: %w", err)
 	}
+	s.logger.Debug().Str("temp_dir", tmpDir).Msg("Successfully cloned repository")
 
 	// Checkout specific tag if provided
 	if req.Input.GitTag != nil {
-		if err := s.gitClient.Checkout(ctx, tmpDir, *req.Input.GitTag); err != nil {
-			s.storageService.RemoveAll(tmpDir)
-			return "", fmt.Errorf("failed to checkout git tag '%s': %w", *req.Input.GitTag, err)
+		originalGitTag := *req.Input.GitTag
+		gitTag := originalGitTag
+
+		// Apply git tag format if configured
+		if gitTagFormat := moduleProvider.GitTagFormat(); gitTagFormat != nil {
+			// Replace {version} placeholder in git tag format
+			replacer := strings.NewReplacer("{version}", gitTag)
+			gitTag = replacer.Replace(*gitTagFormat)
+			s.logger.Debug().
+				Str("git_tag_format", *gitTagFormat).
+				Str("original_version", originalGitTag).
+				Str("formatted_git_tag", gitTag).
+				Msg("Applied git tag format")
+		} else {
+			s.logger.Debug().Str("git_tag", gitTag).Msg("No git tag format configured, using raw git tag")
 		}
+
+		s.logger.Debug().
+			Str("git_tag", gitTag).
+			Str("directory", tmpDir).
+			Msg("Attempting to checkout git tag")
+		if err := s.gitClient.Checkout(ctx, tmpDir, gitTag); err != nil {
+			s.logger.Debug().
+				Err(err).
+				Str("git_tag", gitTag).
+				Str("directory", tmpDir).
+				Msg("Git checkout failed")
+			s.storageService.RemoveAll(tmpDir)
+			return "", fmt.Errorf("failed to checkout git tag '%s': %w", gitTag, err)
+		}
+		s.logger.Debug().Str("git_tag", gitTag).Msg("Successfully checked out git tag")
 	}
 
 	// Determine source directory

@@ -130,7 +130,7 @@ type Container struct {
 
 	// Transaction Services
 	SavepointHelper                     *transaction.SavepointHelper
-	SecurityScanningTransactionService  *moduleService.SecurityScanningTransactionService
+	SecurityScanningService             *moduleService.SecurityScanningService
 	ModuleCreationWrapper               *moduleService.ModuleCreationWrapperService
 	ArchiveGenerationTransactionService *moduleService.ArchiveGenerationTransactionService
 	MetadataProcessingService           *moduleService.MetadataProcessingService
@@ -383,20 +383,13 @@ func NewContainer(
 	savepointHelper := transaction.NewSavepointHelper(db.DB)
 	c.SavepointHelper = savepointHelper
 
-	// Initialize security service for transaction scanning
-	securityService := moduleService.NewSecurityScanningService(
+	// Initialize combined security scanning service with transaction support
+	securityScanningService := moduleService.NewSecurityScanningService(
 		c.ModuleFileService,
-		c.ModuleVersionRepo,
-	)
-	// Note: SecurityService is already in the container struct
-
-	// Initialize security scanning transaction service
-	securityTransactionService := moduleService.NewSecurityScanningTransactionService(
-		securityService,
 		c.ModuleVersionRepo,
 		savepointHelper,
 	)
-	c.SecurityScanningTransactionService = securityTransactionService
+	c.SecurityScanningService = securityScanningService
 
 	// Initialize module creation wrapper for atomic module creation
 	moduleCreationWrapper := moduleService.NewModuleCreationWrapperService(
@@ -433,7 +426,7 @@ func NewContainer(
 		nil, // archiveService - TODO: implement ArchiveProcessor
 		terraformExecutorService,
 		metadataService,
-		securityTransactionService,
+		securityScanningService,
 		nil, // fileContentService - TODO: implement FileStorage/FileProcessing services
 		archiveGenService,
 		moduleCreationWrapper,
@@ -455,6 +448,7 @@ func NewContainer(
 		c.ModuleParser,
 		domainConfig,
 		infraConfig,
+		logger,
 	)
 
 	// Initialize existing domain services

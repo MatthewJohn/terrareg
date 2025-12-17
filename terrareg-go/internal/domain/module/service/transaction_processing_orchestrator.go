@@ -20,7 +20,7 @@ type TransactionProcessingOrchestrator struct {
 	archiveService     *ArchiveExtractionService
 	terraformService   *TerraformExecutorService
 	metadataService    *MetadataProcessingService
-	securityService    *SecurityScanningTransactionService
+	securityService    *SecurityScanningService
 	fileContentService *FileContentTransactionService
 	archiveGenService  *ArchiveGenerationTransactionService
 
@@ -41,7 +41,7 @@ func NewTransactionProcessingOrchestrator(
 	archiveService *ArchiveExtractionService,
 	terraformService *TerraformExecutorService,
 	metadataService *MetadataProcessingService,
-	securityService *SecurityScanningTransactionService,
+	securityService *SecurityScanningService,
 	fileContentService *FileContentTransactionService,
 	archiveGenService *ArchiveGenerationTransactionService,
 	moduleCreationWrapper *ModuleCreationWrapperService,
