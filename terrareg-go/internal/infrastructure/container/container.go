@@ -432,6 +432,7 @@ func NewContainer(
 		moduleCreationWrapper,
 		savepointHelper,
 		c.DomainConfig,
+		c.Logger,
 		c.ModuleVersionRepo,
 		c.ModuleProviderRepo,
 	)

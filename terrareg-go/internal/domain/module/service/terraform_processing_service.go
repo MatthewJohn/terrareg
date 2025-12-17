@@ -428,19 +428,46 @@ func (s *TerraformExecutorService) hasInitChanges(output string) bool {
 		contains(output, "Downloading and installing"))
 }
 
-// getFailedStep determines which terraform step failed from the error message
+// getFailedStep determines which terraform step failed and returns detailed error info
 func (s *TerraformExecutorService) getFailedStep(err error) string {
 	errorMsg := err.Error()
 
+	// Look for specific terraform commands in the error
 	switch {
-	case contains(errorMsg, "init"):
-		return "terraform_init"
-	case contains(errorMsg, "graph"):
-		return "terraform_graph"
-	case contains(errorMsg, "version"):
-		return "terraform_version"
+	case contains(errorMsg, "terraform init"):
+		return "terraform_init failed"
+	case contains(errorMsg, "terraform graph"):
+		return "terraform_graph failed"
+	case contains(errorMsg, "terraform version"):
+		return "terraform_version failed"
+	case contains(errorMsg, "terraform fmt"):
+		return "terraform_fmt failed"
+	case contains(errorMsg, "terraform validate"):
+		return "terraform_validate failed"
+	case contains(errorMsg, "terraform show"):
+		return "terraform_show failed"
+	case contains(errorMsg, "terraform providers"):
+		return "terraform_providers failed"
+	case contains(errorMsg, "permission denied"):
+		return "permission_denied"
+	case contains(errorMsg, "no such file or directory"):
+		return "file_not_found"
+	case contains(errorMsg, "command not found"):
+		return "command_not_found"
+	case contains(errorMsg, "context deadline exceeded"):
+		return "timeout"
+	case contains(errorMsg, "signal: killed"):
+		return "process_killed"
 	default:
-		return "terraform_operation"
+		// Extract the actual command that failed if possible
+		if strings.Contains(errorMsg, "failed:") {
+			// Return everything after "failed:" for more detail
+			parts := strings.Split(errorMsg, "failed:")
+			if len(parts) > 1 {
+				return strings.TrimSpace(parts[1])
+			}
+		}
+		return fmt.Sprintf("terraform_error: %s", errorMsg)
 	}
 }
 

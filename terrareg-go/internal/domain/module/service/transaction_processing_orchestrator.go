@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
@@ -30,6 +31,7 @@ type TransactionProcessingOrchestrator struct {
 
 	// Configuration
 	domainConfig *configmodel.DomainConfig
+	logger       zerolog.Logger
 
 	// Repositories
 	moduleVersionRepo  repository.ModuleVersionRepository
@@ -47,6 +49,7 @@ func NewTransactionProcessingOrchestrator(
 	moduleCreationWrapper *ModuleCreationWrapperService,
 	savepointHelper *transaction.SavepointHelper,
 	domainConfig *configmodel.DomainConfig,
+	logger zerolog.Logger,
 	moduleVersionRepo repository.ModuleVersionRepository,
 	moduleProviderRepo repository.ModuleProviderRepository,
 ) *TransactionProcessingOrchestrator {
@@ -60,6 +63,7 @@ func NewTransactionProcessingOrchestrator(
 		moduleCreationWrapper: moduleCreationWrapper,
 		savepointHelper:       savepointHelper,
 		domainConfig:          domainConfig,
+		logger:                logger,
 		moduleVersionRepo:     moduleVersionRepo,
 		moduleProviderRepo:    moduleProviderRepo,
 	}
@@ -131,6 +135,16 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 		Timestamp:           startTime,
 	}
 
+	// Log the start of processing
+	o.logger.Info().
+		Str("namespace", req.Namespace).
+		Str("module", req.ModuleName).
+		Str("provider", req.Provider).
+		Str("version", req.Version).
+		Str("source_type", string(req.SourceType)).
+		Str("module_path", req.ModulePath).
+		Msg("Starting module processing")
+
 	// Use the smart transaction wrapper that properly handles nested transactions
 	err := o.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Use module creation wrapper for atomic module creation and publishing
@@ -148,7 +162,8 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 			func(ctx context.Context, moduleVersion *model.ModuleVersion) error {
 				// Execute all processing phases
 				if err := o.executeProcessingPhases(ctx, req, moduleVersion, result); err != nil {
-					return fmt.Errorf("processing phases failed: %w", err)
+					return fmt.Errorf("processing phases failed for module %s/%s/%s version %s: %w",
+						req.Namespace, req.ModuleName, req.Provider, req.Version, err)
 				}
 
 				// Set the module version in result
@@ -157,7 +172,8 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 			})
 
 		if err != nil {
-			return fmt.Errorf("module creation failed: %w", err)
+			return fmt.Errorf("module creation failed for %s/%s/%s version %s: %w",
+				req.Namespace, req.ModuleName, req.Provider, req.Version, err)
 		}
 
 		// Mark overall success
@@ -173,10 +189,25 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 		result.SavepointRolledBack = true
 		errorMsg := err.Error()
 		result.Error = &errorMsg
+		o.logger.Error().
+			Str("namespace", req.Namespace).
+			Str("module", req.ModuleName).
+			Str("provider", req.Provider).
+			Str("version", req.Version).
+			Dur("duration", result.OverallDuration).
+			Err(err).
+			Msg("Module processing failed")
 		return result, nil
 	}
 
 	result.Success = true
+	o.logger.Info().
+		Str("namespace", req.Namespace).
+		Str("module", req.ModuleName).
+		Str("provider", req.Provider).
+		Str("version", req.Version).
+		Dur("duration", result.OverallDuration).
+		Msg("Module processing completed successfully")
 	return result, nil
 }
 
@@ -289,6 +320,11 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 	startTime := time.Now()
 	phaseResult := &PhaseResult{Success: false}
 
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("module_path", req.ModulePath).
+		Msg("Starting terraform processing phase")
+
 	// Create terraform processing operations
 	operations := []TerraformOperation{
 		{Type: "init", Command: []string{"init", "-input=false", "-no-color"}, WorkingDir: req.ModulePath, Description: "Initialize Terraform"},
@@ -313,13 +349,53 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 	}
 
 	if !terraformResult.OverallSuccess {
-		errorMsg := fmt.Sprintf("Terraform processing failed: %s", terraformResult.FailedStep)
-		phaseResult.Error = &errorMsg
+		// Provide detailed error with command output and context
+		var detailedError string
+		var commandOutput string
+
+		// Extract command output from the most relevant failed step
+		if terraformResult.InitResult != nil && terraformResult.InitResult.Error != nil {
+			commandOutput = *terraformResult.InitResult.Error
+		} else if terraformResult.GraphResult != nil && terraformResult.GraphResult.Error != nil {
+			commandOutput = *terraformResult.GraphResult.Error
+		} else if terraformResult.VersionResult != nil && terraformResult.VersionResult.Error != nil {
+			commandOutput = *terraformResult.VersionResult.Error
+		}
+
+		if commandOutput != "" {
+			detailedError = fmt.Sprintf("Terraform processing failed for module version %d (%s/%s/%s): %s\nCommand output: %s",
+				moduleVersion.ID(), req.Namespace, req.ModuleName, req.Provider,
+				terraformResult.FailedStep, commandOutput)
+		} else {
+			detailedError = fmt.Sprintf("Terraform processing failed for module version %d (%s/%s/%s): %s",
+				moduleVersion.ID(), req.Namespace, req.ModuleName, req.Provider,
+				terraformResult.FailedStep)
+		}
+
+		// Log the terraform processing failure with details
+		o.logger.Error().
+			Int("module_version_id", moduleVersion.ID()).
+			Str("failed_step", terraformResult.FailedStep).
+			Str("namespace", req.Namespace).
+			Str("module", req.ModuleName).
+			Str("provider", req.Provider).
+			Dur("phase_duration", phaseResult.Duration).
+			Err(fmt.Errorf(detailedError)).
+			Msg("Terraform processing phase failed")
+
+		phaseResult.Error = &detailedError
 		return phaseResult
 	}
 
 	phaseResult.Success = true
 	phaseResult.Data = terraformResult
+
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("module_path", req.ModulePath).
+		Dur("phase_duration", phaseResult.Duration).
+		Msg("Terraform processing completed successfully")
+
 	return phaseResult
 }
 
