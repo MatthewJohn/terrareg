@@ -135,7 +135,7 @@ func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 
 	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
 		// Execute terraform pipeline with rollback capability
-		return s.executeTerraformPipeline(ctx, req.ModulePath, req.Operations)
+		return s.ExecuteTerraformPipeline(ctx, req.ModulePath, req.Operations)
 	})
 
 	result.Duration = time.Since(startTime)
@@ -172,7 +172,7 @@ func (s *TerraformExecutorService) ExecuteTerraformPipeline(
 
 // executeOperation executes a single terraform operation
 func (s *TerraformExecutorService) executeOperation(ctx context.Context, op TerraformOperation) error {
-	cmd := exec.CommandContext(ctx, op.Command...)
+	cmd := exec.CommandContext(ctx, op.Command[0], op.Command[1:]...)
 	cmd.Dir = op.WorkingDir
 
 	// Set environment variables

@@ -7,6 +7,8 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
@@ -89,19 +91,50 @@ func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namesp
 		}, nil
 	}
 
-	// Create and execute the import request
-	importRequest := ImportModuleVersionRequest{
-		Namespace: namespace,
-		Module:    moduleName,
-		Provider:  provider,
-		GitTag:    &version,
+	// Create domain input DTO
+	parsedVersion, err := shared.ParseVersion(version)
+	if err != nil {
+		return &WebhookResult{
+			Success: false,
+			Message: fmt.Sprintf("Failed to parse version %s: %v", version, err),
+		}, nil
 	}
 
+	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, &version)
+
 	// Execute the module import
-	if err := ws.moduleImporterService.ImportModuleVersion(ctx, importRequest); err != nil {
+	domainReq := DomainImportRequest{
+		Input:             domainInput,
+		ProcessingOptions: ProcessingOptions{
+			SkipArchiveExtraction:   false,
+			SkipTerraformProcessing: false,
+			SkipMetadataProcessing:  false,
+			SkipSecurityScanning:    false,
+			SkipFileContentStorage:  false,
+			SkipArchiveGeneration:   false,
+			SecurityScanEnabled:     true,
+			FileProcessingEnabled:   true,
+			GenerateArchives:        true,
+			PublishModule:           true,
+		},
+		SourceType:         "git",
+		EnableSecurityScan: true,
+		GenerateArchives:   true,
+	}
+
+	if result, err := ws.moduleImporterService.ImportModuleVersionWithTransaction(ctx, domainReq); err != nil {
 		return &WebhookResult{
 			Success: false,
 			Message: fmt.Sprintf("Failed to import module version %s: %v", version, err),
+		}, nil
+	} else if !result.Success {
+		errorMsg := ""
+		if result.Error != nil {
+			errorMsg = *result.Error
+		}
+		return &WebhookResult{
+			Success: false,
+			Message: fmt.Sprintf("Failed to import module version %s: %s", version, errorMsg),
 		}, nil
 	}
 
@@ -115,7 +148,7 @@ func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namesp
 // VersionImportRequest represents a request to import a specific version
 type VersionImportRequest struct {
 	Version string
-	Request ImportModuleVersionRequest
+	Request module.ImportModuleVersionRequest
 }
 
 // VersionImportResult represents the result of importing a single version
@@ -182,8 +215,52 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 				ctx,
 				prepareReq,
 				func(ctx context.Context, moduleVersion *model.ModuleVersion) error {
+					// Create domain input DTO
+					parsedVersion, err := shared.ParseVersion(versionReq.Version)
+					if err != nil {
+						return fmt.Errorf("failed to parse version %s: %w", versionReq.Version, err)
+					}
+
+					domainInput := module.NewModuleVersionImportInput(
+						versionReq.Request.Namespace,
+						versionReq.Request.Module,
+						versionReq.Request.Provider,
+						parsedVersion,
+						versionReq.Request.GitTag,
+					)
+
 					// Execute the actual module import
-					return ws.moduleImporterService.ImportModuleVersion(ctx, versionReq.Request)
+					domainReq := DomainImportRequest{
+						Input:             domainInput,
+						ProcessingOptions: ProcessingOptions{
+							SkipArchiveExtraction:   false,
+							SkipTerraformProcessing: false,
+							SkipMetadataProcessing:  false,
+							SkipSecurityScanning:    false,
+							SkipFileContentStorage:  false,
+							SkipArchiveGeneration:   false,
+							SecurityScanEnabled:     true,
+							FileProcessingEnabled:   true,
+							GenerateArchives:        true,
+							PublishModule:           true,
+						},
+						SourceType:         "git",
+						EnableSecurityScan: true,
+						GenerateArchives:   true,
+					}
+
+				result, err := ws.moduleImporterService.ImportModuleVersionWithTransaction(ctx, domainReq)
+				if err != nil {
+					return err
+				}
+				if !result.Success {
+					errorMsg := ""
+					if result.Error != nil {
+						errorMsg = *result.Error
+					}
+					return fmt.Errorf("module import failed: %s", errorMsg)
+				}
+				return nil
 				},
 			)
 		})

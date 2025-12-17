@@ -234,9 +234,9 @@ func (s *SecurityScanningTransactionService) ProcessExistingModuleSecurity(
 		ModuleVersionID: moduleVersionID,
 		ModulePath:      "", // Will trigger temporary extraction
 		Namespace:       moduleProvider.Namespace().Name(),
-		Module:          moduleProvider.Module().Name(),
-		Provider:        moduleProvider.Name(),
-		Version:         moduleVersion.Version(),
+		Module:          moduleProvider.Module(),
+		Provider:        moduleProvider.Provider(),
+		Version:         moduleVersion.Version().String(),
 		TransactionCtx:  ctx,
 	}
 

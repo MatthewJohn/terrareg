@@ -210,7 +210,7 @@ func (s *FileContentTransactionService) StoreFilesWithTransaction(
 		result.Success = len(result.FailedFiles) == 0
 
 		if !result.Success {
-			return fmt.Errorf("failed to store %d out of %d files", len(result.FailedFiles), req.TotalFiles)
+			return fmt.Errorf("failed to store %d out of %d files", len(result.FailedFiles), len(req.Files))
 		}
 
 		return nil

@@ -35,12 +35,21 @@ type GenerateModuleSourceRequest struct {
 	Version   string
 }
 
-// GenerateModuleSourceResponse represents the generated module source archive
+// GenerateModuleSourceResponse represents the generated module source archive information
 type GenerateModuleSourceResponse struct {
 	Filename    string
 	ContentType string
 	Content     []byte
-	ContentSize int64
+	Size        int64
+}
+
+// GenerateModuleSourceStorageResponse represents the result when storing the generated archive
+type GenerateModuleSourceStorageResponse struct {
+	Filename    string
+	ContentType string
+	Size        int64
+	StoragePath string
+	Stored      bool
 }
 
 // Execute generates a source archive for the module version
@@ -94,6 +103,6 @@ func (c *GenerateModuleSourceCommand) Execute(ctx context.Context, req *Generate
 		Filename:    filename,
 		ContentType: "application/zip",
 		Content:     buf.Bytes(),
-		ContentSize: int64(buf.Len()),
+		Size:        int64(buf.Len()),
 	}, nil
 }

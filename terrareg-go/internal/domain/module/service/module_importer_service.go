@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
@@ -61,32 +62,28 @@ func NewModuleImporterService(
 	}
 }
 
-// ModuleImportRequest represents a comprehensive import request with all processing options
-type ModuleImportRequest struct {
-	ImportModuleVersionRequest
+// DomainImportRequest represents a minimal domain import request
+// This contains only domain-relevant information without application concerns
+type DomainImportRequest struct {
+	// Core domain input
+	Input *module.ModuleVersionImportInput
 
-	// Processing options
+	// Domain-relevant options
 	ProcessingOptions ProcessingOptions
 
-	// Source information
+	// Source information (domain-relevant only)
 	SourcePath  string // Path to source files (if already extracted)
 	ArchivePath string // Path to archive file (if applicable)
-	SourceType  SourceType
+	SourceType  string // "git", "archive", "path"
 
-	// Archive generation options
+	// Domain processing options
 	GenerateArchives bool
 	ArchiveFormats   []ArchiveFormat
-	PathspecFilter   *PathspecFilter
 
-	// Security and analysis options
+	// Domain analysis options
 	EnableSecurityScan bool
 	EnableInfracost    bool
 	EnableExamples     bool
-
-	// Transaction options
-	UseTransaction bool
-	EnableRollback bool
-	SavepointName  string
 }
 
 // ModuleImportResult represents the result of enhanced module import
@@ -107,23 +104,20 @@ type ModuleImportResult struct {
 // ImportModuleVersionWithTransaction performs a complete module import with transaction safety
 func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 	ctx context.Context,
-	req ModuleImportRequest,
+	req DomainImportRequest,
 ) (*ModuleImportResult, error) {
 	startTime := time.Now()
 
 	result := &ModuleImportResult{
 		Success:             false,
-		Version:             req.getVersion(),
+		Version:             req.Input.GetVersionString(),
 		SavepointRolledBack: false,
 		Timestamp:           startTime,
 	}
 
 	// Create main savepoint for the entire import process
-	savepointName := req.SavepointName
-	if savepointName == "" {
-		savepointName = fmt.Sprintf("enhanced_import_%s_%s_%s_%d",
-			req.Namespace, req.Module, req.Provider, startTime.UnixNano())
-	}
+	savepointName := fmt.Sprintf("domain_import_%s_%s_%s_%d",
+		req.Input.Namespace, req.Input.Module, req.Input.Provider, startTime.UnixNano())
 
 	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
 		// Phase 1: Pre-import setup and validation
@@ -140,14 +134,14 @@ func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 
 		// Phase 3: Execute complete processing pipeline
 		processingReq := ProcessingRequest{
-			Namespace:   req.Namespace,
-			ModuleName:  req.Module,
-			Provider:    req.Provider,
-			Version:     req.getVersion(),
-			GitTag:      req.GitTag,
+			Namespace:   req.Input.Namespace,
+			ModuleName:  req.Input.Module,
+			Provider:    req.Input.Provider,
+			Version:     req.Input.GetVersionString(),
+			GitTag:      req.Input.GitTag,
 			ModulePath:  sourcePath,
 			ArchivePath: req.ArchivePath,
-			SourceType:  req.SourceType,
+			SourceType:  SourceType(req.SourceType),
 			Options:     req.ProcessingOptions,
 		}
 
@@ -203,7 +197,7 @@ func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 // ImportBatchModules imports multiple modules with individual transaction isolation
 func (s *ModuleImporterService) ImportBatchModules(
 	ctx context.Context,
-	requests []ModuleImportRequest,
+	requests []DomainImportRequest,
 ) (*BatchModuleImportResult, error) {
 	startTime := time.Now()
 
@@ -222,7 +216,7 @@ func (s *ModuleImporterService) ImportBatchModules(
 			// This should rarely happen since we handle errors within ImportModuleVersionWithTransaction
 			errorResult := ModuleImportResult{
 				Success:             false,
-				Version:             req.getVersion(),
+				Version:             req.Input.GetVersionString(),
 				Error:               func() *string { e := err.Error(); return &e }(),
 				Timestamp:           time.Now(),
 				SavepointRolledBack: true,
@@ -258,17 +252,17 @@ func (s *ModuleImporterService) ReindexModuleWithTransaction(
 	namespace, moduleName, provider, version string,
 	options ProcessingOptions,
 ) (*ModuleImportResult, error) {
-	req := ModuleImportRequest{
-		ImportModuleVersionRequest: ImportModuleVersionRequest{
-			Namespace: namespace,
-			Module:    moduleName,
-			Provider:  provider,
-			Version:   &version,
-		},
+	parsedVersion, err := shared.ParseVersion(version)
+	if err != nil {
+		return nil, err
+	}
+
+	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, nil)
+
+	req := DomainImportRequest{
+		Input:             domainInput,
 		ProcessingOptions: options,
 		SourceType:        "git", // Re-indexing typically from git
-		UseTransaction:    true,
-		EnableRollback:    true,
 	}
 
 	return s.ImportModuleVersionWithTransaction(ctx, req)
@@ -281,30 +275,30 @@ func (s *ModuleImporterService) ImportFromArchive(
 	archivePath string,
 	options ProcessingOptions,
 ) (*ModuleImportResult, error) {
-	req := ModuleImportRequest{
-		ImportModuleVersionRequest: ImportModuleVersionRequest{
-			Namespace: namespace,
-			Module:    moduleName,
-			Provider:  provider,
-			Version:   &version,
-		},
+	parsedVersion, err := shared.ParseVersion(version)
+	if err != nil {
+		return nil, err
+	}
+
+	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, nil)
+
+	req := DomainImportRequest{
+		Input:             domainInput,
 		ProcessingOptions: options,
 		ArchivePath:       archivePath,
 		SourceType:        "archive",
-		UseTransaction:    true,
-		EnableRollback:    true,
 	}
 
 	return s.ImportModuleVersionWithTransaction(ctx, req)
 }
 
-// validateImportRequest validates the enhanced import request
+// validateImportRequest validates the domain import request
 func (s *ModuleImporterService) validateImportRequest(
 	ctx context.Context,
-	req ModuleImportRequest,
+	req DomainImportRequest,
 ) error {
-	// Validate basic import request
-	if err := s.validateBasicImportRequest(req.ImportModuleVersionRequest); err != nil {
+	// Validate domain input
+	if err := req.Input.Validate(); err != nil {
 		return err
 	}
 
@@ -314,7 +308,7 @@ func (s *ModuleImporterService) validateImportRequest(
 	}
 
 	// Validate source
-	if req.SourcePath == "" && req.ArchivePath == "" && req.GitTag == nil {
+	if req.SourcePath == "" && req.ArchivePath == "" && req.Input.GitTag == nil {
 		return fmt.Errorf("no source specified (source path, archive path, or git tag required)")
 	}
 
@@ -324,7 +318,7 @@ func (s *ModuleImporterService) validateImportRequest(
 // prepareSource prepares the source files for processing
 func (s *ModuleImporterService) prepareSource(
 	ctx context.Context,
-	req ModuleImportRequest,
+	req DomainImportRequest,
 ) (string, error) {
 	if req.SourcePath != "" {
 		// Source already prepared
@@ -336,7 +330,7 @@ func (s *ModuleImporterService) prepareSource(
 		return s.extractArchive(ctx, req)
 	}
 
-	if req.GitTag != nil {
+	if req.Input.GitTag != nil {
 		// Use base importer for git operations
 		return s.prepareGitSource(ctx, req)
 	}
@@ -347,7 +341,7 @@ func (s *ModuleImporterService) prepareSource(
 // extractArchive extracts archive files for processing
 func (s *ModuleImporterService) extractArchive(
 	ctx context.Context,
-	req ModuleImportRequest,
+	req DomainImportRequest,
 ) (string, error) {
 	// Create temporary directory for extraction
 	tempDir, err := s.storageService.MkdirTemp("", "terrareg-archive-")
@@ -363,16 +357,16 @@ func (s *ModuleImporterService) extractArchive(
 // prepareGitSource prepares git source for processing
 func (s *ModuleImporterService) prepareGitSource(
 	ctx context.Context,
-	req ModuleImportRequest,
+	req DomainImportRequest,
 ) (string, error) {
-	// Validate that either version or git_tag is provided
-	if (req.Version == nil && req.GitTag == nil) || (req.Version != nil && req.GitTag != nil) {
-		return "", fmt.Errorf("either version or git_tag must be provided (but not both)")
+	// Validate domain input (should already be validated)
+	if err := req.Input.Validate(); err != nil {
+		return "", err
 	}
 
 	// Find the module provider
 	moduleProvider, err := s.moduleProviderRepo.FindByNamespaceModuleProvider(
-		ctx, req.Namespace, req.Module, req.Provider,
+		ctx, req.Input.Namespace, req.Input.Module, req.Input.Provider,
 	)
 	if err != nil {
 		return "", fmt.Errorf("module provider not found: %w", err)
@@ -383,7 +377,7 @@ func (s *ModuleImporterService) prepareGitSource(
 		return "", fmt.Errorf("module provider is not a git based module")
 	}
 
-	// Clone and checkout - using legacy git operations for now
+	// Clone and checkout - using domain git operations
 	cloneURL := s.buildCloneURL(req, moduleProvider)
 
 	tmpDir, err := s.storageService.MkdirTemp("", "terrareg-git-")
@@ -402,10 +396,10 @@ func (s *ModuleImporterService) prepareGitSource(
 	}
 
 	// Checkout specific tag if provided
-	if req.GitTag != nil {
-		if err := s.gitClient.Checkout(ctx, tmpDir, *req.GitTag); err != nil {
+	if req.Input.GitTag != nil {
+		if err := s.gitClient.Checkout(ctx, tmpDir, *req.Input.GitTag); err != nil {
 			s.storageService.RemoveAll(tmpDir)
-			return "", fmt.Errorf("failed to checkout git tag '%s': %w", *req.GitTag, err)
+			return "", fmt.Errorf("failed to checkout git tag '%s': %w", *req.Input.GitTag, err)
 		}
 	}
 
@@ -419,7 +413,7 @@ func (s *ModuleImporterService) prepareGitSource(
 }
 
 // buildCloneURL builds the clone URL from template
-func (s *ModuleImporterService) buildCloneURL(req ModuleImportRequest, moduleProvider *model.ModuleProvider) string {
+func (s *ModuleImporterService) buildCloneURL(req DomainImportRequest, moduleProvider *model.ModuleProvider) string {
 	var cloneURLTemplate string
 	if tmpl := moduleProvider.RepoCloneURLTemplate(); tmpl != nil {
 		cloneURLTemplate = *tmpl
@@ -429,9 +423,9 @@ func (s *ModuleImporterService) buildCloneURL(req ModuleImportRequest, modulePro
 
 	replacer := strings.NewReplacer(
 		"{protocol}", "https",
-		"{namespace}", req.Namespace,
-		"{name}", req.Module,
-		"{provider}", req.Provider,
+		"{namespace}", req.Input.Namespace,
+		"{name}", req.Input.Module,
+		"{provider}", req.Input.Provider,
 	)
 	return replacer.Replace(cloneURLTemplate)
 }
@@ -445,16 +439,6 @@ func (s *ModuleImporterService) cleanupSource(sourcePath string) {
 	}
 }
 
-// Helper method to get version from request
-func (req ModuleImportRequest) getVersion() string {
-	if req.Version != nil {
-		return *req.Version
-	}
-	if req.GitTag != nil {
-		return *req.GitTag
-	}
-	return ""
-}
 
 // BatchModuleImportResult represents the result of batch enhanced imports
 type BatchModuleImportResult struct {
@@ -467,17 +451,8 @@ type BatchModuleImportResult struct {
 	Timestamp         time.Time            `json:"timestamp"`
 }
 
-// validateBasicImportRequest validates the basic import request using base importer logic
-func (s *ModuleImporterService) validateBasicImportRequest(req ImportModuleVersionRequest) error {
-	// Use base importer validation logic
-	// This would extract common validation from the base importer
-	if (req.Version == nil && req.GitTag == nil) || (req.Version != nil && req.GitTag != nil) {
-		return fmt.Errorf("either version or git_tag must be provided (but not both)")
-	}
-
-	if req.Namespace == "" || req.Module == "" || req.Provider == "" {
-		return fmt.Errorf("namespace, module, and provider are required")
-	}
-
-	return nil
+// validateBasicImportRequest validates the basic import request using domain DTO
+func (s *ModuleImporterService) validateBasicImportRequest(input *module.ModuleVersionImportInput) error {
+	// Use domain validation logic
+	return input.Validate()
 }

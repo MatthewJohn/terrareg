@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
@@ -21,26 +23,30 @@ func NewImportModuleVersionCommand(
 	}
 }
 
-// ImportModuleVersionRequest represents the import request
-type ImportModuleVersionRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   *string // Optional - derived from git tag if not provided
-	GitTag    *string // Optional - conflicts with Version
-}
-
 // Execute imports a module version from Git with full processing pipeline
-func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req ImportModuleVersionRequest) error {
+func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req module.ImportModuleVersionRequest) error {
+	// Parse version for domain input
+	var version *shared.Version
+	var err error
+	if req.Version != nil {
+		version, err = shared.ParseVersion(*req.Version)
+		if err != nil {
+			return fmt.Errorf("invalid version: %w", err)
+		}
+	}
+
+	// Create domain input DTO
+	domainInput := module.NewModuleVersionImportInput(
+		req.Namespace,
+		req.Module,
+		req.Provider,
+		version,
+		req.GitTag,
+	)
+
 	// Create comprehensive import request with all processing options
-	importReq := moduleService.ModuleImportRequest{
-		ImportModuleVersionRequest: ImportModuleVersionRequest{
-			Namespace: req.Namespace,
-			Module:    req.Module,
-			Provider:  req.Provider,
-			Version:   req.Version,
-			GitTag:    req.GitTag,
-		},
+	importReq := ModuleImportRequest{
+		ImportModuleVersionRequest: req,
 		ProcessingOptions: moduleService.ProcessingOptions{
 			SkipArchiveExtraction:   false,
 			SkipTerraformProcessing: false,
@@ -57,15 +63,24 @@ func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req ImportModu
 				moduleService.ArchiveFormatTarGz,
 			},
 		},
-		SourceType:         moduleService.SourceTypeGit,
+		SourceType:         "git",
 		UseTransaction:     true,
 		EnableRollback:     true,
 		EnableSecurityScan: true,
 		GenerateArchives:   true,
 	}
 
+	// Convert application request to domain request
+	domainReq := moduleService.DomainImportRequest{
+		Input:             domainInput,
+		ProcessingOptions: importReq.ProcessingOptions,
+		SourceType:        importReq.SourceType,
+		GenerateArchives:  importReq.GenerateArchives,
+		EnableSecurityScan: importReq.EnableSecurityScan,
+	}
+
 	// Use the transaction-aware import method
-	result, err := c.moduleImporterService.ImportModuleVersionWithTransaction(ctx, importReq)
+	result, err := c.moduleImporterService.ImportModuleVersionWithTransaction(ctx, domainReq)
 	if err != nil {
 		return err
 	}
