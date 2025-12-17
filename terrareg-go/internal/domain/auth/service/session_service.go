@@ -66,7 +66,7 @@ func (ss *SessionService) CreateSession(ctx context.Context, authMethod string, 
 // ValidateSession validates a session by checking if it exists and hasn't expired
 func (ss *SessionService) ValidateSession(ctx context.Context, sessionID string) (*auth.Session, error) {
 	session, err := ss.sessionRepo.FindByID(ctx, sessionID)
-	if err != nil {
+	if err != nil || session == nil {
 		return nil, fmt.Errorf("session not found: %w", err)
 	}
 

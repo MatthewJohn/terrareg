@@ -135,7 +135,7 @@ func (as *AuthenticationService) ValidateRequest(ctx context.Context, r *http.Re
 
 	// Validate and decrypt session cookie
 	sessionData, err := as.cookieService.ValidateSessionCookie(cookie.Value)
-	if err != nil {
+	if err != nil || sessionData == nil {
 		// Invalid or expired cookie - return unauthenticated context
 		return &AuthenticationContext{
 			IsAuthenticated: false,
@@ -144,7 +144,7 @@ func (as *AuthenticationService) ValidateRequest(ctx context.Context, r *http.Re
 
 	// Validate session in database
 	session, err := as.sessionService.ValidateSession(ctx, sessionData.SessionID)
-	if err != nil {
+	if err != nil || session == nil {
 		// Session not found or expired - return unauthenticated context
 		return &AuthenticationContext{
 			IsAuthenticated: false,
