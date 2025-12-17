@@ -78,7 +78,7 @@ func (s *MetadataProcessingService) ProcessMetadataWithTransaction(
 
 	savepointName := fmt.Sprintf("metadata_processing_%d", startTime.UnixNano())
 
-	err := s.savepointHelper.WithSavepointNamed(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
 		// Check if metadata file exists
 		metadataPath := s.findMetadataFile(req.MetadataPath)
 		if metadataPath == "" {

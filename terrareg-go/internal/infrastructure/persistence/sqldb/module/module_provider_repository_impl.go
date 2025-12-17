@@ -14,7 +14,8 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
-	gitmapper "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/git"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/git"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
 // ModuleProviderRepositoryImpl implements ModuleProviderRepository using GORM
@@ -35,35 +36,49 @@ func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.Namespace
 	}
 }
 
+// getDBFromContext returns the database instance from context or the default db
+// This allows repositories to participate in transactions created by the service layer
+func (r *ModuleProviderRepositoryImpl) getDBFromContext(ctx context.Context) *gorm.DB {
+	if tx, exists := ctx.Value(transaction.TransactionDBKey).(*gorm.DB); exists {
+		return tx
+	}
+	return r.db.WithContext(ctx)
+}
+
 // Save persists a module provider (aggregate root)
+// Note: This should NOT create its own transaction - it should participate in a transaction
+// created by the service layer
 func (r *ModuleProviderRepositoryImpl) Save(ctx context.Context, mp *model.ModuleProvider) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		dbModel := toDBModuleProvider(mp)
+	// Get the database instance from context (participate in existing transaction) or use default
+	db := r.getDBFromContext(ctx)
 
-		var err error
-		if mp.ID() == 0 {
-			// Create
-			err = tx.Create(&dbModel).Error
-			if err != nil {
-				return fmt.Errorf("failed to create module provider: %w", err)
-			}
-		} else {
-			// Update
-			err = tx.Save(&dbModel).Error
-			if err != nil {
-				return fmt.Errorf("failed to update module provider: %w", err)
-			}
+	dbModel := toDBModuleProvider(mp)
+
+	var err error
+	if mp.ID() == 0 {
+		// Create
+		err = db.Create(&dbModel).Error
+		if err != nil {
+			return fmt.Errorf("failed to create module provider: %w", err)
 		}
-
-		// Save versions (entities within aggregate)
-		for _, version := range mp.GetAllVersions() {
-			if err := r.saveVersion(tx, version); err != nil {
-				return err
-			}
+	} else {
+		// Update
+		err = db.Save(&dbModel).Error
+		if err != nil {
+			return fmt.Errorf("failed to update module provider: %w", err)
 		}
+	}
 
-		return nil
-	})
+	// Save versions (entities within aggregate)
+	for _, version := range mp.GetAllVersions() {
+		if err := r.saveVersion(db, version); err != nil {
+			return err
+		}
+	}
+
+	// TODO: Update the domain model with the database-generated ID if needed
+	// This would require a method in the domain model to set the ID
+	return nil
 }
 
 // saveVersion saves a module version
@@ -459,7 +474,7 @@ func (r *ModuleProviderRepositoryImpl) toDomain(ctx context.Context, db *sqldb.M
 	mp := fromDBModuleProvider(db, namespace)
 
 	if db.GitProvider != nil {
-		gitProvider := gitmapper.FromDBGitProvider(db.GitProvider)
+		gitProvider := git.FromDBGitProvider(db.GitProvider)
 		mp.SetGitProvider(gitProvider)
 	}
 
