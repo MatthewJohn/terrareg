@@ -12,6 +12,7 @@ import (
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
@@ -631,7 +632,7 @@ func (h *ModuleHandler) HandleModuleVersionImport(w http.ResponseWriter, r *http
 	}
 
 	// Execute import command
-	importReq := moduleCmd.ImportModuleVersionRequest{
+	importReq := module.ImportModuleVersionRequest{
 		Namespace: namespace,
 		Module:    name,
 		Provider:  provider,
@@ -844,7 +845,7 @@ func (h *ModuleHandler) HandleModuleVersionCreate(w http.ResponseWriter, r *http
 	}
 
 	// Create import request - version comes from URL for this endpoint
-	request := moduleCmd.ImportModuleVersionRequest{
+	request := module.ImportModuleVersionRequest{
 		Namespace: namespace,
 		Module:    moduleName,
 		Provider:  provider,
@@ -981,7 +982,7 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 	// Set headers for file download
 	w.Header().Set("Content-Type", resp.ContentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", resp.Filename))
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", resp.ContentSize))
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", resp.Size))
 
 	// Write the ZIP content
 	w.WriteHeader(http.StatusOK)

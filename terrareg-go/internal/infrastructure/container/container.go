@@ -63,7 +63,6 @@ import (
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	providerLogoRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/provider_logo"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
@@ -389,7 +388,7 @@ func NewContainer(
 		c.ModuleFileService,
 		c.ModuleVersionRepo,
 	)
-	c.SecurityScanningService = securityService
+	// Note: SecurityService is already in the container struct
 
 	// Initialize security scanning transaction service
 	securityTransactionService := moduleService.NewSecurityScanningTransactionService(
