@@ -44,7 +44,6 @@ type PrepareModuleRequest struct {
 type PrepareModuleResult struct {
 	ModuleVersion *model.ModuleVersion
 	ShouldPublish bool
-	Savepoint     string
 }
 
 // PrepareModule creates the database row for the module version and returns whether it should be published
@@ -71,7 +70,6 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 		result = &PrepareModuleResult{
 			ModuleVersion: moduleVersion,
 			ShouldPublish: shouldPublish,
-			Savepoint:     "auto",
 		}
 
 		return nil
@@ -100,52 +98,36 @@ func (s *ModuleCreationWrapperService) CompleteModule(ctx context.Context, modul
 	return nil
 }
 
-// RollbackModule rolls back the module preparation
-// This should be called if extraction fails
-func (s *ModuleCreationWrapperService) RollbackModule(ctx context.Context, savepointName string) error {
-	// Rollback to the savepoint created during preparation
-	if err := s.savepointHelper.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT %s", savepointName)).Error; err != nil {
-		return fmt.Errorf("failed to rollback to savepoint %s: %w", savepointName, err)
-	}
-
-	return nil
-}
-
 // WithModuleCreationWrapper provides a context manager pattern similar to Python
 // It prepares the module, executes the extraction function, and completes or rolls back
+// This method now uses the unified transaction API for automatic transaction management
 func (s *ModuleCreationWrapperService) WithModuleCreationWrapper(
 	ctx context.Context,
 	req PrepareModuleRequest,
 	extractionFunc func(ctx context.Context, moduleVersion *model.ModuleVersion) error,
 ) error {
-	// Prepare the module (create DB row within savepoint)
-	prepareResult, err := s.PrepareModule(ctx, req)
-	if err != nil {
-		return fmt.Errorf("failed to prepare module: %w", err)
-	}
-
-	// Execute the extraction function
-	if err := extractionFunc(ctx, prepareResult.ModuleVersion); err != nil {
-		// Rollback on extraction failure
-		if rollbackErr := s.RollbackModule(ctx, prepareResult.Savepoint); rollbackErr != nil {
-			return fmt.Errorf("extraction failed: %v, rollback also failed: %w", err, rollbackErr)
+	// Wrap the entire operation in a single transaction
+	return s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
+		// Prepare the module within the transaction
+		prepareResult, err := s.PrepareModule(ctx, req)
+		if err != nil {
+			return fmt.Errorf("failed to prepare module: %w", err)
 		}
-		return fmt.Errorf("extraction failed: %w", err)
-	}
 
-	// Complete the module (publish if necessary)
-	if prepareResult.ShouldPublish {
-		if err := s.CompleteModule(ctx, prepareResult.ModuleVersion); err != nil {
-			return fmt.Errorf("failed to complete module: %w", err)
+		// Execute the extraction function
+		if err := extractionFunc(ctx, prepareResult.ModuleVersion); err != nil {
+			return fmt.Errorf("extraction failed: %w", err)
 		}
-	}
 
-	// Release the savepoint
-	if err := s.savepointHelper.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT %s", prepareResult.Savepoint)).Error; err != nil {
-		return fmt.Errorf("failed to release savepoint %s: %w", prepareResult.Savepoint, err)
-	}
+		// Complete the module (publish if necessary)
+		if prepareResult.ShouldPublish {
+			if err := s.CompleteModule(ctx, prepareResult.ModuleVersion); err != nil {
+				return fmt.Errorf("failed to complete module: %w", err)
+			}
+		}
 
-	return nil
+		return nil
+	})
 }
 
 // shouldPublishModule determines if a module should be published based on configuration
