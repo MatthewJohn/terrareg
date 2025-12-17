@@ -97,36 +97,19 @@ func (h *SavepointHelper) WithSavepoint(ctx context.Context, fn func(*gorm.DB) e
 }
 
 // WithSavepointNamed creates a savepoint with a specific name
+// DEPRECATED: Use WithSmartSavepointOrTransaction instead for better transaction handling
 func (h *SavepointHelper) WithSavepointNamed(ctx context.Context, savepointName string, fn func(*gorm.DB) error) error {
-	// Sanitize savepoint name to be SQL-safe across all databases (SQLite, MySQL, PostgreSQL)
-	safeName := sanitizeSavepointName(savepointName)
-
-	// Create savepoint using raw SQL with proper quoting for cross-database compatibility
-	// Different databases have different quoting rules:
-	// - PostgreSQL and MySQL: `identifier` or "identifier"
-	// - SQLite: `identifier` or "identifier" or [identifier]
-	// We'll use backticks for MySQL/SQLite and PostgreSQL compatibility
-	if err := h.db.WithContext(ctx).Exec(fmt.Sprintf("SAVEPOINT `%s`", safeName)).Error; err != nil {
-		return fmt.Errorf("failed to create savepoint %s: %w", safeName, err)
+	// Check if there's an existing transaction first
+	if tx, exists := h.getTransactionFromContext(ctx); exists {
+		// Use the existing transaction
+		return h.withSavepointAndTx(tx, savepointName, fn)
 	}
 
-	// Execute the function
-	err := fn(h.db.WithContext(ctx))
-
-	if err != nil {
-		// Rollback to savepoint on error
-		if rollbackErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT `%s`", safeName)).Error; rollbackErr != nil {
-			return fmt.Errorf("failed to rollback to savepoint %s: %w (original error: %v)", safeName, rollbackErr, err)
-		}
-		return err
-	}
-
-	// Release the savepoint on success
-	if releaseErr := h.db.WithContext(ctx).Exec(fmt.Sprintf("RELEASE SAVEPOINT `%s`", safeName)).Error; releaseErr != nil {
-		return fmt.Errorf("failed to release savepoint %s: %w", safeName, releaseErr)
-	}
-
-	return nil
+	// No existing transaction, create one with savepoint
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		_ = context.WithValue(ctx, TransactionDBKey, tx) // Store transaction in context for nested calls
+		return h.withSavepointAndTx(tx, savepointName, fn)
+	})
 }
 
 // BatchOperation represents an operation in a batch with results
@@ -244,13 +227,44 @@ func (h *SavepointHelper) IsTransactionActive(ctx context.Context) bool {
 	return exists
 }
 
+// withSavepointAndTx creates a savepoint using a specific transaction instance
+// This bypasses the normal WithSavepointNamed to ensure we use the correct transaction
+func (h *SavepointHelper) withSavepointAndTx(tx *gorm.DB, savepointName string, fn func(*gorm.DB) error) error {
+	// Sanitize savepoint name to be SQL-safe
+	safeName := sanitizeSavepointName(savepointName)
+
+	// Create savepoint using the specific transaction instance
+	if err := tx.Exec(fmt.Sprintf("SAVEPOINT `%s`", safeName)).Error; err != nil {
+		return fmt.Errorf("failed to create savepoint %s: %w", safeName, err)
+	}
+
+	// Execute the function
+	err := fn(tx)
+
+	if err != nil {
+		// Rollback to savepoint on error
+		if rollbackErr := tx.Exec(fmt.Sprintf("ROLLBACK TO SAVEPOINT `%s`", safeName)).Error; rollbackErr != nil {
+			return fmt.Errorf("failed to rollback to savepoint %s: %w (original error: %v)", safeName, rollbackErr, err)
+		}
+		return err
+	}
+
+	// Release the savepoint on success
+	if releaseErr := tx.Exec(fmt.Sprintf("RELEASE SAVEPOINT `%s`", safeName)).Error; releaseErr != nil {
+		return fmt.Errorf("failed to release savepoint %s: %w", safeName, releaseErr)
+	}
+
+	return nil
+}
+
 // WithSmartSavepointOrTransaction is a helper for services to use
 // It automatically detects if a transaction is active and uses the appropriate wrapper
 // This is a simplified wrapper that doesn't modify the function signature for existing services
 func (h *SavepointHelper) WithSmartSavepointOrTransaction(ctx context.Context, savepointName string, fn func(*gorm.DB) error) error {
-	if h.IsTransactionActive(ctx) {
+	if tx, exists := h.getTransactionFromContext(ctx); exists {
 		// Use existing transaction with savepoint
-		return h.WithSavepointNamed(ctx, savepointName, fn)
+		// IMPORTANT: Use the transaction from context, NOT h.db.WithContext(ctx)!
+		return h.withSavepointAndTx(tx, savepointName, fn)
 	}
 
 	// Create new transaction with savepoint
