@@ -834,23 +834,30 @@ func (h *ModuleHandler) HandleModuleVersionCreate(w http.ResponseWriter, r *http
 	version := chi.URLParam(r, "version")
 
 	// Parse request body
-	var importReq struct {
-		// The deprecated endpoint doesn't accept a body, but we'll parse it for consistency
-		// The version is already known from the URL
+	var reqBody struct {
+		GitTag *string `json:"git_tag,omitempty"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&importReq); err != nil {
-		// For this deprecated endpoint, we can ignore body parsing errors
-		// since the version comes from the URL
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		// For this deprecated endpoint, body parsing is optional
+		// If no git_tag is provided, we'll try to derive from version
 	}
 
-	// Create import request - version comes from URL for this endpoint
+	// Determine git tag - use provided git_tag or derive from version
+	gitTag := reqBody.GitTag
+	if gitTag == nil {
+		// Derive git tag from version (common pattern: use version as git tag)
+		gitTag = &version
+	}
+
+	// Create import request
+	// For this endpoint, we use git tag for cloning since version in URL alone isn't enough
 	request := module.ImportModuleVersionRequest{
 		Namespace: namespace,
 		Module:    moduleName,
 		Provider:  provider,
-		Version:   &version, // Use version from URL
-		GitTag:    nil,      // No git tag, derive from version
+		Version:   nil,      // Don't provide version when using git tag (validation requires exactly one)
+		GitTag:    gitTag,   // Use provided or derived git tag for cloning
 	}
 
 	// Execute import command

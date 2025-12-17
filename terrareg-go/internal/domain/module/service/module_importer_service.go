@@ -373,8 +373,9 @@ func (s *ModuleImporterService) prepareGitSource(
 	}
 
 	// Validate git configuration
-	if moduleProvider.GitProviderID() == nil || moduleProvider.RepoCloneURLTemplate() == nil {
-		return "", fmt.Errorf("module provider is not a git based module")
+	// A module is git-based if it has either a git provider OR a custom clone URL template
+	if moduleProvider.RepoCloneURLTemplate() == nil {
+		return "", fmt.Errorf("module provider is not a git based module - no clone URL configured")
 	}
 
 	// Clone and checkout - using domain git operations
