@@ -53,13 +53,16 @@ func (af ArchiveFormat) String() string {
 
 // ArchiveGenerationRequest represents a request to generate archives
 type ArchiveGenerationRequest struct {
-	ModuleVersionID int
-	SourcePath      string // Path to source files
-	ArchivePath     string // Output directory for archives
-	Formats         []ArchiveFormat
-	PathspecFilter  *PathspecFilter // For filtering files (from .terraformignore)
-	TransactionCtx  context.Context
-	SavepointName   string
+	ModuleVersionID               int
+	SourcePath                    string // Path to source files
+	ArchivePath                   string // Output directory for archives
+	Formats                       []ArchiveFormat
+	PathspecFilter                *PathspecFilter // For filtering files (from .terraformignore)
+	TransactionCtx                context.Context
+	SavepointName                string
+	// Archive hosting configuration
+	GitCloneURL                   string              // Module's git clone URL (empty if not externally hosted)
+	DeleteExternallyHostedArtifacts bool                // Whether to skip archive generation for externally hosted modules
 }
 
 // ArchiveGenerationResult represents the result of archive generation
@@ -68,6 +71,7 @@ type ArchiveGenerationResult struct {
 	GeneratedArchives   []GeneratedArchive `json:"generated_archives,omitempty"`
 	FailedFormats       []ArchiveFormat    `json:"failed_formats,omitempty"`
 	Error               *string            `json:"error,omitempty"`
+	SkippedReason       string             `json:"skipped_reason,omitempty"`
 	GenerationDuration  time.Duration      `json:"generation_duration"`
 	SourceFilesCount    int                `json:"source_files_count"`
 	TotalArchiveSize    int64              `json:"total_archive_size"`
@@ -129,6 +133,15 @@ func (s *ArchiveGenerationTransactionService) GenerateArchivesWithTransaction(
 		FailedFormats:       []ArchiveFormat{},
 		SavepointRolledBack: false,
 		Timestamp:           startTime,
+		SkippedReason:       "",
+	}
+
+	// Skip archive generation for externally hosted modules when DELETE_EXTERNALLY_HOSTED_ARTIFACTS is enabled
+	// This matches Python's logic: don't generate local archives for modules available externally
+	if req.GitCloneURL != "" && req.DeleteExternallyHostedArtifacts {
+		result.Success = true
+		result.SkippedReason = "Module is externally hosted and DELETE_EXTERNALLY_HOSTED_ARTIFACTS is enabled"
+		return result, nil
 	}
 
 	// Use provided savepoint name or create new one

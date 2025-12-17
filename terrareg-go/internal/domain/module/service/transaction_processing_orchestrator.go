@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
@@ -27,6 +28,9 @@ type TransactionProcessingOrchestrator struct {
 	moduleCreationWrapper *ModuleCreationWrapperService
 	savepointHelper       *transaction.SavepointHelper
 
+	// Configuration
+	domainConfig *configmodel.DomainConfig
+
 	// Repositories
 	moduleVersionRepo  repository.ModuleVersionRepository
 	moduleProviderRepo repository.ModuleProviderRepository
@@ -42,6 +46,7 @@ func NewTransactionProcessingOrchestrator(
 	archiveGenService *ArchiveGenerationTransactionService,
 	moduleCreationWrapper *ModuleCreationWrapperService,
 	savepointHelper *transaction.SavepointHelper,
+	domainConfig *configmodel.DomainConfig,
 	moduleVersionRepo repository.ModuleVersionRepository,
 	moduleProviderRepo repository.ModuleProviderRepository,
 ) *TransactionProcessingOrchestrator {
@@ -54,6 +59,7 @@ func NewTransactionProcessingOrchestrator(
 		archiveGenService:     archiveGenService,
 		moduleCreationWrapper: moduleCreationWrapper,
 		savepointHelper:       savepointHelper,
+		domainConfig:          domainConfig,
 		moduleVersionRepo:     moduleVersionRepo,
 		moduleProviderRepo:    moduleProviderRepo,
 	}
@@ -435,12 +441,20 @@ func (o *TransactionProcessingOrchestrator) executeArchiveGenerationPhase(
 	startTime := time.Now()
 	phaseResult := &PhaseResult{Success: false}
 
+	// Get git clone URL from module provider (may be empty if not externally hosted)
+	var gitCloneURL string
+	if moduleVersion.ModuleProvider() != nil && moduleVersion.ModuleProvider().GetGitCloneURL() != nil {
+		gitCloneURL = *moduleVersion.ModuleProvider().GetGitCloneURL()
+	}
+
 	// Integrate with the archive generation service
 	genReq := ArchiveGenerationRequest{
-		ModuleVersionID: moduleVersion.ID(),
-		SourcePath:      req.ModulePath,
-		Formats:         []ArchiveFormat{ArchiveFormatZIP, ArchiveFormatTarGz},
-		TransactionCtx:  ctx,
+		ModuleVersionID:               moduleVersion.ID(),
+		SourcePath:                    req.ModulePath,
+		Formats:                       []ArchiveFormat{ArchiveFormatZIP, ArchiveFormatTarGz},
+		TransactionCtx:                ctx,
+		GitCloneURL:                   gitCloneURL,
+		DeleteExternallyHostedArtifacts: o.domainConfig.DeleteExternallyHostedArtifacts,
 	}
 
 	genResult, err := o.archiveGenService.GenerateArchivesWithTransaction(ctx, genReq)
@@ -454,6 +468,17 @@ func (o *TransactionProcessingOrchestrator) executeArchiveGenerationPhase(
 	}
 
 	if !genResult.Success {
+		// Check if archives were skipped (this is actually success for externally hosted modules)
+		if genResult.SkippedReason != "" {
+			phaseResult.Success = true
+			phaseResult.Data = struct {
+				SkippedReason string `json:"skipped_reason"`
+			}{
+				SkippedReason: genResult.SkippedReason,
+			}
+			return phaseResult
+		}
+
 		errorMsg := fmt.Sprintf("Archive generation failed: %s", *genResult.Error)
 		phaseResult.Success = false
 		phaseResult.Error = &errorMsg
@@ -468,8 +493,14 @@ func (o *TransactionProcessingOrchestrator) executeArchiveGenerationPhase(
 
 	phaseResult.Data = struct {
 		GeneratedArchives []string `json:"generated_archives"`
+		SkippedReason     string   `json:"skipped_reason,omitempty"`
+		TotalArchiveSize  int64    `json:"total_archive_size"`
+		SourceFilesCount  int      `json:"source_files_count"`
 	}{
 		GeneratedArchives: generatedFiles,
+		SkippedReason:     genResult.SkippedReason,
+		TotalArchiveSize:  genResult.TotalArchiveSize,
+		SourceFilesCount:  genResult.SourceFilesCount,
 	}
 
 	return phaseResult

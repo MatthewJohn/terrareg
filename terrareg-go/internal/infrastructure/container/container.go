@@ -439,6 +439,7 @@ func NewContainer(
 		archiveGenService,
 		moduleCreationWrapper,
 		savepointHelper,
+		c.DomainConfig,
 		c.ModuleVersionRepo,
 		c.ModuleProviderRepo,
 	)

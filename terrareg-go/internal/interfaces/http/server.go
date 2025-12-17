@@ -239,9 +239,9 @@ func (s *Server) setupRoutes() {
 
 			// Module versions
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
-			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
+			r.With(s.authMiddleware.RequireUploadPermission("{namespace}")).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
-			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
+			r.With(s.authMiddleware.RequireUploadPermission("{namespace}")).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)

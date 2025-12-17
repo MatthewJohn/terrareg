@@ -249,6 +249,52 @@ func (m *AuthMiddleware) RequireNamespacePermission(permissionType, namespacePar
 	}
 }
 
+// RequireUploadPermission creates middleware that requires upload permission for a namespace
+func (m *AuthMiddleware) RequireUploadPermission(namespaceParam string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// Extract request data
+			headers, formData, queryParams := m.extractRequestData(r)
+
+			// Authenticate the request
+			authResponse, err := m.authenticateRequest(ctx, headers, formData, queryParams)
+			if err != nil || authResponse == nil || !authResponse.Success {
+				http.Error(w, "Authentication required", http.StatusUnauthorized)
+				return
+			}
+
+			// Extract namespace name from URL parameter
+			namespaceName := namespaceParam
+			if strings.HasPrefix(namespaceParam, "{") && strings.HasSuffix(namespaceParam, "}") {
+				// Extract from URL path (e.g., "{namespace}" -> actual namespace value)
+				paramName := namespaceParam[1 : len(namespaceParam)-1]
+				namespaceName = chi.URLParam(r, paramName)
+			}
+
+			if namespaceName == "" {
+				http.Error(w, "Namespace parameter required", http.StatusBadRequest)
+				return
+			}
+
+			// Check if user can upload to this namespace using the current auth method
+			// This matches Python's @auth_wrapper('can_upload_module_version', request_kwarg_map={'namespace': 'namespace'})
+			currentAuthMethod := m.authFactory.GetCurrentAuthMethod()
+			if !currentAuthMethod.CanUploadModuleVersion(namespaceName) {
+				http.Error(w, "Insufficient upload permissions", http.StatusForbidden)
+				return
+			}
+
+			// Create and set auth context
+			authCtx := m.createAuthContext(authResponse)
+			ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 // SetAuthContextInContext sets the auth context in the request context
 func SetAuthContextInContext(ctx context.Context, authCtx *model.AuthContext) context.Context {
 	return context.WithValue(ctx, middlewareAuthContextKey, authCtx)
