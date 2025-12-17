@@ -96,9 +96,8 @@ func (s *ArchiveExtractionService) ExtractAndProcessWithTransaction(
 	}
 
 	// Create savepoint for this archive operation
-	savepointName := fmt.Sprintf("archive_extraction_%d", startTime.UnixNano())
 
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Detect archive type
 		archiveType, err := s.archiveProcessor.DetectArchiveType(req.ArchivePath)
 		if err != nil {
@@ -183,9 +182,8 @@ func (s *ArchiveExtractionService) extractArchiveWithSavepoint(
 		Duration: 0,
 	}
 
-	savepointName := fmt.Sprintf("archive_%s_%d", filepath.Base(req.ArchivePath), startTime.UnixNano())
 
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		return s.extractArchive(ctx, req)
 	})
 

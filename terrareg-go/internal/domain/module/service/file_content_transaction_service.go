@@ -48,7 +48,6 @@ type FileStorageRequest struct {
 	ModuleVersionID int
 	Files           []FileContentItem
 	TransactionCtx  context.Context
-	SavepointName   string
 	ProcessContent  bool // Whether to process content (markdown, etc.)
 	ValidatePaths   bool // Whether to validate file paths
 }
@@ -140,13 +139,7 @@ func (s *FileContentTransactionService) StoreFilesWithTransaction(
 		TotalFiles:          len(req.Files),
 	}
 
-	// Use provided savepoint name or create new one
-	savepointName := req.SavepointName
-	if savepointName == "" {
-		savepointName = fmt.Sprintf("file_storage_%d_%d", req.ModuleVersionID, startTime.UnixNano())
-	}
-
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		for _, fileItem := range req.Files {
 			fileStart := time.Now()
 
@@ -244,9 +237,7 @@ func (s *FileContentTransactionService) ProcessExampleFiles(
 
 	for _, example := range examples {
 		// Each example gets its own savepoint for isolation
-		savepointName := fmt.Sprintf("example_processing_%s_%d", strings.ReplaceAll(example.Path, "/", "_"), time.Now().UnixNano())
-
-		err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+		err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 			// Validate example file
 			if err := s.validateExampleFile(example); err != nil {
 				return fmt.Errorf("example validation failed: %w", err)
@@ -263,8 +254,7 @@ func (s *FileContentTransactionService) ProcessExampleFiles(
 				ModuleVersionID: moduleVersionID,
 				Files:           []FileContentItem{fileItem},
 				TransactionCtx:  ctx,
-				SavepointName:   savepointName,
-				ProcessContent:  true,
+								ProcessContent:  true,
 				ValidatePaths:   true,
 			}
 
@@ -346,9 +336,7 @@ func (s *FileContentTransactionService) UpdateFileContent(
 	filePath string,
 	newContent string,
 ) error {
-	savepointName := fmt.Sprintf("update_file_%s_%d", strings.ReplaceAll(filePath, "/", "_"), time.Now().UnixNano())
-
-	return s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	return s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Find existing file
 		existingFile, err := s.moduleVersionFileRepo.FindByPath(ctx, moduleVersionID, filePath)
 		if err != nil {
@@ -385,9 +373,7 @@ func (s *FileContentTransactionService) DeleteFilesWithTransaction(
 	moduleVersionID int,
 	filePaths []string,
 ) error {
-	savepointName := fmt.Sprintf("delete_files_%d_%d", moduleVersionID, time.Now().UnixNano())
-
-	return s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	return s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		for _, filePath := range filePaths {
 			// Find the file
 			file, err := s.moduleVersionFileRepo.FindByPath(ctx, moduleVersionID, filePath)

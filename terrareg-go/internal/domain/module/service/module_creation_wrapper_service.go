@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -52,10 +51,9 @@ type PrepareModuleResult struct {
 // This matches the Python prepare_module() method
 func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req PrepareModuleRequest) (*PrepareModuleResult, error) {
 	// Create a savepoint for the preparation
-	savepointName := fmt.Sprintf("prepare_module_%s_%d", req.Version, time.Now().UnixNano())
 
 	var result *PrepareModuleResult
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Create module version entity
 		moduleVersion, err := model.NewModuleVersion(req.Version, nil, false)
 		if err != nil {
@@ -73,7 +71,7 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 		result = &PrepareModuleResult{
 			ModuleVersion: moduleVersion,
 			ShouldPublish: shouldPublish,
-			Savepoint:     savepointName,
+			Savepoint:     "auto",
 		}
 
 		return nil

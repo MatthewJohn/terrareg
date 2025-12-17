@@ -199,9 +199,8 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 		}
 
 		// Create savepoint for this version
-		savepointName := fmt.Sprintf("webhook_version_%s_%d", versionReq.Version, startTime.UnixNano())
 
-		err := ws.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+		err := ws.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 			// Use module creation wrapper for this version
 			prepareReq := PrepareModuleRequest{
 				Namespace:  namespace,

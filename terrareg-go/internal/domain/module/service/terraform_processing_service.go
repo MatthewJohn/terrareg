@@ -131,9 +131,8 @@ func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 		Duration:       0,
 	}
 
-	savepointName := fmt.Sprintf("terraform_processing_%d", startTime.UnixNano())
 
-	err := s.savepointHelper.WithSmartSavepointOrTransaction(ctx, savepointName, func(tx *gorm.DB) error {
+	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Execute terraform pipeline with rollback capability
 		return s.ExecuteTerraformPipeline(ctx, req.ModulePath, req.Operations)
 	})

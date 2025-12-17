@@ -131,15 +131,8 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 		Timestamp:           startTime,
 	}
 
-	// Create main transaction for the entire processing pipeline
-	mainSavepoint := fmt.Sprintf("module_processing_%s_%s_%s_%d",
-		req.Namespace, req.ModuleName, req.Provider, startTime.UnixNano())
-
 	// Use the smart transaction wrapper that properly handles nested transactions
-	err := o.savepointHelper.WithSmartSavepointOrTransaction(ctx, mainSavepoint, func(tx *gorm.DB) error {
-		// Store transaction in context for nested services to detect
-		ctxWithTx := context.WithValue(ctx, transaction.TransactionDBKey, tx)
-
+	err := o.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Use module creation wrapper for atomic module creation and publishing
 		prepareReq := PrepareModuleRequest{
 			Namespace:    req.Namespace,
@@ -151,7 +144,7 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 		}
 
 		// Execute within the transaction context
-		err := o.moduleCreationWrapper.WithModuleCreationWrapper(ctxWithTx, prepareReq,
+		err := o.moduleCreationWrapper.WithModuleCreationWrapper(ctx, prepareReq,
 			func(ctx context.Context, moduleVersion *model.ModuleVersion) error {
 				// Execute all processing phases
 				if err := o.executeProcessingPhases(ctx, req, moduleVersion, result); err != nil {
