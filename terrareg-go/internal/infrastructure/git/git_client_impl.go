@@ -38,7 +38,13 @@ func (g *GitClientImpl) CloneWithOptions(ctx context.Context, repoURL, destinati
 	}
 
 	// Build git clone command with optional depth 1 for faster cloning
+	// Note: Use --depth 1 only when we don't need to checkout specific tags
 	args := []string{"clone", "--depth", "1", repoURL, destinationPath}
+	if options.NeedTags {
+		// For tag-based operations, we need full history and all tags
+		// Remove --depth 1 to fetch all tags and history
+		args = []string{"clone", repoURL, destinationPath}
+	}
 
 	cmd := exec.CommandContext(gitCtx, "git", args...)
 
@@ -65,6 +71,13 @@ func (g *GitClientImpl) CloneWithOptions(ctx context.Context, repoURL, destinati
 
 // Checkout switches to a specific tag or branch in a repository.
 func (g *GitClientImpl) Checkout(ctx context.Context, repositoryPath, tag string) error {
+	// First, validate that the tag exists to provide better error messages
+	if !g.tagExists(ctx, repositoryPath, tag) {
+		// List available tags to help with debugging
+		availableTags := g.listTags(ctx, repositoryPath)
+		return fmt.Errorf("git tag '%s' not found in repository. Available tags: %s", tag, availableTags)
+	}
+
 	cmd := exec.CommandContext(ctx, "git", "-C", repositoryPath, "checkout", tag)
 
 	// Capture stdout and stderr for debugging
@@ -78,4 +91,36 @@ func (g *GitClientImpl) Checkout(ctx context.Context, repositoryPath, tag string
 	}
 
 	return nil
+}
+
+// tagExists checks if a tag exists in the repository
+func (g *GitClientImpl) tagExists(ctx context.Context, repositoryPath, tag string) bool {
+	cmd := exec.CommandContext(ctx, "git", "-C", repositoryPath, "tag", "-l", tag)
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(output)) == tag
+}
+
+// listTags returns a comma-separated list of available tags (limited to first 10 for readability)
+func (g *GitClientImpl) listTags(ctx context.Context, repositoryPath string) string {
+	cmd := exec.CommandContext(ctx, "git", "-C", repositoryPath, "tag", "--sort=-version:refname")
+	output, err := cmd.Output()
+	if err != nil {
+		return "unable to list tags"
+	}
+
+	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(tags) == 0 {
+		return "no tags found"
+	}
+
+	// Limit to first 10 tags for readability
+	if len(tags) > 10 {
+		tags = tags[:10]
+		tags = append(tags, "...")
+	}
+
+	return strings.Join(tags, ", ")
 }

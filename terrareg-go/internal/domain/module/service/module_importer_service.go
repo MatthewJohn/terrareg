@@ -397,9 +397,19 @@ func (s *ModuleImporterService) prepareGitSource(
 	// Clone repository
 	cloneOptions := gitService.CloneOptions{
 		Timeout: time.Duration(s.infraConfig.GitCloneTimeout) * time.Second,
+		NeedTags: req.Input.GitTag != nil, // Fetch all tags when we need to checkout a specific tag
 	}
 
-	s.logger.Debug().Str("clone_url", cloneURL).Int("timeout_seconds", s.infraConfig.GitCloneTimeout).Msg("Cloning repository")
+	cloneType := "shallow"
+	if cloneOptions.NeedTags {
+		cloneType = "full (with tags)"
+	}
+	s.logger.Debug().
+		Str("clone_url", cloneURL).
+		Int("timeout_seconds", s.infraConfig.GitCloneTimeout).
+		Str("clone_type", cloneType).
+		Bool("needs_tags", cloneOptions.NeedTags).
+		Msg("Cloning repository")
 	if err := s.gitClient.CloneWithOptions(ctx, cloneURL, tmpDir, cloneOptions); err != nil {
 		s.logger.Debug().Err(err).Str("clone_url", cloneURL).Msg("Git clone failed")
 		s.storageService.RemoveAll(tmpDir)
