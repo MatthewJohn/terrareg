@@ -15,6 +15,7 @@ type GitCredentials struct {
 type CloneOptions struct {
 	Timeout     time.Duration
 	Credentials *GitCredentials
+	NeedTags    bool // Set to true when tags need to be fetched (disables shallow clone)
 }
 
 // GitClient defines the interface for interacting with Git.
