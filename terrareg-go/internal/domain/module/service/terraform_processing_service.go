@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
@@ -142,6 +143,18 @@ func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 	if err != nil {
 		failedStep := s.getFailedStep(err)
 		result.FailedStep = failedStep
+
+		// Add detailed error information from individual results
+		if result.InitResult != nil && !result.InitResult.Success && result.InitResult.Error != nil {
+			result.FailedStep = fmt.Sprintf("terraform_init failed: %s", *result.InitResult.Error)
+		} else if result.GraphResult != nil && !result.GraphResult.Success && result.GraphResult.Error != nil {
+			result.FailedStep = fmt.Sprintf("terraform_graph failed: %s", *result.GraphResult.Error)
+		} else if result.VersionResult != nil && !result.VersionResult.Success && result.VersionResult.Error != nil {
+			result.FailedStep = fmt.Sprintf("terraform_version failed: %s", *result.VersionResult.Error)
+		} else if result.ModulesResult != nil && !result.ModulesResult.Success && result.ModulesResult.Error != nil {
+			result.FailedStep = fmt.Sprintf("terraform_modules failed: %s", *result.ModulesResult.Error)
+		}
+
 		return result, nil
 	}
 
@@ -161,16 +174,84 @@ func (s *TerraformExecutorService) ExecuteTerraformPipeline(
 	modulePath string,
 	operations []TerraformOperation,
 ) error {
+	logger := zerolog.Ctx(ctx)
+
+	logger.Debug().
+		Str("module_path", modulePath).
+		Int("operations_count", len(operations)).
+		Msg("Starting terraform pipeline execution")
+
 	for i, op := range operations {
+		commandStr := strings.Join(op.Command, " ")
+		logger.Debug().
+			Int("operation_index", i).
+			Str("command", commandStr).
+			Str("description", op.Description).
+			Str("working_dir", op.WorkingDir).
+			Msg("About to execute terraform operation")
+
 		if err := s.executeOperation(ctx, op); err != nil {
+			logger.Error().
+				Int("operation_index", i).
+				Str("command", commandStr).
+				Str("description", op.Description).
+				Err(err).
+				Msg("Terraform operation failed in pipeline")
+
 			return fmt.Errorf("terraform operation %d (%s) failed: %w", i, op.Description, err)
 		}
+
+		logger.Info().
+			Int("operation_index", i).
+			Str("command", commandStr).
+			Str("description", op.Description).
+			Msg("Terraform operation completed successfully")
 	}
+
+	logger.Debug().
+		Str("module_path", modulePath).
+		Msg("All terraform pipeline operations completed successfully")
+
 	return nil
 }
 
 // executeOperation executes a single terraform operation
 func (s *TerraformExecutorService) executeOperation(ctx context.Context, op TerraformOperation) error {
+	logger := zerolog.Ctx(ctx)
+
+	commandStr := strings.Join(op.Command, " ")
+	logger.Debug().
+		Str("module_path", op.WorkingDir).
+		Str("command", commandStr).
+		Str("description", op.Description).
+		Msg("Executing terraform operation")
+
+	// Check if terraform binary exists
+	if s.terraformBin == "" {
+		err := fmt.Errorf("terraform binary path is empty")
+		logger.Error().
+			Str("module_path", op.WorkingDir).
+			Str("command", commandStr).
+			Err(err).
+			Msg("Terraform binary path is empty")
+		return err
+	}
+
+	// Check if working directory exists
+	if _, err := os.Stat(op.WorkingDir); err != nil {
+		logger.Error().
+			Str("module_path", op.WorkingDir).
+			Str("command", commandStr).
+			Err(err).
+			Msg("Working directory does not exist or is not accessible")
+		return fmt.Errorf("working directory %s not accessible: %w", op.WorkingDir, err)
+	}
+
+	logger.Debug().
+		Str("module_path", op.WorkingDir).
+		Str("command", commandStr).
+		Msg("Creating terraform command")
+
 	cmd := exec.CommandContext(ctx, op.Command[0], op.Command[1:]...)
 	cmd.Dir = op.WorkingDir
 
@@ -178,13 +259,56 @@ func (s *TerraformExecutorService) executeOperation(ctx context.Context, op Terr
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "TF_IN_AUTOMATION=true")
 
+	logger.Debug().
+		Str("module_path", op.WorkingDir).
+		Str("command", commandStr).
+		Msg("Executing terraform command")
+
+	startTime := time.Now()
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("terraform %s failed: %s\nOutput: %s", op.Description, err, string(output))
+	duration := time.Since(startTime)
+
+	outputStr := string(output)
+
+	logger.Debug().
+		Str("module_path", op.WorkingDir).
+		Str("command", commandStr).
+		Str("description", op.Description).
+		Dur("duration_ms", duration).
+		Int("output_length", len(outputStr)).
+		Bool("has_error", err != nil).
+		Msg("Terraform operation completed")
+
+	// Log the full terraform output at debug level
+	if outputStr != "" {
+		logger.Debug().
+			Str("module_path", op.WorkingDir).
+			Str("command", commandStr).
+			Str("terraform_output", outputStr).
+			Msg("Terraform operation output")
 	}
 
-	// For successful operations, we could store the output if needed
-	_ = output
+	if err != nil {
+		logger.Error().
+			Str("module_path", op.WorkingDir).
+			Str("command", commandStr).
+			Str("description", op.Description).
+			Err(err).
+			Dur("duration", duration).
+			Str("error_type", s.classifyInitError(err, outputStr)).
+			Str("output_preview", s.getOutputPreview(outputStr)).
+			Str("terraform_output", outputStr).
+			Msg("Terraform operation failed")
+
+		return fmt.Errorf("terraform %s failed: %s\nOutput: %s", op.Description, err, outputStr)
+	}
+
+	logger.Info().
+		Str("module_path", op.WorkingDir).
+		Str("command", commandStr).
+		Str("description", op.Description).
+		Dur("duration", duration).
+		Msg("Terraform operation completed successfully")
 
 	return nil
 }
@@ -196,22 +320,101 @@ func (s *TerraformExecutorService) getInitResult(ctx context.Context, modulePath
 		Success: false,
 	}
 
-	cmd := exec.CommandContext(ctx, s.terraformBin, "init")
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Str("terraform_binary", s.terraformBin).
+		Msg("Executing terraform init")
+
+	// Check if module path exists and is accessible
+	if _, err := os.Stat(modulePath); err != nil {
+		errorMsg := fmt.Sprintf("module path not accessible: %v", err)
+		result.Error = &errorMsg
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Msg("Module path not accessible for terraform init")
+		return result
+	}
+
+	// Check for .tf files in the module
+	tfFiles, err := filepath.Glob(filepath.Join(modulePath, "*.tf"))
+	if err != nil {
+		logger.Warn().
+			Str("module_path", modulePath).
+			Err(err).
+			Msg("Failed to check for .tf files")
+	} else {
+		logger.Debug().
+			Str("module_path", modulePath).
+			Int("tf_files_count", len(tfFiles)).
+			Msgf("Found %d .tf files", len(tfFiles))
+	}
+
+	cmd := exec.CommandContext(ctx, s.terraformBin, "init", "-input=false", "-no-color")
 	cmd.Dir = modulePath
 	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
 
+	logger.Debug().
+		Str("command", s.terraformBin+" init").
+		Str("working_dir", modulePath).
+		Msg("Running terraform init command")
+
 	output, err := cmd.CombinedOutput()
 	result.Duration = time.Since(startTime)
+	outputStr := string(output)
+
+	logger.Debug().
+		Str("module_path", modulePath).
+		Dur("duration_ms", result.Duration).
+		Int("output_length", len(outputStr)).
+		Bool("has_error", err != nil).
+		Msg("Terraform init completed")
+
+	// Log the full terraform output at debug level
+	if outputStr != "" {
+		logger.Debug().
+			Str("module_path", modulePath).
+			Str("terraform_output", outputStr).
+			Msg("Terraform init output")
+	}
 
 	if err != nil {
-		errorMsg := err.Error()
+		errorMsg := fmt.Sprintf("terraform init failed: %v\nOutput: %s", err, outputStr)
 		result.Error = &errorMsg
+
+		// Enhanced logging for common terraform init failures
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Dur("duration", result.Duration).
+			Str("error_type", s.classifyInitError(err, outputStr)).
+			Str("output_preview", s.getOutputPreview(outputStr)).
+			Str("terraform_output", outputStr).
+			Msg("Terraform init failed")
+
 		return result
 	}
 
 	result.Success = true
-	result.Output = string(output)
-	result.HasChanges = s.hasInitChanges(string(output))
+	result.Output = outputStr
+	result.HasChanges = s.hasInitChanges(outputStr)
+
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Bool("has_changes", result.HasChanges).
+		Int("output_length", len(outputStr)).
+		Msg("Terraform init completed successfully")
+
+	// Log the full terraform output at debug level for successful runs too
+	if outputStr != "" {
+		logger.Debug().
+			Str("module_path", modulePath).
+			Str("terraform_output", outputStr).
+			Bool("init_success", true).
+			Msg("Terraform init successful output")
+	}
 
 	return result
 }
@@ -223,21 +426,57 @@ func (s *TerraformExecutorService) getGraphResult(ctx context.Context, modulePat
 		Success: false,
 	}
 
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Msg("Executing terraform graph")
+
 	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), "graph")
 	cmd.Dir = modulePath
 	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
 
 	output, err := cmd.CombinedOutput()
 	result.Duration = time.Since(startTime)
+	outputStr := string(output)
+
+	logger.Debug().
+		Str("module_path", modulePath).
+		Dur("duration_ms", result.Duration).
+		Int("output_length", len(outputStr)).
+		Bool("has_error", err != nil).
+		Msg("Terraform graph completed")
+
+	// Log the full terraform graph output at debug level
+	if outputStr != "" {
+		logger.Debug().
+			Str("module_path", modulePath).
+			Str("terraform_graph_output", outputStr).
+			Msg("Terraform graph output")
+	}
 
 	if err != nil {
-		errorMsg := fmt.Sprintf("terraform graph failed: %v\nOutput: %s", err, string(output))
+		errorMsg := fmt.Sprintf("terraform graph failed: %v\nOutput: %s", err, outputStr)
 		result.Error = &errorMsg
+
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Dur("duration", result.Duration).
+			Str("error_type", "terraform_graph_failed").
+			Str("output_preview", s.getOutputPreview(outputStr)).
+			Msg("Terraform graph failed")
+
 		return result
 	}
 
 	result.Success = true
-	result.GraphData = string(output)
+	result.GraphData = outputStr
+
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Int("graph_data_length", len(outputStr)).
+		Msg("Terraform graph completed successfully")
 
 	return result
 }
@@ -284,21 +523,56 @@ func (s *TerraformExecutorService) getVersionResult(ctx context.Context, moduleP
 		Success: false,
 	}
 
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Str("terraform_binary", s.terraformBin).
+		Msg("Executing terraform version")
+
 	cmd := exec.CommandContext(ctx, s.terraformBin, "version", "-json")
 	cmd.Dir = modulePath
 
 	output, err := cmd.CombinedOutput()
 	result.Duration = time.Since(startTime)
+	outputStr := string(output)
+
+	logger.Debug().
+		Str("module_path", modulePath).
+		Dur("duration_ms", result.Duration).
+		Int("output_length", len(outputStr)).
+		Bool("has_error", err != nil).
+		Msg("Terraform version completed")
+
+	// Log the full terraform version output at debug level
+	if outputStr != "" {
+		logger.Debug().
+			Str("module_path", modulePath).
+			Str("terraform_version_output", outputStr).
+			Msg("Terraform version output")
+	}
 
 	if err != nil {
 		errorMsg := err.Error()
 		result.Error = &errorMsg
+
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Dur("duration", result.Duration).
+			Str("error_type", "terraform_version_failed").
+			Str("output_preview", s.getOutputPreview(outputStr)).
+			Msg("Terraform version failed")
+
 		return result
 	}
 
 	result.Success = true
-	result.Output = string(output)
-	// Would parse JSON to extract version string in a full implementation
+	result.Output = outputStr
+
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Msg("Terraform version completed successfully")
 
 	return result
 }
@@ -435,19 +709,19 @@ func (s *TerraformExecutorService) getFailedStep(err error) string {
 	// Look for specific terraform commands in the error
 	switch {
 	case contains(errorMsg, "terraform init"):
-		return "terraform_init failed"
+		return s.extractTerraformErrorDetails("terraform_init", errorMsg)
 	case contains(errorMsg, "terraform graph"):
-		return "terraform_graph failed"
+		return s.extractTerraformErrorDetails("terraform_graph", errorMsg)
 	case contains(errorMsg, "terraform version"):
-		return "terraform_version failed"
+		return s.extractTerraformErrorDetails("terraform_version", errorMsg)
 	case contains(errorMsg, "terraform fmt"):
-		return "terraform_fmt failed"
+		return s.extractTerraformErrorDetails("terraform_fmt", errorMsg)
 	case contains(errorMsg, "terraform validate"):
-		return "terraform_validate failed"
+		return s.extractTerraformErrorDetails("terraform_validate", errorMsg)
 	case contains(errorMsg, "terraform show"):
-		return "terraform_show failed"
+		return s.extractTerraformErrorDetails("terraform_show", errorMsg)
 	case contains(errorMsg, "terraform providers"):
-		return "terraform_providers failed"
+		return s.extractTerraformErrorDetails("terraform_providers", errorMsg)
 	case contains(errorMsg, "permission denied"):
 		return "permission_denied"
 	case contains(errorMsg, "no such file or directory"):
@@ -469,6 +743,39 @@ func (s *TerraformExecutorService) getFailedStep(err error) string {
 		}
 		return fmt.Sprintf("terraform_error: %s", errorMsg)
 	}
+}
+
+// extractTerraformErrorDetails extracts detailed error information from terraform command output
+func (s *TerraformExecutorService) extractTerraformErrorDetails(command, errorMsg string) string {
+	// Extract terraform output from the error message
+	// The error format is typically: "terraform <command> failed: <error details>\nOutput: <terraform output>"
+
+	// Split by "Output:" to get the terraform output
+	parts := strings.Split(errorMsg, "Output:")
+	if len(parts) > 1 {
+		output := strings.TrimSpace(parts[1])
+
+		// Extract key error patterns from terraform output
+		if strings.Contains(output, "Error:") {
+			// Get the first error line
+			lines := strings.Split(output, "\n")
+			for _, line := range lines {
+				if strings.Contains(line, "Error:") {
+					return fmt.Sprintf("%s failed: %s", command, strings.TrimSpace(line))
+				}
+			}
+		}
+
+		// If no specific error found, return a preview of the output
+		preview := s.getOutputPreview(output)
+		if preview != output {
+			return fmt.Sprintf("%s failed: %s...", command, preview)
+		}
+		return fmt.Sprintf("%s failed: %s", command, output)
+	}
+
+	// Fallback to basic command detection
+	return fmt.Sprintf("%s failed", command)
 }
 
 // contains checks if a string contains a substring (case-insensitive)
@@ -667,4 +974,47 @@ func (s *TerraformExecutorService) RunTerraformInit(ctx context.Context, moduleP
 	result.HasChanges = true // Assume changes were made during init
 
 	return result, nil
+}
+
+// classifyInitError classifies terraform init errors into common categories
+func (s *TerraformExecutorService) classifyInitError(err error, output string) string {
+	errorMsg := strings.ToLower(err.Error() + " " + output)
+
+	switch {
+	case strings.Contains(errorMsg, "permission denied"):
+		return "permission_denied"
+	case strings.Contains(errorMsg, "no such file or directory"):
+		return "file_not_found"
+	case strings.Contains(errorMsg, "command not found"):
+		return "terraform_not_found"
+	case strings.Contains(errorMsg, "context deadline exceeded"):
+		return "timeout"
+	case strings.Contains(errorMsg, "signal: killed"):
+		return "process_killed"
+	case strings.Contains(errorMsg, "network") || strings.Contains(errorMsg, "connection refused"):
+		return "network_error"
+	case strings.Contains(errorMsg, "authentication failed") || strings.Contains(errorMsg, "unauthorized"):
+		return "authentication_error"
+	case strings.Contains(errorMsg, "provider") && strings.Contains(errorMsg, "not found"):
+		return "provider_error"
+	case strings.Contains(errorMsg, "module") && strings.Contains(errorMsg, "not found"):
+		return "module_error"
+	default:
+		return "unknown_error"
+	}
+}
+
+// getOutputPreview returns a preview of the terraform output for logging
+func (s *TerraformExecutorService) getOutputPreview(output string) string {
+	if len(output) <= 200 {
+		return strings.TrimSpace(output)
+	}
+
+	// Return first 200 characters, trimming to whole words
+	preview := output[:200]
+	if lastSpace := strings.LastIndex(preview, " "); lastSpace > 0 {
+		preview = preview[:lastSpace]
+	}
+
+	return strings.TrimSpace(preview) + "..."
 }

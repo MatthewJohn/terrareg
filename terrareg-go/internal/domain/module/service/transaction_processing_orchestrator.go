@@ -325,6 +325,36 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 		Str("module_path", req.ModulePath).
 		Msg("Starting terraform processing phase")
 
+	// Add validation and context for terraform processing
+	if req.ModulePath == "" {
+		errorMsg := "module path is empty for terraform processing"
+		o.logger.Error().
+			Int("module_version_id", moduleVersion.ID()).
+			Str("namespace", req.Namespace).
+			Str("module", req.ModuleName).
+			Str("provider", req.Provider).
+			Str("version", req.Version).
+			Msg("Module path is empty for terraform processing")
+		phaseResult.Error = &errorMsg
+		phaseResult.Duration = time.Since(startTime)
+		return phaseResult
+	}
+
+	// Add terraform context logging
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("namespace", req.Namespace).
+		Str("module", req.ModuleName).
+		Str("provider", req.Provider).
+		Str("version", req.Version).
+		Str("module_path", req.ModulePath).
+		Msg("Executing terraform operations on module")
+
+	// Log terraform service details
+	o.logger.Debug().
+		Str("terraform_service_type", "TerraformExecutorService").
+		Msg("Using terraform executor service")
+
 	// Create terraform processing operations
 	operations := []TerraformOperation{
 		{Type: "init", Command: []string{"init", "-input=false", "-no-color"}, WorkingDir: req.ModulePath, Description: "Initialize Terraform"},
