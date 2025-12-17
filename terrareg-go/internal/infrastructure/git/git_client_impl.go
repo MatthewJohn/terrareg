@@ -66,5 +66,16 @@ func (g *GitClientImpl) CloneWithOptions(ctx context.Context, repoURL, destinati
 // Checkout switches to a specific tag or branch in a repository.
 func (g *GitClientImpl) Checkout(ctx context.Context, repositoryPath, tag string) error {
 	cmd := exec.CommandContext(ctx, "git", "-C", repositoryPath, "checkout", tag)
-	return cmd.Run()
+
+	// Capture stdout and stderr for debugging
+	stdout, err := cmd.CombinedOutput()
+	if err != nil {
+		// Include both stdout and stderr in the error for better debugging
+		if len(stdout) > 0 {
+			return fmt.Errorf("git checkout failed: %w\nOutput:\n%s", err, string(stdout))
+		}
+		return fmt.Errorf("git checkout failed: %w", err)
+	}
+
+	return nil
 }
