@@ -17,7 +17,7 @@ import (
 type TransactionProcessingOrchestrator struct {
 	// Core processing services with transaction safety
 	archiveService     *ArchiveExtractionService
-	terraformService   *TerraformProcessingService
+	terraformService   *TerraformExecutorService
 	metadataService    *MetadataProcessingService
 	securityService    *SecurityScanningTransactionService
 	fileContentService *FileContentTransactionService
@@ -35,7 +35,7 @@ type TransactionProcessingOrchestrator struct {
 // NewTransactionProcessingOrchestrator creates a new transaction processing orchestrator
 func NewTransactionProcessingOrchestrator(
 	archiveService *ArchiveExtractionService,
-	terraformService *TerraformProcessingService,
+	terraformService *TerraformExecutorService,
 	metadataService *MetadataProcessingService,
 	securityService *SecurityScanningTransactionService,
 	fileContentService *FileContentTransactionService,
@@ -256,7 +256,7 @@ func (o *TransactionProcessingOrchestrator) executeArchiveExtractionPhase(
 	}
 
 	if !extractionResult.Success {
-		errorMsg := fmt.Sprintf("Archive extraction failed: %s", extractionResult.ErrorMessage)
+		errorMsg := fmt.Sprintf("Archive extraction failed: %s", extractionResult.Error)
 		phaseResult.Error = &errorMsg
 		return phaseResult
 	}
@@ -277,9 +277,9 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 
 	// Create terraform processing operations
 	operations := []TerraformOperation{
-		{Type: TerraformOperationInit, Options: TerraformInitOptions{BackendOverride: true}},
-		{Type: TerraformOperationVersion, Options: TerraformVersionOptions{}},
-		{Type: TerraformOperationGraph, Options: TerraformGraphOptions{}},
+		{Type: "init", Command: []string{"init", "-input=false", "-no-color"}, WorkingDir: req.ModulePath, Description: "Initialize Terraform"},
+		{Type: "version", Command: []string{"version", "-no-color"}, WorkingDir: req.ModulePath, Description: "Get Terraform version"},
+		{Type: "graph", Command: []string{"graph", "-no-color"}, WorkingDir: req.ModulePath, Description: "Generate dependency graph"},
 	}
 
 	terraformReq := TerraformProcessingRequest{
@@ -299,7 +299,7 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 	}
 
 	if !terraformResult.OverallSuccess {
-		errorMsg := fmt.Sprintf("Terraform processing failed: %s", terraformResult.ErrorMessage)
+		errorMsg := fmt.Sprintf("Terraform processing failed: %s", terraformResult.FailedStep)
 		phaseResult.Error = &errorMsg
 		return phaseResult
 	}
@@ -435,24 +435,41 @@ func (o *TransactionProcessingOrchestrator) executeArchiveGenerationPhase(
 	startTime := time.Now()
 	phaseResult := &PhaseResult{Success: false}
 
-	// This would integrate with the archive generation service
-	// For now, create a placeholder
+	// Integrate with the archive generation service
 	genReq := ArchiveGenerationRequest{
 		ModuleVersionID: moduleVersion.ID(),
-		Formats:         []string{"zip", "tar.gz"},
+		SourcePath:      req.ModulePath,
+		Formats:         []ArchiveFormat{ArchiveFormatZIP, ArchiveFormatTarGz},
 		TransactionCtx:  ctx,
 	}
 
-	// genResult, err := o.archiveGenService.GenerateArchivesWithTransaction(ctx, genReq)
-	// phaseResult.Duration = time.Since(startTime)
-
-	// Placeholder implementation
+	genResult, err := o.archiveGenService.GenerateArchivesWithTransaction(ctx, genReq)
 	phaseResult.Duration = time.Since(startTime)
+
+	if err != nil {
+		errorMsg := fmt.Sprintf("Archive generation failed: %v", err)
+		phaseResult.Success = false
+		phaseResult.Error = &errorMsg
+		return phaseResult
+	}
+
+	if !genResult.Success {
+		errorMsg := fmt.Sprintf("Archive generation failed: %s", *genResult.Error)
+		phaseResult.Success = false
+		phaseResult.Error = &errorMsg
+		return phaseResult
+	}
+
 	phaseResult.Success = true
+	generatedFiles := make([]string, len(genResult.GeneratedArchives))
+	for i, archive := range genResult.GeneratedArchives {
+		generatedFiles[i] = archive.Path
+	}
+
 	phaseResult.Data = struct {
 		GeneratedArchives []string `json:"generated_archives"`
 	}{
-		GeneratedArchives: []string{"module.zip", "module.tar.gz"},
+		GeneratedArchives: generatedFiles,
 	}
 
 	return phaseResult
@@ -552,8 +569,8 @@ func (o *TransactionProcessingOrchestrator) GetProcessingStatus(
 	details := moduleVersion.Details()
 	status := &ProcessingStatus{
 		ModuleVersionID: moduleVersionID,
-		Version:         moduleVersion.Version(),
-		Published:       moduleVersion.Published(),
+		Version:         moduleVersion.Version().String(),
+		Published:       moduleVersion.IsPublished(),
 		Timestamp:       time.Now(),
 	}
 

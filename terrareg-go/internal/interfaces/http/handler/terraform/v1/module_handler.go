@@ -11,6 +11,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
@@ -186,6 +187,8 @@ func (h *TerraformV1ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r
 }
 
 // HandleModuleDownload handles the HTTP request to download a specific module version.
+// For now, this returns a 204 with X-Terraform-Get pointing to the archive URL.
+// TODO: Implement proper module hosting logic with allow_module_hosting configuration
 func (h *TerraformV1ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -196,7 +199,7 @@ func (h *TerraformV1ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r
 
 	downloadInfo, err := h.getModuleDownloadQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
-		if errors.Is(err, errors.New("not found")) {
+		if errors.Is(err, shared.ErrNotFound) {
 			terrareg.RespondError(w, http.StatusNotFound, err.Error())
 			return
 		}
@@ -204,10 +207,9 @@ func (h *TerraformV1ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r
 		return
 	}
 
-	// Construct the redirect URL for the module archive
-	// Assuming a structure like /modules/namespace/name/provider/version/archive.zip
-	// This should align with the actual file storage path
-	archiveURL := fmt.Sprintf("/modules/%s/%s/%s/%s/archive.zip",
+	// For now, construct archive URL using the standard terrareg pattern
+	// TODO: Add module hosting configuration logic (allow_module_hosting, redirect vs storage)
+	archiveURL := fmt.Sprintf("/v1/modules/%s/%s/%s/%s/archive",
 		downloadInfo.ModuleProvider.Namespace().Name(),
 		downloadInfo.ModuleProvider.Module(),
 		downloadInfo.ModuleProvider.Provider(),
