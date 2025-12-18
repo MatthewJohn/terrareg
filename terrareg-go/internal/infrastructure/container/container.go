@@ -34,9 +34,6 @@ import (
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
-	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
-	storageModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
-	storageInfrastructure "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 	gpgkeyService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/service"
 	graphRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
@@ -46,10 +43,13 @@ import (
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
+	storageModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
+	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
+	storageInfrastructure "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
 	providerLogoRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_logo/repository"
@@ -110,15 +110,15 @@ type Container struct {
 	GPGKeyService *gpgkeyService.GPGKeyService
 
 	// Infrastructure Services
-	GitClient               gitService.GitClient
-	DomainStorageService    storageService.StorageService  // Core domain storage (8 methods)
-	ModuleStorageService    moduleService.StorageService  // Module-specific storage with filesystem ops
-	PathBuilder             storageService.PathBuilder
-	TempDirManager          storageService.TemporaryDirectoryManager
-	StorageWorkflowService  storageService.StorageWorkflowService
-	GitService              gitService.GitService
-	ModuleIndexingService   moduleService.ModuleIndexingService
-	ModuleParser            moduleService.ModuleParser
+	GitClient              gitService.GitClient
+	DomainStorageService   storageService.StorageService // Core domain storage (8 methods)
+	ModuleStorageService   moduleService.StorageService  // Module-specific storage with filesystem ops
+	PathBuilder            storageService.PathBuilder
+	TempDirManager         storageService.TemporaryDirectoryManager
+	StorageWorkflowService storageService.StorageWorkflowService
+	GitService             gitService.GitService
+	ModuleIndexingService  moduleService.ModuleIndexingService
+	ModuleParser           moduleService.ModuleParser
 
 	// Domain Services
 	ModuleImporterService *moduleService.ModuleImporterService
@@ -408,10 +408,10 @@ func NewContainer(
 
 	// Initialize terraform executor service with tfswitch config
 	tfswitchConfig := &moduleService.TfswitchConfig{
-		DefaultTerraformVersion: "1.5.7",         // TODO: configure from domain config
-		TerraformProduct:        "terraform",     // TODO: configure from domain config
-		ArchiveMirror:           "",              // TODO: configure from infra config
-		BinaryPath:              "bin/terraform", // TODO: configure from infra config
+		DefaultTerraformVersion: "1.5.7",              // TODO: configure from domain config
+		TerraformProduct:        "terraform",          // TODO: configure from domain config
+		ArchiveMirror:           "",                   // TODO: configure from infra config
+		BinaryPath:              "/app/bin/terraform", // TODO: configure from infra config
 	}
 	terraformExecutorService := moduleService.NewTerraformExecutorService(
 		savepointHelper,

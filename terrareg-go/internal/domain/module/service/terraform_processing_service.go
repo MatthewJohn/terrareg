@@ -107,10 +107,7 @@ func NewTerraformExecutorService(
 	tfswitchConfig *TfswitchConfig,
 ) *TerraformExecutorService {
 	if tfswitchConfig == nil {
-		// Create default tfswitch config
-		tfswitchConfig = &TfswitchConfig{
-			BinaryPath: terraformBin,
-		}
+		return nil
 	}
 
 	return &TerraformExecutorService{
@@ -185,7 +182,6 @@ func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 
 	return result, nil
 }
-
 
 // executeTerraformInit executes terraform init and returns result
 // Following Python's _run_tf_init pattern
@@ -591,10 +587,10 @@ func (s *TerraformExecutorService) getVersionResult(ctx context.Context, moduleP
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
-		Str("terraform_binary", s.terraformBin).
+		Str("terraform_binary", s.TerraformBinaryPath()).
 		Msg("Executing terraform version")
 
-	cmd := exec.CommandContext(ctx, s.terraformBin, "version", "-json")
+	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), "version", "-json")
 	cmd.Dir = modulePath
 
 	output, err := cmd.CombinedOutput()
