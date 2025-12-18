@@ -137,6 +137,7 @@ type Container struct {
 	ArchiveGenerationTransactionService *moduleService.ArchiveGenerationTransactionService
 	MetadataProcessingService           *moduleService.MetadataProcessingService
 	TerraformExecutorService            *moduleService.TerraformExecutorService
+	FileContentTransactionService       *moduleService.FileContentTransactionService
 	TransactionProcessingOrchestrator   *moduleService.TransactionProcessingOrchestrator
 	AuthFactory                         *authservice.AuthFactory
 	SessionService                      *authservice.SessionService
@@ -385,20 +386,14 @@ func NewContainer(
 	savepointHelper := transaction.NewSavepointHelper(db.DB)
 	c.SavepointHelper = savepointHelper
 
-	// Initialize combined security scanning service with transaction support
-	securityScanningService := moduleService.NewSecurityScanningService(
-		c.ModuleFileService,
-		c.ModuleVersionRepo,
-		savepointHelper,
-	)
-	c.SecurityScanningService = securityScanningService
-
 	// Initialize module creation wrapper for atomic module creation
 	moduleCreationWrapper := moduleService.NewModuleCreationWrapperService(
 		c.ModuleVersionRepo,
 		savepointHelper,
 	)
 	c.ModuleCreationWrapper = moduleCreationWrapper
+
+	// Note: SecurityScanningService will be initialized after ModuleFileService is created
 
 	// Initialize archive generation transaction service
 	archiveGenService := moduleService.NewArchiveGenerationTransactionService(savepointHelper)
@@ -445,13 +440,52 @@ func NewContainer(
 	)
 	c.TerraformExecutorService = terraformExecutorService
 
-	// Initialize transaction processing orchestrator (simplified for now)
-	processingOrchestrator := moduleService.NewTransactionProcessingOrchestrator(
+	// Initialize existing domain services
+	c.NamespaceService = moduleService.NewNamespaceService(domainConfig) // Uses DomainConfig for business logic
+	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, c.NamespaceRepo, c.NamespaceService)
+
+	// Initialize security and module file services (legacy - can be gradually phased out)
+	c.SecurityService = moduleService.NewSecurityService()
+	c.MarkdownService = sharedService.NewMarkdownService()
+
+	// Initialize file processing service adapter
+	fileProcessingService := sharedService.NewFileProcessingServiceAdapter(c.MarkdownService)
+
+	// Initialize file content transaction service
+	c.FileContentTransactionService = moduleService.NewFileContentTransactionService(
+		c.ModuleVersionFileRepo,
+		c.ModuleVersionRepo,
+		fileProcessingService,
+		c.PathBuilder,
+		savepointHelper,
+	)
+
+	// Initialize transaction processing orchestrator now that all dependencies are ready
+	// We'll initialize this after the security scanning service is created below
+	var processingOrchestrator *moduleService.TransactionProcessingOrchestrator
+
+	c.ModuleFileService = moduleService.NewModuleFileService(
+		c.ModuleProviderRepo,
+		c.ModuleVersionFileRepo,
+		c.NamespaceService,
+		c.SecurityService,
+	)
+
+	// Initialize security scanning service now that ModuleFileService is available
+	securityScanningService := moduleService.NewSecurityScanningService(
+		c.ModuleFileService,
+		c.ModuleVersionRepo,
+		savepointHelper,
+	)
+	c.SecurityScanningService = securityScanningService
+
+	// Initialize transaction processing orchestrator now that all dependencies are ready
+	processingOrchestrator = moduleService.NewTransactionProcessingOrchestrator(
 		nil, // archiveService - TODO: implement ArchiveProcessor
-		terraformExecutorService,
+		c.TerraformExecutorService,
 		metadataService,
 		securityScanningService,
-		nil, // fileContentService - TODO: implement FileStorage/FileProcessing services
+		c.FileContentTransactionService,
 		archiveGenService,
 		moduleCreationWrapper,
 		savepointHelper,
@@ -462,7 +496,7 @@ func NewContainer(
 	)
 	c.TransactionProcessingOrchestrator = processingOrchestrator
 
-	// Initialize updated module importer service with transaction support
+	// Update module importer service with the orchestrator
 	c.ModuleImporterService = moduleService.NewModuleImporterService(
 		processingOrchestrator,
 		moduleCreationWrapper,
@@ -474,20 +508,6 @@ func NewContainer(
 		domainConfig,
 		infraConfig,
 		logger,
-	)
-
-	// Initialize existing domain services
-	c.NamespaceService = moduleService.NewNamespaceService(domainConfig) // Uses DomainConfig for business logic
-	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, c.NamespaceRepo, c.NamespaceService)
-
-	// Initialize security and module file services (legacy - can be gradually phased out)
-	c.SecurityService = moduleService.NewSecurityService()
-	c.MarkdownService = sharedService.NewMarkdownService()
-	c.ModuleFileService = moduleService.NewModuleFileService(
-		c.ModuleProviderRepo,
-		c.ModuleVersionFileRepo,
-		c.NamespaceService,
-		c.SecurityService,
 	)
 
 	// Initialize webhook service (updated to use transaction-aware services)
