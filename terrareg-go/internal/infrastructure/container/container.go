@@ -3,6 +3,8 @@ package container
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -414,10 +416,25 @@ func NewContainer(
 		BinaryPath:              infraConfig.TerraformBinaryPath,
 	}
 
-	// Use terraform binary path from config, or default to system terraform installed by tfswitch
+	// Use terraform binary path from config, or default to bin/terraform relative to CWD
 	terraformBinaryPath := infraConfig.TerraformBinaryPath
 	if terraformBinaryPath == "" {
-		terraformBinaryPath = "terraform" // Default to terraform in PATH (installed by tfswitch to /usr/local/bin/terraform)
+		terraformBinaryPath = "bin/terraform" // Default to bin/terraform relative to application CWD
+	}
+
+	// Convert to absolute path to avoid issues when working directory changes during terraform execution
+	if !filepath.IsAbs(terraformBinaryPath) {
+		wd, err := os.Getwd()
+		if err != nil {
+			logger.Warn().
+				Err(err).
+				Msg("Failed to get current working directory")
+		} else {
+			terraformBinaryPath = filepath.Join(wd, terraformBinaryPath)
+			logger.Debug().
+				Str("terraform_binary_path", terraformBinaryPath).
+				Msg("Resolved terraform binary to absolute path from current working directory")
+		}
 	}
 
 	terraformExecutorService := moduleService.NewTerraformExecutorService(
