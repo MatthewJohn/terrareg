@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
 	"github.com/rs/zerolog"
+	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
@@ -21,11 +21,10 @@ type ModuleVersionRepositoryImpl struct {
 // NewModuleVersionRepository creates a new module version repository
 func NewModuleVersionRepository(db *gorm.DB) *ModuleVersionRepositoryImpl {
 	return &ModuleVersionRepositoryImpl{
-		BaseRepository: baserepo.NewBaseRepository(db),
+		BaseRepository:  baserepo.NewBaseRepository(db),
 		submoduleLoader: NewSubmoduleLoader(db),
 	}
 }
-
 
 // FindByModuleProvider retrieves module versions for a specific module provider
 func (r *ModuleVersionRepositoryImpl) FindByModuleProvider(ctx context.Context, moduleProviderID int, includeBeta, includeUnpublished bool) ([]*model.ModuleVersion, error) {
@@ -51,7 +50,7 @@ func (r *ModuleVersionRepositoryImpl) FindByModuleProvider(ctx context.Context, 
 	// Convert to domain models
 	moduleVersions := make([]*model.ModuleVersion, 0, len(moduleVersionDBs))
 	for _, dbVersion := range moduleVersionDBs {
-		moduleVersion, err := r.mapToDomainModel(dbVersion)
+		moduleVersion, err := r.mapToDomainModel(ctx, dbVersion)
 		if err != nil {
 			return nil, fmt.Errorf("failed to map module version: %w", err)
 		}
@@ -106,7 +105,7 @@ func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *m
 	}
 
 	// After successful save, return the updated domain model with proper database-assigned values
-	updatedModuleVersion, err := r.mapToDomainModel(*dbVersion)
+	updatedModuleVersion, err := r.mapToDomainModel(ctx, *dbVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map updated module version: %w", err)
 	}
@@ -126,7 +125,7 @@ func (r *ModuleVersionRepositoryImpl) FindByID(ctx context.Context, id int) (*mo
 		return nil, fmt.Errorf("failed to find module version: %w", err)
 	}
 
-	return r.mapToDomainModel(dbVersion)
+	return r.mapToDomainModel(ctx, dbVersion)
 }
 
 // FindByModuleProviderAndVersion retrieves a specific module version
@@ -143,7 +142,7 @@ func (r *ModuleVersionRepositoryImpl) FindByModuleProviderAndVersion(ctx context
 		return nil, fmt.Errorf("failed to find module version: %w", err)
 	}
 
-	return r.mapToDomainModel(dbVersion)
+	return r.mapToDomainModel(ctx, dbVersion)
 }
 
 // Delete removes a module version
@@ -169,12 +168,12 @@ func (r *ModuleVersionRepositoryImpl) Exists(ctx context.Context, moduleProvider
 // Helper methods for mapping between domain and persistence models
 
 // mapToDomainModel converts persistence model to domain model using centralized mapper
-func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVersionDB) (*model.ModuleVersion, error) {
+func (r *ModuleVersionRepositoryImpl) mapToDomainModel(ctx context.Context, dbVersion sqldb.ModuleVersionDB) (*model.ModuleVersion, error) {
 	// Load module details if available
 	var details *model.ModuleDetails
 	if dbVersion.ModuleDetailsID != nil {
 		var detailsDB sqldb.ModuleDetailsDB
-		err := r.GetDB().First(&detailsDB, *dbVersion.ModuleDetailsID).Error
+		err := r.GetDBFromContext(ctx).First(&detailsDB, *dbVersion.ModuleDetailsID).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("failed to load module details: %w", err)
 		}
@@ -197,7 +196,7 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 	if dbVersion.ModuleProviderID > 0 {
 		// Load the module provider and its namespace to restore the relationship
 		var moduleProviderDB sqldb.ModuleProviderDB
-		err := r.GetDB().Preload("Namespace").First(&moduleProviderDB, dbVersion.ModuleProviderID).Error
+		err := r.GetDBFromContext(ctx).Preload("Namespace").First(&moduleProviderDB, dbVersion.ModuleProviderID).Error
 		if err == nil {
 			// Convert namespace database model to domain model
 			namespace := fromDBNamespace(&moduleProviderDB.Namespace)
