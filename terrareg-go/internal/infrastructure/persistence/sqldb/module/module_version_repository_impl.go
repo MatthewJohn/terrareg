@@ -9,36 +9,28 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
+	baserepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/repository"
 )
 
 // ModuleVersionRepositoryImpl implements the module version repository using GORM
 type ModuleVersionRepositoryImpl struct {
-	db              *gorm.DB
+	*baserepo.BaseRepository
 	submoduleLoader *SubmoduleLoader
 }
 
 // NewModuleVersionRepository creates a new module version repository
 func NewModuleVersionRepository(db *gorm.DB) *ModuleVersionRepositoryImpl {
 	return &ModuleVersionRepositoryImpl{
-		db:              db,
+		BaseRepository: baserepo.NewBaseRepository(db),
 		submoduleLoader: NewSubmoduleLoader(db),
 	}
 }
 
-// getDBFromContext returns the database instance from context or the default db
-// This allows repositories to participate in transactions created by the service layer
-func (r *ModuleVersionRepositoryImpl) getDBFromContext(ctx context.Context) *gorm.DB {
-	if tx, exists := ctx.Value(transaction.TransactionDBKey).(*gorm.DB); exists {
-		return tx
-	}
-	return r.db.WithContext(ctx)
-}
 
 // FindByModuleProvider retrieves module versions for a specific module provider
 func (r *ModuleVersionRepositoryImpl) FindByModuleProvider(ctx context.Context, moduleProviderID int, includeBeta, includeUnpublished bool) ([]*model.ModuleVersion, error) {
 	var moduleVersionDBs []sqldb.ModuleVersionDB
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 	query := db.Where("module_provider_id = ?", moduleProviderID)
 
 	// Apply filters based on parameters
@@ -97,7 +89,7 @@ func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *m
 		Msg("ModuleVersion Save: After mapping to persistence model")
 
 	// Get the database instance from context (participate in existing transaction) or use default
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	// CRITICAL FIX: Always use Create() when ID is 0, regardless of whether a record exists
 	// This follows Python's delete-then-create pattern exactly
@@ -125,7 +117,7 @@ func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *m
 // FindByID retrieves a module version by ID
 func (r *ModuleVersionRepositoryImpl) FindByID(ctx context.Context, id int) (*model.ModuleVersion, error) {
 	var dbVersion sqldb.ModuleVersionDB
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 	err := db.First(&dbVersion, id).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -140,7 +132,7 @@ func (r *ModuleVersionRepositoryImpl) FindByID(ctx context.Context, id int) (*mo
 // FindByModuleProviderAndVersion retrieves a specific module version
 func (r *ModuleVersionRepositoryImpl) FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version string) (*model.ModuleVersion, error) {
 	var dbVersion sqldb.ModuleVersionDB
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Where("module_provider_id = ? AND version = ?", moduleProviderID, version).
 		First(&dbVersion).Error
 
@@ -156,13 +148,13 @@ func (r *ModuleVersionRepositoryImpl) FindByModuleProviderAndVersion(ctx context
 
 // Delete removes a module version
 func (r *ModuleVersionRepositoryImpl) Delete(ctx context.Context, id int) error {
-	return r.db.WithContext(ctx).Delete(&sqldb.ModuleVersionDB{}, id).Error
+	return r.GetDBFromContext(ctx).Delete(&sqldb.ModuleVersionDB{}, id).Error
 }
 
 // Exists checks if a module version exists
 func (r *ModuleVersionRepositoryImpl) Exists(ctx context.Context, moduleProviderID int, version string) (bool, error) {
 	var count int64
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Model(&sqldb.ModuleVersionDB{}).
 		Where("module_provider_id = ? AND version = ?", moduleProviderID, version).
 		Count(&count).Error
@@ -182,7 +174,7 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 	var details *model.ModuleDetails
 	if dbVersion.ModuleDetailsID != nil {
 		var detailsDB sqldb.ModuleDetailsDB
-		err := r.db.First(&detailsDB, *dbVersion.ModuleDetailsID).Error
+		err := r.GetDB().First(&detailsDB, *dbVersion.ModuleDetailsID).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("failed to load module details: %w", err)
 		}
@@ -205,7 +197,7 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 	if dbVersion.ModuleProviderID > 0 {
 		// Load the module provider and its namespace to restore the relationship
 		var moduleProviderDB sqldb.ModuleProviderDB
-		err := r.db.Preload("Namespace").First(&moduleProviderDB, dbVersion.ModuleProviderID).Error
+		err := r.GetDB().Preload("Namespace").First(&moduleProviderDB, dbVersion.ModuleProviderID).Error
 		if err == nil {
 			// Convert namespace database model to domain model
 			namespace := fromDBNamespace(&moduleProviderDB.Namespace)
@@ -233,7 +225,7 @@ func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(ctx context.Context,
 	var existingDetailsID *int
 	if moduleVersion.ID() > 0 {
 		var existingDBVersion sqldb.ModuleVersionDB
-		db := r.getDBFromContext(ctx)
+		db := r.GetDBFromContext(ctx)
 		if err := db.First(&existingDBVersion, moduleVersion.ID()).Error; err == nil {
 			existingDetailsID = existingDBVersion.ModuleDetailsID
 		}
@@ -258,7 +250,7 @@ func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(ctx context.Context,
 
 // UpdateModuleDetailsID updates the module details ID for a module version
 func (r *ModuleVersionRepositoryImpl) UpdateModuleDetailsID(ctx context.Context, moduleVersionID int, moduleDetailsID int) error {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	// CRITICAL DEBUG: Log before update
 	logger := zerolog.Ctx(ctx)

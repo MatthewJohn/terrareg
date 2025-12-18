@@ -15,12 +15,12 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/git"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
+	baserepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/repository"
 )
 
 // ModuleProviderRepositoryImpl implements ModuleProviderRepository using GORM
 type ModuleProviderRepositoryImpl struct {
-	db              *gorm.DB
+	*baserepo.BaseRepository
 	namespaceRepo   repository.NamespaceRepository
 	domainConfig    *configModel.DomainConfig
 	submoduleLoader *SubmoduleLoader
@@ -29,20 +29,11 @@ type ModuleProviderRepositoryImpl struct {
 // NewModuleProviderRepository creates a new module provider repository
 func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, domainConfig *configModel.DomainConfig) repository.ModuleProviderRepository {
 	return &ModuleProviderRepositoryImpl{
-		db:              db,
-		namespaceRepo:   namespaceRepo,
-		domainConfig:    domainConfig,
+		BaseRepository: baserepo.NewBaseRepository(db),
+		namespaceRepo:  namespaceRepo,
+		domainConfig:   domainConfig,
 		submoduleLoader: NewSubmoduleLoader(db),
 	}
-}
-
-// getDBFromContext returns the database instance from context or the default db
-// This allows repositories to participate in transactions created by the service layer
-func (r *ModuleProviderRepositoryImpl) getDBFromContext(ctx context.Context) *gorm.DB {
-	if tx, exists := ctx.Value(transaction.TransactionDBKey).(*gorm.DB); exists {
-		return tx
-	}
-	return r.db.WithContext(ctx)
 }
 
 // Save persists a module provider (aggregate root)
@@ -50,7 +41,7 @@ func (r *ModuleProviderRepositoryImpl) getDBFromContext(ctx context.Context) *go
 // created by the service layer
 func (r *ModuleProviderRepositoryImpl) Save(ctx context.Context, mp *model.ModuleProvider) error {
 	// Get the database instance from context (participate in existing transaction) or use default
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	dbModel := toDBModuleProvider(mp)
 
@@ -124,7 +115,7 @@ func (r *ModuleProviderRepositoryImpl) saveVersion(tx *gorm.DB, version *model.M
 func (r *ModuleProviderRepositoryImpl) FindByID(ctx context.Context, id int) (*model.ModuleProvider, error) {
 	var dbModel sqldb.ModuleProviderDB
 
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Preload("Namespace").
 		Preload("GitProvider").
 		First(&dbModel, id).Error
@@ -143,7 +134,7 @@ func (r *ModuleProviderRepositoryImpl) FindByID(ctx context.Context, id int) (*m
 func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context.Context, namespace, module, provider string) (*model.ModuleProvider, error) {
 	var dbModel sqldb.ModuleProviderDB
 
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
 		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", namespace, module, provider).
 		Preload("Namespace").
@@ -164,7 +155,7 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context
 func (r *ModuleProviderRepositoryImpl) FindByNamespace(ctx context.Context, namespace string) ([]*model.ModuleProvider, error) {
 	var dbModels []sqldb.ModuleProviderDB
 
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
 		Where("namespace.namespace = ?", namespace).
 		Preload("Namespace").
@@ -375,13 +366,13 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 		Total int64 `json:"total"`
 	}
 	countArgs := append(append([]interface{}{}, args...), whereArgs...)
-	if err := r.db.WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
+	if err := r.GetDBFromContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
 		return nil, fmt.Errorf("failed to count module providers: %w", err)
 	}
 
 	// Execute main query
 	var results []sqldb.ModuleProviderSearchResult
-	if err := r.db.WithContext(ctx).Raw(sql, finalArgs...).Scan(&results).Error; err != nil {
+	if err := r.GetDBFromContext(ctx).Raw(sql, finalArgs...).Scan(&results).Error; err != nil {
 		return nil, fmt.Errorf("failed to search module providers: %w", err)
 	}
 
@@ -438,7 +429,7 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 
 // Delete removes a module provider
 func (r *ModuleProviderRepositoryImpl) Delete(ctx context.Context, id int) error {
-	result := r.db.WithContext(ctx).Delete(&sqldb.ModuleProviderDB{}, id)
+	result := r.GetDBFromContext(ctx).Delete(&sqldb.ModuleProviderDB{}, id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete module provider: %w", result.Error)
 	}
@@ -453,7 +444,7 @@ func (r *ModuleProviderRepositoryImpl) Delete(ctx context.Context, id int) error
 // Exists checks if a module provider exists
 func (r *ModuleProviderRepositoryImpl) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
 	var count int64
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Model(&sqldb.ModuleProviderDB{}).
 		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
 		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", namespace, module, provider).
@@ -492,7 +483,7 @@ func (r *ModuleProviderRepositoryImpl) toDomain(ctx context.Context, db *sqldb.M
 func (r *ModuleProviderRepositoryImpl) loadVersions(ctx context.Context, moduleProviderID int) ([]*model.ModuleVersion, error) {
 	var dbVersions []sqldb.ModuleVersionDB
 
-	err := r.db.WithContext(ctx).
+	err := r.GetDBFromContext(ctx).
 		Where("module_provider_id = ?", moduleProviderID).
 		Preload("ModuleDetails").
 		Order("version DESC").
