@@ -44,7 +44,8 @@ func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req module.Imp
 		req.GitTag,
 	)
 
-	// Create comprehensive import request with all processing options
+	// Create import request with processing options
+	// NOTE: Publishing is handled by the domain layer based on reindex mode configuration
 	importReq := ModuleImportRequest{
 		ImportModuleVersionRequest: req,
 		ProcessingOptions: moduleService.ProcessingOptions{
@@ -57,7 +58,7 @@ func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req module.Imp
 			SecurityScanEnabled:     true,
 			FileProcessingEnabled:   true,
 			GenerateArchives:        true,
-			PublishModule:           true,
+			PublishModule:           false, // Publishing handled by domain logic based on reindex mode
 			ArchiveFormats: []moduleService.ArchiveFormat{
 				moduleService.ArchiveFormatZIP,
 				moduleService.ArchiveFormatTarGz,
