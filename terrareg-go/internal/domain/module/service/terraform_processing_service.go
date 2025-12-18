@@ -418,7 +418,7 @@ func (s *TerraformExecutorService) RunTerraformWithCallback(
 		Msg("Acquiring global terraform lock for entire operation")
 
 	// Try to acquire global lock with timeout
-	lockTimeout := 60 * time.Second // Default timeout
+	lockTimeout := s.lockTimeout
 	lockAcquired := make(chan bool, 1)
 	go func() {
 		terraformGlobalLock.Lock()
@@ -545,7 +545,7 @@ func (s *TerraformExecutorService) SwitchTerraformVersions(
 	// Try to acquire global lock with timeout
 	lockTimeout := timeout
 	if lockTimeout == 0 {
-		lockTimeout = 60 * time.Second // Default 60 second timeout matching Python
+		lockTimeout = s.lockTimeout // Use service's configured timeout as default
 	}
 
 	// Use a channel to handle lock acquisition with timeout
