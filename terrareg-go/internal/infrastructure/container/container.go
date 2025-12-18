@@ -92,6 +92,8 @@ type Container struct {
 	ModuleVersionFileRepo             moduleModel.ModuleVersionFileRepository
 	ModuleProviderRedirectRepo        *modulePersistence.ModuleProviderRedirectRepositoryImpl
 	ModuleDetailsRepo                 moduleRepo.ModuleDetailsRepository
+	SubmoduleRepo                     moduleRepo.SubmoduleRepository
+	ExampleFileRepo                   moduleRepo.ExampleFileRepository
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
 	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
@@ -317,6 +319,8 @@ func NewContainer(
 	c.ModuleVersionFileRepo = modulePersistence.NewModuleVersionFileRepository(db.DB)
 	c.ModuleProviderRedirectRepo = modulePersistence.NewModuleProviderRedirectRepository(db.DB)
 	c.ModuleDetailsRepo = modulePersistence.NewModuleDetailsRepository(db.DB)
+	c.SubmoduleRepo = modulePersistence.NewSubmoduleRepository(db.DB)
+	c.ExampleFileRepo = modulePersistence.NewExampleFileRepository(db.DB)
 	c.ProviderRepo = sqldbprovider.NewProviderRepository(db.DB)
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
@@ -390,6 +394,8 @@ func NewContainer(
 		c.ModuleParser,
 		c.ModuleDetailsRepo,
 		c.ModuleVersionRepo,
+		c.SubmoduleRepo,
+		c.ExampleFileRepo,
 		logger,
 	)
 
