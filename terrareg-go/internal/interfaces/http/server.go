@@ -245,6 +245,7 @@ func (s *Server) setupRoutes() {
 				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
 			).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
 			r.With(
+				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
 				s.authMiddleware.RequireAuth,
 			).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
 			r.With(
@@ -443,11 +444,18 @@ func (s *Server) startHTTP(addr string) error {
 		fallthrough
 	default:
 		// Default built-in server
+		// Use a longer timeout than standard requests to accommodate module processing
+		// The StandardRequestTimeoutSeconds is for regular requests, but server-level timeout
+		// should be longer to allow route-level timeouts to work properly
+		serverTimeout := max(
+			s.infraConfig.StandardRequestTimeoutSeconds,
+			300, // 5 minutes minimum to accommodate route-level timeouts
+		)
 		server := &http.Server{
 			Addr:         addr,
 			Handler:      s.router,
-			ReadTimeout:  60 * time.Second,
-			WriteTimeout: 60 * time.Second,
+			ReadTimeout:  time.Duration(serverTimeout) * time.Second,
+			WriteTimeout: time.Duration(serverTimeout) * time.Second,
 			IdleTimeout:  120 * time.Second,
 		}
 
@@ -471,12 +479,19 @@ func (s *Server) startHTTPS(addr string) error {
 	}
 
 	// Create HTTPS server
+	// Use a longer timeout than standard requests to accommodate module processing
+	// The StandardRequestTimeoutSeconds is for regular requests, but server-level timeout
+	// should be longer to allow route-level timeouts to work properly
+	serverTimeout := max(
+		s.infraConfig.StandardRequestTimeoutSeconds,
+		300, // 5 minutes minimum to accommodate route-level timeouts
+	)
 	server := &http.Server{
 		Addr:         addr,
 		Handler:      s.router,
 		TLSConfig:    tlsConfig,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		ReadTimeout:  time.Duration(serverTimeout) * time.Second,
+		WriteTimeout: time.Duration(serverTimeout) * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
