@@ -31,7 +31,7 @@ func NewLogger(logger zerolog.Logger) func(next http.Handler) http.Handler {
 					Msg("HTTP request")
 			}()
 
-			next.ServeHTTP(ww, r)
+			next.ServeHTTP(ww, r.WithContext(logger.WithContext(r.Context())))
 		})
 	}
 }
