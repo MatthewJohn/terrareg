@@ -122,195 +122,260 @@ func NewTerraformExecutorService(
 }
 
 // ProcessTerraformWithTransaction processes terraform operations with transaction context
+// Following Python pattern: execute terraform init once, then collect all results
 func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 	ctx context.Context,
 	req TerraformProcessingRequest,
 ) (*TerraformProcessingResult, error) {
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Int("module_version_id", req.ModuleVersionID).
+		Str("module_path", req.ModulePath).
+		Msg("ProcessTerraformWithTransaction started")
+
 	startTime := time.Now()
 	result := &TerraformProcessingResult{
 		OverallSuccess: false,
 		Duration:       0,
 	}
 
-
 	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
-		// Execute terraform pipeline with rollback capability
-		return s.ExecuteTerraformPipeline(ctx, req.ModulePath, req.Operations)
+		logger.Debug().
+			Int("module_version_id", req.ModuleVersionID).
+			Str("module_path", req.ModulePath).
+			Msg("Transaction started, ensuring terraform is installed")
+
+		// Ensure terraform is installed using tfswitch before processing
+		if err := s.ensureTerraformInstalled(ctx, req.ModulePath); err != nil {
+			return fmt.Errorf("failed to ensure terraform is installed: %w", err)
+		}
+
+		logger.Debug().
+			Int("module_version_id", req.ModuleVersionID).
+			Str("module_path", req.ModulePath).
+			Msg("Terraform installation verified, executing terraform operations")
+
+		// Execute terraform init first (required for other operations)
+		initResult := s.executeTerraformInit(ctx, req.ModulePath)
+		result.InitResult = initResult
+		if !initResult.Success {
+			return fmt.Errorf("terraform init failed: %s", *initResult.Error)
+		}
+
+		logger.Debug().
+			Str("module_path", req.ModulePath).
+			Msg("Terraform init completed successfully, collecting other results")
+
+		// Collect results from other operations (following Python pattern)
+		result.GraphResult = s.executeTerraformGraph(ctx, req.ModulePath)
+		result.VersionResult = s.executeTerraformVersion(ctx, req.ModulePath)
+		result.ModulesResult = s.executeTerraformModules(ctx, req.ModulePath)
+
+		result.OverallSuccess = true
+		return nil
 	})
 
 	result.Duration = time.Since(startTime)
 
 	if err != nil {
-		failedStep := s.getFailedStep(err)
-		result.FailedStep = failedStep
-
-		// Add detailed error information from individual results
-		if result.InitResult != nil && !result.InitResult.Success && result.InitResult.Error != nil {
-			result.FailedStep = fmt.Sprintf("terraform_init failed: %s", *result.InitResult.Error)
-		} else if result.GraphResult != nil && !result.GraphResult.Success && result.GraphResult.Error != nil {
-			result.FailedStep = fmt.Sprintf("terraform_graph failed: %s", *result.GraphResult.Error)
-		} else if result.VersionResult != nil && !result.VersionResult.Success && result.VersionResult.Error != nil {
-			result.FailedStep = fmt.Sprintf("terraform_version failed: %s", *result.VersionResult.Error)
-		} else if result.ModulesResult != nil && !result.ModulesResult.Success && result.ModulesResult.Error != nil {
-			result.FailedStep = fmt.Sprintf("terraform_modules failed: %s", *result.ModulesResult.Error)
-		}
-
+		result.FailedStep = s.getFailedStep(err)
+		result.OverallSuccess = false
 		return result, nil
 	}
-
-	// Execute individual operations to get detailed results
-	result.OverallSuccess = true
-	result.InitResult = s.getInitResult(ctx, req.ModulePath)
-	result.GraphResult = s.getGraphResult(ctx, req.ModulePath)
-	result.VersionResult = s.getVersionResult(ctx, req.ModulePath)
-	result.ModulesResult = s.getModulesResult(ctx, req.ModulePath)
 
 	return result, nil
 }
 
-// ExecuteTerraformPipeline executes multiple terraform operations as a pipeline
-func (s *TerraformExecutorService) ExecuteTerraformPipeline(
-	ctx context.Context,
-	modulePath string,
-	operations []TerraformOperation,
-) error {
-	logger := zerolog.Ctx(ctx)
 
-	logger.Debug().
-		Str("module_path", modulePath).
-		Int("operations_count", len(operations)).
-		Msg("Starting terraform pipeline execution")
-
-	for i, op := range operations {
-		commandStr := strings.Join(op.Command, " ")
-		logger.Debug().
-			Int("operation_index", i).
-			Str("command", commandStr).
-			Str("description", op.Description).
-			Str("working_dir", op.WorkingDir).
-			Msg("About to execute terraform operation")
-
-		if err := s.executeOperation(ctx, op); err != nil {
-			logger.Error().
-				Int("operation_index", i).
-				Str("command", commandStr).
-				Str("description", op.Description).
-				Err(err).
-				Msg("Terraform operation failed in pipeline")
-
-			return fmt.Errorf("terraform operation %d (%s) failed: %w", i, op.Description, err)
-		}
-
-		logger.Info().
-			Int("operation_index", i).
-			Str("command", commandStr).
-			Str("description", op.Description).
-			Msg("Terraform operation completed successfully")
-	}
-
-	logger.Debug().
-		Str("module_path", modulePath).
-		Msg("All terraform pipeline operations completed successfully")
-
-	return nil
-}
-
-// executeOperation executes a single terraform operation
-func (s *TerraformExecutorService) executeOperation(ctx context.Context, op TerraformOperation) error {
-	logger := zerolog.Ctx(ctx)
-
-	commandStr := strings.Join(op.Command, " ")
-	logger.Debug().
-		Str("module_path", op.WorkingDir).
-		Str("command", commandStr).
-		Str("description", op.Description).
-		Msg("Executing terraform operation")
-
-	// Check if terraform binary exists
-	if s.terraformBin == "" {
-		err := fmt.Errorf("terraform binary path is empty")
-		logger.Error().
-			Str("module_path", op.WorkingDir).
-			Str("command", commandStr).
-			Err(err).
-			Msg("Terraform binary path is empty")
-		return err
-	}
-
-	// Check if working directory exists
-	if _, err := os.Stat(op.WorkingDir); err != nil {
-		logger.Error().
-			Str("module_path", op.WorkingDir).
-			Str("command", commandStr).
-			Err(err).
-			Msg("Working directory does not exist or is not accessible")
-		return fmt.Errorf("working directory %s not accessible: %w", op.WorkingDir, err)
-	}
-
-	logger.Debug().
-		Str("module_path", op.WorkingDir).
-		Str("command", commandStr).
-		Msg("Creating terraform command")
-
-	cmd := exec.CommandContext(ctx, op.Command[0], op.Command[1:]...)
-	cmd.Dir = op.WorkingDir
-
-	// Set environment variables
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "TF_IN_AUTOMATION=true")
-
-	logger.Debug().
-		Str("module_path", op.WorkingDir).
-		Str("command", commandStr).
-		Msg("Executing terraform command")
-
+// executeTerraformInit executes terraform init and returns result
+// Following Python's _run_tf_init pattern
+func (s *TerraformExecutorService) executeTerraformInit(ctx context.Context, modulePath string) *TerraformInitResult {
 	startTime := time.Now()
-	output, err := cmd.CombinedOutput()
-	duration := time.Since(startTime)
-
-	outputStr := string(output)
-
-	logger.Debug().
-		Str("module_path", op.WorkingDir).
-		Str("command", commandStr).
-		Str("description", op.Description).
-		Dur("duration_ms", duration).
-		Int("output_length", len(outputStr)).
-		Bool("has_error", err != nil).
-		Msg("Terraform operation completed")
-
-	// Log the full terraform output at debug level
-	if outputStr != "" {
-		logger.Debug().
-			Str("module_path", op.WorkingDir).
-			Str("command", commandStr).
-			Str("terraform_output", outputStr).
-			Msg("Terraform operation output")
+	result := &TerraformInitResult{
+		Success: false,
 	}
+
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Msg("Executing terraform init")
+
+	// Override terraform backend if detected (matching Python)
+	overrideFilename, err := s.OverrideTerraformBackend(modulePath)
+	if err != nil {
+		errorMsg := fmt.Sprintf("backend override failed: %v", err)
+		result.Error = &errorMsg
+		return result
+	}
+	if overrideFilename != nil {
+		result.BackendOverride = overrideFilename
+	}
+
+	// Execute terraform init with global lock and version switching
+	err = s.RunTerraformWithLock(ctx, modulePath, []string{"init", "-input=false", "-no-color"}, 60*time.Second)
+	result.Duration = time.Since(startTime)
 
 	if err != nil {
-		logger.Error().
-			Str("module_path", op.WorkingDir).
-			Str("command", commandStr).
-			Str("description", op.Description).
-			Err(err).
-			Dur("duration", duration).
-			Str("error_type", s.classifyInitError(err, outputStr)).
-			Str("output_preview", s.getOutputPreview(outputStr)).
-			Str("terraform_output", outputStr).
-			Msg("Terraform operation failed")
+		errorMsg := fmt.Sprintf("terraform init failed: %v", err)
+		result.Error = &errorMsg
 
-		return fmt.Errorf("terraform %s failed: %s\nOutput: %s", op.Description, err, outputStr)
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Dur("duration", result.Duration).
+			Msg("Terraform init failed")
+
+		return result
 	}
 
-	logger.Info().
-		Str("module_path", op.WorkingDir).
-		Str("command", commandStr).
-		Str("description", op.Description).
-		Dur("duration", duration).
-		Msg("Terraform operation completed successfully")
+	result.Success = true
+	result.Output = "Terraform initialization completed successfully"
+	result.HasChanges = true // Assume changes were made during init
 
-	return nil
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Bool("backend_override", overrideFilename != nil).
+		Msg("Terraform init completed successfully")
+
+	return result
+}
+
+// executeTerraformGraph executes terraform graph and returns result
+// Following Python's _get_graph_data pattern
+func (s *TerraformExecutorService) executeTerraformGraph(ctx context.Context, modulePath string) *TerraformGraphResult {
+	startTime := time.Now()
+	result := &TerraformGraphResult{
+		Success: false,
+	}
+
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Msg("Executing terraform graph")
+
+	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), "graph")
+	cmd.Dir = modulePath
+	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
+
+	output, err := cmd.CombinedOutput()
+	result.Duration = time.Since(startTime)
+	outputStr := string(output)
+
+	if err != nil {
+		errorMsg := fmt.Sprintf("terraform graph failed: %v", err)
+		result.Error = &errorMsg
+
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Dur("duration", result.Duration).
+			Str("output_preview", s.getOutputPreview(outputStr)).
+			Msg("Terraform graph failed")
+
+		return result
+	}
+
+	result.Success = true
+	result.GraphData = outputStr
+
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Int("graph_data_length", len(outputStr)).
+		Msg("Terraform graph completed successfully")
+
+	return result
+}
+
+// executeTerraformVersion executes terraform version and returns result
+// Following Python's _get_terraform_version pattern
+func (s *TerraformExecutorService) executeTerraformVersion(ctx context.Context, modulePath string) *TerraformVersionResult {
+	startTime := time.Now()
+	result := &TerraformVersionResult{
+		Success: false,
+	}
+
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Msg("Executing terraform version")
+
+	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), "version", "-json")
+	cmd.Dir = modulePath
+
+	output, err := cmd.CombinedOutput()
+	result.Duration = time.Since(startTime)
+	outputStr := string(output)
+
+	if err != nil {
+		errorMsg := fmt.Sprintf("terraform version failed: %v", err)
+		result.Error = &errorMsg
+
+		logger.Error().
+			Str("module_path", modulePath).
+			Err(err).
+			Dur("duration", result.Duration).
+			Str("output_preview", s.getOutputPreview(outputStr)).
+			Msg("Terraform version failed")
+
+		return result
+	}
+
+	result.Success = true
+	result.Output = outputStr
+
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Msg("Terraform version completed successfully")
+
+	return result
+}
+
+// executeTerraformModules parses terraform modules and returns result
+// Following Python's _get_terraform_modules pattern
+func (s *TerraformExecutorService) executeTerraformModules(ctx context.Context, modulePath string) *TerraformModulesResult {
+	startTime := time.Now()
+	result := &TerraformModulesResult{
+		Success: false,
+	}
+
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Msg("Reading terraform modules")
+
+	modulesPath := filepath.Join(modulePath, ".terraform", "modules", "modules.json")
+	output, err := os.ReadFile(modulesPath)
+	result.Duration = time.Since(startTime)
+
+	if err != nil {
+		errorMsg := fmt.Sprintf("failed to read terraform modules.json: %v", err)
+		result.Error = &errorMsg
+
+		logger.Warn().
+			Str("module_path", modulePath).
+			Str("modules_path", modulesPath).
+			Err(err).
+			Msg("Terraform modules file not found - may not be a terraform module")
+
+		// Don't treat this as an error - some modules may not have dependencies
+		result.Success = true
+		result.Modules = "{}"
+		return result
+	}
+
+	result.Success = true
+	result.Modules = string(output)
+
+	logger.Info().
+		Str("module_path", modulePath).
+		Dur("duration", result.Duration).
+		Int("modules_data_length", len(output)).
+		Msg("Terraform modules read successfully")
+
+	return result
 }
 
 // getInitResult executes terraform init and returns detailed result
@@ -782,6 +847,107 @@ func (s *TerraformExecutorService) extractTerraformErrorDetails(command, errorMs
 func contains(s, substr string) bool {
 	return len(s) > 0 && (len(substr) == 0 || (s[0:len(substr)] == substr ||
 		(len(s) > len(substr) && s[len(s)-len(substr):len(s)] == substr)))
+}
+
+// ensureTerraformInstalled ensures terraform is installed using tfswitch with global locking
+func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context, modulePath string) error {
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("module_path", modulePath).
+		Str("default_version", s.tfswitchConfig.DefaultTerraformVersion).
+		Msg("Ensuring terraform is installed using tfswitch")
+
+	// Check if terraform binary already exists
+	terraformPath := s.TerraformBinaryPath()
+	if _, err := exec.LookPath(terraformPath); err == nil {
+		logger.Debug().
+			Str("terraform_path", terraformPath).
+			Msg("Terraform binary already exists")
+		return nil
+	}
+
+	// Use global lock to ensure only one tfswitch operation runs at a time
+	logger.Debug().Msg("Acquiring global terraform lock for tfswitch")
+
+	lockAcquired := make(chan bool, 1)
+	go func() {
+		terraformGlobalLock.Lock()
+		lockAcquired <- true
+	}()
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("context cancelled while waiting for terraform lock: %w", ctx.Err())
+	case <-time.After(60 * time.Second):
+		return fmt.Errorf("unable to obtain global terraform lock in 60 seconds")
+	case <-lockAcquired:
+		logger.Debug().Msg("Global terraform lock acquired")
+	}
+
+	defer func() {
+		terraformGlobalLock.Unlock()
+		logger.Debug().Msg("Global terraform lock released")
+	}()
+
+	// Double-check after acquiring lock (another process might have installed it)
+	if _, err := exec.LookPath(terraformPath); err == nil {
+		logger.Debug().
+			Str("terraform_path", terraformPath).
+			Msg("Terraform binary was installed by another process")
+		return nil
+	}
+
+	// Prepare environment variables for tfswitch
+	tfswitchEnv := os.Environ()
+	if s.tfswitchConfig.DefaultTerraformVersion != "" {
+		tfswitchEnv = append(tfswitchEnv, fmt.Sprintf("TF_DEFAULT_VERSION=%s", s.tfswitchConfig.DefaultTerraformVersion))
+	}
+	if s.tfswitchConfig.TerraformProduct != "" {
+		tfswitchEnv = append(tfswitchEnv, fmt.Sprintf("TF_PRODUCT=%s", s.tfswitchConfig.TerraformProduct))
+	}
+	if s.tfswitchConfig.ArchiveMirror != "" {
+		tfswitchEnv = append(tfswitchEnv, fmt.Sprintf("TERRAFORM_ARCHIVE_MIRROR=%s", s.tfswitchConfig.ArchiveMirror))
+	}
+
+	// Prepare tfswitch command arguments
+	var tfswitchArgs []string
+	if s.tfswitchConfig.DefaultTerraformVersion != "" {
+		tfswitchArgs = append(tfswitchArgs, s.tfswitchConfig.DefaultTerraformVersion)
+	}
+	if s.tfswitchConfig.BinaryPath != "" {
+		tfswitchArgs = append(tfswitchArgs, "--bin", s.tfswitchConfig.BinaryPath)
+	}
+
+	// Create tfswitch command
+	cmd := exec.CommandContext(ctx, "tfswitch", tfswitchArgs...)
+	cmd.Dir = modulePath
+	cmd.Env = tfswitchEnv
+
+	logger.Debug().
+		Str("command", "tfswitch "+strings.Join(tfswitchArgs, " ")).
+		Str("working_dir", modulePath).
+		Msg("Executing tfswitch to install terraform")
+
+	// Execute tfswitch
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Error().
+			Err(err).
+			Str("tfswitch_output", string(output)).
+			Msg("Tfswitch failed to install terraform")
+		return fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, string(output))
+	}
+
+	logger.Info().
+		Str("tfswitch_output", string(output)).
+		Msg("Terraform successfully installed via tfswitch")
+
+	// Verify terraform is now available
+	if _, err := exec.LookPath(terraformPath); err != nil {
+		return fmt.Errorf("terraform installation verification failed: %w", err)
+	}
+
+	return nil
 }
 
 // SwitchTerraformVersions switches terraform versions using tfswitch with global locking

@@ -362,6 +362,12 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 		{Type: "graph", Command: []string{"graph", "-no-color"}, WorkingDir: req.ModulePath, Description: "Generate dependency graph"},
 	}
 
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Int("operations_count", len(operations)).
+		Str("module_path", req.ModulePath).
+		Msg("Creating terraform processing request")
+
 	terraformReq := TerraformProcessingRequest{
 		ModuleVersionID: moduleVersion.ID(),
 		ModulePath:      req.ModulePath,
@@ -369,8 +375,20 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 		Operations:      operations,
 	}
 
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("module_path", req.ModulePath).
+		Msg("About to call ProcessTerraformWithTransaction")
+
 	terraformResult, err := o.terraformService.ProcessTerraformWithTransaction(ctx, terraformReq)
 	phaseResult.Duration = time.Since(startTime)
+
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("module_path", req.ModulePath).
+		Dur("phase_duration", phaseResult.Duration).
+		Bool("has_error", err != nil).
+		Msg("ProcessTerraformWithTransaction completed")
 
 	if err != nil {
 		errorMsg := err.Error()
