@@ -389,7 +389,9 @@ func NewContainer(
 	// Initialize module creation wrapper for atomic module creation
 	moduleCreationWrapper := moduleService.NewModuleCreationWrapperService(
 		c.ModuleVersionRepo,
+		c.ModuleProviderRepo,
 		savepointHelper,
+		domainConfig,
 	)
 	c.ModuleCreationWrapper = moduleCreationWrapper
 
