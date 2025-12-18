@@ -147,6 +147,19 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 			return fmt.Errorf("failed to add version to module provider: %w", err)
 		}
 
+		// Debug: Verify the module provider relationship was established
+		logger := zerolog.Ctx(ctx)
+		logger.Debug().
+			Int("module_provider_id", moduleProvider.ID()).
+			Int("module_version_id_before_save", moduleVersion.ID()).
+			Str("module_version_module_provider", func() string {
+				if moduleVersion.ModuleProvider() != nil {
+					return fmt.Sprintf("id=%d", moduleVersion.ModuleProvider().ID())
+				}
+				return "nil"
+			}()).
+			Msg("Module provider relationship check before save")
+
 		// Save the module version - this creates the database row with proper module_provider_id
 		savedModuleVersion, err := s.moduleVersionRepo.Save(ctx, moduleVersion)
 		if err != nil {

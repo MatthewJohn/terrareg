@@ -200,3 +200,4 @@ func fromDBModuleDetails(db *sqldb.ModuleDetailsDB) *model.ModuleDetails {
 		terraformVersion,
 	)
 }
+
