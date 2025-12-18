@@ -147,18 +147,31 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 
 	// Use the smart transaction wrapper that properly handles nested transactions
 	err := o.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
+		// Find the module provider to get its ID for proper module version creation
+		moduleProvider, err := o.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, req.Namespace, req.ModuleName, req.Provider)
+		if err != nil {
+			return fmt.Errorf("failed to find module provider %s/%s/%s: %w", req.Namespace, req.ModuleName, req.Provider, err)
+		}
+		if moduleProvider == nil {
+			return fmt.Errorf("module provider not found: %s/%s/%s", req.Namespace, req.ModuleName, req.Provider)
+		}
+
+		// Create a variable for the module provider ID to get a pointer
+		moduleProviderID := moduleProvider.ID()
+
 		// Use module creation wrapper for atomic module creation and publishing
 		prepareReq := PrepareModuleRequest{
-			Namespace:    req.Namespace,
-			ModuleName:   req.ModuleName,
-			Provider:     req.Provider,
-			Version:      req.Version,
-			GitTag:       req.GitTag,
-			SourceGitTag: req.GitTag,
+			Namespace:        req.Namespace,
+			ModuleName:       req.ModuleName,
+			Provider:         req.Provider,
+			Version:          req.Version,
+			GitTag:           req.GitTag,
+			SourceGitTag:     req.GitTag,
+			ModuleProviderID: &moduleProviderID,
 		}
 
 		// Execute within the transaction context
-		err := o.moduleCreationWrapper.WithModuleCreationWrapper(ctx, prepareReq,
+		err = o.moduleCreationWrapper.WithModuleCreationWrapper(ctx, prepareReq,
 			func(ctx context.Context, moduleVersion *model.ModuleVersion) error {
 				// Execute all processing phases
 				if err := o.executeProcessingPhases(ctx, req, moduleVersion, result); err != nil {

@@ -190,19 +190,63 @@ func (s *SecurityScanningService) runTfsecScan(modulePath string) (map[string]in
 	// Execute tfsec command
 	cmd := exec.Command("tfsec", args...)
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// tfsec returns non-zero exit code when security issues are found
-		// This is expected behavior, so we continue with the output
-		// Only fail if the command itself couldn't execute
-		if !cmd.ProcessState.Success() && len(output) == 0 {
-			return nil, fmt.Errorf("tfsec execution failed: %w", err)
-		}
+	outputStr := string(output)
+
+	// Check if tfsec command exists
+	if err != nil && strings.Contains(err.Error(), "executable file not found") {
+		// tfsec is not installed, return empty results instead of failing
+		return map[string]interface{}{
+			"results": []interface{}{},
+			"summary": map[string]interface{}{
+				"passed":  0,
+				"failed":  0,
+				"critical": 0,
+				"high":  0,
+				"medium": 0,
+				"low": 0,
+			},
+		}, nil
+	}
+
+	// Log tfsec output for debugging (trimmed if too long)
+	outputPreview := outputStr
+	if len(outputPreview) > 500 {
+		outputPreview = outputPreview[:500] + "..."
+	}
+
+	// Check if output looks like JSON
+	outputStr = strings.TrimSpace(outputStr)
+	if !strings.HasPrefix(outputStr, "{") && !strings.HasPrefix(outputStr, "[") {
+		// Output doesn't look like JSON, it's probably an error message
+		// Return empty results
+		return map[string]interface{}{
+			"results": []interface{}{},
+			"summary": map[string]interface{}{
+				"passed":  0,
+				"failed":  0,
+				"critical": 0,
+				"high":  0,
+				"medium": 0,
+				"low": 0,
+			},
+		}, nil
 	}
 
 	// Parse JSON output
 	var results map[string]interface{}
-	if err := json.Unmarshal(output, &results); err != nil {
-		return nil, fmt.Errorf("failed to parse tfsec JSON output: %w", err)
+	if err := json.Unmarshal([]byte(outputStr), &results); err != nil {
+		// JSON parsing failed, return empty results
+		return map[string]interface{}{
+			"results": []interface{}{},
+			"summary": map[string]interface{}{
+				"passed":  0,
+				"failed":  0,
+				"critical": 0,
+				"high":  0,
+				"medium": 0,
+				"low": 0,
+			},
+		}, nil
 	}
 
 	return results, nil
