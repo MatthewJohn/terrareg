@@ -214,37 +214,10 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model.ModuleVersion) (*sqldb.ModuleVersionDB, error) {
 	dbVersion := toDBModuleVersion(moduleVersion)
 
-	// Debug logging to understand what's being mapped
-	if moduleVersion.ID() == 0 {
-		fmt.Printf("DEBUG: Saving new module version:\n")
-		fmt.Printf("  - ModuleVersion.ID(): %d\n", moduleVersion.ID())
-		fmt.Printf("  - ModuleVersion.ModuleProvider(): %v\n", func() interface{} {
-			if moduleVersion.ModuleProvider() != nil {
-				return fmt.Sprintf("ID=%d", moduleVersion.ModuleProvider().ID())
-			}
-			return "nil"
-		}())
-		fmt.Printf("  - dbVersion.ModuleProviderID: %d\n", dbVersion.ModuleProviderID)
-		fmt.Printf("  - dbVersion.Version: %s\n", dbVersion.Version)
-	} else {
-		fmt.Printf("DEBUG: Updating existing module version ID=%d:\n", moduleVersion.ID())
-		fmt.Printf("  - ModuleVersion.ModuleProvider(): %v\n", func() interface{} {
-			if moduleVersion.ModuleProvider() != nil {
-				return fmt.Sprintf("ID=%d", moduleVersion.ModuleProvider().ID())
-			}
-			return "nil"
-		}())
-		fmt.Printf("  - dbVersion.ModuleProviderID: %d\n", dbVersion.ModuleProviderID)
-
-		// For existing records, if the domain model has lost the module provider relationship,
-		// preserve the original module_provider_id from the database
-		if dbVersion.ModuleProviderID == 0 {
-			fmt.Printf("  - WARNING: domain model lost module provider relationship, but preserving existing relationship\n")
-			// We can't reload the record safely in this context, so we'll use a different approach:
-			// Skip updating records that would corrupt the module_provider_id
-			fmt.Printf("  - Skipping update to prevent data corruption\n")
-			return nil, fmt.Errorf("cannot update module version %d: domain model has lost module provider relationship", moduleVersion.ID())
-		}
+	// For existing records, if the domain model has lost the module provider relationship,
+	// preserve the original module_provider_id from the database and skip update to prevent corruption
+	if moduleVersion.ID() > 0 && dbVersion.ModuleProviderID == 0 {
+		return nil, fmt.Errorf("cannot update module version %d: domain model has lost module provider relationship", moduleVersion.ID())
 	}
 
 	return &dbVersion, nil
