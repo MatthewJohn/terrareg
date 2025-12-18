@@ -9,33 +9,24 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
+	baserepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/repository"
 )
 
 // ModuleDetailsRepositoryImpl implements the ModuleDetailsRepository interface
 type ModuleDetailsRepositoryImpl struct {
-	db *gorm.DB
+	*baserepo.BaseRepository
 }
 
 // NewModuleDetailsRepository creates a new ModuleDetails repository implementation
 func NewModuleDetailsRepository(db *gorm.DB) repository.ModuleDetailsRepository {
 	return &ModuleDetailsRepositoryImpl{
-		db: db,
+		BaseRepository: baserepo.NewBaseRepository(db),
 	}
-}
-
-// getDBFromContext returns the database instance from context or the default db
-// This allows repositories to participate in transactions created by the service layer
-func (r *ModuleDetailsRepositoryImpl) getDBFromContext(ctx context.Context) *gorm.DB {
-	if tx, exists := ctx.Value(transaction.TransactionDBKey).(*gorm.DB); exists {
-		return tx
-	}
-	return r.db.WithContext(ctx)
 }
 
 // Save saves a new module details entity to the database
 func (r *ModuleDetailsRepositoryImpl) Save(ctx context.Context, details *model.ModuleDetails) (*model.ModuleDetails, error) {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	// Convert domain model to database model
 	dbDetails := &sqldb.ModuleDetailsDB{
@@ -59,7 +50,7 @@ func (r *ModuleDetailsRepositoryImpl) Save(ctx context.Context, details *model.M
 
 // FindByID retrieves a module details entity by its ID
 func (r *ModuleDetailsRepositoryImpl) FindByID(ctx context.Context, id int) (*model.ModuleDetails, error) {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	var dbDetails sqldb.ModuleDetailsDB
 	err := db.First(&dbDetails, id).Error
@@ -75,7 +66,7 @@ func (r *ModuleDetailsRepositoryImpl) FindByID(ctx context.Context, id int) (*mo
 
 // Update updates an existing module details entity
 func (r *ModuleDetailsRepositoryImpl) Update(ctx context.Context, id int, details *model.ModuleDetails) (*model.ModuleDetails, error) {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	// Convert domain model to database model
 	dbDetails := &sqldb.ModuleDetailsDB{
@@ -100,7 +91,7 @@ func (r *ModuleDetailsRepositoryImpl) Update(ctx context.Context, id int, detail
 
 // Delete removes a module details entity by its ID
 func (r *ModuleDetailsRepositoryImpl) Delete(ctx context.Context, id int) error {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	if err := db.Delete(&sqldb.ModuleDetailsDB{}, id).Error; err != nil {
 		return fmt.Errorf("failed to delete module details with ID %d: %w", id, err)
@@ -111,7 +102,7 @@ func (r *ModuleDetailsRepositoryImpl) Delete(ctx context.Context, id int) error 
 
 // FindByModuleVersionID retrieves module details associated with a specific module version
 func (r *ModuleDetailsRepositoryImpl) FindByModuleVersionID(ctx context.Context, moduleVersionID int) (*model.ModuleDetails, error) {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	var dbDetails sqldb.ModuleDetailsDB
 	err := db.
@@ -130,7 +121,7 @@ func (r *ModuleDetailsRepositoryImpl) FindByModuleVersionID(ctx context.Context,
 }
 // SaveAndReturnID saves a new module details entity and returns the database ID
 func (r *ModuleDetailsRepositoryImpl) SaveAndReturnID(ctx context.Context, details *model.ModuleDetails) (int, error) {
-	db := r.getDBFromContext(ctx)
+	db := r.GetDBFromContext(ctx)
 
 	// Convert domain model to database model
 	dbDetails := &sqldb.ModuleDetailsDB{
