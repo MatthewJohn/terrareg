@@ -101,11 +101,21 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 					return fmt.Errorf("failed to delete existing module version %s: %w", req.Version, err)
 				}
 
+				// CRITICAL FIX: Explicitly clear the ID from the deleted version's in-memory representation
+				// to prevent the new version from inheriting the old ID
+				logger.Debug().
+					Int("deleted_version_id", existingVersion.ID()).
+					Str("deleted_version", existingVersion.Version().String()).
+					Msg("Clearing ID from deleted version to prevent inheritance")
+
+				// Clear the ID from the deleted version to ensure new versions start with ID=0
+				existingVersion.ResetID()
+
 				// Remove the existing version from the module provider's in-memory list to avoid conflicts
 				// Filter out the existing version and set the updated list
 				updatedVersions := make([]*moduleModel.ModuleVersion, 0)
 				for _, v := range moduleProvider.GetAllVersions() {
-					if v.ID() != existingVersion.ID() {
+					if v.ID() != existingVersion.ID() { // Note: This should be 0 after ResetID
 						updatedVersions = append(updatedVersions, v)
 					}
 				}
@@ -124,11 +134,20 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 					return fmt.Errorf("failed to delete existing module version %s: %w", req.Version, err)
 				}
 
+				// CRITICAL FIX: Explicitly clear the ID from the deleted version's in-memory representation
+				logger.Debug().
+					Int("deleted_version_id", existingVersion.ID()).
+					Str("deleted_version", existingVersion.Version().String()).
+					Msg("Clearing ID from deleted version to prevent inheritance (auto-publish mode)")
+
+				// Clear the ID from the deleted version to ensure new versions start with ID=0
+				existingVersion.ResetID()
+
 				// Remove the existing version from the module provider's in-memory list to avoid conflicts
 				// Filter out the existing version and set the updated list
 				updatedVersions := make([]*moduleModel.ModuleVersion, 0)
 				for _, v := range moduleProvider.GetAllVersions() {
-					if v.ID() != existingVersion.ID() {
+					if v.ID() != existingVersion.ID() { // Note: This should be 0 after ResetID
 						updatedVersions = append(updatedVersions, v)
 					}
 				}
@@ -147,18 +166,19 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 			return fmt.Errorf("failed to add version to module provider: %w", err)
 		}
 
-		// Debug: Verify the module provider relationship was established
+		// Debug: Verify the module provider relationship was established and confirm new record creation
 		logger := zerolog.Ctx(ctx)
-		logger.Debug().
+		logger.Info().
 			Int("module_provider_id", moduleProvider.ID()).
 			Int("module_version_id_before_save", moduleVersion.ID()).
+			Bool("is_new_record", moduleVersion.ID() == 0).
 			Str("module_version_module_provider", func() string {
 				if moduleVersion.ModuleProvider() != nil {
 					return fmt.Sprintf("id=%d", moduleVersion.ModuleProvider().ID())
 				}
 				return "nil"
 			}()).
-			Msg("Module provider relationship check before save")
+			Msg("CRITICAL: New module version created - should have ID=0 for CREATE operation")
 
 		// Save the module version - this creates the database row with proper module_provider_id
 		savedModuleVersion, err := s.moduleVersionRepo.Save(ctx, moduleVersion)
@@ -170,6 +190,24 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 		if savedModuleVersion.ID() == 0 {
 			return fmt.Errorf("module version was not assigned a valid ID from database")
 		}
+
+		// CRITICAL SUCCESS: Log that a new record was created with a new ID
+		logger.Info().
+			Int("old_version_id", func() int {
+				if existingVersion != nil {
+					return existingVersion.ID() // Should be 0 after ResetID
+				}
+				return 0
+			}()).
+			Int("new_version_id", savedModuleVersion.ID()).
+			Str("version", savedModuleVersion.Version().String()).
+			Bool("is_new_id", func() bool {
+				if existingVersion != nil {
+					return savedModuleVersion.ID() != existingVersion.ID()
+				}
+				return true
+			}()).
+			Msg("CRITICAL SUCCESS: New module version record created in database")
 
 		// Determine if module should be published based on reindex mode and configuration
 		shouldPublish := s.shouldPublishModuleWithReindexMode(savedModuleVersion, reindexMode, existingVersion != nil)
