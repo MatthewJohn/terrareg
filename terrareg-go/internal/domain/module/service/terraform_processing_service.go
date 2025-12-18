@@ -375,21 +375,16 @@ func (s *TerraformExecutorService) executeTerraformModules(ctx context.Context, 
 }
 
 // ensureTerraformInstalled ensures terraform is installed using tfswitch with global locking
+// Always runs tfswitch to ensure correct version is being used (not just when missing)
 func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context, modulePath string) error {
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
 		Str("default_version", s.tfswitchConfig.DefaultTerraformVersion).
-		Msg("Ensuring terraform is installed using tfswitch")
+		Msg("Ensuring terraform version using tfswitch (always run to maintain version consistency)")
 
-	// Check if terraform binary already exists
+	// Get terraform binary path for verification
 	terraformPath := s.TerraformBinaryPath()
-	if _, err := exec.LookPath(terraformPath); err == nil {
-		logger.Debug().
-			Str("terraform_path", terraformPath).
-			Msg("Terraform binary already exists")
-		return nil
-	}
 
 	// Use global lock to ensure only one tfswitch operation runs at a time
 	logger.Debug().Msg("Acquiring global terraform lock for tfswitch")
@@ -414,13 +409,10 @@ func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context,
 		logger.Debug().Msg("Global terraform lock released")
 	}()
 
-	// Double-check after acquiring lock (another process might have installed it)
-	if _, err := exec.LookPath(terraformPath); err == nil {
-		logger.Debug().
-			Str("terraform_path", terraformPath).
-			Msg("Terraform binary was installed by another process")
-		return nil
-	}
+	// Always run tfswitch to ensure correct version is used
+	logger.Debug().
+		Str("terraform_path", terraformPath).
+		Msg("Running tfswitch to ensure correct terraform version")
 
 	// Prepare environment variables for tfswitch
 	tfswitchEnv := os.Environ()
