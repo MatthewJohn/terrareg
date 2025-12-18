@@ -93,24 +93,46 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 				logger.Debug().
 					Str("version", req.Version).
 					Str("reindex_mode", "legacy").
+					Int("existing_version_id", existingVersion.ID()).
 					Msg("Deleting existing module version for reindexing")
 
 				// Delete existing version (this will cascade delete related data)
 				if err := s.moduleVersionRepo.Delete(ctx, existingVersion.ID()); err != nil {
 					return fmt.Errorf("failed to delete existing module version %s: %w", req.Version, err)
 				}
+
+				// Remove the existing version from the module provider's in-memory list to avoid conflicts
+				// Filter out the existing version and set the updated list
+				updatedVersions := make([]*moduleModel.ModuleVersion, 0)
+				for _, v := range moduleProvider.GetAllVersions() {
+					if v.ID() != existingVersion.ID() {
+						updatedVersions = append(updatedVersions, v)
+					}
+				}
+				moduleProvider.SetVersions(updatedVersions)
 			case configModel.ModuleVersionReindexModeAutoPublish:
 				// In auto-publish mode, preserve published state
 				logger := zerolog.Ctx(ctx)
 				logger.Debug().
 					Str("version", req.Version).
 					Str("reindex_mode", "auto-publish").
+					Int("existing_version_id", existingVersion.ID()).
 					Msg("Deleting existing module version for reindexing (preserving published state)")
 
 				// Delete existing version (this will cascade delete related data)
 				if err := s.moduleVersionRepo.Delete(ctx, existingVersion.ID()); err != nil {
 					return fmt.Errorf("failed to delete existing module version %s: %w", req.Version, err)
 				}
+
+				// Remove the existing version from the module provider's in-memory list to avoid conflicts
+				// Filter out the existing version and set the updated list
+				updatedVersions := make([]*moduleModel.ModuleVersion, 0)
+				for _, v := range moduleProvider.GetAllVersions() {
+					if v.ID() != existingVersion.ID() {
+						updatedVersions = append(updatedVersions, v)
+					}
+				}
+				moduleProvider.SetVersions(updatedVersions)
 			}
 		}
 
@@ -126,20 +148,21 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 		}
 
 		// Save the module version - this creates the database row with proper module_provider_id
-		if err := s.moduleVersionRepo.Save(ctx, moduleVersion); err != nil {
+		savedModuleVersion, err := s.moduleVersionRepo.Save(ctx, moduleVersion)
+		if err != nil {
 			return fmt.Errorf("failed to create module version: %w", err)
 		}
 
 		// Verify the module version got a valid ID from the database
-		if moduleVersion.ID() == 0 {
+		if savedModuleVersion.ID() == 0 {
 			return fmt.Errorf("module version was not assigned a valid ID from database")
 		}
 
 		// Determine if module should be published based on reindex mode and configuration
-		shouldPublish := s.shouldPublishModuleWithReindexMode(moduleVersion, reindexMode, existingVersion != nil)
+		shouldPublish := s.shouldPublishModuleWithReindexMode(savedModuleVersion, reindexMode, existingVersion != nil)
 
 		result = &PrepareModuleResult{
-			ModuleVersion: moduleVersion,
+			ModuleVersion: savedModuleVersion,
 			ShouldPublish: shouldPublish,
 		}
 
@@ -162,7 +185,8 @@ func (s *ModuleCreationWrapperService) CompleteModule(ctx context.Context, modul
 	}
 
 	// Save the updated module version
-	if err := s.moduleVersionRepo.Save(ctx, moduleVersion); err != nil {
+	_, err := s.moduleVersionRepo.Save(ctx, moduleVersion)
+	if err != nil {
 		return fmt.Errorf("failed to save published module version: %w", err)
 	}
 

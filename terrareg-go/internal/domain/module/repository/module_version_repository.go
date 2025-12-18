@@ -11,8 +11,8 @@ type ModuleVersionRepository interface {
 	// FindByModuleProvider retrieves module versions for a specific module provider
 	FindByModuleProvider(ctx context.Context, moduleProviderID int, includeBeta, includeUnpublished bool) ([]*model.ModuleVersion, error)
 
-	// Save persists a module version
-	Save(ctx context.Context, moduleVersion *model.ModuleVersion) error
+	// Save persists a module version and returns the updated version with database-assigned ID
+	Save(ctx context.Context, moduleVersion *model.ModuleVersion) (*model.ModuleVersion, error)
 
 	// FindByID retrieves a module version by ID
 	FindByID(ctx context.Context, id int) (*model.ModuleVersion, error)
