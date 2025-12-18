@@ -169,8 +169,9 @@ func (s *MarkdownService) SanitizeHTML(html string) string {
 	html = jsLinkRegex.ReplaceAllString(html, `href="#"`)
 
 	// Also handle single quotes
-	jsLinkRegexSingle := regexp.MustCompile(`href\s*=\s*'(?:[^'']*javascript[^'']*)'`)
+	jsLinkRegexSingle := regexp.MustCompile(`href\s*=\s*'(?:[^'']*javascript[^'"]*)'`)
 	html = jsLinkRegexSingle.ReplaceAllString(html, `href='#'`)
 
 	return html
 }
+
