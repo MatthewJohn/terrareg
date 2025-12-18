@@ -183,6 +183,25 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 		return nil, err
 	}
 
+	// IMPORTANT: Restore the module provider relationship if module_provider_id exists
+	// This fixes the issue where domain models lose their parent relationships during reconstruction
+	if dbVersion.ModuleProviderID > 0 {
+		// Load the module provider and its namespace to restore the relationship
+		var moduleProviderDB sqldb.ModuleProviderDB
+		err := r.db.Preload("Namespace").First(&moduleProviderDB, dbVersion.ModuleProviderID).Error
+		if err == nil {
+			// Convert namespace database model to domain model
+			namespace := fromDBNamespace(&moduleProviderDB.Namespace)
+
+			// Convert module provider database model to domain model
+			moduleProvider := fromDBModuleProvider(&moduleProviderDB, namespace)
+			if moduleProvider != nil {
+				// Use the SetVersions method which properly establishes parent-child relationships
+				moduleProvider.SetVersions([]*model.ModuleVersion{moduleVersion})
+			}
+		}
+	}
+
 	// Load submodules and examples using shared service
 	if err := r.submoduleLoader.LoadSubmodulesAndExamples(moduleVersion, dbVersion.ID); err != nil {
 		return nil, err
@@ -194,5 +213,39 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 // mapToPersistenceModel converts domain model to persistence model using centralized mapper
 func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model.ModuleVersion) (*sqldb.ModuleVersionDB, error) {
 	dbVersion := toDBModuleVersion(moduleVersion)
+
+	// Debug logging to understand what's being mapped
+	if moduleVersion.ID() == 0 {
+		fmt.Printf("DEBUG: Saving new module version:\n")
+		fmt.Printf("  - ModuleVersion.ID(): %d\n", moduleVersion.ID())
+		fmt.Printf("  - ModuleVersion.ModuleProvider(): %v\n", func() interface{} {
+			if moduleVersion.ModuleProvider() != nil {
+				return fmt.Sprintf("ID=%d", moduleVersion.ModuleProvider().ID())
+			}
+			return "nil"
+		}())
+		fmt.Printf("  - dbVersion.ModuleProviderID: %d\n", dbVersion.ModuleProviderID)
+		fmt.Printf("  - dbVersion.Version: %s\n", dbVersion.Version)
+	} else {
+		fmt.Printf("DEBUG: Updating existing module version ID=%d:\n", moduleVersion.ID())
+		fmt.Printf("  - ModuleVersion.ModuleProvider(): %v\n", func() interface{} {
+			if moduleVersion.ModuleProvider() != nil {
+				return fmt.Sprintf("ID=%d", moduleVersion.ModuleProvider().ID())
+			}
+			return "nil"
+		}())
+		fmt.Printf("  - dbVersion.ModuleProviderID: %d\n", dbVersion.ModuleProviderID)
+
+		// For existing records, if the domain model has lost the module provider relationship,
+		// preserve the original module_provider_id from the database
+		if dbVersion.ModuleProviderID == 0 {
+			fmt.Printf("  - WARNING: domain model lost module provider relationship, but preserving existing relationship\n")
+			// We can't reload the record safely in this context, so we'll use a different approach:
+			// Skip updating records that would corrupt the module_provider_id
+			fmt.Printf("  - Skipping update to prevent data corruption\n")
+			return nil, fmt.Errorf("cannot update module version %d: domain model has lost module provider relationship", moduleVersion.ID())
+		}
+	}
+
 	return &dbVersion, nil
 }
