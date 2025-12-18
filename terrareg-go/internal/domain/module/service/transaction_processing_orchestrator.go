@@ -24,6 +24,7 @@ type TransactionProcessingOrchestrator struct {
 	securityService    *SecurityScanningService
 	fileContentService *FileContentTransactionService
 	archiveGenService  *ArchiveGenerationTransactionService
+	moduleProcessor    ModuleProcessorService
 
 	// Foundation services
 	moduleCreationWrapper *ModuleCreationWrapperService
@@ -46,6 +47,7 @@ func NewTransactionProcessingOrchestrator(
 	securityService *SecurityScanningService,
 	fileContentService *FileContentTransactionService,
 	archiveGenService *ArchiveGenerationTransactionService,
+	moduleProcessor ModuleProcessorService,
 	moduleCreationWrapper *ModuleCreationWrapperService,
 	savepointHelper *transaction.SavepointHelper,
 	domainConfig *configmodel.DomainConfig,
@@ -60,6 +62,7 @@ func NewTransactionProcessingOrchestrator(
 		securityService:       securityService,
 		fileContentService:    fileContentService,
 		archiveGenService:     archiveGenService,
+		moduleProcessor:       moduleProcessor,
 		moduleCreationWrapper: moduleCreationWrapper,
 		savepointHelper:       savepointHelper,
 		domainConfig:          domainConfig,
@@ -249,7 +252,16 @@ func (o *TransactionProcessingOrchestrator) executeProcessingPhases(
 		}
 	}
 
-	// Phase 3: Metadata Processing
+	// Phase 3: Module Content Extraction
+	if !req.Options.SkipMetadataProcessing && req.ModulePath != "" {
+		phaseResult := o.executeModuleContentExtractionPhase(ctx, req, moduleVersion)
+		result.PhaseResults["module_content_extraction"] = phaseResult
+		if !phaseResult.Success {
+			return fmt.Errorf("module content extraction failed: %s", *phaseResult.Error)
+		}
+	}
+
+	// Phase 4: Metadata Processing
 	if !req.Options.SkipMetadataProcessing && req.ModulePath != "" {
 		phaseResult := o.executeMetadataProcessingPhase(ctx, req, moduleVersion)
 		result.PhaseResults["metadata_processing"] = phaseResult
@@ -456,6 +468,93 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 		Str("module_path", req.ModulePath).
 		Dur("phase_duration", phaseResult.Duration).
 		Msg("Terraform processing completed successfully")
+
+	return phaseResult
+}
+
+// executeModuleContentExtractionPhase executes module content extraction with its own savepoint
+func (o *TransactionProcessingOrchestrator) executeModuleContentExtractionPhase(
+	ctx context.Context,
+	req ProcessingRequest,
+	moduleVersion *model.ModuleVersion,
+) *PhaseResult {
+	startTime := time.Now()
+	phaseResult := &PhaseResult{Success: false}
+
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("module_path", req.ModulePath).
+		Msg("Starting module content extraction phase")
+
+	// Validate module path
+	if req.ModulePath == "" {
+		errorMsg := "module path is empty for content extraction"
+		o.logger.Error().
+			Int("module_version_id", moduleVersion.ID()).
+			Msg("Module path is empty for content extraction")
+		phaseResult.Error = &errorMsg
+		phaseResult.Duration = time.Since(startTime)
+		return phaseResult
+	}
+
+	// Create module processing metadata
+	gitTag := ""
+	if req.GitTag != nil {
+		gitTag = *req.GitTag
+	}
+
+	processingMetadata := &ModuleProcessingMetadata{
+		ModuleVersionID: moduleVersion.ID(),
+		GitTag:         gitTag,
+		GitURL:         "", // Will be populated if needed
+		GitPath:        req.ModulePath,
+		CommitSHA:      "", // Will be populated if needed
+	}
+
+	o.logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("module_path", req.ModulePath).
+		Msg("Calling module processor to extract content")
+
+	// Process module content extraction
+	result, err := o.moduleProcessor.ProcessModule(ctx, req.ModulePath, processingMetadata)
+	phaseResult.Duration = time.Since(startTime)
+
+	if err != nil {
+		errorMsg := fmt.Sprintf("module content extraction failed: %v", err)
+		phaseResult.Error = &errorMsg
+		o.logger.Error().
+			Int("module_version_id", moduleVersion.ID()).
+			Str("module_path", req.ModulePath).
+			Err(err).
+			Msg("Module content extraction failed")
+		return phaseResult
+	}
+
+	// Set phase data with extraction results
+	phaseResult.Data = map[string]interface{}{
+		"variables_count":    len(result.ModuleMetadata.Variables),
+		"outputs_count":      len(result.ModuleMetadata.Outputs),
+		"providers_count":    len(result.ModuleMetadata.Providers),
+		"resources_count":    len(result.ModuleMetadata.Resources),
+		"dependencies_count": len(result.ModuleMetadata.Dependencies),
+		"readme_length":      len(result.ReadmeContent),
+		"processed_files":    result.ProcessedFiles,
+	}
+
+	phaseResult.Success = true
+
+	o.logger.Info().
+		Int("module_version_id", moduleVersion.ID()).
+		Int("variables_count", len(result.ModuleMetadata.Variables)).
+		Int("outputs_count", len(result.ModuleMetadata.Outputs)).
+		Int("providers_count", len(result.ModuleMetadata.Providers)).
+		Int("resources_count", len(result.ModuleMetadata.Resources)).
+		Int("dependencies_count", len(result.ModuleMetadata.Dependencies)).
+		Int("readme_length", len(result.ReadmeContent)).
+		Str("module_path", req.ModulePath).
+		Dur("phase_duration", phaseResult.Duration).
+		Msg("Module content extraction completed successfully")
 
 	return phaseResult
 }

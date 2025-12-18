@@ -94,6 +94,11 @@ func ReconstructModuleVersion(
 		return nil, fmt.Errorf("invalid version: %w", err)
 	}
 
+	// Ensure details is never nil to prevent panic
+	if details == nil {
+		details = NewModuleDetails([]byte{})
+	}
+
 	return &ModuleVersion{
 		id:                    id,
 		version:               version,
@@ -237,6 +242,9 @@ func (mv *ModuleVersion) Version() *shared.Version {
 }
 
 func (mv *ModuleVersion) Details() *ModuleDetails {
+	if mv.details == nil {
+		mv.details = NewModuleDetails([]byte{})
+	}
 	return mv.details
 }
 

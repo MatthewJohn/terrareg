@@ -120,6 +120,9 @@ func (md *ModuleDetails) WithTerraformVersion(version string) *ModuleDetails {
 // Getters
 
 func (md *ModuleDetails) ReadmeContent() []byte {
+	if md == nil {
+		return []byte{}
+	}
 	return md.readmeContent
 }
 
