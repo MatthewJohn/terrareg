@@ -612,7 +612,8 @@ func (s *SecurityScanningService) storeSecurityResultsInTransaction(
 	}
 
 	// Save the updated module version
-	if err := s.moduleVersionRepo.Save(ctx, moduleVersion); err != nil {
+	_, err = s.moduleVersionRepo.Save(ctx, moduleVersion)
+	if err != nil {
 		return fmt.Errorf("failed to save module version with security results: %w", err)
 	}
 

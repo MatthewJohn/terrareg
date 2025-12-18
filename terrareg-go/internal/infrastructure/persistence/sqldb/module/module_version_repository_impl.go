@@ -68,23 +68,41 @@ func (r *ModuleVersionRepositoryImpl) FindByModuleProvider(ctx context.Context, 
 	return moduleVersions, nil
 }
 
-// Save persists a module version
+// Save persists a module version and returns the updated version with database-assigned ID
 // Note: This should NOT create its own transaction - it should participate in a transaction
 // created by the service layer
-func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *model.ModuleVersion) error {
+func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *model.ModuleVersion) (*model.ModuleVersion, error) {
 	if moduleVersion == nil {
-		return fmt.Errorf("module version cannot be nil")
+		return nil, fmt.Errorf("module version cannot be nil")
 	}
 
 	dbVersion, err := r.mapToPersistenceModel(moduleVersion)
 	if err != nil {
-		return fmt.Errorf("failed to map module version: %w", err)
+		return nil, fmt.Errorf("failed to map module version: %w", err)
 	}
 
 	// Get the database instance from context (participate in existing transaction) or use default
 	db := r.getDBFromContext(ctx)
 
-	return db.Save(dbVersion).Error
+	// For new records (ID = 0), use Create to properly assign ID
+	// For existing records, use Save to update
+	if moduleVersion.ID() == 0 {
+		if err := db.Create(dbVersion).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := db.Save(dbVersion).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// After successful save, return the updated domain model with proper database-assigned values
+	updatedModuleVersion, err := r.mapToDomainModel(*dbVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map updated module version: %w", err)
+	}
+
+	return updatedModuleVersion, nil
 }
 
 // FindByID retrieves a module version by ID
