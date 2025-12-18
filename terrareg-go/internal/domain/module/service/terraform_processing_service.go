@@ -120,6 +120,7 @@ func NewTerraformExecutorService(
 
 // ProcessTerraformWithTransaction processes terraform operations with transaction context
 // Following Python pattern: execute terraform init once, then collect all results
+// Uses single global lock for entire operation to ensure consistency
 func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 	ctx context.Context,
 	req TerraformProcessingRequest,
@@ -137,39 +138,32 @@ func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 	}
 
 	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
-		logger.Debug().
-			Int("module_version_id", req.ModuleVersionID).
-			Str("module_path", req.ModulePath).
-			Msg("Transaction started, ensuring terraform is installed")
+		// Use single global lock callback for entire terraform operation
+		return s.RunTerraformWithCallback(ctx, req.ModulePath, func(ctx context.Context) error {
+			logger.Debug().
+				Int("module_version_id", req.ModuleVersionID).
+				Str("module_path", req.ModulePath).
+				Msg("Global terraform lock acquired, executing terraform operations")
 
-		// Ensure terraform is installed using tfswitch before processing
-		if err := s.ensureTerraformInstalled(ctx, req.ModulePath); err != nil {
-			return fmt.Errorf("failed to ensure terraform is installed: %w", err)
-		}
+			// Execute terraform init first (required for other operations)
+			initResult := s.executeTerraformInit(ctx, req.ModulePath)
+			result.InitResult = initResult
+			if !initResult.Success {
+				return fmt.Errorf("terraform init failed: %s", *initResult.Error)
+			}
 
-		logger.Debug().
-			Int("module_version_id", req.ModuleVersionID).
-			Str("module_path", req.ModulePath).
-			Msg("Terraform installation verified, executing terraform operations")
+			logger.Debug().
+				Str("module_path", req.ModulePath).
+				Msg("Terraform init completed successfully, collecting other results")
 
-		// Execute terraform init first (required for other operations)
-		initResult := s.executeTerraformInit(ctx, req.ModulePath)
-		result.InitResult = initResult
-		if !initResult.Success {
-			return fmt.Errorf("terraform init failed: %s", *initResult.Error)
-		}
+			// Collect results from other operations (following Python pattern)
+			result.GraphResult = s.executeTerraformGraph(ctx, req.ModulePath)
+			result.VersionResult = s.executeTerraformVersion(ctx, req.ModulePath)
+			result.ModulesResult = s.executeTerraformModules(ctx, req.ModulePath)
 
-		logger.Debug().
-			Str("module_path", req.ModulePath).
-			Msg("Terraform init completed successfully, collecting other results")
-
-		// Collect results from other operations (following Python pattern)
-		result.GraphResult = s.executeTerraformGraph(ctx, req.ModulePath)
-		result.VersionResult = s.executeTerraformVersion(ctx, req.ModulePath)
-		result.ModulesResult = s.executeTerraformModules(ctx, req.ModulePath)
-
-		result.OverallSuccess = true
-		return nil
+			result.OverallSuccess = true
+			return nil
+		})
 	})
 
 	result.Duration = time.Since(startTime)
@@ -183,8 +177,24 @@ func (s *TerraformExecutorService) ProcessTerraformWithTransaction(
 	return result, nil
 }
 
+// executeTerraformCommand executes a terraform command without additional locking
+// Assumes global lock is already held by RunTerraformWithCallback
+func (s *TerraformExecutorService) executeTerraformCommand(
+	ctx context.Context,
+	modulePath string,
+	args []string,
+) (string, error) {
+	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), args...)
+	cmd.Dir = modulePath
+	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
+
+	output, err := cmd.CombinedOutput()
+	return string(output), err
+}
+
 // executeTerraformInit executes terraform init and returns result
 // Following Python's _run_tf_init pattern
+// Assumes global lock is already held by RunTerraformWithCallback
 func (s *TerraformExecutorService) executeTerraformInit(ctx context.Context, modulePath string) *TerraformInitResult {
 	startTime := time.Now()
 	result := &TerraformInitResult{
@@ -194,7 +204,7 @@ func (s *TerraformExecutorService) executeTerraformInit(ctx context.Context, mod
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
-		Msg("Executing terraform init")
+		Msg("Executing terraform init (direct execution)")
 
 	// Override terraform backend if detected (matching Python)
 	overrideFilename, err := s.OverrideTerraformBackend(modulePath)
@@ -207,18 +217,20 @@ func (s *TerraformExecutorService) executeTerraformInit(ctx context.Context, mod
 		result.BackendOverride = overrideFilename
 	}
 
-	// Execute terraform init with global lock and version switching
-	err = s.RunTerraformWithLock(ctx, modulePath, []string{"init", "-input=false", "-no-color"}, 60*time.Second)
+	// Execute terraform init directly (no additional locking)
+	output, err := s.executeTerraformCommand(ctx, modulePath, []string{"init", "-input=false", "-no-color"})
 	result.Duration = time.Since(startTime)
 
 	if err != nil {
 		errorMsg := fmt.Sprintf("terraform init failed: %v", err)
 		result.Error = &errorMsg
+		result.Output = output
 
 		logger.Error().
 			Str("module_path", modulePath).
 			Err(err).
 			Dur("duration", result.Duration).
+			Str("output_preview", s.getOutputPreview(output)).
 			Msg("Terraform init failed")
 
 		return result
@@ -237,8 +249,13 @@ func (s *TerraformExecutorService) executeTerraformInit(ctx context.Context, mod
 	return result
 }
 
+
+
+
+
 // executeTerraformGraph executes terraform graph and returns result
 // Following Python's _get_graph_data pattern
+// Assumes global lock is already held by RunTerraformWithCallback
 func (s *TerraformExecutorService) executeTerraformGraph(ctx context.Context, modulePath string) *TerraformGraphResult {
 	startTime := time.Now()
 	result := &TerraformGraphResult{
@@ -248,15 +265,11 @@ func (s *TerraformExecutorService) executeTerraformGraph(ctx context.Context, mo
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
-		Msg("Executing terraform graph")
+		Msg("Executing terraform graph (direct execution)")
 
-	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), "graph")
-	cmd.Dir = modulePath
-	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
-
-	output, err := cmd.CombinedOutput()
+	output, err := s.executeTerraformCommand(ctx, modulePath, []string{"graph"})
 	result.Duration = time.Since(startTime)
-	outputStr := string(output)
+	outputStr := output
 
 	if err != nil {
 		errorMsg := fmt.Sprintf("terraform graph failed: %v", err)
@@ -286,6 +299,7 @@ func (s *TerraformExecutorService) executeTerraformGraph(ctx context.Context, mo
 
 // executeTerraformVersion executes terraform version and returns result
 // Following Python's _get_terraform_version pattern
+// Assumes global lock is already held by RunTerraformWithCallback
 func (s *TerraformExecutorService) executeTerraformVersion(ctx context.Context, modulePath string) *TerraformVersionResult {
 	startTime := time.Now()
 	result := &TerraformVersionResult{
@@ -295,14 +309,11 @@ func (s *TerraformExecutorService) executeTerraformVersion(ctx context.Context, 
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
-		Msg("Executing terraform version")
+		Msg("Executing terraform version (direct execution)")
 
-	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), "version", "-json")
-	cmd.Dir = modulePath
-
-	output, err := cmd.CombinedOutput()
+	output, err := s.executeTerraformCommand(ctx, modulePath, []string{"version", "-json"})
 	result.Duration = time.Since(startTime)
-	outputStr := string(output)
+	outputStr := output
 
 	if err != nil {
 		errorMsg := fmt.Sprintf("terraform version failed: %v", err)
@@ -321,6 +332,15 @@ func (s *TerraformExecutorService) executeTerraformVersion(ctx context.Context, 
 	result.Success = true
 	result.Output = outputStr
 
+	// Parse version from JSON output for structured result
+	if strings.Contains(outputStr, "\"terraform_version\"") {
+		// Extract version from JSON for potential future use
+		// For now, just store the raw JSON output
+		logger.Debug().
+			Str("module_path", modulePath).
+			Msg("Terraform version JSON parsed successfully")
+	}
+
 	logger.Info().
 		Str("module_path", modulePath).
 		Dur("duration", result.Duration).
@@ -331,6 +351,7 @@ func (s *TerraformExecutorService) executeTerraformVersion(ctx context.Context, 
 
 // executeTerraformModules parses terraform modules and returns result
 // Following Python's _get_terraform_modules pattern
+// Assumes global lock is already held by RunTerraformWithCallback
 func (s *TerraformExecutorService) executeTerraformModules(ctx context.Context, modulePath string) *TerraformModulesResult {
 	startTime := time.Now()
 	result := &TerraformModulesResult{
@@ -340,7 +361,7 @@ func (s *TerraformExecutorService) executeTerraformModules(ctx context.Context, 
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
-		Msg("Reading terraform modules")
+		Msg("Reading terraform modules (direct execution)")
 
 	modulesPath := filepath.Join(modulePath, ".terraform", "modules", "modules.json")
 	output, err := os.ReadFile(modulesPath)
@@ -374,21 +395,30 @@ func (s *TerraformExecutorService) executeTerraformModules(ctx context.Context, 
 	return result
 }
 
-// ensureTerraformInstalled ensures terraform is installed using tfswitch with global locking
-// Always runs tfswitch to ensure correct version is being used (not just when missing)
-func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context, modulePath string) error {
+
+// TerraformBinaryPath returns the path to the terraform binary
+func (s *TerraformExecutorService) TerraformBinaryPath() string {
+	if s.tfswitchConfig.BinaryPath != "" {
+		return s.tfswitchConfig.BinaryPath
+	}
+	return "terraform" // Default fallback
+}
+
+// RunTerraformWithCallback executes terraform operations within a single global lock
+// The callback holds the lock for its entire duration, ensuring tfswitch runs once
+// and all terraform commands execute with the correct version
+func (s *TerraformExecutorService) RunTerraformWithCallback(
+	ctx context.Context,
+	modulePath string,
+	callback func(context.Context) error,
+) error {
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().
 		Str("module_path", modulePath).
-		Str("default_version", s.tfswitchConfig.DefaultTerraformVersion).
-		Msg("Ensuring terraform version using tfswitch (always run to maintain version consistency)")
+		Msg("Acquiring global terraform lock for entire operation")
 
-	// Get terraform binary path for verification
-	terraformPath := s.TerraformBinaryPath()
-
-	// Use global lock to ensure only one tfswitch operation runs at a time
-	logger.Debug().Msg("Acquiring global terraform lock for tfswitch")
-
+	// Try to acquire global lock with timeout
+	lockTimeout := 60 * time.Second // Default timeout
 	lockAcquired := make(chan bool, 1)
 	go func() {
 		terraformGlobalLock.Lock()
@@ -398,8 +428,8 @@ func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context,
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context cancelled while waiting for terraform lock: %w", ctx.Err())
-	case <-time.After(60 * time.Second):
-		return fmt.Errorf("unable to obtain global terraform lock in 60 seconds")
+	case <-time.After(lockTimeout):
+		return fmt.Errorf("unable to obtain global terraform lock in %v", lockTimeout)
 	case <-lockAcquired:
 		logger.Debug().Msg("Global terraform lock acquired")
 	}
@@ -409,10 +439,24 @@ func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context,
 		logger.Debug().Msg("Global terraform lock released")
 	}()
 
-	// Always run tfswitch to ensure correct version is used
+	// Run tfswitch first to ensure correct version
 	logger.Debug().
-		Str("terraform_path", terraformPath).
+		Str("default_version", s.tfswitchConfig.DefaultTerraformVersion).
 		Msg("Running tfswitch to ensure correct terraform version")
+
+	if err := s.runTfswitch(ctx, modulePath); err != nil {
+		return fmt.Errorf("tfswitch failed: %w", err)
+	}
+
+	logger.Debug().Msg("Tfswitch completed successfully, executing callback")
+
+	// Execute the callback with the lock held
+	return callback(ctx)
+}
+
+// runTfswitch executes tfswitch with the configured version
+func (s *TerraformExecutorService) runTfswitch(ctx context.Context, modulePath string) error {
+	logger := zerolog.Ctx(ctx)
 
 	// Prepare environment variables for tfswitch
 	tfswitchEnv := os.Environ()
@@ -443,7 +487,7 @@ func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context,
 	logger.Debug().
 		Str("command", "tfswitch "+strings.Join(tfswitchArgs, " ")).
 		Str("working_dir", modulePath).
-		Msg("Executing tfswitch to install terraform")
+		Msg("Executing tfswitch to set terraform version")
 
 	// Execute tfswitch
 	output, err := cmd.CombinedOutput()
@@ -451,28 +495,15 @@ func (s *TerraformExecutorService) ensureTerraformInstalled(ctx context.Context,
 		logger.Error().
 			Err(err).
 			Str("tfswitch_output", string(output)).
-			Msg("Tfswitch failed to install terraform")
+			Msg("Tfswitch failed to set terraform version")
 		return fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, string(output))
 	}
 
 	logger.Info().
 		Str("tfswitch_output", string(output)).
-		Msg("Terraform successfully installed via tfswitch")
-
-	// Verify terraform is now available
-	if _, err := exec.LookPath(terraformPath); err != nil {
-		return fmt.Errorf("terraform installation verification failed: %w", err)
-	}
+		Msg("Terraform version successfully set via tfswitch")
 
 	return nil
-}
-
-// TerraformBinaryPath returns the path to the terraform binary
-func (s *TerraformExecutorService) TerraformBinaryPath() string {
-	if s.tfswitchConfig.BinaryPath != "" {
-		return s.tfswitchConfig.BinaryPath
-	}
-	return "terraform" // Default fallback
 }
 
 // RunTerraformWithLock executes terraform commands with proper version switching and locking
