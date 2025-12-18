@@ -91,6 +91,7 @@ type Container struct {
 	ModuleVersionRepo                 moduleRepo.ModuleVersionRepository
 	ModuleVersionFileRepo             moduleModel.ModuleVersionFileRepository
 	ModuleProviderRedirectRepo        *modulePersistence.ModuleProviderRedirectRepositoryImpl
+	ModuleDetailsRepo                 moduleRepo.ModuleDetailsRepository
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
 	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
@@ -121,6 +122,7 @@ type Container struct {
 	GitService             gitService.GitService
 	ModuleIndexingService  moduleService.ModuleIndexingService
 	ModuleParser           moduleService.ModuleParser
+	ModuleProcessorService moduleService.ModuleProcessorService
 
 	// Domain Services
 	ModuleImporterService *moduleService.ModuleImporterService
@@ -314,6 +316,7 @@ func NewContainer(
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ModuleVersionFileRepo = modulePersistence.NewModuleVersionFileRepository(db.DB)
 	c.ModuleProviderRedirectRepo = modulePersistence.NewModuleProviderRedirectRepository(db.DB)
+	c.ModuleDetailsRepo = modulePersistence.NewModuleDetailsRepository(db.DB)
 	c.ProviderRepo = sqldbprovider.NewProviderRepository(db.DB)
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
@@ -381,6 +384,14 @@ func NewContainer(
 	// )
 
 	c.ModuleParser = parser.NewModuleParserImpl(c.ModuleStorageService)
+
+	// Create module processor service
+	c.ModuleProcessorService = moduleService.NewModuleProcessorServiceImpl(
+		c.ModuleParser,
+		c.ModuleDetailsRepo,
+		c.ModuleVersionRepo,
+		logger,
+	)
 
 	// Initialize foundation transaction services
 	savepointHelper := transaction.NewSavepointHelper(db.DB)
@@ -490,6 +501,7 @@ func NewContainer(
 		securityScanningService,
 		c.FileContentTransactionService,
 		archiveGenService,
+		c.ModuleProcessorService,
 		moduleCreationWrapper,
 		savepointHelper,
 		c.DomainConfig,

@@ -1,5 +1,7 @@
 package service
 
+import "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+
 // ModuleParser handles parsing of module files
 type ModuleParser interface {
 	// ParseModule parses a module directory and extracts metadata
@@ -12,14 +14,16 @@ type ModuleParser interface {
 
 // ParseResult contains the results of parsing a module
 type ParseResult struct {
-	Description      string
-	ReadmeContent    string
-	RawTerraformDocs []byte
-	Owner            string
-	Variables        []Variable
-	Outputs          []Output
-	ProviderVersions []ProviderVersion
-	Resources        []Resource
+	Description        string
+	ReadmeContent      string
+	RawTerraformDocs   []byte
+	Owner              string
+	Variables          []Variable
+	Outputs            []Output
+	ProviderVersions   []ProviderVersion
+	Resources          []Resource
+	Dependencies       []model.Dependency
+	TerraformRequirements []TerraformRequirement
 }
 
 // Variable represents a Terraform variable
@@ -47,4 +51,10 @@ type ProviderVersion struct {
 type Resource struct {
 	Type string
 	Name string
+}
+
+// TerraformRequirement represents a Terraform version requirement
+type TerraformRequirement struct {
+	Name    string
+	Version string
 }

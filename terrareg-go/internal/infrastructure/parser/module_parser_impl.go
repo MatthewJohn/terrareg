@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
@@ -62,15 +63,34 @@ func (p *ModuleParserImpl) ParseModule(modulePath string) (*service.ParseResult,
 				})
 			}
 			for _, provider := range tfdocs.Providers {
+				version := ""
+				if provider.Version != nil {
+					version = *provider.Version
+				}
 				result.ProviderVersions = append(result.ProviderVersions, service.ProviderVersion{
 					Name:    provider.Name,
-					Version: provider.Version,
+					Version: version,
 				})
 			}
 			for _, resource := range tfdocs.Resources {
 				result.Resources = append(result.Resources, service.Resource{
 					Type: resource.Type,
 					Name: resource.Name,
+				})
+			}
+			// Extract module dependencies
+			for _, module := range tfdocs.Modules {
+				result.Dependencies = append(result.Dependencies, model.Dependency{
+					Module:  module.Name,
+					Source:  module.Source,
+					Version: module.Version,
+				})
+			}
+			// Extract terraform requirements
+			for _, req := range tfdocs.Requirements {
+				result.TerraformRequirements = append(result.TerraformRequirements, service.TerraformRequirement{
+					Name:    req.Name,
+					Version: req.Version,
 				})
 			}
 			if tfdocs.Header != "" && result.Description == "" {
@@ -96,6 +116,7 @@ func (p *ModuleParserImpl) ParseModule(modulePath string) (*service.ParseResult,
 // TerraformDocs represents the structure of the terraform-docs JSON output
 type TerraformDocs struct {
 	Header string `json:"header"`
+	Footer string `json:"footer"`
 	Inputs []struct {
 		Name        string      `json:"name"`
 		Type        string      `json:"type"`
@@ -109,13 +130,27 @@ type TerraformDocs struct {
 	} `json:"outputs"`
 	Providers []struct {
 		Name    string `json:"name"`
-		Version string `json:"version"`
+		Alias   *string `json:"alias"`
+		Version *string `json:"version"`
 	} `json:"providers"`
 	Resources []struct {
-		Type string `json:"type"`
-		Name string `json:"name"`
+		Type        string  `json:"type"`
+		Name        string  `json:"name"`
+		Provider    string  `json:"provider"`
+		Source      string  `json:"source"`
+		Mode        string  `json:"mode"`
+		Version     string  `json:"version"`
+		Description *string `json:"description"`
 	} `json:"resources"`
-	Footer string `json:"footer"`
+	Modules []struct {
+		Name    string `json:"name"`
+		Source  string `json:"source"`
+		Version string `json:"version"`
+	} `json:"modules"`
+	Requirements []struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	} `json:"requirements"`
 }
 
 // extractReadme reads the README.md file from the module directory

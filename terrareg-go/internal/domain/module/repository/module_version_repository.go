@@ -25,4 +25,7 @@ type ModuleVersionRepository interface {
 
 	// Exists checks if a module version exists
 	Exists(ctx context.Context, moduleProviderID int, version string) (bool, error)
+
+	// UpdateModuleDetailsID updates the module details ID for a module version
+	UpdateModuleDetailsID(ctx context.Context, moduleVersionID int, moduleDetailsID int) error
 }

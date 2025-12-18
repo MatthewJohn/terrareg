@@ -222,3 +222,22 @@ func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model
 
 	return &dbVersion, nil
 }
+
+// UpdateModuleDetailsID updates the module details ID for a module version
+func (r *ModuleVersionRepositoryImpl) UpdateModuleDetailsID(ctx context.Context, moduleVersionID int, moduleDetailsID int) error {
+	db := r.getDBFromContext(ctx)
+
+	result := db.Model(&sqldb.ModuleVersionDB{}).
+		Where("id = ?", moduleVersionID).
+		Update("module_details_id", moduleDetailsID)
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update module details ID for module version %d: %w", moduleVersionID, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("module version %d not found", moduleVersionID)
+	}
+
+	return nil
+}
