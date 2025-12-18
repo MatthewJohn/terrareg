@@ -59,8 +59,13 @@ func NewModuleVersion(versionStr string, details *ModuleDetails, beta bool) (*Mo
 		return nil, fmt.Errorf("invalid version: %w", err)
 	}
 
+	if details == nil {
+		details = NewModuleDetails([]byte{})
+	}
+
 	now := time.Now()
 	return &ModuleVersion{
+		id:         0, // CRITICAL: Ensure ID starts at 0 for new records
 		version:    version,
 		details:    details,
 		beta:       beta,
@@ -262,6 +267,13 @@ func (mv *ModuleVersion) IsPublished() bool {
 
 func (mv *ModuleVersion) PublishedAt() *time.Time {
 	return mv.publishedAt
+}
+
+// ResetID explicitly resets the module version ID to 0
+// This is critical for ensuring new records are created instead of updating existing ones
+func (mv *ModuleVersion) ResetID() {
+	mv.id = 0
+	mv.updatedAt = time.Now()
 }
 
 func (mv *ModuleVersion) GitSHA() *string {

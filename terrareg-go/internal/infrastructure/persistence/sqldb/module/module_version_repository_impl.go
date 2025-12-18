@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"github.com/rs/zerolog"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
@@ -76,23 +77,39 @@ func (r *ModuleVersionRepositoryImpl) Save(ctx context.Context, moduleVersion *m
 		return nil, fmt.Errorf("module version cannot be nil")
 	}
 
-	dbVersion, err := r.mapToPersistenceModel(moduleVersion)
+	// CRITICAL DEBUG: Log the ID to understand what's happening
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Int("module_version_id", moduleVersion.ID()).
+		Str("version", moduleVersion.Version().String()).
+		Bool("is_new_record", moduleVersion.ID() == 0).
+		Msg("ModuleVersion Save: Before mapping to persistence model")
+
+	dbVersion, err := r.mapToPersistenceModel(ctx, moduleVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map module version: %w", err)
 	}
 
+	// CRITICAL DEBUG: Log the persistence model ID
+	logger.Debug().
+		Int("db_version_id", dbVersion.ID).
+		Int("module_provider_id", dbVersion.ModuleProviderID).
+		Msg("ModuleVersion Save: After mapping to persistence model")
+
 	// Get the database instance from context (participate in existing transaction) or use default
 	db := r.getDBFromContext(ctx)
 
-	// For new records (ID = 0), use Create to properly assign ID
-	// For existing records, use Save to update
+	// CRITICAL FIX: Always use Create() when ID is 0, regardless of whether a record exists
+	// This follows Python's delete-then-create pattern exactly
 	if moduleVersion.ID() == 0 {
+		logger.Debug().Msg("ModuleVersion Save: Using CREATE operation (new record)")
 		if err := db.Create(dbVersion).Error; err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create module version: %w", err)
 		}
 	} else {
+		logger.Debug().Int("existing_id", moduleVersion.ID()).Msg("ModuleVersion Save: Using UPDATE operation (existing record)")
 		if err := db.Save(dbVersion).Error; err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to update module version: %w", err)
 		}
 	}
 
@@ -211,8 +228,24 @@ func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVer
 }
 
 // mapToPersistenceModel converts domain model to persistence model using centralized mapper
-func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model.ModuleVersion) (*sqldb.ModuleVersionDB, error) {
+func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(ctx context.Context, moduleVersion *model.ModuleVersion) (*sqldb.ModuleVersionDB, error) {
+	// For existing records, fetch current database record to preserve module_details_id
+	var existingDetailsID *int
+	if moduleVersion.ID() > 0 {
+		var existingDBVersion sqldb.ModuleVersionDB
+		db := r.getDBFromContext(ctx)
+		if err := db.First(&existingDBVersion, moduleVersion.ID()).Error; err == nil {
+			existingDetailsID = existingDBVersion.ModuleDetailsID
+		}
+	}
+
 	dbVersion := toDBModuleVersion(moduleVersion)
+
+	// CRITICAL FIX: Preserve existing module_details_id from database
+	// The domain model doesn't track the module_details_id, so we need to preserve it from the database
+	if existingDetailsID != nil {
+		dbVersion.ModuleDetailsID = existingDetailsID
+	}
 
 	// For existing records, if the domain model has lost the module provider relationship,
 	// preserve the original module_provider_id from the database and skip update to prevent corruption
@@ -227,15 +260,38 @@ func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model
 func (r *ModuleVersionRepositoryImpl) UpdateModuleDetailsID(ctx context.Context, moduleVersionID int, moduleDetailsID int) error {
 	db := r.getDBFromContext(ctx)
 
+	// CRITICAL DEBUG: Log before update
+	logger := zerolog.Ctx(ctx)
+	logger.Info().
+		Int("module_version_id", moduleVersionID).
+		Int("module_details_id", moduleDetailsID).
+		Msg("UpdateModuleDetailsID: About to execute UPDATE")
+
 	result := db.Model(&sqldb.ModuleVersionDB{}).
 		Where("id = ?", moduleVersionID).
 		Update("module_details_id", moduleDetailsID)
 
 	if result.Error != nil {
+		logger.Error().
+			Int("module_version_id", moduleVersionID).
+			Int("module_details_id", moduleDetailsID).
+			Err(result.Error).
+			Msg("UpdateModuleDetailsID: Database UPDATE failed")
 		return fmt.Errorf("failed to update module details ID for module version %d: %w", moduleVersionID, result.Error)
 	}
 
+	// CRITICAL DEBUG: Log after update with rows affected
+	logger.Info().
+		Int("module_version_id", moduleVersionID).
+		Int("module_details_id", moduleDetailsID).
+		Int64("rows_affected", result.RowsAffected).
+		Msg("UpdateModuleDetailsID: UPDATE completed successfully")
+
 	if result.RowsAffected == 0 {
+		logger.Warn().
+			Int("module_version_id", moduleVersionID).
+			Int("module_details_id", moduleDetailsID).
+			Msg("UpdateModuleDetailsID: No rows affected - module version not found")
 		return fmt.Errorf("module version %d not found", moduleVersionID)
 	}
 
