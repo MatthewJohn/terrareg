@@ -42,7 +42,3 @@ func (r *BaseRepository) IsTransactionActive(ctx context.Context) bool {
 	return r.helper.IsTransactionActive(ctx)
 }
 
-// GetDB returns the base database connection for operations that don't have context
-func (r *BaseRepository) GetDB() *gorm.DB {
-	return r.db
-}
