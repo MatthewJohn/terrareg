@@ -406,17 +406,24 @@ func NewContainer(
 	metadataService := moduleService.NewMetadataProcessingService(savepointHelper)
 	c.MetadataProcessingService = metadataService
 
-	// Initialize terraform executor service with tfswitch config
+	// Initialize terraform executor service with tfswitch config from infrastructure config
 	tfswitchConfig := &moduleService.TfswitchConfig{
-		DefaultTerraformVersion: "1.5.7",              // TODO: configure from domain config
-		TerraformProduct:        "terraform",          // TODO: configure from domain config
-		ArchiveMirror:           "",                   // TODO: configure from infra config
-		BinaryPath:              "/app/bin/terraform", // TODO: configure from infra config
+		DefaultTerraformVersion: infraConfig.TerraformDefaultVersion,
+		TerraformProduct:        infraConfig.TerraformProduct,
+		ArchiveMirror:           infraConfig.TerraformArchiveMirror,
+		BinaryPath:              infraConfig.TerraformBinaryPath,
 	}
+
+	// Use terraform binary path from config, or default to system terraform installed by tfswitch
+	terraformBinaryPath := infraConfig.TerraformBinaryPath
+	if terraformBinaryPath == "" {
+		terraformBinaryPath = "terraform" // Default to terraform in PATH (installed by tfswitch to /usr/local/bin/terraform)
+	}
+
 	terraformExecutorService := moduleService.NewTerraformExecutorService(
 		savepointHelper,
-		"bin/terraform", // TODO: configure terraform binary path
-		30*time.Second,  // TODO: configure lock timeout
+		terraformBinaryPath,
+		30*time.Second, // TODO: configure lock timeout from infra config
 		tfswitchConfig,
 	)
 	c.TerraformExecutorService = terraformExecutorService

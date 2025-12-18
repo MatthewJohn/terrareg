@@ -93,6 +93,12 @@ type InfrastructureConfig struct {
 	UpstreamGitCredentialsUsername string `env:"UPSTREAM_GIT_CREDENTIALS_USERNAME"`
 	UpstreamGitCredentialsPassword string `env:"UPSTREAM_GIT_CREDENTIALS_PASSWORD"`
 
+	// Terraform Configuration
+	TerraformBinaryPath    string `env:"TERRAFORM_BINARY_PATH"`
+	TerraformDefaultVersion string `env:"TERRAFORM_DEFAULT_VERSION" envDefault:"1.5.7"`
+	TerraformProduct       string `env:"TERRAFORM_PRODUCT" envDefault:"terraform"`
+	TerraformArchiveMirror string `env:"TERRAFORM_ARCHIVE_MIRROR"`
+
 	// Server Configuration
 	ServerType       model.ServerType `env:"SERVER"`
 	Threaded         bool             `env:"THREADED"`
