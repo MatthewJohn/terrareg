@@ -1,6 +1,8 @@
 package service
 
-import "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+import (
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+)
 
 // ModuleParser handles parsing of module files
 type ModuleParser interface {

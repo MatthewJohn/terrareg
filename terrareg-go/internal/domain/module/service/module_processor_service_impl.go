@@ -11,6 +11,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
@@ -46,6 +47,7 @@ type ModuleProcessorServiceImpl struct {
 	moduleVersionRepo  repository.ModuleVersionRepository
 	submoduleRepo      repository.SubmoduleRepository
 	exampleFileRepo    repository.ExampleFileRepository
+	config            *configModel.DomainConfig
 	logger            zerolog.Logger
 }
 
@@ -56,6 +58,7 @@ func NewModuleProcessorServiceImpl(
 	moduleVersionRepo repository.ModuleVersionRepository,
 	submoduleRepo repository.SubmoduleRepository,
 	exampleFileRepo repository.ExampleFileRepository,
+	config *configModel.DomainConfig,
 	logger zerolog.Logger,
 ) ModuleProcessorService {
 	return &ModuleProcessorServiceImpl{
@@ -64,6 +67,7 @@ func NewModuleProcessorServiceImpl(
 		moduleVersionRepo:  moduleVersionRepo,
 		submoduleRepo:      submoduleRepo,
 		exampleFileRepo:    exampleFileRepo,
+		config:            config,
 		logger:            logger,
 	}
 }
@@ -481,10 +485,14 @@ func (s *ModuleProcessorServiceImpl) processExamples(ctx context.Context, module
 	var examples []ExampleInfo
 
 	for _, exampleName := range exampleNames {
-		examplePath := filepath.Join(moduleDir, "examples", exampleName)
+		examplesDir := s.config.ExamplesDirectory
+		if examplesDir == "" {
+			examplesDir = "examples" // fallback to default
+		}
+		examplePath := filepath.Join(moduleDir, examplesDir, exampleName)
 
 		// Extract all files from example directory
-		exampleFiles, err := s.extractExampleFiles(examplePath)
+		exampleFiles, err := s.extractExampleFiles(examplePath, s.config.ExampleFileExtensions)
 		if err != nil {
 			s.logger.Warn().Err(err).
 				Str("example", exampleName).
@@ -551,50 +559,56 @@ func (s *ModuleProcessorServiceImpl) processExamples(ctx context.Context, module
 	return examples, nil
 }
 
-// extractExampleFiles extracts all files from an example directory
-func (s *ModuleProcessorServiceImpl) extractExampleFiles(exampleDir string) ([]ProcessedExampleFile, error) {
+// extractExampleFiles extracts files from an example directory
+// Matches Python implementation: non-recursive extraction of specific file extensions
+func (s *ModuleProcessorServiceImpl) extractExampleFiles(exampleDir string, exampleFileExtensions []string) ([]ProcessedExampleFile, error) {
 	var files []ProcessedExampleFile
 
-	err := filepath.Walk(exampleDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	// Use provided file extensions (matching Python behavior)
+	if exampleFileExtensions == nil || len(exampleFileExtensions) == 0 {
+		// Fallback to Python defaults if not provided
+		exampleFileExtensions = []string{"tf", "tfvars", "sh", "json"}
+	}
+
+	// Read the example directory (non-recursive)
+	entries, err := os.ReadDir(exampleDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read example directory %s: %w", exampleDir, err)
+	}
+
+	for _, entry := range entries {
+		// Skip directories and hidden files
+		if entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
 		}
 
-		// Skip directories
-		if info.IsDir() {
-			return nil
+		// Check if file has one of the allowed extensions
+		hasValidExtension := false
+		for _, ext := range exampleFileExtensions {
+			if strings.HasSuffix(entry.Name(), "."+ext) {
+				hasValidExtension = true
+				break
+			}
 		}
 
-		// Skip hidden files and temporary files
-		if strings.HasPrefix(info.Name(), ".") || strings.HasSuffix(info.Name(), "~") {
-			return nil
+		if !hasValidExtension {
+			continue
 		}
 
 		// Read file content
-		contentBytes, err := os.ReadFile(path)
+		filePath := filepath.Join(exampleDir, entry.Name())
+		contentBytes, err := os.ReadFile(filePath)
 		if err != nil {
 			s.logger.Warn().Err(err).
-				Str("file_path", path).
+				Str("file_path", filePath).
 				Msg("Failed to read example file, skipping")
-			return nil
-		}
-
-		// Get relative path from example directory
-		relPath, err := filepath.Rel(exampleDir, path)
-		if err != nil {
-			relPath = filepath.Base(path)
+			continue
 		}
 
 		files = append(files, ProcessedExampleFile{
-			Path:    relPath,
-			Content: string(contentBytes), // Convert []byte to string
+			Path:    entry.Name(),
+			Content: string(contentBytes),
 		})
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to walk example directory %s: %w", exampleDir, err)
 	}
 
 	return files, nil
