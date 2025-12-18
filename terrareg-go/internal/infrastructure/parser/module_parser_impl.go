@@ -3,10 +3,12 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
@@ -14,12 +16,14 @@ import (
 // ModuleParserImpl implements the service.ModuleParser interface.
 type ModuleParserImpl struct {
 	storageService service.StorageService
+	config         *configModel.DomainConfig
 }
 
 // NewModuleParserImpl creates a new ModuleParserImpl.
-func NewModuleParserImpl(storageService service.StorageService) *ModuleParserImpl {
+func NewModuleParserImpl(storageService service.StorageService, config *configModel.DomainConfig) *ModuleParserImpl {
 	return &ModuleParserImpl{
 		storageService: storageService,
+		config:         config,
 	}
 }
 
@@ -216,45 +220,76 @@ func (p *ModuleParserImpl) extractDescriptionFromReadme(readmeContent string) st
 }
 
 // DetectSubmodules finds submodules in the module directory
+// Matches Python implementation using recursive scanning for .tf files
 func (p *ModuleParserImpl) DetectSubmodules(modulePath string) ([]string, error) {
 	var submodules []string
+	submoduleSet := make(map[string]bool)
 
-	entries, err := p.storageService.ReadDir(modulePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read module directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		// Skip hidden directories and examples
-		if strings.HasPrefix(entry.Name(), ".") || entry.Name() == "examples" {
-			continue
-		}
-
-		submodulePath := filepath.Join(modulePath, entry.Name())
-
-		// Check if this directory contains .tf files
-		hasTerraformFiles, err := p.hasTerraformFiles(submodulePath)
+	// Walk through the directory looking for .tf files recursively
+	err := filepath.Walk(modulePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			continue
+			return err
 		}
 
-		if hasTerraformFiles {
-			submodules = append(submodules, entry.Name())
+		// Skip if not a .tf file
+		if !strings.HasSuffix(path, ".tf") || info.IsDir() {
+			return nil
 		}
+
+		// Get the parent directory of the .tf file
+		parentDir := filepath.Dir(path)
+
+		// Skip if parent directory is the root module path (Python warns about this)
+		if parentDir == modulePath {
+			return nil
+		}
+
+		// Skip if parent directory is examples directory
+		examplesDir := p.config.ExamplesDirectory
+		if examplesDir == "" {
+			examplesDir = "examples" // fallback to default
+		}
+		if filepath.Base(filepath.Dir(parentDir)) == examplesDir {
+			return nil
+		}
+
+		// Get relative path from module root
+		relativePath, err := filepath.Rel(modulePath, parentDir)
+		if err != nil {
+			return nil
+		}
+
+		// Skip hidden directories
+		if strings.HasPrefix(relativePath, ".") {
+			return nil
+		}
+
+		// Add to set to avoid duplicates
+		if !submoduleSet[relativePath] {
+			submoduleSet[relativePath] = true
+			submodules = append(submodules, relativePath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan module directory: %w", err)
 	}
 
 	return submodules, nil
 }
 
 // DetectExamples finds example directories in the module
+// Matches Python implementation: scans examples/ directory non-recursively for subdirectories with .tf files
 func (p *ModuleParserImpl) DetectExamples(modulePath string) ([]string, error) {
 	var examples []string
 
-	examplesPath := filepath.Join(modulePath, "examples")
+	examplesDir := p.config.ExamplesDirectory
+	if examplesDir == "" {
+		examplesDir = "examples" // fallback to default
+	}
+	examplesPath := filepath.Join(modulePath, examplesDir)
 
 	// Check if examples directory exists
 	_, err := p.storageService.Stat(examplesPath)

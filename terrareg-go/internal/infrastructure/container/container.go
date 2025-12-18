@@ -387,7 +387,7 @@ func NewContainer(
 	//     c.Logger,
 	// )
 
-	c.ModuleParser = parser.NewModuleParserImpl(c.ModuleStorageService)
+	c.ModuleParser = parser.NewModuleParserImpl(c.ModuleStorageService, c.DomainConfig)
 
 	// Create module processor service
 	c.ModuleProcessorService = moduleService.NewModuleProcessorServiceImpl(
@@ -396,6 +396,7 @@ func NewContainer(
 		c.ModuleVersionRepo,
 		c.SubmoduleRepo,
 		c.ExampleFileRepo,
+		c.DomainConfig,
 		logger,
 	)
 
