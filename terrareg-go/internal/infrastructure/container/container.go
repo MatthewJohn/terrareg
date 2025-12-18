@@ -434,10 +434,11 @@ func NewContainer(
 		}
 	}
 
+	terraformLockTimeout := time.Duration(infraConfig.TerraformLockTimeoutSeconds) * time.Second
 	terraformExecutorService := moduleService.NewTerraformExecutorService(
 		savepointHelper,
 		terraformBinaryPath,
-		30*time.Second, // TODO: configure lock timeout from infra config
+		terraformLockTimeout,
 		tfswitchConfig,
 	)
 	c.TerraformExecutorService = terraformExecutorService

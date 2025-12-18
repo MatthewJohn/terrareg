@@ -253,6 +253,13 @@ func (s *ConfigurationService) buildInfrastructureConfig(rawConfig map[string]st
 		// Terraform Presigned URL Configuration
 		TerraformPresignedUrlSecret:        rawConfig["TERRAFORM_PRESIGNED_URL_SECRET"],
 		TerraformPresignedUrlExpirySeconds: s.parseInt(rawConfig["TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS"], 10),
+
+		// HTTP Timeouts (in seconds)
+		StandardRequestTimeoutSeconds: s.parseInt(rawConfig["STANDARD_REQUEST_TIMEOUT_SECONDS"], 60),
+		ModuleIndexingTimeoutSeconds:  s.parseInt(rawConfig["MODULE_INDEXING_TIMEOUT_SECONDS"], 1800),
+
+		// Terraform Processing Timeouts (in seconds)
+		TerraformLockTimeoutSeconds: s.parseInt(rawConfig["TERRAFORM_LOCK_TIMEOUT_SECONDS"], 1800),
 	}
 }
 
