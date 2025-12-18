@@ -173,7 +173,26 @@ func (s *FileContentTransactionService) StoreFilesWithTransaction(
 			}
 
 			// Create module version file entity
-			moduleVersion := &model.ModuleVersion{} // Would normally find this
+			// Find the actual module version to establish proper relationship
+			moduleVersion, err := s.moduleVersionRepo.FindByID(ctx, req.ModuleVersionID)
+			if err != nil {
+				result.FailedFiles = append(result.FailedFiles, FailedFileInfo{
+					Path:   fileItem.Path,
+					Error:  fmt.Sprintf("failed to find module version %d: %v", req.ModuleVersionID, err),
+					Reason: "storage",
+				})
+				continue
+			}
+
+			if moduleVersion == nil {
+				result.FailedFiles = append(result.FailedFiles, FailedFileInfo{
+					Path:   fileItem.Path,
+					Error:  fmt.Sprintf("module version %d not found", req.ModuleVersionID),
+					Reason: "storage",
+				})
+				continue
+			}
+
 			moduleVersionFile := model.NewModuleVersionFile(0, moduleVersion, fileItem.Path, processedContent)
 
 			// Store the file

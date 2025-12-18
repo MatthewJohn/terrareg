@@ -132,9 +132,10 @@ func (s *Server) setupMiddleware() {
 	// Session middleware for session management
 	s.router.Use(s.sessionMiddleware.Session)
 
-	// Timeout middleware
+	// Standard timeout for all requests
 	s.router.Use(middleware.Timeout(60 * time.Second))
 
+	
 	// CORS if needed
 	// s.router.Use(cors.Handler(cors.Options{
 	//     AllowedOrigins:   []string{"*"},
@@ -239,9 +240,18 @@ func (s *Server) setupRoutes() {
 
 			// Module versions
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
-			r.With(s.authMiddleware.RequireUploadPermission("{namespace}")).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
-			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
-			r.With(s.authMiddleware.RequireUploadPermission("{namespace}")).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
+			r.With(
+				s.authMiddleware.RequireUploadPermission("{namespace}"),
+				terrareg_middleware.WithModuleIndexingTimeout(moduleTimeoutConfig),
+			).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
+			r.With(
+				s.authMiddleware.RequireAuth,
+				terrareg_middleware.WithModuleIndexingTimeout(moduleTimeoutConfig),
+			).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
+			r.With(
+				s.authMiddleware.RequireUploadPermission("{namespace}"),
+				terrareg_middleware.WithModuleIndexingTimeout(moduleTimeoutConfig),
+			).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
@@ -330,9 +340,21 @@ func (s *Server) setupRoutes() {
 	s.router.With(s.authMiddleware.RequireAuth).Post("/{provider_source}/refresh-namespace", s.handleProviderSourceRefreshNamespace)
 	s.router.With(s.authMiddleware.RequireAuth).Post("/{provider_source}/repositories/{repo_id}/publish-provider", s.handleProviderSourcePublishProvider)
 
+	// Create timeout config for module indexing endpoints
+	moduleTimeoutConfig := terrareg_middleware.TimeoutConfig{
+		ModuleIndexingReadTimeout:  s.infraConfig.ModuleIndexingReadTimeoutSeconds,
+		ModuleIndexingWriteTimeout: s.infraConfig.ModuleIndexingWriteTimeoutSeconds,
+	}
+
 	// Webhooks
-	s.router.With(s.authMiddleware.OptionalAuth).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", s.handleGitHubWebhook)
-	s.router.With(s.authMiddleware.OptionalAuth).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.handleBitBucketWebhook)
+	s.router.With(
+		s.authMiddleware.OptionalAuth,
+		terrareg_middleware.WithModuleIndexingTimeout(moduleTimeoutConfig),
+	).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", s.handleGitHubWebhook)
+	s.router.With(
+		s.authMiddleware.OptionalAuth,
+		terrareg_middleware.WithModuleIndexingTimeout(moduleTimeoutConfig),
+	).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.handleBitBucketWebhook)
 
 	// Initial Setup API
 	s.router.With(s.authMiddleware.OptionalAuth).Get("/v1/terrareg/initial_setup", s.handleInitialSetup)
@@ -423,8 +445,8 @@ func (s *Server) startHTTP(addr string) error {
 		server := &http.Server{
 			Addr:         addr,
 			Handler:      s.router,
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 30 * time.Second,
+			ReadTimeout:  60 * time.Second,
+			WriteTimeout: 300 * time.Second, // 5 minutes to handle long-running module processing
 			IdleTimeout:  120 * time.Second,
 		}
 
@@ -452,8 +474,8 @@ func (s *Server) startHTTPS(addr string) error {
 		Addr:         addr,
 		Handler:      s.router,
 		TLSConfig:    tlsConfig,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 300 * time.Second, // 5 minutes to handle long-running module processing
 		IdleTimeout:  120 * time.Second,
 	}
 
