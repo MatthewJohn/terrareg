@@ -84,7 +84,7 @@ services:
   mysql:
     container_name: "${DOCKER_NAME}_mysql"
     restart: unless-stopped
-    image: docker.io/bitnami/mariadb:10.5
+    image: docker.io/bitnami/mariadb:12.0
     volumes:
       - 'mysql:/bitnami/mysql/data'
     env_file:
