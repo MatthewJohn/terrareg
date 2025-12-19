@@ -76,7 +76,8 @@ ARG PYPI_PROXY
 RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
   http_proxy= https_proxy="" pip install poetry $pip_args
 RUN poetry config virtualenvs.in-project true
-# Remove the no-binary config to allow using pre-compiled wheels where available
+# Build lxml and xmlsec from source to match system libraries
+RUN poetry config installer.no-binary lxml,xmlsec
 
 RUN if test ! -z "$PYPI_PROXY"; then \
   poetry source add --priority=primary packages $PYPI_PROXY; \
