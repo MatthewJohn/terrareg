@@ -1,25 +1,31 @@
 package terrareg
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/graph"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/model"
+	graphservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
 
 // GraphHandler handles graph-related requests
 type GraphHandler struct {
 	getModuleDependencyGraphQuery *graph.GetModuleDependencyGraphQuery
+	graphService                  graphservice.GraphService
 }
 
 // NewGraphHandler creates a new graph handler
 func NewGraphHandler(
 	getModuleDependencyGraphQuery *graph.GetModuleDependencyGraphQuery,
+	graphService graphservice.GraphService,
 ) *GraphHandler {
 	return &GraphHandler{
 		getModuleDependencyGraphQuery: getModuleDependencyGraphQuery,
+		graphService:                  graphService,
 	}
 }
 
@@ -66,71 +72,40 @@ func (h *GraphHandler) HandleModuleDependencyGraph(w http.ResponseWriter, r *htt
 // HandleGraphExport handles GET /v1/terrareg/graph/export
 // Exports graph data in various formats (dot, json, svg)
 func (h *GraphHandler) HandleGraphExport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// Parse query parameters
 	format := r.URL.Query().Get("format")
 	if format == "" {
 		format = "json" // Default format
 	}
 
-	_ = r.URL.Query().Get("include-beta") == "true"
-	_ = r.URL.Query().Get("namespace")
+	includeBeta := r.URL.Query().Get("include-beta") == "true"
+	namespace := r.URL.Query().Get("namespace")
+
+	// Get global graph data
+	graph, err := h.graphService.ParseGlobalGraph(ctx, namespace, includeBeta)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	switch format {
 	case "dot":
 		// Return Graphviz DOT format
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`digraph module_dependencies {
-    rankdir=TB;
-    node [shape=box];
 
-    "namespace1/module1/provider1" -> "namespace1/module2/provider1" [label="depends on"];
-    "namespace1/module2/provider1" -> "hashicorp/aws" [label="provider"];
-}`))
+		// Generate DOT format from graph data
+		dotOutput := h.convertToDOT(graph)
+		w.Write([]byte(dotOutput))
 
 	case "json":
-		// Return JSON format (same as graph data endpoint)
-		response := map[string]interface{}{
-			"nodes": []map[string]interface{}{
-				{
-					"id":        "namespace1/module1/provider1",
-					"label":     "module1/provider1",
-					"type":      "module_provider",
-					"group":     "published",
-					"namespace": "namespace1",
-				},
-				{
-					"id":        "namespace1/module2/provider1",
-					"label":     "module2/provider1",
-					"type":      "module_provider",
-					"group":     "published",
-					"namespace": "namespace1",
-				},
-			},
-			"edges": []map[string]interface{}{
-				{
-					"from":  "namespace1/module1/provider1",
-					"to":    "namespace1/module2/provider1",
-					"label": "depends on",
-				},
-			},
-		}
-		RespondJSON(w, http.StatusOK, response)
-
-	case "svg":
-		// Return SVG format (placeholder)
-		w.Header().Set("Content-Type", "image/svg+xml")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
-    <rect width="800" height="600" fill="white"/>
-    <text x="400" y="300" text-anchor="middle" font-family="Arial" font-size="16">
-        Graph visualization would be rendered here
-    </text>
-</svg>`))
+		// Return JSON format
+		RespondJSON(w, http.StatusOK, graph)
 
 	default:
-		RespondJSON(w, http.StatusBadRequest, dto.NewError("Unsupported format. Supported formats: dot, json, svg"))
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Unsupported format. Supported formats: dot, json"))
 	}
 }
 
@@ -183,4 +158,28 @@ func (h *GraphHandler) HandleGraphStatistics(w http.ResponseWriter, r *http.Requ
 	}
 
 	RespondJSON(w, http.StatusOK, response)
+}
+
+// convertToDOT converts graph data to DOT format
+func (h *GraphHandler) convertToDOT(graph *model.DependencyGraph) string {
+	dot := "digraph module_dependencies {\n"
+	dot += "    rankdir=TB;\n"
+	dot += "    node [shape=box];\n\n"
+
+	// Add nodes
+	for _, node := range graph.Nodes {
+		dot += fmt.Sprintf("    \"%s\" [label=\"%s\", type=\"%s\", group=\"%s\"];\n",
+			node.ID, node.Label, node.Type, node.Group)
+	}
+
+	dot += "\n"
+
+	// Add edges
+	for _, edge := range graph.Edges {
+		dot += fmt.Sprintf("    \"%s\" -> \"%s\" [label=\"%s\"];\n",
+			edge.From, edge.To, edge.Label)
+	}
+
+	dot += "}\n"
+	return dot
 }

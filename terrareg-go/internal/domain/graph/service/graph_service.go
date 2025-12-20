@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
@@ -97,10 +99,45 @@ func (s *GraphService) ParseGlobalGraph(
 	namespace string,
 	includeBeta bool,
 ) (*model.DependencyGraph, error) {
-	// For now, return empty graph
-	// In a real implementation, this would aggregate data from all modules in the database
-	nodes := []model.GraphNode{}
-	edges := []model.GraphEdge{}
+	// Get all module providers from database
+	moduleProviders, err := s.graphRepo.GetAllModuleProviders(ctx, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to graph nodes
+	nodes := make([]model.GraphNode, 0)
+	edges := make([]model.GraphEdge, 0)
+
+	// Create nodes for module providers
+	for _, mp := range moduleProviders {
+		node := model.GraphNode{
+			ID:        fmt.Sprintf("%s/%s/%s", mp.Namespace, mp.Module, mp.Provider),
+			Label:     fmt.Sprintf("%s/%s", mp.Module, mp.Provider),
+			Type:      "module_provider",
+			Group:     mp.Status,
+			Namespace: mp.Namespace,
+		}
+		nodes = append(nodes, node)
+
+		// Get dependencies for this module provider
+		dependencies, err := s.graphRepo.GetModuleProviderDependencies(ctx, mp.Namespace, mp.Module, mp.Provider)
+		if err != nil {
+			continue // Skip if can't get dependencies
+		}
+
+		// Create edges for dependencies
+		for _, dep := range dependencies {
+			if dep.Type == "provider" {
+				edge := model.GraphEdge{
+					From: node.ID,
+					To:   fmt.Sprintf("provider/%s", dep.Source),
+					Label: "provider",
+				}
+				edges = append(edges, edge)
+			}
+		}
+	}
 
 	return &model.DependencyGraph{
 		Nodes: nodes,
@@ -108,9 +145,9 @@ func (s *GraphService) ParseGlobalGraph(
 		Metadata: model.GraphMetadata{
 			IncludeBeta: includeBeta,
 			Namespace:   namespace,
-			TotalNodes:  0,
-			TotalEdges:  0,
-			GeneratedAt: "2025-01-13T10:00:00Z",
+			TotalNodes:  len(nodes),
+			TotalEdges:  len(edges),
+			GeneratedAt: time.Now().Format(time.RFC3339),
 		},
 	}, nil
 }
