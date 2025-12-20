@@ -5,25 +5,30 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // CreateModuleProviderCommand handles creating a new module provider
 type CreateModuleProviderCommand struct {
 	namespaceRepo      repository.NamespaceRepository
 	moduleProviderRepo repository.ModuleProviderRepository
+	auditService       *service.ModuleAuditService
 }
 
 // NewCreateModuleProviderCommand creates a new create module provider command
 func NewCreateModuleProviderCommand(
 	namespaceRepo repository.NamespaceRepository,
 	moduleProviderRepo repository.ModuleProviderRepository,
+	auditService *service.ModuleAuditService,
 ) *CreateModuleProviderCommand {
 	return &CreateModuleProviderCommand{
 		namespaceRepo:      namespaceRepo,
 		moduleProviderRepo: moduleProviderRepo,
+		auditService:       auditService,
 	}
 }
 
@@ -64,6 +69,23 @@ func (c *CreateModuleProviderCommand) Execute(ctx context.Context, req CreateMod
 	if err := c.moduleProviderRepo.Save(ctx, moduleProvider); err != nil {
 		return nil, fmt.Errorf("failed to save module provider: %w", err)
 	}
+
+	// Log audit event (async, don't block the response)
+	go func() {
+		username := "system"
+		// Try to get username from auth context if available
+		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+			username = authCtx.Username
+		}
+
+		c.auditService.LogModuleProviderCreate(
+			context.Background(),
+			username,
+			req.Namespace,
+			req.Module,
+			req.Provider,
+		)
+	}()
 
 	return moduleProvider, nil
 }
