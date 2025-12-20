@@ -98,24 +98,6 @@ services:
     networks:
       web:
 
-  phpmyadmin:
-    container_name: "${DOCKER_NAME}_phpmyadmin"
-    restart: unless-stopped
-    image: docker.io/bitnami/phpmyadmin:5
-    depends_on:
-      - mysql
-      - traefik
-    environment:
-      - DATABASE_HOST=mysql
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.tls=true"
-      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.rule=Host(`phpmyadmin.${DOCKER_BASE_URL}`)"
-      - "traefik.http.services.${DOCKER_NAME}_phpmyadmin.loadbalancer.server.port=8080"
-      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.service=${DOCKER_NAME}_phpmyadmin"
-    networks:
-      web:
-
   minio:
     image: minio/minio
     ports:
