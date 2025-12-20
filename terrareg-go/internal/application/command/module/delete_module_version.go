@@ -4,24 +4,29 @@ import (
 	"context"
 	"errors"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // DeleteModuleVersionCommand handles deleting a specific module version
 type DeleteModuleVersionCommand struct {
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
 	moduleVersionRepo  moduleRepo.ModuleVersionRepository
+	auditService       *service.ModuleAuditService
 }
 
 // NewDeleteModuleVersionCommand creates a new delete module version command
 func NewDeleteModuleVersionCommand(
 	moduleProviderRepo moduleRepo.ModuleProviderRepository,
 	moduleVersionRepo moduleRepo.ModuleVersionRepository,
+	auditService *service.ModuleAuditService,
 ) *DeleteModuleVersionCommand {
 	return &DeleteModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,
 		moduleVersionRepo:  moduleVersionRepo,
+		auditService:       auditService,
 	}
 }
 
@@ -61,9 +66,26 @@ func (c *DeleteModuleVersionCommand) Execute(ctx context.Context, req DeleteModu
 		return err
 	}
 
+	// Log audit event (async, don't block the response)
+	go func() {
+		username := "system"
+		// Try to get username from auth context if available
+		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+			username = authCtx.Username
+		}
+
+		c.auditService.LogModuleVersionDelete(
+			context.Background(),
+			username,
+			req.Namespace,
+			req.Module,
+			req.Provider,
+			req.Version,
+		)
+	}()
+
 	// TODO: Update provider's latest_version_id if this was the latest
 	// TODO: Delete associated files from storage
-	// TODO: Create audit event
 	// TODO: Delete analytics data
 
 	return nil

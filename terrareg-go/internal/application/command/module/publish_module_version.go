@@ -5,20 +5,27 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // PublishModuleVersionCommand handles publishing a new module version
 type PublishModuleVersionCommand struct {
 	moduleProviderRepo repository.ModuleProviderRepository
+	auditService      *service.ModuleAuditService
 }
 
 // NewPublishModuleVersionCommand creates a new publish module version command
-func NewPublishModuleVersionCommand(moduleProviderRepo repository.ModuleProviderRepository) *PublishModuleVersionCommand {
+func NewPublishModuleVersionCommand(
+	moduleProviderRepo repository.ModuleProviderRepository,
+	auditService *service.ModuleAuditService,
+) *PublishModuleVersionCommand {
 	return &PublishModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,
+		auditService:      auditService,
 	}
 }
 
@@ -71,6 +78,34 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 	if err := c.moduleProviderRepo.Save(ctx, moduleProvider); err != nil {
 		return nil, fmt.Errorf("failed to save module provider: %w", err)
 	}
+
+	// Log audit event (async, don't block the response)
+	go func() {
+		// Get username from context
+		username := "system"
+		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+			username = authCtx.Username
+		}
+
+		// Log the version creation and publish
+		c.auditService.LogModuleVersionCreate(
+			context.Background(),
+			username,
+			req.Namespace,
+			req.Module,
+			req.Provider,
+			req.Version,
+		)
+
+		c.auditService.LogModuleVersionPublish(
+			context.Background(),
+			username,
+			req.Namespace,
+			req.Module,
+			req.Provider,
+			req.Version,
+		)
+	}()
 
 	return version, nil
 }

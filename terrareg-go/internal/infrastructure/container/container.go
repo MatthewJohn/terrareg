@@ -563,6 +563,9 @@ func NewContainer(
 	// Initialize audit service
 	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
 
+	// Initialize module audit service for module operations
+	moduleAuditService := auditservice.NewModuleAuditService(c.AuditHistoryRepo)
+
 	// Initialize graph service
 	c.GraphService = domainGraphService.NewGraphService(c.GraphRepo)
 
@@ -592,15 +595,15 @@ func NewContainer(
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
 	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo)
 	c.DeleteNamespaceCmd = namespace.NewDeleteNamespaceCommand(c.NamespaceRepo)
-	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo)
-	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
+	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo, moduleAuditService)
+	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo, moduleAuditService)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
-	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
+	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo, moduleAuditService)
 	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.ModuleStorageService, infraConfig) // Uses InfrastructureConfig for file operations
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)
-	c.DeleteModuleVersionCmd = moduleCmd.NewDeleteModuleVersionCommand(c.ModuleProviderRepo, c.ModuleVersionRepo)
+	c.DeleteModuleVersionCmd = moduleCmd.NewDeleteModuleVersionCommand(c.ModuleProviderRepo, c.ModuleVersionRepo, moduleAuditService)
 	c.GenerateModuleSourceCmd = moduleCmd.NewGenerateModuleSourceCommand(c.ModuleProviderRepo, c.ModuleFileService, c.DomainStorageService)
 	c.GetVariableTemplateQuery = moduleCmd.NewGetVariableTemplateQuery(c.ModuleProviderRepo, c.ModuleFileService)
 
