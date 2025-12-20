@@ -89,9 +89,10 @@ class TestModuleVersionFile(TerraregIntegrationTest):
 Should only show alphanumeric in ID
 """,
             """
-<h1 id="terrareg-anchor-randomcharactersmd-heading-with-123-_">Heading With 123 !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;/.,</h1>
+<h1 id="terrareg-anchor-randomcharactersmd-heading-with-123-_-">Heading With 123 !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;!--.,</h1>
 <h1 id="terrareg-anchor-randomcharactersmd-pre-existing_hypens-and_underscores">Pre-existing_hypens-and_underscores</h1>
 <p>Should only show alphanumeric in ID</p>
+<p>--&gt;</p>
 """.strip()
         ),
 

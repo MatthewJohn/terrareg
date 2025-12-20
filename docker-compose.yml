@@ -84,34 +84,17 @@ services:
   mysql:
     container_name: "${DOCKER_NAME}_mysql"
     restart: unless-stopped
-    image: docker.io/bitnami/mariadb:10.5
+    image: mariadb:10.11
     volumes:
-      - 'mysql:/bitnami/mysql/data'
+      - 'mysql:/var/lib/mysql'
     env_file:
       - ./.env
     healthcheck:
-      test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
-      interval: 5s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
       timeout: 5s
       retries: 10
-    networks:
-      web:
-
-  phpmyadmin:
-    container_name: "${DOCKER_NAME}_phpmyadmin"
-    restart: unless-stopped
-    image: docker.io/bitnami/phpmyadmin:5
-    depends_on:
-      - mysql
-      - traefik
-    environment:
-      - DATABASE_HOST=mysql
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.tls=true"
-      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.rule=Host(`phpmyadmin.${DOCKER_BASE_URL}`)"
-      - "traefik.http.services.${DOCKER_NAME}_phpmyadmin.loadbalancer.server.port=8080"
-      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.service=${DOCKER_NAME}_phpmyadmin"
     networks:
       web:
 

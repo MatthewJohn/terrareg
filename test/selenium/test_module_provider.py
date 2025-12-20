@@ -184,7 +184,7 @@ class TestModuleProvider(SeleniumTest):
             self.assert_equals(lambda: self.wait_for_element(By.ID, f'module-tab-link-readme').is_displayed(), True)
 
             # Ensure tab content is displayed
-            assert self.selenium_instance.find_element(By.ID, f'module-tab-readme').is_displayed() == True
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-readme').is_displayed(), True)
 
             # Ensure all other tabs aren't shown
             for tab_name in ['inputs', 'outputs', 'providers', 'resources', 'analytics', 'usage-builder', 'integrations']:
