@@ -264,3 +264,74 @@ func (s *S3StorageService) DeleteDirectory(
 	// Directories don't exist in S3
 	return nil
 }
+
+// UploadStream uploads data from a reader directly to S3
+// This provides streaming upload without loading entire file into memory
+func (s *S3StorageService) UploadStream(ctx context.Context, reader io.Reader, destPath string) error {
+	key := s.generateKey(destPath)
+
+	// Upload directly to S3 from reader
+	_, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.s3Config.Bucket),
+		Key:         aws.String(key),
+		Body:        reader,
+		ContentType: aws.String("application/octet-stream"),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload stream to S3: %w", err)
+	}
+
+	return nil
+}
+
+// StreamToHTTPResponse streams a file directly from S3 to HTTP response writer
+// This provides streaming download without loading entire file into memory
+func (s *S3StorageService) StreamToHTTPResponse(ctx context.Context, path string, writer io.Writer) error {
+	key := s.generateKey(path)
+
+	// Get object from S3
+	result, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.s3Config.Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NoSuchKey" {
+			return fmt.Errorf("file not found: %s", path)
+		}
+		return fmt.Errorf("failed to read file from S3: %w", err)
+	}
+	defer result.Body.Close()
+
+	// Stream directly to response writer
+	_, err = io.Copy(writer, result.Body)
+	if err != nil {
+		return fmt.Errorf("failed to stream file: %w", err)
+	}
+
+	return nil
+}
+
+// GetFileSize returns the size of a file in bytes
+func (s *S3StorageService) GetFileSize(ctx context.Context, path string) (int64, error) {
+	key := s.generateKey(path)
+
+	// HeadObject to get file metadata
+	result, err := s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.s3Config.Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NotFound" {
+			return 0, fmt.Errorf("file not found: %s", path)
+		}
+		return 0, fmt.Errorf("failed to get file metadata: %w", err)
+	}
+
+	if result.ContentLength == nil {
+		return 0, fmt.Errorf("file size not available")
+	}
+
+	return *result.ContentLength, nil
+}

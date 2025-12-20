@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
 )
@@ -40,6 +41,11 @@ type StorageService interface {
 
 	// Python equivalent: delete_directory(path)
 	DeleteDirectory(ctx context.Context, path string) error
+
+	// Streaming operations for performance optimization
+	UploadStream(ctx context.Context, reader io.Reader, destPath string) error
+	StreamToHTTPResponse(ctx context.Context, path string, writer io.Writer) error
+	GetFileSize(ctx context.Context, path string) (int64, error)
 }
 
 

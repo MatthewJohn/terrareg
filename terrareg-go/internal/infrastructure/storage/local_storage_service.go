@@ -319,3 +319,66 @@ func copyFileHelper(src, dest string) error {
 	return out.Close()
 }
 
+// UploadStream uploads data from a reader directly to storage
+// This provides streaming upload without loading entire file into memory
+func (s *LocalStorageService) UploadStream(ctx context.Context, reader io.Reader, destPath string) error {
+	fullPath := s.generatePath(destPath)
+
+	// Create destination directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Create destination file
+	file, err := os.Create(fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer file.Close()
+
+	// Copy data from reader to file
+	_, err = io.Copy(file, reader)
+	if err != nil {
+		os.Remove(fullPath) // Clean up on failure
+		return fmt.Errorf("failed to write data: %w", err)
+	}
+
+	return nil
+}
+
+// StreamToHTTPResponse streams a file directly to HTTP response writer
+// This provides streaming download without loading entire file into memory
+func (s *LocalStorageService) StreamToHTTPResponse(ctx context.Context, path string, writer io.Writer) error {
+	fullPath := s.generatePath(path)
+
+	// Open file for reading
+	file, err := os.Open(fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// Copy file directly to response writer
+	_, err = io.Copy(writer, file)
+	if err != nil {
+		return fmt.Errorf("failed to stream file: %w", err)
+	}
+
+	return nil
+}
+
+// GetFileSize returns the size of a file in bytes
+func (s *LocalStorageService) GetFileSize(ctx context.Context, path string) (int64, error) {
+	fullPath := s.generatePath(path)
+
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, fmt.Errorf("file not found: %s", path)
+		}
+		return 0, fmt.Errorf("failed to stat file: %w", err)
+	}
+
+	return fileInfo.Size(), nil
+}
+
