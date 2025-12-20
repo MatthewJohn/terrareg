@@ -969,8 +969,8 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 		Version:   version,
 	}
 
-	// Execute command
-	resp, err := h.generateModuleSourceCmd.Execute(ctx, req)
+	// Execute command with streaming
+	resp, err := h.generateModuleSourceCmd.ExecuteAndStore(ctx, req)
 	if err != nil {
 		if err.Error() == "missing required parameters" {
 			w.WriteHeader(http.StatusBadRequest)
@@ -989,11 +989,17 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 	// Set headers for file download
 	w.Header().Set("Content-Type", resp.ContentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", resp.Filename))
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", resp.Size))
+	if resp.Size > 0 {
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", resp.Size))
+	}
 
-	// Write the ZIP content
+	// Stream the file directly from storage to HTTP response
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp.Content)
+	err = h.generateModuleSourceCmd.StreamFromStorage(ctx, resp.StoragePath, w)
+	if err != nil {
+		// Log error but can't send error response as headers already sent
+		return
+	}
 }
 
 // HandleModuleVersionVariableTemplate handles GET /modules/{namespace}/{name}/{provider}/{version}/variable_template

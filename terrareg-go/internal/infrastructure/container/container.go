@@ -39,7 +39,7 @@ import (
 	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 	gpgkeyService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/service"
 	graphRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/repository"
-	graphService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/service"
+	domainGraphService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/graph/service"
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
@@ -108,7 +108,7 @@ type Container struct {
 
 	// Graph
 	GraphRepo    graphRepo.DependencyGraphRepository
-	GraphService *graphService.GraphService
+	GraphService *domainGraphService.GraphService
 
 	// GPG Keys
 	GPGKeyRepo    gpgkeyRepo.GPGKeyRepository
@@ -564,7 +564,7 @@ func NewContainer(
 	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
 
 	// Initialize graph service
-	c.GraphService = graphService.NewGraphService(c.GraphRepo)
+	c.GraphService = domainGraphService.NewGraphService(c.GraphRepo)
 
 	// Initialize GPG key service
 	c.GPGKeyService = gpgkeyService.NewGPGKeyService(c.GPGKeyRepo, c.NamespaceRepo)
@@ -601,7 +601,7 @@ func NewContainer(
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)
 	c.DeleteModuleVersionCmd = moduleCmd.NewDeleteModuleVersionCommand(c.ModuleProviderRepo, c.ModuleVersionRepo)
-	c.GenerateModuleSourceCmd = moduleCmd.NewGenerateModuleSourceCommand(c.ModuleProviderRepo, c.ModuleFileService)
+	c.GenerateModuleSourceCmd = moduleCmd.NewGenerateModuleSourceCommand(c.ModuleProviderRepo, c.ModuleFileService, c.DomainStorageService)
 	c.GetVariableTemplateQuery = moduleCmd.NewGetVariableTemplateQuery(c.ModuleProviderRepo, c.ModuleFileService)
 
 	// Initialize admin login command
@@ -763,7 +763,7 @@ func NewContainer(
 		infraConfig,
 	)
 	c.AuditHandler = terrareg.NewAuditHandler(c.GetAuditHistoryQuery)
-	c.GraphHandler = terrareg.NewGraphHandler(c.GetModuleDependencyGraphQuery)
+	c.GraphHandler = terrareg.NewGraphHandler(c.GetModuleDependencyGraphQuery, c.GraphService)
 
 	// Initialize webhook handler with upload API keys for signature validation
 	var uploadAPIKeys []string

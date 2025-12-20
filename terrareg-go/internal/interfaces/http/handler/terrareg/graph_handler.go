@@ -15,13 +15,13 @@ import (
 // GraphHandler handles graph-related requests
 type GraphHandler struct {
 	getModuleDependencyGraphQuery *graph.GetModuleDependencyGraphQuery
-	graphService                  graphservice.GraphService
+	graphService                  *graphservice.GraphService
 }
 
 // NewGraphHandler creates a new graph handler
 func NewGraphHandler(
 	getModuleDependencyGraphQuery *graph.GetModuleDependencyGraphQuery,
-	graphService graphservice.GraphService,
+	graphService *graphservice.GraphService,
 ) *GraphHandler {
 	return &GraphHandler{
 		getModuleDependencyGraphQuery: getModuleDependencyGraphQuery,
@@ -177,7 +177,7 @@ func (h *GraphHandler) convertToDOT(graph *model.DependencyGraph) string {
 	// Add edges
 	for _, edge := range graph.Edges {
 		dot += fmt.Sprintf("    \"%s\" -> \"%s\" [label=\"%s\"];\n",
-			edge.From, edge.To, edge.Label)
+			edge.Source, edge.Target, edge.Label)
 	}
 
 	dot += "}\n"
