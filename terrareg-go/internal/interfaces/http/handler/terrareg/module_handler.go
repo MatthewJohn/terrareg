@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
 )
@@ -45,6 +47,7 @@ type ModuleHandler struct {
 	createModuleProviderRedirectCmd *moduleCmd.CreateModuleProviderRedirectCommand
 	deleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand
 	getModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery
+	recordModuleDownloadCmd          *analyticsCmd.RecordModuleDownloadCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -77,6 +80,7 @@ func NewModuleHandler(
 	createModuleProviderRedirectCmd *moduleCmd.CreateModuleProviderRedirectCommand,
 	deleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand,
 	getModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery,
+	recordModuleDownloadCmd *analyticsCmd.RecordModuleDownloadCommand,
 	domainConfig *model.DomainConfig,
 	namespaceService *moduleService.NamespaceService,
 	analyticsRepo analyticsCmd.AnalyticsRepository,
@@ -106,6 +110,7 @@ func NewModuleHandler(
 		createModuleProviderRedirectCmd: createModuleProviderRedirectCmd,
 		deleteModuleProviderRedirectCmd: deleteModuleProviderRedirectCmd,
 		getModuleProviderRedirectsQuery: getModuleProviderRedirectsQuery,
+		recordModuleDownloadCmd:        recordModuleDownloadCmd,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -960,6 +965,56 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 	moduleName := chi.URLParam(r, "name")
 	provider := chi.URLParam(r, "provider")
 	version := chi.URLParam(r, "version")
+
+	// Record analytics for the download (async, don't block the download)
+	go func() {
+		// Extract analytics information
+		terraformVersion := r.Header.Get("X-Terraform-Version")
+		if terraformVersion == "" {
+			// Try to extract from User-Agent for older Terraform versions
+			userAgent := r.Header.Get("User-Agent")
+			if strings.Contains(userAgent, "Terraform/") {
+				parts := strings.Split(userAgent, "/")
+				if len(parts) > 1 {
+					terraformVersion = parts[1]
+				}
+			}
+		}
+
+		// Extract analytics token from namespace if present (format: {token}__{namespace})
+		var analyticsToken *string
+		var cleanNamespace string
+		if strings.Contains(namespace, "__") {
+			parts := strings.SplitN(namespace, "__", 2)
+			if len(parts) == 2 {
+				analyticsToken = &parts[0]
+				cleanNamespace = parts[1]
+			}
+		} else {
+			cleanNamespace = namespace
+		}
+
+		// Get auth token from context if authenticated
+		authUsername := ""
+		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+			authUsername = authCtx.Username
+		}
+
+		// Create analytics recording request
+		anaylticsReq := analyticsCmd.RecordModuleDownloadRequest{
+			Namespace:        cleanNamespace,
+			Module:           moduleName,
+			Provider:         provider,
+			Version:          version,
+			TerraformVersion: &terraformVersion,
+			AnalyticsToken:   analyticsToken,
+			AuthToken:        &authUsername,
+			Environment:      nil, // TODO: Extract environment from auth token if needed
+		}
+
+		// Record analytics (silently fail on error to not affect downloads)
+		h.recordModuleDownloadCmd.Execute(ctx, anaylticsReq)
+	}()
 
 	// Create request
 	req := &moduleCmd.GenerateModuleSourceRequest{

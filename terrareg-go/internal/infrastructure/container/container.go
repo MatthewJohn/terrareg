@@ -724,6 +724,7 @@ func NewContainer(
 		c.CreateModuleProviderRedirectCmd,
 		c.DeleteModuleProviderRedirectCmd,
 		c.GetModuleProviderRedirectsQuery,
+		c.RecordModuleDownloadCmd,
 		domainConfig,
 		c.NamespaceService,
 		c.AnalyticsRepo,
