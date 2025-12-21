@@ -14,15 +14,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// AuthFactory handles authentication with immutable AuthMethod implementations
-// It creates adapters that hold authentication state without modifying the AuthMethods themselves
+// AuthFactory handles authentication with immutable AuthMethodFactory implementations
+// It uses factories to create AuthMethod instances with authentication state
 type AuthFactory struct {
-	authMethods []auth.AuthMethod
-	mutex       sync.RWMutex
-	sessionRepo repository.SessionRepository
+	authFactories []auth.AuthMethodFactory
+	mutex         sync.RWMutex
+	sessionRepo   repository.SessionRepository
 	userGroupRepo repository.UserGroupRepository
-	config      *infraConfig.InfrastructureConfig
-	logger      *zerolog.Logger
+	config        *infraConfig.InfrastructureConfig
+	logger        *zerolog.Logger
 }
 
 // NewAuthFactory creates a new immutable authentication factory
@@ -35,7 +35,7 @@ func NewAuthFactory(
 	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
-		authMethods:   make([]auth.AuthMethod, 0),
+		authFactories: make([]auth.AuthMethodFactory, 0),
 		sessionRepo:   sessionRepo,
 		userGroupRepo: userGroupRepo,
 		config:        config,
@@ -120,11 +120,11 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 	}
 }
 
-// RegisterAuthMethod registers an authentication method
-func (af *AuthFactory) RegisterAuthMethod(authMethod auth.AuthMethod) {
+// RegisterAuthMethod registers an authentication method factory
+func (af *AuthFactory) RegisterAuthMethod(authFactory auth.AuthMethodFactory) {
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
-	af.authMethods = append(af.authMethods, authMethod)
+	af.authFactories = append(af.authFactories, authFactory)
 }
 
 // AuthenticateRequest authenticates an HTTP request using immutable AuthMethods

@@ -8,12 +8,13 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
-// SamlAuthMethod implements immutable SAML authentication
+// SamlAuthMethod implements immutable SAML authentication factory
+// This is a factory that creates SAML auth contexts with actual permission logic
 type SamlAuthMethod struct {
 	config *config.InfrastructureConfig
 }
 
-// NewSamlAuthMethod creates a new immutable SAML auth method
+// NewSamlAuthMethod creates a new immutable SAML auth method factory
 func NewSamlAuthMethod(config *config.InfrastructureConfig) *SamlAuthMethod {
 	return &SamlAuthMethod{
 		config: config,
@@ -21,7 +22,7 @@ func NewSamlAuthMethod(config *config.InfrastructureConfig) *SamlAuthMethod {
 }
 
 // Authenticate validates SAML session and returns a SamlAuthContext
-func (s *SamlAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthMethod, error) {
+func (s *SamlAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthContext, error) {
 	// Check if SAML is enabled
 	if !s.IsEnabled() {
 		return nil, nil // Let other auth methods try
@@ -72,23 +73,7 @@ func (s *SamlAuthMethod) Authenticate(ctx context.Context, sessionData map[strin
 	return authContext, nil
 }
 
-// AuthMethod interface implementation for the base SamlAuthMethod
-
-func (s *SamlAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (s *SamlAuthMethod) IsAdmin() bool                     { return false }
-func (s *SamlAuthMethod) IsAuthenticated() bool              { return false }
-func (s *SamlAuthMethod) RequiresCSRF() bool                   { return true }
-func (s *SamlAuthMethod) CheckAuthState() bool                  { return false }
-func (s *SamlAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (s *SamlAuthMethod) CanUploadModuleVersion(string) bool  { return false }
-func (s *SamlAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (s *SamlAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (s *SamlAuthMethod) GetUsername() string                { return "" }
-func (s *SamlAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (s *SamlAuthMethod) CanAccessReadAPI() bool             { return false }
-func (s *SamlAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (s *SamlAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (s *SamlAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+// AuthMethod interface implementation
 
 func (s *SamlAuthMethod) GetProviderType() auth.AuthMethodType {
 	return auth.AuthMethodSAML

@@ -10,13 +10,14 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
-// OpenidConnectAuthMethod implements immutable OpenID Connect authentication
+// OpenidConnectAuthMethod implements immutable OpenID Connect authentication factory
+// This is a factory that creates OpenID Connect auth contexts with actual permission logic
 type OpenidConnectAuthMethod struct {
 	config     *config.InfrastructureConfig
 	oidcService auth.OIDCValidator
 }
 
-// NewOpenidConnectAuthMethod creates a new immutable OpenID Connect auth method
+// NewOpenidConnectAuthMethod creates a new immutable OpenID Connect auth method factory
 func NewOpenidConnectAuthMethod(config *config.InfrastructureConfig, oidcService auth.OIDCValidator) *OpenidConnectAuthMethod {
 	return &OpenidConnectAuthMethod{
 		config:     config,
@@ -25,7 +26,7 @@ func NewOpenidConnectAuthMethod(config *config.InfrastructureConfig, oidcService
 }
 
 // Authenticate validates OpenID Connect session and returns an OpenidConnectAuthContext
-func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthMethod, error) {
+func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthContext, error) {
 	// Check if OpenID Connect is enabled
 	if !o.IsEnabled() || o.oidcService == nil {
 		return nil, nil // Let other auth methods try
@@ -85,23 +86,7 @@ func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData 
 	return authContext, nil
 }
 
-// AuthMethod interface implementation for the base OpenidConnectAuthMethod
-
-func (o *OpenidConnectAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (o *OpenidConnectAuthMethod) IsAdmin() bool                     { return false }
-func (o *OpenidConnectAuthMethod) IsAuthenticated() bool              { return false }
-func (o *OpenidConnectAuthMethod) RequiresCSRF() bool                   { return true }
-func (o *OpenidConnectAuthMethod) CheckAuthState() bool                  { return false }
-func (o *OpenidConnectAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (o *OpenidConnectAuthMethod) CanUploadModuleVersion(string) bool  { return false }
-func (o *OpenidConnectAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (o *OpenidConnectAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (o *OpenidConnectAuthMethod) GetUsername() string                { return "" }
-func (o *OpenidConnectAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (o *OpenidConnectAuthMethod) CanAccessReadAPI() bool             { return false }
-func (o *OpenidConnectAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (o *OpenidConnectAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (o *OpenidConnectAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+// AuthMethodFactory interface implementation
 
 func (o *OpenidConnectAuthMethod) GetProviderType() auth.AuthMethodType {
 	return auth.AuthMethodOpenIDConnect
