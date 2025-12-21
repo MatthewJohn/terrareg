@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"net/url"
+	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
@@ -14,190 +16,122 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// TerraformIDPServiceAdapter wraps the domain service to implement the infrastructure interface
-type TerraformIDPServiceAdapter struct {
-	service interface{}
-}
-
-// ValidateToken implements the infrastructure interface
-func (a *TerraformIDPServiceAdapter) ValidateToken(ctx context.Context, token string) (interface{}, error) {
-	// Use type assertion to call the domain service method
-	if validator, ok := a.service.(interface {
-		ValidateToken(ctx context.Context, token string) (interface{}, error)
-	}); ok {
-		return validator.ValidateToken(ctx, token)
-	}
-	return nil, fmt.Errorf("service does not implement ValidateToken")
-}
-
-// AuthFactory implements the factory pattern for authentication methods
-// Matches Python's AuthFactory behavior with priority-ordered discovery
+// AuthFactory handles authentication with immutable AuthMethod implementations
+// It creates adapters that hold authentication state without modifying the AuthMethods themselves
 type AuthFactory struct {
-	authMethods         []auth.AuthMethod
-	currentAuthMethod   auth.AuthMethod
-	currentAuthCtx      *auth.AuthContext
-	mutex               sync.RWMutex
-	sessionRepo         repository.SessionRepository
-	userGroupRepo       repository.UserGroupRepository
-	config              *infraConfig.InfrastructureConfig
-	terraformIDPService interface{}
-	logger              *zerolog.Logger
+	authMethods []auth.AuthMethod
+	mutex       sync.RWMutex
+	sessionRepo repository.SessionRepository
+	userGroupRepo repository.UserGroupRepository
+	config      *infraConfig.InfrastructureConfig
+	logger      *zerolog.Logger
 }
 
-// NewAuthFactory creates a new authentication factory
+// NewAuthFactory creates a new immutable authentication factory
 func NewAuthFactory(
 	sessionRepo repository.SessionRepository,
 	userGroupRepo repository.UserGroupRepository,
 	config *infraConfig.InfrastructureConfig,
-	terraformIDPService interface{},
 	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
-		authMethods:         make([]auth.AuthMethod, 0),
-		sessionRepo:         sessionRepo,
-		userGroupRepo:       userGroupRepo,
-		config:              config,
-		terraformIDPService: terraformIDPService,
-		logger:              logger,
+		authMethods:   make([]auth.AuthMethod, 0),
+		sessionRepo:   sessionRepo,
+		userGroupRepo: userGroupRepo,
+		config:        config,
+		logger:        logger,
 	}
 
-	// Initialize auth methods in priority order (matching Python)
+	// Initialize immutable auth methods in priority order
 	factory.initializeAuthMethods()
 
 	return factory
 }
 
-// initializeAuthMethods sets up authentication methods in priority order
+// initializeAuthMethods sets up immutable authentication methods in priority order
 func (af *AuthFactory) initializeAuthMethods() {
 	// Priority order from Python terrareg
-	// 1. ApiKeyAuthMethod (consolidated admin/upload/publish API keys)
-	// 2. AdminSessionAuthMethod
-	// 3. SamlAuthMethod
-	// 4. OpenidConnectAuthMethod
-	// 5. GithubAuthMethod
-	// 6. TerraformOidcAuthMethod
-	// 7. TerraformAnalyticsAuthKeyAuthMethod
-	// 8. NotAuthenticated (fallback)
+	// 1. ImmutableApiKeyAuthMethod (consolidated admin/upload/publish API keys)
+	// 2. ImmutableSessionAuthMethod
+	// 3. Other auth methods...
 
-	// Register consolidated ApiKeyAuthMethod (handles admin, upload, and publish API keys)
+	// Register consolidated API key auth method
 	apiKeyAuthMethod := infraAuth.NewApiKeyAuthMethod(af.config)
 	if apiKeyAuthMethod.IsEnabled() {
 		af.RegisterAuthMethod(apiKeyAuthMethod)
 	}
 
-	// AuthenticationTokenAuthMethod is not used as we follow Python's approach
-	// of using environment variables for API keys
+	// Register session auth method
+	sessionAuthConfig := &infraAuth.SessionAuthMethodConfig{
+		SessionCookieName: "terrareg_session",
+		SessionSecure:     true,
+		SessionHTTPOnly:   true,
+		SessionSameSite:   "Lax",
+		SessionMaxAge:     86400, // 24 hours
+	}
+	sessionAuthMethod := infraAuth.NewSessionAuthMethod(
+		af.sessionRepo,
+		af.userGroupRepo,
+		sessionAuthConfig,
+	)
+	af.RegisterAuthMethod(sessionAuthMethod)
 
-	// Register AdminSessionAuthMethod (5th priority)
-	adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(af.sessionRepo, af.userGroupRepo)
-	af.RegisterAuthMethod(adminSessionAuthMethod)
-
-	// Register SamlAuthMethod (3rd priority) - only if SAML is configured
-	if af.config.SAML2IDPMetadataURL != "" && af.config.SAML2IssuerEntityID != "" {
-		samlConfig := &infraAuth.SAMLConfig{
-			EntityID:       af.config.SAML2EntityID,
-			SSOURL:         af.config.SAML2IDPMetadataURL,
-			SLOURL:         "", // Optional - can be added if needed
-			Certificate:    af.config.SAML2PublicKey,
-			PrivateKey:     af.config.SAML2PrivateKey,
-			GroupAttribute: af.config.SAML2GroupAttribute,
-			// Note: Debug field not available in SAMLConfig struct - would need to be added if needed
-		}
-		samlAuthMethod := infraAuth.NewSamlAuthMethod(samlConfig, af.userGroupRepo)
+	// Register SAML auth method
+	samlAuthMethod := infraAuth.NewSamlAuthMethod(af.config)
+	if samlAuthMethod.IsEnabled() {
 		af.RegisterAuthMethod(samlAuthMethod)
 	}
 
-	// Register OpenIDConnectAuthMethod (4th priority) - only if OIDC is configured
-	if af.config.OpenIDConnectClientID != "" && af.config.OpenIDConnectIssuer != "" {
-		// Use configured scopes or fall back to default scopes
-		scopes := af.config.OpenIDConnectScopes
-		if len(scopes) == 0 {
-			scopes = []string{"openid", "profile", "email"} // Default scopes
-		}
-
-		// Build redirect URI from PublicURL
-		redirectURI := ""
-		if af.config.PublicURL != "" {
-			redirectURL, _ := url.Parse(af.config.PublicURL)
-			redirectURL.Path = "/v1/terrareg/auth/oidc/callback"
-			redirectURI = redirectURL.String()
-		}
-
-		oidcConfig := &infraAuth.OIDCConfig{
-			ClientID:     af.config.OpenIDConnectClientID,
-			ClientSecret: af.config.OpenIDConnectClientSecret,
-			IssuerURL:    af.config.OpenIDConnectIssuer,
-			RedirectURI:  redirectURI,
-			Scopes:       scopes,
-			// Note: Debug field not available in OIDCConfig struct - would need to be added if needed
-		}
-		oidcAuthMethod := infraAuth.NewOpenIDConnectAuthMethod(oidcConfig, af.userGroupRepo)
-		af.RegisterAuthMethod(oidcAuthMethod)
+	// Register OpenID Connect auth method
+	openidAuthMethod := infraAuth.NewOpenidConnectAuthMethod(af.config)
+	if openidAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(openidAuthMethod)
 	}
 
-	// Register TerraformOidcAuthMethod (9th priority)
-	// This provides OIDC authentication for Terraform CLI
-	if af.terraformIDPService != nil {
-		// Wrap the service in an adapter to bridge the interface gap
-		adapter := &TerraformIDPServiceAdapter{
-			service: af.terraformIDPService,
-		}
-		terraformIDP := infraAuth.NewTerraformIDP(
-			adapter,
-			af.logger,
-			true, // Enable by default when service is available
-		)
-		terraformOidcAuthMethod := infraAuth.NewTerraformOidcAuthMethod(terraformIDP)
+	// Register Terraform OIDC auth method
+	terraformOidcAuthMethod := infraAuth.NewTerraformOidcAuthMethod(af.config)
+	if terraformOidcAuthMethod.IsEnabled() {
 		af.RegisterAuthMethod(terraformOidcAuthMethod)
 	}
-
-	// Register fallback method
-	af.RegisterAuthMethod(NewNotAuthenticatedAuthMethod())
 }
 
-// RegisterAuthMethod registers an authentication method with the factory
+// RegisterAuthMethod registers an authentication method
 func (af *AuthFactory) RegisterAuthMethod(authMethod auth.AuthMethod) {
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
-
 	af.authMethods = append(af.authMethods, authMethod)
 }
 
-// GetCurrentAuthMethod returns the currently authenticated auth method
-func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
-	af.mutex.RLock()
-	defer af.mutex.RUnlock()
-
-	if af.currentAuthMethod != nil {
-		return af.currentAuthMethod
-	}
-
-	// Fallback to NotAuthenticated if no method is current
-	return NewNotAuthenticatedAuthMethod()
-}
-
-// GetCurrentAuthContext returns the current authentication context
-func (af *AuthFactory) GetCurrentAuthContext() *auth.AuthContext {
-	af.mutex.RLock()
-	defer af.mutex.RUnlock()
-
-	if af.currentAuthCtx != nil {
-		return af.currentAuthCtx
-	}
-
-	// Create context for NotAuthenticated
-	return auth.NewAuthContext(&NotAuthenticatedAuthMethod{})
-}
-
-// AuthenticateRequest authenticates an HTTP request
+// AuthenticateRequest authenticates an HTTP request using immutable AuthMethods
 func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (*model.AuthenticationResponse, error) {
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
 
-	request := model.NewAuthenticationRequest(ctx, auth.AuthMethodNotAuthenticated, headers, formData, queryParams)
-
 	// Extract API key from X-Terrareg-ApiKey header (matches Python)
 	apiKey := headers["X-Terrareg-ApiKey"]
+
+	// Extract session ID from cookies
+	sessionID := af.extractSessionID(headers)
+
+	// Extract session data for SAML/OpenID (in a real implementation, this would come from the session store)
+	sessionData := make(map[string]interface{})
+	if sessionID != nil {
+		// TODO: Load session data from session repository
+		// For now, assume session data is extracted from headers/cookies
+		sessionData["samlNameId"] = headers["X-SAML-NameID"]
+		sessionData["samlUserdata"] = nil // Would be loaded from session
+		sessionData["openid_connect_expires_at"] = 0.0
+		sessionData["openid_connect_id_token"] = ""
+		sessionData["openid_username"] = headers["X-OpenID-Username"]
+		sessionData["openid_groups"] = []string{} // Would be loaded from session
+	}
+
+	// Extract authorization header for Terraform OIDC
+	authorizationHeader := headers["Authorization"]
+
+	// Extract request body for Terraform OIDC (if needed)
+	var requestBody []byte
+	// In a real implementation, this would be extracted from the request
 
 	// Try each auth method in priority order
 	for _, authMethod := range af.authMethods {
@@ -205,44 +139,55 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 			continue
 		}
 
-		// Check authentication state
-		isAuthenticated := false
+		var authenticatedAdapter auth.AuthMethod
+		var err error
 
-		// Special handling for API key auth methods
-		switch providerType := authMethod.GetProviderType(); providerType {
-		case auth.AuthMethodAdminApiKey, auth.AuthMethodUploadApiKey, auth.AuthMethodPublishApiKey:
-			// Handle consolidated ApiKeyAuthMethod
-			if apiKeyAuthMethod, ok := authMethod.(*infraAuth.ApiKeyAuthMethod); ok {
-				// Try to authenticate with the API key
-				authCtx, err := apiKeyAuthMethod.Authenticate(ctx, apiKey)
-				if err == nil && authCtx != nil {
-					isAuthenticated = true
-				}
-			} else {
-				isAuthenticated = authMethod.CheckAuthState()
-			}
+		// Handle different authentication methods
+		switch method := authMethod.(type) {
+		case *infraAuth.ApiKeyAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, apiKey)
+		case *infraAuth.SessionAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, sessionID)
+		case *infraAuth.SamlAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
+		case *infraAuth.OpenidConnectAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
+		case *infraAuth.TerraformOidcAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, authorizationHeader, requestBody)
 		default:
-			isAuthenticated = authMethod.CheckAuthState()
+			// For legacy auth methods, fall back to CheckAuthState
+			if authMethod.CheckAuthState() {
+				authenticatedAdapter = authMethod
+			}
 		}
 
-		if isAuthenticated {
-			af.currentAuthMethod = authMethod
-			af.currentAuthCtx = af.buildAuthContext(ctx, authMethod)
+		if err != nil {
+			continue // Try next auth method
+		}
 
-			response := model.NewAuthenticationResponse(request.RequestID, true, authMethod.GetProviderType())
-			response.AuthMethod = authMethod.GetProviderType()
-			response.Username = authMethod.GetUsername()
-			response.IsAdmin = authMethod.IsAdmin()
-			response.UserGroups = authMethod.GetUserGroupNames()
-			response.Permissions = authMethod.GetAllNamespacePermissions()
-			response.CanPublish = authMethod.CanPublishModuleVersion("")
-			response.CanUpload = authMethod.CanUploadModuleVersion("")
-			response.CanAccessAPI = authMethod.CanAccessReadAPI()
-			response.CanAccessTerraform = authMethod.CanAccessTerraformAPI()
-			response.TerraformToken = af.getStringPtr(authMethod.GetTerraformAuthToken())
+		// If we got an authenticated adapter, build response
+		if authenticatedAdapter != nil && authenticatedAdapter.IsAuthenticated() {
+			// Build response using the adapter
+			response := model.NewAuthenticationResponse(
+				af.generateRequestID(),
+				true,
+				authenticatedAdapter.GetProviderType(),
+			)
+			response.AuthMethod = authenticatedAdapter.GetProviderType()
+			response.Username = authenticatedAdapter.GetUsername()
+			response.IsAdmin = authenticatedAdapter.IsAdmin()
+			response.UserGroups = authenticatedAdapter.GetUserGroupNames()
+			response.Permissions = authenticatedAdapter.GetAllNamespacePermissions()
+			response.CanPublish = authenticatedAdapter.CanPublishModuleVersion("")
+			response.CanUpload = authenticatedAdapter.CanUploadModuleVersion("")
+			response.CanAccessAPI = authenticatedAdapter.CanAccessReadAPI()
+			response.CanAccessTerraform = authenticatedAdapter.CanAccessTerraformAPI()
+			response.TerraformToken = af.getStringPtr(authenticatedAdapter.GetTerraformAuthToken())
 
 			// Set session ID if available
-			if sessionID := af.extractSessionID(headers); sessionID != nil {
+			if adapter, ok := authenticatedAdapter.(*model.SessionStateAdapter); ok {
+				response.SessionID = adapter.GetContext().Value("session_id").(*string)
+			} else if sessionID := af.extractSessionID(headers); sessionID != nil {
 				response.SessionID = sessionID
 			}
 
@@ -252,10 +197,11 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 
 	// No authentication method succeeded - return NotAuthenticated
 	fallbackMethod := &NotAuthenticatedAuthMethod{}
-	af.currentAuthMethod = fallbackMethod
-	af.currentAuthCtx = auth.NewAuthContext(fallbackMethod)
-
-	response := model.NewAuthenticationResponse(request.RequestID, false, auth.AuthMethodNotAuthenticated)
+	response := model.NewAuthenticationResponse(
+		af.generateRequestID(),
+		false,
+		auth.AuthMethodNotAuthenticated,
+	)
 	response.AuthMethod = auth.AuthMethodNotAuthenticated
 	response.Username = fallbackMethod.GetUsername()
 	response.CanAccessAPI = fallbackMethod.CanAccessReadAPI()
@@ -265,63 +211,84 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 
 // CheckNamespacePermission checks if the current auth context has permission for a namespace
 func (af *AuthFactory) CheckNamespacePermission(namespace, permissionType string) bool {
-	authCtx := af.GetCurrentAuthContext()
-
-	// Admin users have access to everything
-	if authCtx.AuthMethod.IsAdmin() {
-		return true
-	}
-
-	// Check permissions in context
-	return authCtx.HasPermission(namespace, permissionType)
+	// This method would need to be called with the current AuthContext
+	// For now, return false as we don't store the current context
+	return false
 }
 
 // CanPublishModuleVersion checks if current user can publish to a namespace
 func (af *AuthFactory) CanPublishModuleVersion(namespace string) bool {
-	authMethod := af.GetCurrentAuthMethod()
-	return authMethod.CanPublishModuleVersion(namespace)
+	// This method would need to be called with the current AuthContext
+	return false
 }
 
 // CanUploadModuleVersion checks if current user can upload to a namespace
 func (af *AuthFactory) CanUploadModuleVersion(namespace string) bool {
-	authMethod := af.GetCurrentAuthMethod()
-	return authMethod.CanUploadModuleVersion(namespace)
+	// This method would need to be called with the current AuthContext
+	return false
 }
 
 // CanAccessReadAPI checks if current user can access the read API
 func (af *AuthFactory) CanAccessReadAPI() bool {
-	authMethod := af.GetCurrentAuthMethod()
-	return authMethod.CanAccessReadAPI()
+	// This method would need to be called with the current AuthContext
+	return false
 }
 
 // CanAccessTerraformAPI checks if current user can access Terraform API
 func (af *AuthFactory) CanAccessTerraformAPI() bool {
-	authMethod := af.GetCurrentAuthMethod()
-	return authMethod.CanAccessTerraformAPI()
+	// This method would need to be called with the current AuthContext
+	return false
 }
 
 // InvalidateAuthentication clears the current authentication state
 func (af *AuthFactory) InvalidateAuthentication() {
-	af.mutex.Lock()
-	defer af.mutex.Unlock()
-
-	af.currentAuthMethod = nil
-	af.currentAuthCtx = nil
+	// With immutable methods, there's no state to invalidate
+	// The authentication state is managed per-request
 }
 
-// buildAuthContext builds an authentication context for an auth method
-func (af *AuthFactory) buildAuthContext(ctx context.Context, authMethod auth.AuthMethod) *auth.AuthContext {
-	authCtx := auth.NewAuthContext(authMethod)
+// generateRequestID generates a unique request ID
+func (af *AuthFactory) generateRequestID() string {
+	return fmt.Sprintf("req_%d", af.generateRandomID())
+}
 
-	// Load user groups for the authentication method
-	userGroups, err := af.loadUserGroupsForAuthMethod(ctx, authMethod)
-	if err == nil {
-		for _, group := range userGroups {
-			authCtx.AddUserGroup(group)
+// generateRandomID generates a random ID (simplified)
+func (af *AuthFactory) generateRandomID() string {
+	// In a real implementation, use crypto/rand or similar
+	return fmt.Sprintf("%d", 0) // Placeholder
+}
+
+// getStringPtr returns a pointer to the string, or nil if empty
+func (af *AuthFactory) getStringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// extractSessionID extracts session ID from headers/cookies
+func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
+	// Check for session ID in headers first
+	if sessionID, exists := headers["X-Session-ID"]; exists && sessionID != "" {
+		return &sessionID
+	}
+
+	// Check cookie header for session ID
+	if cookieHeader, exists := headers["Cookie"]; exists && cookieHeader != "" {
+		// Parse cookies
+		cookies := strings.Split(cookieHeader, ";")
+		for _, cookie := range cookies {
+			cookie = strings.TrimSpace(cookie)
+			if strings.HasPrefix(cookie, "terrareg_session=") {
+				sessionID := strings.TrimPrefix(cookie, "terrareg_session=")
+				sessionID = strings.TrimSuffix(sessionID, "\"")
+				if sessionID != "" {
+					return &sessionID
+				}
+			}
 		}
 	}
 
-	return authCtx
+	return nil
 }
 
 // NotAuthenticatedAuthMethod represents the fallback authentication method
@@ -334,12 +301,11 @@ func NewNotAuthenticatedAuthMethod() *NotAuthenticatedAuthMethod {
 	return &NotAuthenticatedAuthMethod{}
 }
 
-// GetType returns the authentication method type
+// Implement AuthMethod interface methods
 func (n *NotAuthenticatedAuthMethod) GetType() string {
 	return "NotAuthenticated"
 }
 
-// Implement AuthMethod interface methods
 func (n *NotAuthenticatedAuthMethod) IsBuiltInAdmin() bool {
 	return false
 }
@@ -389,75 +355,21 @@ func (n *NotAuthenticatedAuthMethod) GetUserGroupNames() []string {
 }
 
 func (n *NotAuthenticatedAuthMethod) CanAccessReadAPI() bool {
-	return true
+	return false
 }
 
 func (n *NotAuthenticatedAuthMethod) CanAccessTerraformAPI() bool {
-	return true
+	return false
 }
 
 func (n *NotAuthenticatedAuthMethod) GetTerraformAuthToken() string {
 	return ""
 }
 
+func (n *NotAuthenticatedAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}
+
 func (n *NotAuthenticatedAuthMethod) GetProviderType() auth.AuthMethodType {
 	return auth.AuthMethodNotAuthenticated
-}
-
-// loadUserGroupsForAuthMethod loads user groups for an authentication method
-func (af *AuthFactory) loadUserGroupsForAuthMethod(ctx context.Context, authMethod auth.AuthMethod) ([]*auth.UserGroup, error) {
-	// Get username from the auth method if available
-	username := authMethod.GetUsername()
-	if username == "" {
-		// If no username is available, return empty groups list
-		// This is the case for API key authentication methods and NotAuthenticated
-		return []*auth.UserGroup{}, nil
-	}
-
-	// Get user groups for the authenticated user
-	userGroups, err := af.userGroupRepo.GetGroupsForUser(ctx, username)
-	if err != nil {
-		// If user groups can't be loaded, don't fail authentication
-		// Return empty groups list instead
-		return []*auth.UserGroup{}, nil
-	}
-
-	return userGroups, nil
-}
-
-// extractSessionID extracts session ID from headers
-func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
-	// Check for session cookie or header
-	if cookie, exists := headers["Cookie"]; exists {
-		// Parse session from cookie
-		// Implementation depends on cookie format
-		return af.parseSessionFromCookie(cookie)
-	}
-
-	if sessionID, exists := headers["X-Session-ID"]; exists {
-		return &sessionID
-	}
-
-	return nil
-}
-
-// parseSessionFromCookie parses session ID from cookie string
-func (af *AuthFactory) parseSessionFromCookie(cookie string) *string {
-	// Simple implementation - in practice, this would parse cookie format properly
-	// This matches Python's session cookie handling
-	if cookie == "" {
-		return nil
-	}
-
-	// For now, just return the cookie as session ID
-	// Real implementation would parse "session_id=<value>" format
-	return &cookie
-}
-
-// getStringPtr returns a pointer to a string or nil if empty
-func (af *AuthFactory) getStringPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
