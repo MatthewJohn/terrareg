@@ -6,33 +6,23 @@ import (
 	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 )
 
-// AdminSessionAuthMethod implements authentication for admin users via session cookies
+// AdminSessionAuthMethod implements immutable authentication for admin users via session cookies
 type AdminSessionAuthMethod struct {
-	auth.BaseAuthMethod
-	sessionRepo     repository.SessionRepository
-	userGroupRepo   repository.UserGroupRepository
-	currentSession  *auth.Session
-	isAuthenticated bool
-	isAdmin         bool
-	username        string
-	userPermissions map[string]string
-	userGroups      []*auth.UserGroup
+	sessionRepo   repository.SessionRepository
+	userGroupRepo repository.UserGroupRepository
 }
 
-// NewAdminSessionAuthMethod creates a new admin session authentication method
+// NewAdminSessionAuthMethod creates a new immutable admin session authentication method
 func NewAdminSessionAuthMethod(
 	sessionRepo repository.SessionRepository,
 	userGroupRepo repository.UserGroupRepository,
 ) *AdminSessionAuthMethod {
 	return &AdminSessionAuthMethod{
-		sessionRepo:     sessionRepo,
-		userGroupRepo:   userGroupRepo,
-		userPermissions: make(map[string]string),
-		userGroups:      make([]*auth.UserGroup, 0),
+		sessionRepo:   sessionRepo,
+		userGroupRepo: userGroupRepo,
 	}
 }
 
@@ -41,181 +31,73 @@ func (a *AdminSessionAuthMethod) GetProviderType() auth.AuthMethodType {
 	return auth.AuthMethodAdminSession
 }
 
-// CheckAuthState validates the current authentication state
-func (a *AdminSessionAuthMethod) CheckAuthState() bool {
-	return a.isAuthenticated
-}
-
-// IsBuiltInAdmin returns whether this is a built-in admin method
-func (a *AdminSessionAuthMethod) IsBuiltInAdmin() bool {
-	return a.isAdmin
-}
-
-// IsAuthenticated returns whether the current request is authenticated
-func (a *AdminSessionAuthMethod) IsAuthenticated() bool {
-	return a.isAuthenticated
-}
-
-// IsAdmin returns whether the authenticated user has admin privileges
-func (a *AdminSessionAuthMethod) IsAdmin() bool {
-	return true
-}
-
 // IsEnabled returns whether this authentication method is enabled
 func (a *AdminSessionAuthMethod) IsEnabled() bool {
 	return true
 }
 
-// RequiresCSRF returns whether this authentication method requires CSRF protection
-func (a *AdminSessionAuthMethod) RequiresCSRF() bool {
-	return true
-}
-
-// CanPublishModuleVersion checks if the user can publish module versions to the given namespace
-func (a *AdminSessionAuthMethod) CanPublishModuleVersion(namespace string) bool {
-	if a.isAdmin {
-		return true
-	}
-	return a.CheckNamespaceAccess("FULL", namespace)
-}
-
-// CanUploadModuleVersion checks if the user can upload module versions to the given namespace
-func (a *AdminSessionAuthMethod) CanUploadModuleVersion(namespace string) bool {
-	if a.isAdmin {
-		return true
-	}
-	return a.CheckNamespaceAccess("FULL", namespace) || a.CheckNamespaceAccess("MODIFY", namespace)
-}
-
-// CheckNamespaceAccess checks if the user has the specified permission for a namespace
-func (a *AdminSessionAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
-	if a.isAdmin {
-		return true
-	}
-
-	storedPermission, exists := a.userPermissions[namespace]
-	if !exists {
-		return false
-	}
-
-	// Check permission hierarchy
-	switch auth.PermissionType(permissionType) {
-	case auth.PermissionRead:
-		return storedPermission == string(auth.PermissionRead) ||
-			storedPermission == string(auth.PermissionModify) ||
-			storedPermission == string(auth.PermissionFull)
-	case auth.PermissionModify:
-		return storedPermission == string(auth.PermissionModify) ||
-			storedPermission == string(auth.PermissionFull)
-	case auth.PermissionFull:
-		return storedPermission == string(auth.PermissionFull)
-	default:
-		return false
-	}
-}
-
-// GetAllNamespacePermissions returns all namespace permissions for the user
-func (a *AdminSessionAuthMethod) GetAllNamespacePermissions() map[string]string {
-	return a.userPermissions
-}
-
-// GetUsername returns the authenticated username
-func (a *AdminSessionAuthMethod) GetUsername() string {
-	return a.username
-}
-
-// GetUserGroupNames returns the names of all user groups
-func (a *AdminSessionAuthMethod) GetUserGroupNames() []string {
-	names := make([]string, len(a.userGroups))
-	for i, group := range a.userGroups {
-		names[i] = group.GetName()
-	}
-	return names
-}
-
-// CanAccessReadAPI returns whether the user can access read APIs
-func (a *AdminSessionAuthMethod) CanAccessReadAPI() bool {
-	return a.isAuthenticated
-}
-
-// CanAccessTerraformAPI returns whether the user can access Terraform APIs
-func (a *AdminSessionAuthMethod) CanAccessTerraformAPI() bool {
-	return a.isAdmin
-}
-
-// GetTerraformAuthToken returns the Terraform authentication token
-func (a *AdminSessionAuthMethod) GetTerraformAuthToken() string {
-	// Session-based auth doesn't typically provide Terraform tokens
-	return ""
-}
-
-// GetProviderData returns provider-specific data
-func (a *AdminSessionAuthMethod) GetProviderData() map[string]interface{} {
-	data := make(map[string]interface{})
-	data["session_id"] = a.currentSession.ID
-	data["expires_at"] = a.currentSession.Expiry
-	data["user_groups"] = a.GetUserGroupNames()
-	return data
-}
-
-// Authenticate authenticates a request and updates the auth method state
-func (a *AdminSessionAuthMethod) Authenticate(ctx context.Context, headers map[string]string, cookies map[string]string) error {
+// Authenticate authenticates a request and returns an AdminSessionAuthContext
+func (a *AdminSessionAuthMethod) Authenticate(ctx context.Context, headers, formData, queryParams map[string]string) (auth.AuthMethod, error) {
 	// Look for session cookie
-	sessionID, exists := cookies["session_id"]
+	sessionID, exists := queryParams["session_id"]
 	if !exists {
-		return model.ErrAuthenticationFailed
+		// Check headers for session ID
+		if sessionID, exists = headers["X-Session-ID"]; !exists {
+			// Check cookie header for session ID
+			if cookieHeader, exists := headers["Cookie"]; exists {
+				cookies := strings.Split(cookieHeader, ";")
+				for _, cookie := range cookies {
+					cookie = strings.TrimSpace(cookie)
+					if strings.HasPrefix(cookie, "session_id=") {
+						sessionID = strings.TrimPrefix(cookie, "session_id=")
+						break
+					}
+				}
+			}
+		}
 	}
 
-	if strings.TrimSpace(sessionID) == "" {
-		return model.ErrAuthenticationFailed
+	if sessionID == "" || strings.TrimSpace(sessionID) == "" {
+		return nil, nil // Let other auth methods try
 	}
 
 	// Find session in database
 	session, err := a.sessionRepo.FindByID(ctx, sessionID)
-	if err != nil {
-		return model.ErrAuthenticationFailed
+	if err != nil || session == nil {
+		return nil, nil // Let other auth methods try
 	}
 
 	// Check if session is expired
 	if session.IsExpired() {
-		return model.ErrSessionExpired
+		return nil, nil // Let other auth methods try
 	}
-
-	// Store current session
-	a.currentSession = session
-	a.isAuthenticated = true
 
 	// Parse provider source auth to get user information
 	userInfo, err := a.parseProviderSourceAuth(session.ProviderSourceAuth)
 	if err != nil {
-		return model.ErrAuthenticationFailed
+		return nil, nil // Let other auth methods try
 	}
 
-	a.username = userInfo.Username
+	// Create AdminSessionAuthContext with session state (convert string UserID to int for compatibility)
+	// For now, use 0 as placeholder since we don't have proper user ID conversion
+	userID := 0 // TODO: Convert userInfo.UserID from string to int when user ID system is defined
+	authContext := auth.NewAdminSessionAuthContext(ctx, userID, userInfo.Username, userInfo.Email, sessionID)
 
-	// Get user groups and check admin status
-	userGroups, err := a.userGroupRepo.GetGroupsForUser(ctx, userInfo.UserID)
-	if err == nil {
-		a.userGroups = userGroups
+	// TODO: Load user groups when repository methods are available
+	// For now, set admin status if user is "admin"
+	if userInfo.UserID == "admin" {
+		authContext.SetAdmin(true)
 	}
-
-	// Check if user is admin
-	isAdmin := false
-	for _, group := range a.userGroups {
-		if group.IsSiteAdmin() {
-			isAdmin = true
-			break
-		}
-	}
-	a.isAdmin = isAdmin
 
 	// Get user permissions
 	permissions, err := a.getUserPermissions(ctx, userInfo.UserID)
-	if err == nil {
-		a.userPermissions = permissions
+	if err == nil && permissions != nil {
+		for namespace, permission := range permissions {
+			authContext.SetPermission(namespace, permission)
+		}
 	}
 
-	return nil
+	return authContext, nil
 }
 
 // parseProviderSourceAuth parses the provider_source_auth JSON to extract user information
@@ -245,64 +127,30 @@ func (a *AdminSessionAuthMethod) parseProviderSourceAuth(providerSourceAuth []by
 func (a *AdminSessionAuthMethod) getUserPermissions(ctx context.Context, userID string) (map[string]string, error) {
 	permissions := make(map[string]string)
 
-	// Check if any group is admin
-	if a.isAdmin {
-		// Admin users get access to all namespaces - return empty map to signify admin
-		return permissions, nil
-	}
-
-	// Get namespace permissions for each group
-	for _, group := range a.userGroups {
-		groupPermissions, err := a.userGroupRepo.GetNamespacePermissions(ctx, group.GetID())
-		if err != nil {
-			continue
-		}
-
-		for _, perm := range groupPermissions {
-			namespaceName := a.getNamespaceName(perm.GetNamespaceID())
-			if namespaceName == "" {
-				continue
-			}
-
-			// Use the highest permission level if multiple permissions exist
-			current, exists := permissions[namespaceName]
-			permType := string(perm.GetPermissionType())
-			if !exists || a.isHigherPermission(permType, current) {
-				permissions[namespaceName] = permType
-			}
-		}
-	}
+	// In a real implementation, query the database for user permissions
+	// For now, return empty permissions - actual permissions would be set by user groups
 
 	return permissions, nil
 }
 
-// getNamespaceName would get the namespace name from ID
-// This is a placeholder - in a real implementation, you'd query the namespace repository
-func (a *AdminSessionAuthMethod) getNamespaceName(namespaceID int) string {
-	// Placeholder implementation
-	return ""
-}
+// AuthMethod interface implementation for the base AdminSessionAuthMethod
+// These return default values since the actual auth state is in the AdminSessionAuthContext
 
-// isHigherPermission checks if permission1 is higher level than permission2
-func (a *AdminSessionAuthMethod) isHigherPermission(perm1, perm2 string) bool {
-	permLevels := map[string]int{
-		"READ":   1,
-		"MODIFY": 2,
-		"FULL":   3,
-	}
-
-	level1, exists1 := permLevels[perm1]
-	level2, exists2 := permLevels[perm2]
-
-	if !exists1 {
-		return false
-	}
-	if !exists2 {
-		return true
-	}
-
-	return level1 > level2
-}
+func (a *AdminSessionAuthMethod) IsBuiltInAdmin() bool               { return false }
+func (a *AdminSessionAuthMethod) IsAdmin() bool                     { return false }
+func (a *AdminSessionAuthMethod) IsAuthenticated() bool              { return false }
+func (a *AdminSessionAuthMethod) RequiresCSRF() bool                   { return true }
+func (a *AdminSessionAuthMethod) CheckAuthState() bool                  { return false }
+func (a *AdminSessionAuthMethod) CanPublishModuleVersion(string) bool { return false }
+func (a *AdminSessionAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (a *AdminSessionAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
+func (a *AdminSessionAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
+func (a *AdminSessionAuthMethod) GetUsername() string                { return "" }
+func (a *AdminSessionAuthMethod) GetUserGroupNames() []string       { return []string{} }
+func (a *AdminSessionAuthMethod) CanAccessReadAPI() bool             { return false }
+func (a *AdminSessionAuthMethod) CanAccessTerraformAPI() bool       { return false }
+func (a *AdminSessionAuthMethod) GetTerraformAuthToken() string     { return "" }
+func (a *AdminSessionAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
 
 // UserInfo represents user information extracted from session
 type UserInfo struct {

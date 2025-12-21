@@ -2,11 +2,9 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
@@ -22,54 +20,70 @@ func NewOpenidConnectAuthMethod(config *config.InfrastructureConfig) *OpenidConn
 	}
 }
 
-// Authenticate validates OpenID Connect session and returns an adapter with authentication state
+// Authenticate validates OpenID Connect session and returns an OpenidConnectAuthContext
 func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthMethod, error) {
 	// Check if OpenID Connect is enabled
 	if !o.IsEnabled() {
-		return nil, fmt.Errorf("OpenID Connect authentication not supported")
+		return nil, nil // Let other auth methods try
 	}
 
 	// Check session expiry
 	expiresAtFloat, hasExpiry := sessionData["openid_connect_expires_at"]
 	if !hasExpiry {
-		return model.NewAuthContextBuilder(ctx).Build(), nil
+		return nil, nil // Let other auth methods try
 	}
 
 	expiresAt, ok := expiresAtFloat.(float64)
 	if !ok {
-		return model.NewAuthContextBuilder(ctx).Build(), nil
+		return nil, nil // Let other auth methods try
 	}
 
 	// Check if session has expired
 	if time.Now().After(time.Unix(int64(expiresAt), 0)) {
-		return model.NewAuthContextBuilder(ctx).Build(), nil
+		return nil, nil // Let other auth methods try
 	}
 
 	// Validate ID token if present
 	idToken, hasToken := sessionData["openid_connect_id_token"]
 	if !hasToken || idToken == "" {
-		return model.NewAuthContextBuilder(ctx).Build(), nil
+		return nil, nil // Let other auth methods try
 	}
 
 	// In a real implementation, validate the token here
 	// For now, assume validation passes if token exists
 
-	username, hasUsername := sessionData["openid_username"]
-	groups, _ := sessionData["openid_groups"]
-
-	if !hasUsername || username == "" || idToken == "" {
-		return model.NewAuthContextBuilder(ctx).Build(), nil
+	usernameInterface, hasUsername := sessionData["openid_username"]
+	username := "unknown-user"
+	if hasUsername {
+		if usernameStr, ok := usernameInterface.(string); ok {
+			username = usernameStr
+		}
 	}
 
-	// Create permission checking adapter with user data
-	adapter := &model.PermissionCheckingAdapter{
-		BaseAdapter: model.NewBaseAdapter(o, ctx),
-		isAdmin:     false, // OpenID users are not admins by default
+	// Extract claims from session data
+	claims := make(map[string]interface{})
+	claims["id_token"] = idToken
+	for k, v := range sessionData {
+		if k == "openid_connect_" {
+			claims[k[len("openid_connect_"):]] = v
+		}
 	}
 
-	// TODO: Add namespace permissions based on groups when user/group management is implemented
+	// Extract the "sub" claim (subject identifier)
+	subject := username // For now, use username as subject (in real implementation, this would come from the "sub" claim in the JWT)
+	if subValue, exists := claims["sub"]; exists {
+		if subStr, ok := subValue.(string); ok {
+			subject = subStr
+		}
+	}
 
-	return adapter, nil
+	// Create OpenidConnectAuthContext with authentication state
+	authContext := auth.NewOpenidConnectAuthContext(ctx, subject, claims)
+
+	// Extract user details
+	authContext.ExtractUserDetails()
+
+	return authContext, nil
 }
 
 // AuthMethod interface implementation for the base OpenidConnectAuthMethod

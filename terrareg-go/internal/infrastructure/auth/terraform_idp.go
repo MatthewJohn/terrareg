@@ -13,6 +13,32 @@ type TerraformIDPValidator interface {
 	ValidateToken(ctx context.Context, token string) (interface{}, error)
 }
 
+// TerraformIDP interface for Terraform identity provider
+type TerraformIDP interface {
+	IsEnabled() bool
+	HandleUserinfoRequest(data []byte, headers map[string]string) (*TerraformUserinfoResponse, error)
+	ValidateAccessToken(token string) (*TerraformTokenValidation, error)
+	SetEnabled(enabled bool)
+}
+
+// TerraformUserinfoResponse represents the response from Terraform userinfo endpoint
+type TerraformUserinfoResponse struct {
+	Subject  string                 `json:"sub"`
+	Name     string                 `json:"name"`
+	Username string                 `json:"username"`
+	Email    string                 `json:"email"`
+	Groups   []string               `json:"groups"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+// TerraformTokenValidation represents the result of token validation
+type TerraformTokenValidation struct {
+	Valid    bool   `json:"valid"`
+	Subject  string `json:"sub,omitempty"`
+	Username string `json:"username,omitempty"`
+	Expiry   int64  `json:"exp,omitempty"`
+}
+
 // TerraformUserInfo represents the user information for OIDC (auth package)
 type TerraformUserInfo struct {
 	Sub      string `json:"sub"`
