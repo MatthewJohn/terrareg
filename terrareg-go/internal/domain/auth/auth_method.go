@@ -4,16 +4,48 @@ import (
 	"context"
 )
 
-// AuthMethod defines the interface for all authentication methods
-// Based on Python's BaseAuthMethod class
+// AuthMethod defines the interface for authentication method factories
+// These are lightweight objects that create AuthContext instances
 type AuthMethod interface {
+	// Factory methods
+	GetProviderType() AuthMethodType
+	IsEnabled() bool
+}
+
+// SessionAuthMethod defines interface for auth methods that work with session data
+type SessionAuthMethod interface {
+	AuthMethod
+	Authenticate(ctx context.Context, sessionData map[string]interface{}) (AuthContext, error)
+}
+
+// HeaderAuthMethod defines interface for auth methods that work with HTTP headers
+type HeaderAuthMethod interface {
+	AuthMethod
+	Authenticate(ctx context.Context, headers, formData, queryParams map[string]string) (AuthContext, error)
+}
+
+// TokenAuthMethod defines interface for auth methods that work with tokens
+type TokenAuthMethod interface {
+	AuthMethod
+	Authenticate(ctx context.Context, token string) (AuthContext, error)
+}
+
+// BearerTokenAuthMethod defines interface for auth methods that work with bearer tokens
+type BearerTokenAuthMethod interface {
+	AuthMethod
+	Authenticate(ctx context.Context, authorizationHeader string, requestData []byte) (AuthContext, error)
+}
+
+// AuthContext defines the interface for authenticated contexts
+// This contains the actual permission logic and user information
+// Based on Python's BaseAuthMethod class
+type AuthContext interface {
 	// Core authentication methods
 	IsBuiltInAdmin() bool
 	IsAdmin() bool
 	IsAuthenticated() bool
 
 	// Configuration and state
-	IsEnabled() bool
 	RequiresCSRF() bool
 	CheckAuthState() bool
 
