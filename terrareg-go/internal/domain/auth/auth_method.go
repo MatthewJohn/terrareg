@@ -155,34 +155,34 @@ func (b *BaseAuthContext) GetContext() context.Context {
 	return b.ctx
 }
 
-// AuthContext represents the current authentication context
-type AuthContext struct {
-	AuthMethod      AuthMethod
-	SessionID       *string
-	UserGroups      []*UserGroup
-	IsAuthenticated bool
-	Username        string
-	Permissions     map[string]string // namespace -> permission_type
+// BaseAuthContextImplementation provides a concrete implementation of AuthContext interface
+type BaseAuthContextImplementation struct {
+	authMethod      AuthMethod
+	sessionID       *string
+	userGroups      []*UserGroup
+	isAuthenticated bool
+	username        string
+	permissions     map[string]string // namespace -> permission_type
 }
 
-// NewAuthContext creates a new authentication context
-func NewAuthContext(authMethod AuthMethod) *AuthContext {
-	return &AuthContext{
-		AuthMethod:      authMethod,
-		UserGroups:      make([]*UserGroup, 0),
-		IsAuthenticated: authMethod.IsAuthenticated(),
-		Username:        authMethod.GetUsername(),
-		Permissions:     authMethod.GetAllNamespacePermissions(),
+// NewBaseAuthContextImplementation creates a new authentication context implementation
+func NewBaseAuthContextImplementation(authMethod AuthMethod) *BaseAuthContextImplementation {
+	return &BaseAuthContextImplementation{
+		authMethod:      authMethod,
+		userGroups:      make([]*UserGroup, 0),
+		isAuthenticated: true, // Default to authenticated for basic implementation
+		username:        "base-user",
+		permissions:     make(map[string]string),
 	}
 }
 
 // HasPermission checks if the context has permission for a namespace
-func (ac *AuthContext) HasPermission(namespace, permissionType string) bool {
-	if ac.AuthMethod.IsAdmin() {
+func (ac *BaseAuthContextImplementation) HasPermission(namespace, permissionType string) bool {
+	if ac.IsAdmin() {
 		return true
 	}
 
-	storedPermission, exists := ac.Permissions[namespace]
+	storedPermission, exists := ac.permissions[namespace]
 	if !exists {
 		return false
 	}
@@ -204,15 +204,92 @@ func (ac *AuthContext) HasPermission(namespace, permissionType string) bool {
 }
 
 // GetUserGroupNames returns the names of all user groups in the context
-func (ac *AuthContext) GetUserGroupNames() []string {
-	names := make([]string, len(ac.UserGroups))
-	for i, group := range ac.UserGroups {
+func (ac *BaseAuthContextImplementation) GetUserGroupNames() []string {
+	names := make([]string, len(ac.userGroups))
+	for i, group := range ac.userGroups {
 		names[i] = group.GetName()
 	}
 	return names
 }
 
 // AddUserGroup adds a user group to the context
-func (ac *AuthContext) AddUserGroup(group *UserGroup) {
-	ac.UserGroups = append(ac.UserGroups, group)
+func (ac *BaseAuthContextImplementation) AddUserGroup(group *UserGroup) {
+	ac.userGroups = append(ac.userGroups, group)
+}
+
+// AuthContext interface implementation
+
+// IsBuiltInAdmin returns true if this is a built-in admin
+func (ac *BaseAuthContextImplementation) IsBuiltInAdmin() bool {
+	return false // Default implementation
+}
+
+// IsAdmin returns true if user has admin privileges
+func (ac *BaseAuthContextImplementation) IsAdmin() bool {
+	return false // Default implementation - specific auth contexts should override
+}
+
+// IsAuthenticated returns true if user is authenticated
+func (ac *BaseAuthContextImplementation) IsAuthenticated() bool {
+	return ac.isAuthenticated
+}
+
+// RequiresCSRF returns true if CSRF protection is required
+func (ac *BaseAuthContextImplementation) RequiresCSRF() bool {
+	return true // Default implementation
+}
+
+// CheckAuthState returns true if auth state is valid
+func (ac *BaseAuthContextImplementation) CheckAuthState() bool {
+	return ac.isAuthenticated
+}
+
+// CanPublishModuleVersion returns true if user can publish to namespace
+func (ac *BaseAuthContextImplementation) CanPublishModuleVersion(namespace string) bool {
+	return false // Default implementation - specific auth contexts should override
+}
+
+// CanUploadModuleVersion returns true if user can upload to namespace
+func (ac *BaseAuthContextImplementation) CanUploadModuleVersion(namespace string) bool {
+	return false // Default implementation - specific auth contexts should override
+}
+
+// CheckNamespaceAccess returns true if user has access to namespace
+func (ac *BaseAuthContextImplementation) CheckNamespaceAccess(permissionType, namespace string) bool {
+	return false // Default implementation - specific auth contexts should override
+}
+
+// GetAllNamespacePermissions returns all namespace permissions
+func (ac *BaseAuthContextImplementation) GetAllNamespacePermissions() map[string]string {
+	return ac.permissions
+}
+
+// GetUsername returns the username
+func (ac *BaseAuthContextImplementation) GetUsername() string {
+	return ac.username
+}
+
+// CanAccessReadAPI returns true if user can access read API
+func (ac *BaseAuthContextImplementation) CanAccessReadAPI() bool {
+	return true // Default implementation - most authenticated users can access read API
+}
+
+// CanAccessTerraformAPI returns true if user can access Terraform API
+func (ac *BaseAuthContextImplementation) CanAccessTerraformAPI() bool {
+	return false // Default implementation - specific auth contexts should override
+}
+
+// GetTerraformAuthToken returns the Terraform auth token
+func (ac *BaseAuthContextImplementation) GetTerraformAuthToken() string {
+	return "" // Default implementation - specific auth contexts should override
+}
+
+// GetProviderType returns the auth method provider type
+func (ac *BaseAuthContextImplementation) GetProviderType() AuthMethodType {
+	return ac.authMethod.GetProviderType()
+}
+
+// GetProviderData returns provider-specific data
+func (ac *BaseAuthContextImplementation) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{}) // Default implementation
 }

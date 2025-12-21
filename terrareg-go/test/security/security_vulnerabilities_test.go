@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // TestSecurityVulnerabilities tests for common security vulnerabilities
@@ -299,6 +300,12 @@ func testAuthenticationBypassPrevention(t *testing.T) {
 		{
 			name: "API key manipulation",
 			header: map[string]string{
+				"X-Terrareg-ApiKey": "fake-admin-key", // Correct header name for admin API key
+			},
+		},
+		{
+			name: "Bearer token manipulation",
+			header: map[string]string{
 				"Authorization": "Bearer fake-admin-key",
 			},
 		},
@@ -319,13 +326,17 @@ func testAuthenticationBypassPrevention(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			// Mock authentication middleware
-			authMethod := auth.NewAdminApiKeyAuthMethod()
+			// Mock authentication middleware using new interface
+			authConfig := &config.InfrastructureConfig{
+				AdminAuthenticationToken: "correct-admin-token", // Set a valid token for testing
+			}
+			authMethod := auth.NewAdminApiKeyAuthMethod(authConfig)
 
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				// Extract authentication data
 				headers := make(map[string]string)
-				cookies := make(map[string]string)
+				formData := make(map[string]string)
+				queryParams := make(map[string]string)
 
 				for key, values := range r.Header {
 					if len(values) > 0 {
@@ -333,26 +344,33 @@ func testAuthenticationBypassPrevention(t *testing.T) {
 					}
 				}
 
-				// Parse cookies
+				// Parse cookies for session-based attacks
 				if cookieHeader := r.Header.Get("Cookie"); cookieHeader != "" {
 					parts := strings.Split(cookieHeader, ";")
 					for _, part := range parts {
 						kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
 						if len(kv) == 2 {
-							cookies[kv[0]] = kv[1]
+							// Add cookies as headers for simplicity in this test
+							headers["Cookie-"+kv[0]] = kv[1]
 						}
 					}
 				}
 
-				// Authenticate
-				err := authMethod.Authenticate(context.Background(), headers, cookies)
+				// Authenticate using new interface
+				authContext, err := authMethod.Authenticate(context.Background(), headers, formData, queryParams)
 				if err != nil {
+					http.Error(w, "Authentication error", http.StatusInternalServerError)
+					return
+				}
+
+				// Check if authentication succeeded
+				if authContext == nil || !authContext.IsAuthenticated() {
 					http.Error(w, "Unauthorized", http.StatusUnauthorized)
 					return
 				}
 
-				// Check if authenticated as admin
-				if !authMethod.IsAdmin() {
+				// Check if authenticated as admin using AuthContext
+				if !authContext.IsAdmin() {
 					http.Error(w, "Forbidden", http.StatusForbidden)
 					return
 				}
@@ -363,9 +381,54 @@ func testAuthenticationBypassPrevention(t *testing.T) {
 
 			handler(w, req)
 
-			// Should not allow access to admin settings
-			assert.NotEqual(t, http.StatusOK, w.Code)
-			assert.Contains(t, []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusBadRequest}, w.Code)
+			// Should not allow access to admin settings with invalid credentials
+			assert.NotEqual(t, http.StatusOK, w.Code, "Admin access should be denied for invalid credentials")
+			assert.Contains(t, []int{http.StatusUnauthorized, http.StatusForbidden}, w.Code,
+				"Should return unauthorized or forbidden status")
+		})
+
+		// Also test that a valid admin token works
+		t.Run(test.name+" - with valid token", func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/v1/terrareg/admin/settings", nil)
+			req.Header.Set("X-Terrareg-ApiKey", "correct-admin-token") // Valid token
+
+			w := httptest.NewRecorder()
+
+			authConfig := &config.InfrastructureConfig{
+				AdminAuthenticationToken: "correct-admin-token",
+			}
+			authMethod := auth.NewAdminApiKeyAuthMethod(authConfig)
+
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				headers := make(map[string]string)
+				formData := make(map[string]string)
+				queryParams := make(map[string]string)
+
+				for key, values := range r.Header {
+					if len(values) > 0 {
+						headers[key] = values[0]
+					}
+				}
+
+				authContext, err := authMethod.Authenticate(context.Background(), headers, formData, queryParams)
+				if err != nil {
+					http.Error(w, "Authentication error", http.StatusInternalServerError)
+					return
+				}
+
+				if authContext == nil || !authContext.IsAuthenticated() || !authContext.IsAdmin() {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				}
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"admin_settings": "sensitive_data"}`))
+			}
+
+			handler(w, req)
+
+			// Valid admin token should work
+			assert.Equal(t, http.StatusOK, w.Code, "Valid admin token should allow access")
 		})
 	}
 }

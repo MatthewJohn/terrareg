@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
@@ -66,11 +65,9 @@ func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData 
 	}
 
 	// Extract username from validated user info
-	username := userInfo.Username
+	username := userInfo.Name
 	if username == "" {
-		if userInfo.Name != "" {
-			username = userInfo.Name
-		} else if userInfo.Email != "" {
+		if userInfo.Email != "" {
 			username = userInfo.Email
 		} else {
 			username = userInfo.Sub
@@ -78,7 +75,7 @@ func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData 
 	}
 
 	// Create OpenidConnectAuthContext with authentication state
-	authContext := auth.NewOpenidConnectAuthContext(ctx, userInfo.Sub, userInfo.RawClaims)
+	authContext := auth.NewOpenidConnectAuthContext(ctx, userInfo.Sub, make(map[string]interface{}))
 
 	// Extract user details from claims (username, email, name, etc.)
 	authContext.ExtractUserDetails()
