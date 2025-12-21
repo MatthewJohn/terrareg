@@ -1,5 +1,9 @@
 package auth
 
+import (
+	"context"
+)
+
 // AuthMethod defines the interface for all authentication methods
 // Based on Python's BaseAuthMethod class
 type AuthMethod interface {
@@ -107,6 +111,16 @@ func (b *BaseAuthMethod) GetTerraformAuthToken() string {
 
 func (b *BaseAuthMethod) GetProviderData() map[string]interface{} {
 	return make(map[string]interface{})
+}
+
+// BaseAuthContext provides common context for all auth contexts
+type BaseAuthContext struct {
+	ctx context.Context
+}
+
+// GetContext returns the context
+func (b *BaseAuthContext) GetContext() context.Context {
+	return b.ctx
 }
 
 // AuthContext represents the current authentication context

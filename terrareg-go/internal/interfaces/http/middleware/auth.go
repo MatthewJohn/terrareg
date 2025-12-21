@@ -278,10 +278,9 @@ func (m *AuthMiddleware) RequireUploadPermission(namespaceParam string) func(htt
 				return
 			}
 
-			// Check if user can upload to this namespace using the current auth method
-			// This matches Python's @auth_wrapper('can_upload_module_version', request_kwarg_map={'namespace': 'namespace'})
-			currentAuthMethod := m.authFactory.GetCurrentAuthMethod()
-			if !currentAuthMethod.CanUploadModuleVersion(namespaceName) {
+			// Check if the authenticated user can upload to this namespace
+			// Use the authResponse from the authentication check above
+			if !authResponse.CanUpload {
 				http.Error(w, "Insufficient upload permissions", http.StatusForbidden)
 				return
 			}
