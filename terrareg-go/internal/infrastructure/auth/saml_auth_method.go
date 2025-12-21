@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
@@ -21,44 +20,56 @@ func NewSamlAuthMethod(config *config.InfrastructureConfig) *SamlAuthMethod {
 	}
 }
 
-// Authenticate validates SAML session and returns an adapter with authentication state
+// Authenticate validates SAML session and returns a SamlAuthContext
 func (s *SamlAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthMethod, error) {
 	// Check if SAML is enabled
 	if !s.IsEnabled() {
-		return nil, fmt.Errorf("SAML authentication not supported")
+		return nil, nil // Let other auth methods try
 	}
 
-	// Extract SAML session data
-	samlUserdata, exists := sessionData["samlUserdata"]
-	if !exists {
-		return model.NewAuthContextBuilder(ctx).Build(), nil
-	}
-
+	// Extract SAML NameID (required)
 	samlNameId, hasNameId := sessionData["samlNameId"]
+	if !hasNameId || samlNameId == "" {
+		return nil, nil // Let other auth methods try
+	}
 
-	// Create adapter with authentication state
-	adapter := model.NewSessionStateAdapter(s, ctx)
+	// Convert NameID to string
+	nameIdStr, ok := samlNameId.(string)
+	if !ok {
+		nameIdStr = fmt.Sprintf("%v", samlNameId)
+	}
 
-	authenticated := exists && hasNameId && samlNameId != ""
-
-	// Set user-specific data in adapter
-	if authenticated {
-		if nameIdStr, ok := samlNameId.(string); ok {
-			adapter.SetSessionData(nil, true, nameIdStr, "")
-
-			// Extract groups if available
-			if userdata, ok := samlUserdata.(map[string]interface{}); ok {
-				if groups, exists := userdata["samlGroups"]; exists { // Using generic key for now
-					if groupList, ok := groups.([]string); ok {
-						// Convert string groups to UserGroup objects if needed
-						// For now, skip group setting as it would require UserGroup objects
+	// Extract SAML attributes
+	attributes := make(map[string][]string)
+	samlUserdata, exists := sessionData["samlUserdata"]
+	if exists {
+		if userdata, ok := samlUserdata.(map[string]interface{}); ok {
+			// Extract attributes from SAML userdata
+			for key, value := range userdata {
+				if key == "groups" || key == "memberOf" {
+					// Handle groups as string arrays
+					if groupList, ok := value.([]string); ok {
+						attributes[key] = groupList
+					} else if groupStr, ok := value.(string); ok {
+						attributes[key] = []string{groupStr}
+					}
+				} else {
+					// Handle other attributes as strings
+					if attrStr, ok := value.(string); ok {
+						attributes[key] = []string{attrStr}
 					}
 				}
 			}
 		}
 	}
 
-	return adapter, nil
+	// Create SamlAuthContext with authentication state
+	authContext := auth.NewSamlAuthContext(ctx, nameIdStr, attributes)
+
+	// Extract user details from SAML attributes
+	authContext.ExtractUserDetails()
+
+	return authContext, nil
 }
 
 // AuthMethod interface implementation for the base SamlAuthMethod

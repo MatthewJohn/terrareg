@@ -88,11 +88,26 @@ func (af *AuthFactory) initializeAuthMethods() {
 		af.RegisterAuthMethod(openidAuthMethod)
 	}
 
+	// Register Admin Session auth method
+	adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(
+		af.sessionRepo,
+		af.userGroupRepo,
+	)
+	af.RegisterAuthMethod(adminSessionAuthMethod)
+
 	// Register Terraform OIDC auth method
 	terraformOidcAuthMethod := infraAuth.NewTerraformOidcAuthMethod(af.config)
 	if terraformOidcAuthMethod.IsEnabled() {
 		af.RegisterAuthMethod(terraformOidcAuthMethod)
 	}
+
+	// Register Terraform Analytics Auth Key auth method
+	terraformAnalyticsAuthMethod := infraAuth.NewTerraformAnalyticsAuthKeyAuthMethod()
+	af.RegisterAuthMethod(terraformAnalyticsAuthMethod)
+
+	// Register Terraform Internal Extraction auth method
+	terraformInternalExtractionAuthMethod := infraAuth.NewTerraformInternalExtractionAuthMethod("terraform-internal-extraction")
+	af.RegisterAuthMethod(terraformInternalExtractionAuthMethod)
 }
 
 // RegisterAuthMethod registers an authentication method
@@ -152,8 +167,14 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
 		case *infraAuth.OpenidConnectAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
+		case *infraAuth.AdminSessionAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
 		case *infraAuth.TerraformOidcAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, authorizationHeader, requestBody)
+		case *infraAuth.TerraformAnalyticsAuthKeyAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
+		case *infraAuth.TerraformInternalExtractionAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
 		default:
 			// For legacy auth methods, fall back to CheckAuthState
 			if authMethod.CheckAuthState() {

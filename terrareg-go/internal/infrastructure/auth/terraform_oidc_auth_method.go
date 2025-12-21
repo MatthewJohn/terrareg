@@ -2,10 +2,8 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
@@ -21,15 +19,15 @@ func NewTerraformOidcAuthMethod(config *config.InfrastructureConfig) *TerraformO
 	}
 }
 
-// Authenticate validates Terraform OIDC token and returns an adapter with authentication state
+// Authenticate validates Terraform OIDC token and returns a TerraformOidcAuthContext
 func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, authorizationHeader string, requestData []byte) (auth.AuthMethod, error) {
 	// Check if Terraform OIDC is enabled
 	if !t.IsEnabled() {
-		return nil, model.ErrAuthenticationNotSupported
+		return nil, nil // Let other auth methods try
 	}
 
 	if authorizationHeader == "" {
-		return &model.NotAuthenticatedAuthMethod{}, nil
+		return nil, nil // Let other auth methods try
 	}
 
 	// In a real implementation, validate the authorization token here
@@ -39,26 +37,18 @@ func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, authorizatio
 	// Extract user information from the validated token
 	// This would come from the token claims in a real implementation
 	subject := "terraform-user"
-	permissions := []string{"read", "download"}
 
-	// Create adapter with authentication state
-	adapter := &model.PermissionCheckingAdapter{
-		BaseAdapter: model.NewBaseAdapter(t, ctx),
-		Authenticated: true,
-		Username: subject,
-		Permissions: make(map[string]bool),
-	}
+	// Create TerraformOidcAuthContext with authentication state
+	authContext := auth.NewTerraformOidcAuthContext(ctx, subject)
 
-	// Set Terraform-specific permissions
-	for _, permission := range permissions {
-		adapter.Permissions[permission] = true
-	}
+	// Add Terraform-specific permissions
+	authContext.AddPermission("read")
+	authContext.AddPermission("download")
 
-	// Terraform OIDC has specific restrictions
-	adapter.AllowPublish = false
-	adapter.AllowUpload = false
+	// Set the bearer token for Terraform
+	authContext.SetTerraformAuthToken(authorizationHeader)
 
-	return adapter, nil
+	return authContext, nil
 }
 
 // AuthMethod interface implementation for the base TerraformOidcAuthMethod
@@ -80,10 +70,10 @@ func (t *TerraformOidcAuthMethod) GetTerraformAuthToken() string     { return ""
 func (t *TerraformOidcAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
 
 func (t *TerraformOidcAuthMethod) GetProviderType() auth.AuthMethodType {
-	return auth.AuthMethodTerraformOidc
+	return auth.AuthMethodTerraformOIDC
 }
 
 func (t *TerraformOidcAuthMethod) IsEnabled() bool {
-	// Check if Terraform OIDC is enabled in config
-	return t.config.TerraformOidcEnabled
+	// Terraform OIDC is enabled if IDP signing key path is configured
+	return t.config.TerraformOidcIdpSigningKeyPath != ""
 }
