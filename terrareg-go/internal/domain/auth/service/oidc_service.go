@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"golang.org/x/oauth2"
 )
@@ -402,4 +403,50 @@ func generateRandomString(length int) (string, error) {
 		return "", err
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+// VerifyIDToken verifies an ID token signature and returns user info
+func (s *OIDCService) VerifyIDToken(ctx context.Context, idToken string) (*auth.UserInfo, error) {
+	// Verify the ID token signature and claims
+	verifiedToken, err := s.verifier.Verify(ctx, idToken)
+	if err != nil {
+		return nil, fmt.Errorf("ID token verification failed: %w", err)
+	}
+
+	// Extract claims from the verified token
+	var claims map[string]interface{}
+	if err := verifiedToken.Claims(&claims); err != nil {
+		return nil, fmt.Errorf("failed to extract claims from ID token: %w", err)
+	}
+
+	// Create UserInfo from claims
+	userInfo := &auth.UserInfo{
+		RawClaims: claims,
+	}
+
+	// Extract standard claims
+	if sub, ok := claims["sub"].(string); ok {
+		userInfo.Sub = sub
+	}
+	if name, ok := claims["name"].(string); ok {
+		userInfo.Name = name
+	}
+	if email, ok := claims["email"].(string); ok {
+		userInfo.Email = email
+	}
+	if emailVerified, ok := claims["email_verified"].(bool); ok {
+		userInfo.EmailVerified = emailVerified
+	}
+
+	// Extract groups if available
+	if groups, ok := claims["groups"].([]interface{}); ok {
+		userInfo.Groups = make([]string, len(groups))
+		for i, group := range groups {
+			if str, ok := group.(string); ok {
+				userInfo.Groups[i] = str
+			}
+		}
+	}
+
+	return userInfo, nil
 }

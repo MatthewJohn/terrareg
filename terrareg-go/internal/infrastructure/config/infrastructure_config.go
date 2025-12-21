@@ -150,3 +150,148 @@ func (c *InfrastructureConfig) GetDatabaseConnectionURL() string {
 func (c *InfrastructureConfig) GetListenAddress() string {
 	return fmt.Sprintf(":%d", c.ListenPort)
 }
+
+// ValidateSAMLConfig validates SAML configuration
+func (c *InfrastructureConfig) ValidateSAMLConfig() error {
+	if c.SAML2IDPMetadataURL != "" {
+		if c.SAML2EntityID == "" {
+			return fmt.Errorf("SAML2_ENTITY_ID is required when SAML2_IDP_METADATA_URL is set")
+		}
+
+		if c.SAML2PublicKey == "" {
+			return fmt.Errorf("SAML2_PUBLIC_KEY is required for SAML authentication")
+		}
+		if c.SAML2PrivateKey == "" {
+			return fmt.Errorf("SAML2_PRIVATE_KEY is required for SAML authentication")
+		}
+	}
+
+	return nil
+}
+
+// ValidateOIDCConfig validates OpenID Connect configuration
+func (c *InfrastructureConfig) ValidateOIDCConfig() error {
+	if c.OpenIDConnectIssuer != "" {
+		if c.OpenIDConnectClientID == "" {
+			return fmt.Errorf("OPENID_CONNECT_CLIENT_ID is required when OPENID_CONNECT_ISSUER is set")
+		}
+		if c.OpenIDConnectClientSecret == "" {
+			return fmt.Errorf("OPENID_CONNECT_CLIENT_SECRET is required when OPENID_CONNECT_ISSUER is set")
+		}
+	}
+
+	return nil
+}
+
+// ValidateAuthConfig validates all authentication configuration
+func (c *InfrastructureConfig) ValidateAuthConfig() error {
+	// Validate SAML configuration
+	if err := c.ValidateSAMLConfig(); err != nil {
+		return fmt.Errorf("SAML configuration error: %w", err)
+	}
+
+	// Validate OIDC configuration
+	if err := c.ValidateOIDCConfig(); err != nil {
+		return fmt.Errorf("OIDC configuration error: %w", err)
+	}
+
+	// Validate session configuration
+	if c.SessionExpiry == 0 {
+		return fmt.Errorf("SESSION_EXPIRY_MINS must be greater than 0")
+	}
+
+	if c.SessionCookieName == "" {
+		return fmt.Errorf("SESSION_COOKIE_NAME cannot be empty")
+	}
+
+	// Validate secret key for session encryption
+	if c.SecretKey == "" {
+		return fmt.Errorf("SECRET_KEY is required for session security")
+	}
+
+	return nil
+}
+
+// ValidateTerraformOIDCConfig validates Terraform OIDC configuration
+func (c *InfrastructureConfig) ValidateTerraformOIDCConfig() error {
+	if c.TerraformOidcIdpSessionExpiry == 0 {
+		return fmt.Errorf("TERRAFORM_OIDC_IDP_SESSION_EXPIRY must be greater than 0")
+	}
+
+	if c.TerraformOidcIdpSubjectIdHashSalt == "" {
+		return fmt.Errorf("TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT is required for Terraform OIDC security")
+	}
+
+	return nil
+}
+
+// ValidateServerConfig validates server configuration
+func (c *InfrastructureConfig) ValidateServerConfig() error {
+	if c.ListenPort == 0 {
+		return fmt.Errorf("LISTEN_PORT must be greater than 0")
+	}
+
+	if c.ListenPort < 1 || c.ListenPort > 65535 {
+		return fmt.Errorf("LISTEN_PORT must be between 1 and 65535")
+	}
+
+	if c.PublicURL == "" {
+		return fmt.Errorf("PUBLIC_URL is required")
+	}
+
+	// Validate timeout configurations
+	if c.StandardRequestTimeoutSeconds <= 0 {
+		return fmt.Errorf("STANDARD_REQUEST_TIMEOUT_SECONDS must be greater than 0")
+	}
+
+	if c.ModuleIndexingTimeoutSeconds <= 0 {
+		return fmt.Errorf("MODULE_INDEXING_TIMEOUT_SECONDS must be greater than 0")
+	}
+
+	if c.TerraformLockTimeoutSeconds <= 0 {
+		return fmt.Errorf("TERRAFORM_LOCK_TIMEOUT_SECONDS must be greater than 0")
+	}
+
+	return nil
+}
+
+// ValidateDatabaseConfig validates database configuration
+func (c *InfrastructureConfig) ValidateDatabaseConfig() error {
+	if c.DatabaseURL == "" {
+		return fmt.Errorf("DATABASE_URL is required")
+	}
+
+	// Additional database URL validation could be added here
+	return nil
+}
+
+// ValidateAll performs comprehensive validation of all configuration
+func (c *InfrastructureConfig) ValidateAll() error {
+	var errors []string
+
+	// Validate server configuration
+	if err := c.ValidateServerConfig(); err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	// Validate database configuration
+	if err := c.ValidateDatabaseConfig(); err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	// Validate authentication configuration
+	if err := c.ValidateAuthConfig(); err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	// Validate Terraform OIDC configuration
+	if err := c.ValidateTerraformOIDCConfig(); err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("configuration validation failed: %v", errors)
+	}
+
+	return nil
+}

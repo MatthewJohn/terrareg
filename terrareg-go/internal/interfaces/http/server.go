@@ -18,6 +18,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
+	http_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
 
@@ -51,6 +52,7 @@ type Server struct {
 	searchFiltersHandler        *terrareg.SearchFiltersHandler
 	moduleWebhookHandler        *webhook.ModuleWebhookHandler
 	graphHandler                *terrareg.GraphHandler
+	rateLimiter                 *http_middleware.RateLimiterMiddleware
 }
 
 // NewServer creates a new HTTP server
@@ -129,13 +131,17 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.Compress(5))
 
+	// Security headers middleware for all routes
+	s.router.Use(http_middleware.SecurityHeaders)
+
+	// Initialize rate limiter (10 requests per second, burst of 5)
+	s.rateLimiter = http_middleware.NewRateLimiterMiddleware(10, 5)
+
 	// Session middleware for session management
 	s.router.Use(s.sessionMiddleware.Session)
 
-	
 	// No global timeout middleware - apply route-specific timeouts only
 
-	
 	// CORS if needed
 	// s.router.Use(cors.Handler(cors.Options{
 	//     AllowedOrigins:   []string{"*"},
@@ -299,6 +305,7 @@ func (s *Server) setupRoutes() {
 			r.Route("/auth", func(r chi.Router) {
 				r.Post("/admin/login", s.handleAdminLogin)
 				r.With(s.sessionMiddleware.Session).Get("/admin/is_authenticated", s.handleIsAuthenticated)
+				r.Post("/logout", s.handleLogout)
 			})
 		})
 	})
@@ -325,11 +332,18 @@ func (s *Server) setupRoutes() {
 		r.With(s.authMiddleware.OptionalAuth).Get("/categories", s.terraformV2CategoryHandler.HandleListCategories)
 	})
 
-	// Authentication endpoints
-	s.router.With(s.authMiddleware.OptionalAuth).Get("/openid/login", s.handleOIDCLogin)
-	s.router.With(s.authMiddleware.OptionalAuth).Get("/openid/callback", s.handleOIDCCallback)
-	s.router.With(s.authMiddleware.OptionalAuth).Get("/saml/login", s.handleSAMLLogin)
-	s.router.With(s.authMiddleware.OptionalAuth).Get("/saml/metadata", s.handleSAMLMetadata)
+	// Authentication endpoints (matching Python URLs)
+	// Apply security headers and rate limiting to auth endpoints
+	authMiddlewareChain := func(next http.Handler) http.Handler {
+		return s.rateLimiter.RateLimitAuth()(http_middleware.AuthSecurityHeaders(next))
+	}
+
+	s.router.With(authMiddlewareChain).Get("/openid/login", s.handleOIDCLogin)
+	s.router.With(authMiddlewareChain).Get("/openid/callback", s.handleOIDCCallback)
+	s.router.With(authMiddlewareChain).Get("/saml/login", s.handleSAMLLogin)
+	s.router.With(authMiddlewareChain).Get("/saml/metadata", s.handleSAMLMetadata)
+	s.router.With(authMiddlewareChain).Post("/saml/acs", s.handleSAMLACS)
+	s.router.With(authMiddlewareChain).Get("/github/oauth", s.handleGitHubOAuth)
 
 	// Provider source endpoints (GitHub, GitLab, etc.)
 	s.router.With(s.authMiddleware.OptionalAuth).Get("/{provider_source}/login", s.handleProviderSourceLogin)
@@ -855,6 +869,9 @@ func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleSAMLMetadata(w, r)
+}
+func (s *Server) handleSAMLACS(w http.ResponseWriter, r *http.Request) {
+	s.authHandler.HandleSAMLACS(w, r)
 }
 func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request) {
 	providerSource := chi.URLParam(r, "provider_source")
