@@ -53,9 +53,9 @@ func (t *TerraformAnalyticsAuthKeyAuthContext) GetProviderType() AuthMethodType 
 	return AuthMethodTerraformAnalyticsAuthKey
 }
 
-// GetUsername returns the auth key (as username) for analytics
+// GetUsername returns the username for analytics (matches Python implementation)
 func (t *TerraformAnalyticsAuthKeyAuthContext) GetUsername() string {
-	return "analytics-key-" + t.authKey[:8] // Show first 8 chars for identification
+	return "Terraform deployment analytics token"
 }
 
 // IsAuthenticated returns true if the auth key is valid

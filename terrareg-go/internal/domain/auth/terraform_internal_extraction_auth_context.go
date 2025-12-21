@@ -24,9 +24,9 @@ func (t *TerraformInternalExtractionAuthContext) GetProviderType() AuthMethodTyp
 	return AuthMethodTerraformInternalExtraction
 }
 
-// GetUsername returns the service name
+// GetUsername returns the username for internal extraction (matches Python implementation)
 func (t *TerraformInternalExtractionAuthContext) GetUsername() string {
-	return t.serviceName
+	return "Terraform internal extraction"
 }
 
 // IsAuthenticated returns true for internal extraction (always authenticated)
@@ -99,6 +99,11 @@ func (t *TerraformInternalExtractionAuthContext) CanAccessTerraformAPI() bool {
 // GetTerraformAuthToken returns empty string for internal extraction
 func (t *TerraformInternalExtractionAuthContext) GetTerraformAuthToken() string {
 	return ""
+}
+
+// ShouldRecordTerraformAnalytics returns false for internal extraction (matches Python)
+func (t *TerraformInternalExtractionAuthContext) ShouldRecordTerraformAnalytics() bool {
+	return false
 }
 
 // GetProviderData returns provider-specific data for internal extraction

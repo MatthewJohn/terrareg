@@ -42,9 +42,9 @@ func (t *TerraformOidcAuthContext) GetProviderType() AuthMethodType {
 	return AuthMethodTerraformOIDC
 }
 
-// GetUsername returns the subject from the Terraform OIDC token
+// GetUsername returns the username for Terraform OIDC (matches Python implementation)
 func (t *TerraformOidcAuthContext) GetUsername() string {
-	return t.subject
+	return "Terraform CLI User"
 }
 
 // IsAuthenticated returns true if Terraform OIDC authentication was successful

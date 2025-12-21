@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
@@ -10,20 +11,22 @@ import (
 
 // OpenidConnectAuthMethod implements immutable OpenID Connect authentication
 type OpenidConnectAuthMethod struct {
-	config *config.InfrastructureConfig
+	config     *config.InfrastructureConfig
+	oidcService auth.OIDCValidator
 }
 
 // NewOpenidConnectAuthMethod creates a new immutable OpenID Connect auth method
-func NewOpenidConnectAuthMethod(config *config.InfrastructureConfig) *OpenidConnectAuthMethod {
+func NewOpenidConnectAuthMethod(config *config.InfrastructureConfig, oidcService auth.OIDCValidator) *OpenidConnectAuthMethod {
 	return &OpenidConnectAuthMethod{
-		config: config,
+		config:     config,
+		oidcService: oidcService,
 	}
 }
 
 // Authenticate validates OpenID Connect session and returns an OpenidConnectAuthContext
 func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData map[string]interface{}) (auth.AuthMethod, error) {
 	// Check if OpenID Connect is enabled
-	if !o.IsEnabled() {
+	if !o.IsEnabled() || o.oidcService == nil {
 		return nil, nil // Let other auth methods try
 	}
 
@@ -44,13 +47,19 @@ func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData 
 	}
 
 	// Validate ID token if present
-	idToken, hasToken := sessionData["openid_connect_id_token"]
-	if !hasToken || idToken == "" {
+	idTokenInterface, hasToken := sessionData["openid_connect_id_token"]
+	if !hasToken {
 		return nil, nil // Let other auth methods try
 	}
 
-	// In a real implementation, validate the token here
-	// For now, assume validation passes if token exists
+	idToken, ok := idTokenInterface.(string)
+	if !ok || idToken == "" {
+		return nil, nil // Let other auth methods try
+	}
+
+	// TODO: In a full implementation, validate the ID token signature using OIDCService
+	// For now, we validate the session expiry and check that token exists
+	// The actual JWT validation should be done here when OIDCService exposes its verifier
 
 	usernameInterface, hasUsername := sessionData["openid_username"]
 	username := "unknown-user"
@@ -64,7 +73,7 @@ func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData 
 	claims := make(map[string]interface{})
 	claims["id_token"] = idToken
 	for k, v := range sessionData {
-		if k == "openid_connect_" {
+		if strings.HasPrefix(k, "openid_connect_") {
 			claims[k[len("openid_connect_"):]] = v
 		}
 	}

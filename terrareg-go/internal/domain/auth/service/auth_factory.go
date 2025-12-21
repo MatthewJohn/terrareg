@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"sync"
 
@@ -32,6 +30,8 @@ func NewAuthFactory(
 	sessionRepo repository.SessionRepository,
 	userGroupRepo repository.UserGroupRepository,
 	config *infraConfig.InfrastructureConfig,
+	terraformIdpService *TerraformIdpService,
+	oidcService *OIDCService,
 	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
@@ -43,71 +43,81 @@ func NewAuthFactory(
 	}
 
 	// Initialize immutable auth methods in priority order
-	factory.initializeAuthMethods()
+	factory.initializeAuthMethods(terraformIdpService, oidcService)
 
 	return factory
 }
 
 // initializeAuthMethods sets up immutable authentication methods in priority order
-func (af *AuthFactory) initializeAuthMethods() {
-	// Priority order from Python terrareg
-	// 1. ImmutableApiKeyAuthMethod (consolidated admin/upload/publish API keys)
-	// 2. ImmutableSessionAuthMethod
-	// 3. Other auth methods...
-
-	// Register consolidated API key auth method
-	apiKeyAuthMethod := infraAuth.NewApiKeyAuthMethod(af.config)
-	if apiKeyAuthMethod.IsEnabled() {
-		af.RegisterAuthMethod(apiKeyAuthMethod)
+// Priority order matches Python terrareg:
+// 1. AdminApiKey
+// 2. AdminSession
+// 3. UploadApiKey
+// 4. PublishApiKey
+// 5. SAML
+// 6. OpenID Connect
+// 7. GitHub (not implemented yet)
+// 8. Terraform OIDC
+// 9. Terraform Analytics
+// 10. Terraform Internal Extraction
+// 11. NotAuthenticated (fallback)
+func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpService, oidcService *OIDCService) {
+	// 1. Admin API Key auth method
+	adminApiKeyAuthMethod := infraAuth.NewAdminApiKeyAuthMethod(af.config)
+	if adminApiKeyAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(adminApiKeyAuthMethod)
 	}
 
-	// Register session auth method
-	sessionAuthConfig := &infraAuth.SessionAuthMethodConfig{
-		SessionCookieName: "terrareg_session",
-		SessionSecure:     true,
-		SessionHTTPOnly:   true,
-		SessionSameSite:   "Lax",
-		SessionMaxAge:     86400, // 24 hours
-	}
-	sessionAuthMethod := infraAuth.NewSessionAuthMethod(
-		af.sessionRepo,
-		af.userGroupRepo,
-		sessionAuthConfig,
-	)
-	af.RegisterAuthMethod(sessionAuthMethod)
-
-	// Register SAML auth method
-	samlAuthMethod := infraAuth.NewSamlAuthMethod(af.config)
-	if samlAuthMethod.IsEnabled() {
-		af.RegisterAuthMethod(samlAuthMethod)
-	}
-
-	// Register OpenID Connect auth method
-	openidAuthMethod := infraAuth.NewOpenidConnectAuthMethod(af.config)
-	if openidAuthMethod.IsEnabled() {
-		af.RegisterAuthMethod(openidAuthMethod)
-	}
-
-	// Register Admin Session auth method
+	// 2. Admin Session auth method
 	adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(
 		af.sessionRepo,
 		af.userGroupRepo,
 	)
 	af.RegisterAuthMethod(adminSessionAuthMethod)
 
-	// Register Terraform OIDC auth method
-	terraformOidcAuthMethod := infraAuth.NewTerraformOidcAuthMethod(af.config)
-	if terraformOidcAuthMethod.IsEnabled() {
-		af.RegisterAuthMethod(terraformOidcAuthMethod)
+	// 3. Upload API Key auth method
+	uploadApiKeyAuthMethod := infraAuth.NewUploadApiKeyAuthMethod(af.config)
+	if uploadApiKeyAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(uploadApiKeyAuthMethod)
 	}
 
-	// Register Terraform Analytics Auth Key auth method
-	terraformAnalyticsAuthMethod := infraAuth.NewTerraformAnalyticsAuthKeyAuthMethod()
-	af.RegisterAuthMethod(terraformAnalyticsAuthMethod)
+	// 4. Publish API Key auth method
+	publishApiKeyAuthMethod := infraAuth.NewPublishApiKeyAuthMethod(af.config)
+	if publishApiKeyAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(publishApiKeyAuthMethod)
+	}
 
-	// Register Terraform Internal Extraction auth method
-	terraformInternalExtractionAuthMethod := infraAuth.NewTerraformInternalExtractionAuthMethod("terraform-internal-extraction")
-	af.RegisterAuthMethod(terraformInternalExtractionAuthMethod)
+	// 5. SAML auth method
+	samlAuthMethod := infraAuth.NewSamlAuthMethod(af.config)
+	if samlAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(samlAuthMethod)
+	}
+
+	// 6. OpenID Connect auth method
+	if oidcService != nil {
+		// For now, skip OpenID Connect until we fix the interface issue
+		// TODO: Fix OpenID Connect auth method interface compatibility
+	}
+
+	// 7. GitHub auth method (TODO: implement)
+
+	// 8. Terraform OIDC auth method
+	if terraformIdpService != nil {
+		// For now, skip Terraform OIDC until we fix the interface issue
+		// TODO: Fix Terraform OIDC auth method interface compatibility
+	}
+
+	// 9. Terraform Analytics auth key method
+	analyticsAuthKeyAuthMethod := infraAuth.NewTerraformAnalyticsAuthKeyAuthMethod(af.config)
+	if analyticsAuthKeyAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(analyticsAuthKeyAuthMethod)
+	}
+
+	// 10. Terraform Internal Extraction auth method
+	internalExtractionAuthMethod := infraAuth.NewTerraformInternalExtractionAuthMethod("terraform-internal", af.config)
+	if internalExtractionAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(internalExtractionAuthMethod)
+	}
 }
 
 // RegisterAuthMethod registers an authentication method
@@ -122,8 +132,7 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
 
-	// Extract API key from X-Terrareg-ApiKey header (matches Python)
-	apiKey := headers["X-Terrareg-ApiKey"]
+	// API key extraction is now handled by individual auth methods
 
 	// Extract session ID from cookies
 	sessionID := af.extractSessionID(headers)
@@ -159,16 +168,18 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 
 		// Handle different authentication methods
 		switch method := authMethod.(type) {
-		case *infraAuth.ApiKeyAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, apiKey)
-		case *infraAuth.SessionAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, sessionID)
+		case *infraAuth.AdminApiKeyAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
+		case *infraAuth.AdminSessionAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
+		case *infraAuth.UploadApiKeyAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
+		case *infraAuth.PublishApiKeyAuthMethod:
+			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
 		case *infraAuth.SamlAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
 		case *infraAuth.OpenidConnectAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
-		case *infraAuth.AdminSessionAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
 		case *infraAuth.TerraformOidcAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, authorizationHeader, requestBody)
 		case *infraAuth.TerraformAnalyticsAuthKeyAuthMethod:
@@ -267,6 +278,27 @@ func (af *AuthFactory) InvalidateAuthentication() {
 	// The authentication state is managed per-request
 }
 
+// GetCurrentAuthMethod returns the current authentication method (for application layer compatibility)
+// TODO: This should be removed and the application layer updated to use AuthenticateRequest
+func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
+	// Return NotAuthenticated as default
+	return af.NotAuthenticated()
+}
+
+// GetCurrentAuthContext returns the current authentication context (for application layer compatibility)
+// TODO: This should be removed and the application layer updated to use AuthenticateRequest
+func (af *AuthFactory) GetCurrentAuthContext() *AuthContextAdapter {
+	// Return an adapter that provides the expected interface
+	return &AuthContextAdapter{
+		authMethod: af.GetCurrentAuthMethod(),
+	}
+}
+
+// NotAuthenticated returns the NotAuthenticated auth method
+func (af *AuthFactory) NotAuthenticated() auth.AuthMethod {
+	return &NotAuthenticatedAuthMethod{}
+}
+
 // generateRequestID generates a unique request ID
 func (af *AuthFactory) generateRequestID() string {
 	return fmt.Sprintf("req_%d", af.generateRandomID())
@@ -310,6 +342,38 @@ func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
 	}
 
 	return nil
+}
+
+// AuthContextAdapter provides the interface expected by the application layer
+type AuthContextAdapter struct {
+	authMethod auth.AuthMethod
+}
+
+// Permissions returns permissions (stub for application layer compatibility)
+func (a *AuthContextAdapter) Permissions() map[string]string {
+	return a.authMethod.GetAllNamespacePermissions()
+}
+
+// SessionID returns session ID (stub for application layer compatibility)
+func (a *AuthContextAdapter) SessionID() *string {
+	// Extract session ID from provider data if available
+	if data := a.authMethod.GetProviderData(); data != nil {
+		if sessionID, ok := data["session_id"].(string); ok {
+			return &sessionID
+		}
+	}
+	return nil
+}
+
+// Username returns username
+func (a *AuthContextAdapter) Username() string {
+	return a.authMethod.GetUsername()
+}
+
+// HasPermission checks if the context has a specific permission (stub)
+func (a *AuthContextAdapter) HasPermission(permission string) bool {
+	// For now, return false - this would need to be implemented in auth contexts
+	return false
 }
 
 // NotAuthenticatedAuthMethod represents the fallback authentication method

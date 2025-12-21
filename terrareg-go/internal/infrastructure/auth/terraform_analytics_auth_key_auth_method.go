@@ -5,16 +5,19 @@ import (
 	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // TerraformAnalyticsAuthKeyAuthMethod implements immutable authentication for Terraform analytics via API keys
 type TerraformAnalyticsAuthKeyAuthMethod struct {
-	// No mutable state - this is immutable
+	config *config.InfrastructureConfig
 }
 
 // NewTerraformAnalyticsAuthKeyAuthMethod creates a new immutable Terraform analytics auth key authentication method
-func NewTerraformAnalyticsAuthKeyAuthMethod() *TerraformAnalyticsAuthKeyAuthMethod {
-	return &TerraformAnalyticsAuthKeyAuthMethod{}
+func NewTerraformAnalyticsAuthKeyAuthMethod(config *config.InfrastructureConfig) *TerraformAnalyticsAuthKeyAuthMethod {
+	return &TerraformAnalyticsAuthKeyAuthMethod{
+		config: config,
+	}
 }
 
 // GetProviderType returns the authentication provider type
@@ -82,35 +85,33 @@ type TerraformAnalyticsAuthKeyInfo struct {
 }
 
 // validateAnalyticsAuthKey validates an analytics auth key and returns key information
-// This is a placeholder implementation - in a real system, you would validate against a database
+// Python implementation uses ANALYTICS_AUTH_KEYS config with token:environment format
 func (t *TerraformAnalyticsAuthKeyAuthMethod) validateAnalyticsAuthKey(authKey string) (*TerraformAnalyticsAuthKeyInfo, error) {
-	// Simple validation for demonstration
-	// In production, this would check against a database or configuration
-	validKeys := map[string]*TerraformAnalyticsAuthKeyInfo{
-		"analytics-key-global": {
-			CanAccessAll:   true,
-			AllowedModules: []string{},
-		},
-		"analytics-key-example": {
-			CanAccessAll:   false,
-			AllowedModules: []string{"example/aws-vpc", "example/aws-ec2"},
-		},
-		"analytics-key-mycompany": {
-			CanAccessAll:   false,
-			AllowedModules: []string{"mycompany/*"}, // Wildcard support
-		},
-		"analytics-key-public": {
-			CanAccessAll:   false,
-			AllowedModules: []string{"hashicorp/aws", "hashicorp/azure", "hashicorp/gcp"},
-		},
+	// Handle token:environment format - only validate part before colon
+	actualToken := authKey
+	if colonIndex := strings.Index(authKey, ":"); colonIndex != -1 {
+		actualToken = authKey[:colonIndex]
 	}
 
-	keyInfo, exists := validKeys[authKey]
-	if !exists {
-		return nil, &TerraformAnalyticsAuthKeyError{Message: "invalid analytics auth key"}
+	// Check against ANALYTICS_AUTH_KEYS configuration
+	for _, configuredKey := range t.config.AnalyticsAuthKeys {
+		// Configured keys might also be in token:environment format
+		configToken := configuredKey
+		if colonIndex := strings.Index(configuredKey, ":"); colonIndex != -1 {
+			configToken = configuredKey[:colonIndex]
+		}
+
+		if actualToken == configToken {
+			// For analytics keys, allow access to all modules
+			// Python implementation doesn't restrict modules for analytics
+			return &TerraformAnalyticsAuthKeyInfo{
+				CanAccessAll:   true,
+				AllowedModules: []string{}, // Empty means all modules
+			}, nil
+		}
 	}
 
-	return keyInfo, nil
+	return nil, &TerraformAnalyticsAuthKeyError{Message: "invalid analytics auth key"}
 }
 
 // AuthMethod interface implementation for the base TerraformAnalyticsAuthKeyAuthMethod

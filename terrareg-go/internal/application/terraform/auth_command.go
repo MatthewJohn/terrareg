@@ -69,20 +69,20 @@ func (c *AuthenticateOIDCTokenCommand) Execute(ctx context.Context, req Authenti
 	}
 
 	// Convert permissions to string slice
-	permissions := make([]string, 0, len(authCtx.Permissions))
-	for namespace, permType := range authCtx.Permissions {
-		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+	permissions := make([]string, 0)
+	for namespace, permType := range authCtx.Permissions() {
+	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Generate identity ID
 	identityID := "terraform-oidc-user"
-	if authCtx.SessionID != nil {
-		identityID = *authCtx.SessionID
+	if authCtx.SessionID() != nil {
+		identityID = *authCtx.SessionID()
 	}
 
 	return &AuthenticateOIDCTokenResponse{
 		IdentityID:   identityID,
-		Subject:      authCtx.Username,
+		Subject:      authCtx.Username(),
 		Permissions:  permissions,
 		IdentityType: string(authMethod.GetProviderType()),
 	}, nil
@@ -155,8 +155,8 @@ func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenReq
 			// Parse required permission format "namespace:permission_type"
 			parts := strings.SplitN(requiredPerm, ":", 2)
 			if len(parts) == 2 {
-				namespace, permType := parts[0], parts[1]
-				if !authCtx.HasPermission(namespace, permType) {
+				// Check if user has the specific permission
+				if !authCtx.HasPermission(requiredPerm) {
 					return &ValidateTokenResponse{Valid: false}, nil
 				}
 			}
@@ -164,21 +164,21 @@ func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenReq
 	}
 
 	// Convert permissions to string slice
-	permissions := make([]string, 0, len(authCtx.Permissions))
-	for namespace, permType := range authCtx.Permissions {
-		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+	permissions := make([]string, 0)
+	for namespace, permType := range authCtx.Permissions() {
+	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Generate identity ID
 	identityID := "terraform-user"
-	if authCtx.SessionID != nil {
-		identityID = *authCtx.SessionID
+	if sessionID := authCtx.SessionID(); sessionID != nil {
+		identityID = *sessionID
 	}
 
 	return &ValidateTokenResponse{
 		Valid:        true,
 		IdentityID:   identityID,
-		Subject:      authCtx.Username,
+		Subject:      authCtx.Username(),
 		Permissions:  permissions,
 		IdentityType: string(authMethod.GetProviderType()),
 	}, nil
@@ -223,7 +223,8 @@ func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUs
 	}
 
 	// Check if session ID matches (using SessionID as identity identifier)
-	sessionMatches := authCtx.SessionID != nil && *authCtx.SessionID == identityID
+	sessionID := authCtx.SessionID()
+	sessionMatches := sessionID != nil && *sessionID == identityID
 	if !sessionMatches && identityID != "current-user" {
 		return &GetUserResponse{
 			IdentityID: identityID,
@@ -240,9 +241,9 @@ func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUs
 	}
 
 	// Convert permissions to string slice
-	permissions := make([]string, 0, len(authCtx.Permissions))
-	for namespace, permType := range authCtx.Permissions {
-		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+	permissions := make([]string, 0)
+	for namespace, permType := range authCtx.Permissions() {
+	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Create metadata
@@ -254,13 +255,13 @@ func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUs
 
 	// Use provided identityID or fallback to session ID
 	responseIdentityID := identityID
-	if sessionMatches && authCtx.SessionID != nil {
-		responseIdentityID = *authCtx.SessionID
+	if sessionMatches && sessionID != nil {
+		responseIdentityID = *sessionID
 	}
 
 	return &GetUserResponse{
 		IdentityID:   responseIdentityID,
-		Subject:      authCtx.Username,
+		Subject:      authCtx.Username(),
 		Permissions:  permissions,
 		IdentityType: string(authMethod.GetProviderType()),
 		IsValid:      true,
