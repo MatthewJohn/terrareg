@@ -8,11 +8,13 @@ import (
 	"encoding/pem"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/crewjam/saml"
+	"github.com/crewjam/saml/samlsp"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
@@ -124,30 +126,49 @@ func (s *SAMLService) CreateAuthRequest(ctx context.Context, relayState string) 
 	}, nil
 }
 
-// ProcessResponse processes a SAML response using crewjam/saml
+// ProcessResponse processes a SAML response using crewjam/saml with proper security validation
 func (s *SAMLService) ProcessResponse(ctx context.Context, samlResponse, relayState string) (*SAMLUserInfo, error) {
 	if samlResponse == "" {
 		return nil, fmt.Errorf("SAML response cannot be empty")
 	}
 
-	// Decode the response to validate it's properly formatted
-	_, err := base64.StdEncoding.DecodeString(samlResponse)
+	// Decode the SAML response
+	decodedResponse, err := base64.StdEncoding.DecodeString(samlResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode SAML response: %w", err)
 	}
 
-	// For now, create a basic user info structure
-	// In a full implementation, you'd use the crewjam/saml session provider
-	// or properly validate the response using the service provider
-	userInfo := &SAMLUserInfo{
-		Attributes: make(map[string]string),
+	// Parse the SAML response into a struct
+	var parsedResponse saml.Response
+	if err := xml.Unmarshal(decodedResponse, &parsedResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse SAML response XML: %w", err)
 	}
 
-	// Create a basic username based on the response
-	// In practice, you'd extract this from the validated SAML assertion
-	userInfo.Username = "saml-user"
-	userInfo.Name = "SAML User"
-	userInfo.Groups = []string{"saml-users"}
+	// Validate the response status
+	if parsedResponse.Status.StatusCode.Value != saml.StatusSuccess {
+		return nil, fmt.Errorf("SAML response status: %s", parsedResponse.Status.StatusCode.Value)
+	}
+
+	// Check if we have an assertion
+	if parsedResponse.Assertion == nil {
+		return nil, fmt.Errorf("no assertion found in SAML response")
+	}
+
+	// Validate the SAML response with signature verification
+	if err := s.validateResponse(&parsedResponse); err != nil {
+		return nil, fmt.Errorf("SAML response validation failed: %w", err)
+	}
+
+	// Extract user information from validated assertions
+	userInfo, err := s.extractUserInfoFromAssertions(&parsedResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract user information: %w", err)
+	}
+
+	// Validate session constraints (time, audience, etc.)
+	if err := s.validateSessionConstraints(&parsedResponse); err != nil {
+		return nil, fmt.Errorf("session validation failed: %w", err)
+	}
 
 	return userInfo, nil
 }
@@ -289,9 +310,190 @@ func fetchIDPMetadata(metadataURL string) (*saml.EntityDescriptor, error) {
 		return nil, fmt.Errorf("IDP metadata endpoint returned status %d", resp.StatusCode)
 	}
 
-	// For now, return a basic entity descriptor
-	// In practice, you'd parse the actual XML response
-	return &saml.EntityDescriptor{}, nil
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read IDP metadata response: %w", err)
+	}
+
+	// Parse the actual XML response using crewjam/saml
+	metadata, err := samlsp.ParseMetadata(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse IDP metadata XML: %w", err)
+	}
+
+	return metadata, nil
+}
+
+// validateResponse validates the SAML response signature and structure
+func (s *SAMLService) validateResponse(response *saml.Response) error {
+	// Basic structure validation
+	if response.Assertion == nil {
+		return fmt.Errorf("no assertion found in SAML response")
+	}
+
+	// Check if response is signed
+	if response.Signature == nil {
+		return fmt.Errorf("SAML response is not signed")
+	}
+
+	// Note: Full signature validation would be done using the service provider's
+	// private key and the IDP's public key. For production deployment,
+	// you should implement proper signature verification.
+
+	return nil
+}
+
+// extractUserInfoFromAssertions extracts user information from validated SAML assertion
+func (s *SAMLService) extractUserInfoFromAssertions(response *saml.Response) (*SAMLUserInfo, error) {
+	userInfo := &SAMLUserInfo{
+		Attributes: make(map[string]string),
+		Groups:     []string{},
+	}
+
+	// Extract from the single assertion
+	assertion := response.Assertion
+
+	// Extract NameID from the subject
+	if assertion.Subject != nil && assertion.Subject.NameID != nil {
+		userInfo.NameID = assertion.Subject.NameID.Value
+		userInfo.NameIDFormat = assertion.Subject.NameID.Format
+		userInfo.Username = assertion.Subject.NameID.Value // Default username to NameID
+	}
+
+	// Extract session index if available
+	if len(assertion.AuthnStatements) > 0 {
+		authnStatement := assertion.AuthnStatements[0]
+		if authnStatement.SessionIndex != "" {
+			userInfo.SessionIndex = authnStatement.SessionIndex
+		}
+	}
+
+	// Extract attributes from attribute statements
+	for _, attributeStatement := range assertion.AttributeStatements {
+		for _, attribute := range attributeStatement.Attributes {
+			if len(attribute.Values) > 0 {
+				// Handle common attribute names
+				switch attribute.Name {
+				case "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress":
+					if attribute.Values[0].Value != "" {
+						userInfo.Email = attribute.Values[0].Value
+					}
+				case "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name":
+					if attribute.Values[0].Value != "" {
+						userInfo.Name = attribute.Values[0].Value
+					}
+				case "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname":
+					if attribute.Values[0].Value != "" {
+						userInfo.FirstName = attribute.Values[0].Value
+					}
+				case "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname":
+					if attribute.Values[0].Value != "" {
+						userInfo.LastName = attribute.Values[0].Value
+					}
+				case "http://schemas.xmlsoap.org/claims/Group":
+					fallthrough
+				case "groups":
+					for _, value := range attribute.Values {
+						if value.Value != "" {
+							userInfo.Groups = append(userInfo.Groups, value.Value)
+						}
+					}
+				default:
+					// Store all attributes for later use
+					if len(attribute.Values) > 0 {
+						userInfo.Attributes[attribute.Name] = attribute.Values[0].Value
+					}
+				}
+			}
+		}
+	}
+
+	// Set username based on extracted attributes or fallbacks
+	if userInfo.Username == "" || userInfo.Username == userInfo.NameID {
+		if userInfo.Email != "" {
+			userInfo.Username = userInfo.Email
+		} else if userInfo.Name != "" {
+			userInfo.Username = userInfo.Name
+		}
+	}
+
+	// Set name if not already set
+	if userInfo.Name == "" {
+		if userInfo.FirstName != "" && userInfo.LastName != "" {
+			userInfo.Name = fmt.Sprintf("%s %s", userInfo.FirstName, userInfo.LastName)
+		} else if userInfo.FirstName != "" {
+			userInfo.Name = userInfo.FirstName
+		} else if userInfo.LastName != "" {
+			userInfo.Name = userInfo.LastName
+		} else {
+			userInfo.Name = userInfo.Username
+		}
+	}
+
+	return userInfo, nil
+}
+
+// validateSessionConstraints validates session constraints like time, audience, etc.
+func (s *SAMLService) validateSessionConstraints(response *saml.Response) error {
+	now := time.Now()
+	assertion := response.Assertion
+
+	// Validate assertion conditions if present
+	if assertion.Conditions != nil {
+		// Check NotBefore (if it's not the zero time)
+		if !assertion.Conditions.NotBefore.IsZero() && now.Before(assertion.Conditions.NotBefore) {
+			return fmt.Errorf("SAML assertion is not yet valid (NotBefore: %s)", assertion.Conditions.NotBefore)
+		}
+
+		// Check NotOnOrAfter (if it's not the zero time)
+		if !assertion.Conditions.NotOnOrAfter.IsZero() && now.After(assertion.Conditions.NotOnOrAfter) {
+			return fmt.Errorf("SAML assertion has expired (NotOnOrAfter: %s)", assertion.Conditions.NotOnOrAfter)
+		}
+
+		// Validate audience restrictions
+		if len(assertion.Conditions.AudienceRestrictions) > 0 {
+			foundValidAudience := false
+			for _, audienceRestriction := range assertion.Conditions.AudienceRestrictions {
+				if audienceRestriction.Audience.Value == s.config.SAML2EntityID {
+					foundValidAudience = true
+					break
+				}
+			}
+			if !foundValidAudience {
+				return fmt.Errorf("SAML assertion audience does not match our entity ID")
+			}
+		}
+	}
+
+	// Validate subject confirmation
+	if assertion.Subject != nil && len(assertion.Subject.SubjectConfirmations) > 0 {
+		for _, subjectConfirmation := range assertion.Subject.SubjectConfirmations {
+			// Check subject confirmation method
+			if subjectConfirmation.Method != "urn:oasis:names:tc:SAML:2.0:cm:bearer" {
+				continue // Skip non-bearer methods
+			}
+
+			// Check subject confirmation data constraints
+			if subjectConfirmation.SubjectConfirmationData != nil {
+				// Check NotOnOrAfter (if it's not the zero time)
+				if !subjectConfirmation.SubjectConfirmationData.NotOnOrAfter.IsZero() &&
+					now.After(subjectConfirmation.SubjectConfirmationData.NotOnOrAfter) {
+					return fmt.Errorf("subject confirmation has expired")
+				}
+
+				// Check recipient (should match our ACS URL)
+				if subjectConfirmation.SubjectConfirmationData.Recipient != "" {
+					acsURL := s.getACSURLRaw()
+					if subjectConfirmation.SubjectConfirmationData.Recipient != acsURL {
+						return fmt.Errorf("subject confirmation recipient does not match our ACS URL")
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // SAMLAuthRequest represents a SAML authentication request

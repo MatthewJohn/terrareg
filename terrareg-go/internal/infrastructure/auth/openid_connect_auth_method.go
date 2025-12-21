@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -57,39 +58,28 @@ func (o *OpenidConnectAuthMethod) Authenticate(ctx context.Context, sessionData 
 		return nil, nil // Let other auth methods try
 	}
 
-	// TODO: In a full implementation, validate the ID token signature using OIDCService
-	// For now, we validate the session expiry and check that token exists
-	// The actual JWT validation should be done here when OIDCService exposes its verifier
-
-	usernameInterface, hasUsername := sessionData["openid_username"]
-	username := "unknown-user"
-	if hasUsername {
-		if usernameStr, ok := usernameInterface.(string); ok {
-			username = usernameStr
-		}
+	// Validate ID token signature using OIDCService
+	userInfo, err := o.oidcService.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return nil, fmt.Errorf("ID token validation failed: %w", err)
 	}
 
-	// Extract claims from session data
-	claims := make(map[string]interface{})
-	claims["id_token"] = idToken
-	for k, v := range sessionData {
-		if strings.HasPrefix(k, "openid_connect_") {
-			claims[k[len("openid_connect_"):]] = v
-		}
-	}
-
-	// Extract the "sub" claim (subject identifier)
-	subject := username // For now, use username as subject (in real implementation, this would come from the "sub" claim in the JWT)
-	if subValue, exists := claims["sub"]; exists {
-		if subStr, ok := subValue.(string); ok {
-			subject = subStr
+	// Extract username from validated user info
+	username := userInfo.Username
+	if username == "" {
+		if userInfo.Name != "" {
+			username = userInfo.Name
+		} else if userInfo.Email != "" {
+			username = userInfo.Email
+		} else {
+			username = userInfo.Sub
 		}
 	}
 
 	// Create OpenidConnectAuthContext with authentication state
-	authContext := auth.NewOpenidConnectAuthContext(ctx, subject, claims)
+	authContext := auth.NewOpenidConnectAuthContext(ctx, userInfo.Sub, userInfo.RawClaims)
 
-	// Extract user details
+	// Extract user details from claims (username, email, name, etc.)
 	authContext.ExtractUserDetails()
 
 	return authContext, nil

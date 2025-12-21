@@ -23,5 +23,6 @@ type TerraformIdpValidator interface {
 
 // OIDCValidator interface for OpenID Connect operations
 type OIDCValidator interface {
-	// Add methods as needed for OIDC validation
+	// VerifyIDToken verifies an ID token signature and returns user info
+	VerifyIDToken(ctx context.Context, idToken string) (*UserInfo, error)
 }
