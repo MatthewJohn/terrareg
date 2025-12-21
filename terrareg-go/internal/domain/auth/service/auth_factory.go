@@ -132,30 +132,13 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
 
-	// API key extraction is now handled by individual auth methods
-
-	// Extract session ID from cookies
+	// Extract session ID for auth methods that need it
 	sessionID := af.extractSessionID(headers)
-
-	// Extract session data for SAML/OpenID (in a real implementation, this would come from the session store)
-	sessionData := make(map[string]interface{})
-	if sessionID != nil {
-		// TODO: Load session data from session repository
-		// For now, assume session data is extracted from headers/cookies
-		sessionData["samlNameId"] = headers["X-SAML-NameID"]
-		sessionData["samlUserdata"] = nil // Would be loaded from session
-		sessionData["openid_connect_expires_at"] = 0.0
-		sessionData["openid_connect_id_token"] = ""
-		sessionData["openid_username"] = headers["X-OpenID-Username"]
-		sessionData["openid_groups"] = []string{} // Would be loaded from session
-	}
-
-	// Extract authorization header for Terraform OIDC
 	authorizationHeader := headers["Authorization"]
 
-	// Extract request body for Terraform OIDC (if needed)
-	var requestBody []byte
-	// In a real implementation, this would be extracted from the request
+	// Create empty session data for SAML/OpenID Connect methods
+	// They can implement their own session loading if needed in future
+	sessionData := make(map[string]interface{})
 
 	// Try each auth method in priority order
 	for _, authMethod := range af.authMethods {
@@ -166,7 +149,7 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 		var authenticatedAdapter auth.AuthMethod
 		var err error
 
-		// Handle different authentication methods
+		// Each auth method handles its own specific authentication requirements
 		switch method := authMethod.(type) {
 		case *infraAuth.AdminApiKeyAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
@@ -181,20 +164,17 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 		case *infraAuth.OpenidConnectAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
 		case *infraAuth.TerraformOidcAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, authorizationHeader, requestBody)
+			authenticatedAdapter, err = method.Authenticate(ctx, authorizationHeader, nil)
 		case *infraAuth.TerraformAnalyticsAuthKeyAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
 		case *infraAuth.TerraformInternalExtractionAuthMethod:
 			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
-		default:
-			// For legacy auth methods, fall back to CheckAuthState
-			if authMethod.CheckAuthState() {
-				authenticatedAdapter = authMethod
-			}
 		}
 
 		if err != nil {
-			continue // Try next auth method
+			// Log the error for debugging but continue trying other auth methods
+			af.logger.Debug().Err(err).Str("auth_method", string(authMethod.GetProviderType())).Msg("Authentication method failed")
+			continue
 		}
 
 		// If we got an authenticated adapter, build response
@@ -217,11 +197,19 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 			response.TerraformToken = af.getStringPtr(authenticatedAdapter.GetTerraformAuthToken())
 
 			// Set session ID if available
-			if adapter, ok := authenticatedAdapter.(*model.SessionStateAdapter); ok {
-				response.SessionID = adapter.GetContext().Value("session_id").(*string)
-			} else if sessionID := af.extractSessionID(headers); sessionID != nil {
+			if sessionID != nil {
 				response.SessionID = sessionID
+			} else if data := authenticatedAdapter.GetProviderData(); data != nil {
+				if authSessionID, ok := data["session_id"].(string); ok && authSessionID != "" {
+					response.SessionID = &authSessionID
+				}
 			}
+
+			af.logger.Info().
+				Str("auth_method", string(authMethod.GetProviderType())).
+				Str("username", authenticatedAdapter.GetUsername()).
+				Bool("is_admin", authenticatedAdapter.IsAdmin()).
+				Msg("Authentication successful")
 
 			return response, nil
 		}
@@ -238,6 +226,7 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	response.Username = fallbackMethod.GetUsername()
 	response.CanAccessAPI = fallbackMethod.CanAccessReadAPI()
 
+	af.logger.Debug().Msg("No authentication method succeeded, returning NotAuthenticated")
 	return response, nil
 }
 
