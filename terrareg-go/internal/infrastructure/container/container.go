@@ -580,13 +580,13 @@ func NewContainer(
 		infraConfig.PublicURL,
 	)
 
-	// Initialize AuthFactory after TerraformIdpService is created
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig, c.TerraformIdpService, &c.Logger)
-
 	// Initialize OIDC and SAML services (these may return nil if not configured)
 	ctx := context.Background()
 	c.OIDCService, _ = authservice.NewOIDCService(ctx, infraConfig)
 	c.SAMLService, _ = authservice.NewSAMLService(infraConfig)
+
+	// Initialize AuthFactory after all services are created
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig, c.TerraformIdpService, c.OIDCService, &c.Logger)
 
 	// Initialize StateStorageService
 	c.StateStorageService = authservice.NewStateStorageService(c.SessionService)

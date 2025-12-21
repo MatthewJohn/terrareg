@@ -2,19 +2,23 @@ package auth
 
 import (
 	"context"
+	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // TerraformInternalExtractionAuthMethod implements immutable authentication for internal Terraform extraction processes
 type TerraformInternalExtractionAuthMethod struct {
 	serviceName string
+	config      *config.InfrastructureConfig
 }
 
 // NewTerraformInternalExtractionAuthMethod creates a new immutable Terraform internal extraction auth method
-func NewTerraformInternalExtractionAuthMethod(serviceName string) *TerraformInternalExtractionAuthMethod {
+func NewTerraformInternalExtractionAuthMethod(serviceName string, config *config.InfrastructureConfig) *TerraformInternalExtractionAuthMethod {
 	return &TerraformInternalExtractionAuthMethod{
 		serviceName: serviceName,
+		config:      config,
 	}
 }
 
@@ -25,25 +29,34 @@ func (t *TerraformInternalExtractionAuthMethod) GetProviderType() auth.AuthMetho
 
 // IsEnabled returns whether this authentication method is enabled
 func (t *TerraformInternalExtractionAuthMethod) IsEnabled() bool {
-	return true
+	// Internal extraction is enabled if token is configured
+	return t.config.InternalExtractionAnalyticsToken != ""
 }
 
 // Authenticate authenticates an internal extraction request and returns a TerraformInternalExtractionAuthContext
 func (t *TerraformInternalExtractionAuthMethod) Authenticate(ctx context.Context, headers, formData, queryParams map[string]string) (auth.AuthMethod, error) {
-	// For internal extraction, we assume the request is valid if it comes from an internal source
-	// In a real implementation, you might check for internal headers, IP ranges, or service tokens
-
-	// Check for internal service token header
-	_, exists := headers["X-Internal-Service-Token"]
-	if !exists {
-		// Check Authorization header for service token
-		if authHeader, exists := headers["Authorization"]; exists && authHeader == "Bearer internal-service-token" {
-			_ = authHeader // Auth header validated
-		}
+	// Check if INTERNAL_EXTRACTION_ANALYTICS_TOKEN is configured
+	if !t.IsEnabled() {
+		return nil, nil // Let other auth methods try
 	}
 
-	// For demonstration, we'll assume internal requests are always valid
-	// In production, you would validate the service token
+	// Look for auth token in Authorization header
+	authHeader, exists := headers["Authorization"]
+	if !exists {
+		return nil, nil // Let other auth methods try
+	}
+
+	// Handle Bearer token format
+	expectedToken := t.config.InternalExtractionAnalyticsToken
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return nil, nil // Let other auth methods try
+	}
+
+	// Extract and validate token
+	token := strings.TrimSpace(authHeader[7:]) // Remove "Bearer " prefix
+	if token != expectedToken {
+		return nil, nil // Let other auth methods try
+	}
 
 	// Create TerraformInternalExtractionAuthContext with authentication state
 	authContext := auth.NewTerraformInternalExtractionAuthContext(ctx, t.serviceName)

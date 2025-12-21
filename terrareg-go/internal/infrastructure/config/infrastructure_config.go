@@ -42,6 +42,12 @@ type InfrastructureConfig struct {
 	PublishApiKeys           []string `env:"PUBLISH_API_KEYS"`
 	SecretKey                string   `env:"SECRET_KEY"`
 
+	// Analytics authentication (from Python ANALYTICS_AUTH_KEYS)
+	AnalyticsAuthKeys []string `env:"ANALYTICS_AUTH_KEYS" envDefault:""`
+
+	// Internal extraction authentication (from Python INTERNAL_EXTRACTION_ANALYTICS_TOKEN)
+	InternalExtractionAnalyticsToken string `env:"INTERNAL_EXTRACTION_ANALYTICS_TOKEN"`
+
 	// Feature flags (infrastructure concerns)
 	AllowProviderHosting   bool `env:"ALLOW_PROVIDER_HOSTING"`
 	AllowCustomGitProvider bool `env:"ALLOW_CUSTOM_GIT_PROVIDER"`

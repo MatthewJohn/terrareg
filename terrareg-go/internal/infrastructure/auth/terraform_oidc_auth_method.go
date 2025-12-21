@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
@@ -9,13 +10,15 @@ import (
 
 // TerraformOidcAuthMethod implements immutable Terraform OIDC authentication
 type TerraformOidcAuthMethod struct {
-	config *config.InfrastructureConfig
+	config            *config.InfrastructureConfig
+	terraformIdpService auth.TerraformIdpValidator
 }
 
 // NewTerraformOidcAuthMethod creates a new immutable Terraform OIDC auth method
-func NewTerraformOidcAuthMethod(config *config.InfrastructureConfig) *TerraformOidcAuthMethod {
+func NewTerraformOidcAuthMethod(config *config.InfrastructureConfig, terraformIdpService auth.TerraformIdpValidator) *TerraformOidcAuthMethod {
 	return &TerraformOidcAuthMethod{
-		config: config,
+		config:            config,
+		terraformIdpService: terraformIdpService,
 	}
 }
 
@@ -30,23 +33,29 @@ func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, authorizatio
 		return nil, nil // Let other auth methods try
 	}
 
-	// In a real implementation, validate the authorization token here
-	// This would involve parsing the JWT token and validating it against the OIDC provider
-	// For now, assume validation passes if header exists
+	// Extract Bearer token from authorization header
+	var token string
+	if strings.HasPrefix(authorizationHeader, "Bearer ") {
+		token = strings.TrimSpace(authorizationHeader[7:]) // Remove "Bearer " prefix
+	} else {
+		return nil, nil // Let other auth methods try
+	}
 
-	// Extract user information from the validated token
-	// This would come from the token claims in a real implementation
-	subject := "terraform-user"
+	// Validate token using TerraformIdpService
+	userInfo, err := t.terraformIdpService.ValidateToken(ctx, token)
+	if err != nil {
+		return nil, nil // Let other auth methods try
+	}
 
 	// Create TerraformOidcAuthContext with authentication state
-	authContext := auth.NewTerraformOidcAuthContext(ctx, subject)
+	authContext := auth.NewTerraformOidcAuthContext(ctx, userInfo.Sub)
 
-	// Add Terraform-specific permissions
+	// Add Terraform-specific permissions (matches Python - minimal access)
 	authContext.AddPermission("read")
 	authContext.AddPermission("download")
 
 	// Set the bearer token for Terraform
-	authContext.SetTerraformAuthToken(authorizationHeader)
+	authContext.SetTerraformAuthToken(token)
 
 	return authContext, nil
 }
