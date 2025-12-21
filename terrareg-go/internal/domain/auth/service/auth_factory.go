@@ -70,34 +70,19 @@ func NewAuthFactory(
 // initializeAuthMethods sets up authentication methods in priority order
 func (af *AuthFactory) initializeAuthMethods() {
 	// Priority order from Python terrareg
-	// 1. AdminApiKeyAuthMethod (legacy)
-	// 2. AuthenticationTokenAuthMethod (admin tokens)
-	// 3. AuthenticationTokenAuthMethod (upload tokens)
-	// 4. AuthenticationTokenAuthMethod (publish tokens)
-	// 5. AdminSessionAuthMethod
-	// 6. SamlAuthMethod
-	// 7. OpenidConnectAuthMethod
-	// 8. GithubAuthMethod
-	// 9. TerraformOidcAuthMethod
-	// 10. TerraformAnalyticsAuthKeyAuthMethod
-	// 11. NotAuthenticated (fallback)
+	// 1. ApiKeyAuthMethod (consolidated admin/upload/publish API keys)
+	// 2. AdminSessionAuthMethod
+	// 3. SamlAuthMethod
+	// 4. OpenidConnectAuthMethod
+	// 5. GithubAuthMethod
+	// 6. TerraformOidcAuthMethod
+	// 7. TerraformAnalyticsAuthKeyAuthMethod
+	// 8. NotAuthenticated (fallback)
 
-	// Register AdminApiKeyAuthMethod (legacy admin token - highest priority)
-	if af.config.AdminAuthenticationToken != "" {
-		adminApiKeyAuthMethod := infraAuth.NewAdminApiKeyAuthMethod(af.config)
-		af.RegisterAuthMethod(adminApiKeyAuthMethod)
-	}
-
-	// Register UploadApiKeyAuthMethod for upload tokens
-	if len(af.config.UploadApiKeys) > 0 {
-		uploadApiKeyAuthMethod := infraAuth.NewUploadApiKeyAuthMethod(af.config)
-		af.RegisterAuthMethod(uploadApiKeyAuthMethod)
-	}
-
-	// Register PublishApiKeyAuthMethod for publish tokens
-	if len(af.config.PublishApiKeys) > 0 {
-		publishApiKeyAuthMethod := infraAuth.NewPublishApiKeyAuthMethod(af.config)
-		af.RegisterAuthMethod(publishApiKeyAuthMethod)
+	// Register consolidated ApiKeyAuthMethod (handles admin, upload, and publish API keys)
+	apiKeyAuthMethod := infraAuth.NewApiKeyAuthMethod(af.config)
+	if apiKeyAuthMethod.IsEnabled() {
+		af.RegisterAuthMethod(apiKeyAuthMethod)
 	}
 
 	// AuthenticationTokenAuthMethod is not used as we follow Python's approach
@@ -210,7 +195,6 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	defer af.mutex.Unlock()
 
 	request := model.NewAuthenticationRequest(ctx, auth.AuthMethodNotAuthenticated, headers, formData, queryParams)
-	request.Context = ctx
 
 	// Extract API key from X-Terrareg-ApiKey header (matches Python)
 	apiKey := headers["X-Terrareg-ApiKey"]
@@ -225,22 +209,15 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 		isAuthenticated := false
 
 		// Special handling for API key auth methods
-		switch authMethod.GetProviderType() {
-		case auth.AuthMethodAdminApiKey:
-			if adminAuthMethod, ok := authMethod.(*infraAuth.AdminApiKeyAuthMethod); ok {
-				isAuthenticated = adminAuthMethod.CheckAuthStateWithKey(apiKey)
-			} else {
-				isAuthenticated = authMethod.CheckAuthState()
-			}
-		case auth.AuthMethodUploadApiKey:
-			if uploadAuthMethod, ok := authMethod.(*infraAuth.UploadApiKeyAuthMethod); ok {
-				isAuthenticated = uploadAuthMethod.CheckAuthStateWithKey(apiKey)
-			} else {
-				isAuthenticated = authMethod.CheckAuthState()
-			}
-		case auth.AuthMethodPublishApiKey:
-			if publishAuthMethod, ok := authMethod.(*infraAuth.PublishApiKeyAuthMethod); ok {
-				isAuthenticated = publishAuthMethod.CheckAuthStateWithKey(apiKey)
+		switch providerType := authMethod.GetProviderType(); providerType {
+		case auth.AuthMethodAdminApiKey, auth.AuthMethodUploadApiKey, auth.AuthMethodPublishApiKey:
+			// Handle consolidated ApiKeyAuthMethod
+			if apiKeyAuthMethod, ok := authMethod.(*infraAuth.ApiKeyAuthMethod); ok {
+				// Try to authenticate with the API key
+				authCtx, err := apiKeyAuthMethod.Authenticate(ctx, apiKey)
+				if err == nil && authCtx != nil {
+					isAuthenticated = true
+				}
 			} else {
 				isAuthenticated = authMethod.CheckAuthState()
 			}
