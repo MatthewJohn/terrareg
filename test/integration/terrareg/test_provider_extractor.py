@@ -5,9 +5,9 @@ import json
 import os
 from re import L
 from subprocess import check_output
-import tarfile
 from tempfile import TemporaryDirectory
 import unittest.mock
+import tarfile
 import base64
 
 from typing import ContextManager

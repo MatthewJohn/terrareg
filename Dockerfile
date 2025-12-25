@@ -1,32 +1,32 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 ARG VERSION
 
 WORKDIR /
 
 RUN apt-get update && \
-    apt-get install --assume-yes \
-        curl unzip git wget zip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev libmagic1 \
-        gcc g++ libffi-dev python3-gpg && \
-    apt-get clean all
+  apt-get install --assume-yes \
+  curl unzip git wget zip git \
+  pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev libmagic1 \
+  gcc g++ libffi-dev python3-gpg zlib1g-dev && \
+  apt-get clean all
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.19.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.19.0-linux-${arch}.tar.gz'
+  then \
+  arch=arm64; \
+  else \
+  arch=amd64; \
+  fi; \
+  wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.20.0/terraform-docs-v0.20.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.20.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.20.0-linux-${arch}.tar.gz'
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://github.com/aquasecurity/tfsec/releases/download/v1.28.4/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
-    chmod +x /usr/local/bin/tfsec'
+  then \
+  arch=arm64; \
+  else \
+  arch=amd64; \
+  fi; \
+  wget https://github.com/aquasecurity/tfsec/releases/download/v1.28.13/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
+  chmod +x /usr/local/bin/tfsec'
 
 # Download Infracost
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
@@ -46,40 +46,43 @@ RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-swit
 
 # Install go
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
-    tar -zxvf /tmp/go.tar.gz -C /usr/local && \
-    rm /tmp/go.tar.gz'
+  then \
+  arch=arm64; \
+  else \
+  arch=amd64; \
+  fi; \
+  wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
+  tar -zxvf /tmp/go.tar.gz -C /usr/local && \
+  rm /tmp/go.tar.gz'
 ENV PATH=$PATH:/usr/local/go/bin
 
 # Install github.com/hashicorp/terraform-plugin-docs
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.16.0/tfplugindocs_0.16.0_linux_${arch}.zip -O /tmp/tfplugindocs.zip && \
-    unzip /tmp/tfplugindocs.zip tfplugindocs && \
-    mv tfplugindocs /usr/local/bin/ && \
-    chmod +x /usr/local/bin/tfplugindocs && \
-    rm /tmp/tfplugindocs.zip'
+  then \
+  arch=arm64; \
+  else \
+  arch=amd64; \
+  fi; \
+  wget https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.16.0/tfplugindocs_0.16.0_linux_${arch}.zip -O /tmp/tfplugindocs.zip && \
+  unzip /tmp/tfplugindocs.zip tfplugindocs && \
+  mv tfplugindocs /usr/local/bin/ && \
+  chmod +x /usr/local/bin/tfplugindocs && \
+  rm /tmp/tfplugindocs.zip'
 
 WORKDIR /app
+
 COPY pyproject.toml poetry.lock .
 ARG PYPI_PROXY
 RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
-    http_proxy= https_proxy="" pip install poetry $pip_args
+  http_proxy= https_proxy="" pip install poetry $pip_args
 RUN poetry config virtualenvs.in-project true
+# Build lxml and xmlsec from source to match system libraries
+RUN poetry config installer.no-binary lxml,xmlsec
 
 RUN if test ! -z "$PYPI_PROXY"; then \
-      poetry source add --priority=primary packages $PYPI_PROXY; \
-      http_proxy= https_proxy= poetry lock; \
-    fi
+  poetry source add --priority=primary packages $PYPI_PROXY; \
+  http_proxy= https_proxy= poetry lock; \
+  fi
 ARG POETRY_INSTALLER_MAX_WORKERS=4
 RUN https_proxy= http_proxy= poetry install --no-root
 

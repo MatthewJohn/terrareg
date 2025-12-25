@@ -65,7 +65,7 @@
 
         // Update link and text in search query breadcrumb
         document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/search/providers?q=' + encodeURIComponent(searchQuery));
-        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+        document.getElementById('searchQueryBreadcrumb').textContent = searchQuery;
 
         if (new_offset === undefined) {
             new_offset = 0;
