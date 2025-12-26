@@ -1,40 +1,36 @@
 FROM golang:1.25.4-trixie
 
-WORKDIR /
+WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Install test dependencies
 RUN apt-get update && \
     apt-get install --assume-yes \
-        curl unzip git wget zip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev libmagic1 \
-        gcc g++ libffi-dev python3-gpg && \
+        curl unzip git wget zip \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl \
+        xmlsec1 libgraphviz-dev libmagic1 \
+        gcc g++ libffi-dev python3-gpg \
+        ca-certificates && \
     apt-get clean all
 
+# Download terraform-docs
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.19.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.19.0-linux-${arch}.tar.gz'
+    then arch=arm64; else arch=amd64; fi; \
+    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-${arch}.tar.gz && \
+    tar -zxvf terraform-docs-v0.19.0-linux-${arch}.tar.gz && \
+    chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && \
+    rm terraform-docs-v0.19.0-linux-${arch}.tar.gz'
 
+# Download tfsec
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
+    then arch=arm64; else arch=amd64; fi; \
     wget https://github.com/aquasecurity/tfsec/releases/download/v1.28.4/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
     chmod +x /usr/local/bin/tfsec'
 
 # Download Infracost
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
+    then arch=arm64; else arch=amd64; fi; \
     wget https://github.com/infracost/infracost/releases/download/v0.10.22/infracost-linux-${arch}.tar.gz -O /tmp/infracost.tar.gz && \
     tar -zxvf /tmp/infracost.tar.gz infracost-linux-${arch} && \
     mv infracost-linux-${arch} /usr/local/bin/infracost && \
@@ -44,74 +40,31 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 # Download tfswitch
 RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 1.2.2'
 
-# Install go
-# RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-#     then \
-#       arch=arm64; \
-#     else \
-#       arch=amd64; \
-#     fi; \
-#     wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
-#     tar -zxvf /tmp/go.tar.gz -C /usr/local && \
-#     rm /tmp/go.tar.gz'
-# ENV PATH=$PATH:/usr/local/go/bin
-
-# Install github.com/hashicorp/terraform-plugin-docs
+# Download tfplugindocs
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
+    then arch=arm64; else arch=amd64; fi; \
     wget https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.16.0/tfplugindocs_0.16.0_linux_${arch}.zip -O /tmp/tfplugindocs.zip && \
     unzip /tmp/tfplugindocs.zip tfplugindocs && \
     mv tfplugindocs /usr/local/bin/ && \
     chmod +x /usr/local/bin/tfplugindocs && \
     rm /tmp/tfplugindocs.zip'
 
+# Install Go testing tools
+RUN go install github.com/jstemmer/go-junit-report/v2@latest && \
+    go install honnef.co/go/tools/cmd/staticcheck@latest && \
+    go install golang.org/x/tools/cmd/cover@latest
+
+# Copy source code
+COPY . .
+
+# Set up Go module cache
+WORKDIR /app/terrareg-go
+RUN go mod download
+
+# Set working directory back to /app for tests
 WORKDIR /app
 
-# RUN apt-get update
-# RUN apt-get update && \
-#     apt-get install -y fonts-liberation xdg-utils \
-#                        software-properties-common curl unzip wget \
-#                        xvfb && \
-#     apt-get clean all
-
-
-# # Install firefox and geckodriver
-# # Add unstable repo to allow for installation of newer firefox packages
-# RUN bash -c 'echo deb https://deb.debian.org/debian unstable main >> /etc/apt/sources.list'
-# RUN apt-get update && apt-get install -y firefox && apt-get clean all
-# RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-#     then \
-#       arch=linux-aarch64; \
-#     else \
-#       arch=linux64; \
-#     fi; \
-#     wget https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckodriver-v0.33.0-${arch}.tar.gz -O /tmp/geckodriver.tar.gz && \
-#     tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
-#     chmod +x /usr/local/bin/geckodriver && \
-#     rm /tmp/geckodriver.tar.gz'
-
-# # Install packages for spell checking
-# RUN apt-get update && apt-get install -y hunspell-en-gb python3-enchant pylint && apt-get clean all
-
-# COPY pyproject.toml poetry.lock .
-# ARG PYPI_PROXY
-# RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
-#     http_proxy= https_proxy= pip install poetry $pip_args
-# RUN poetry config virtualenvs.in-project true
-
-# RUN if test ! -z "$PYPI_PROXY"; then \
-#       poetry source add --priority=primary packages $PYPI_PROXY; \
-#       http_proxy= https_proxy= poetry lock; \
-#     fi
-# ARG POETRY_INSTALLER_MAX_WORKERS=4
-# RUN https_proxy= http_proxy= poetry install --no-root --with=dev
-
-# ENV RUNNING_IN_DOCKER=1
-
-COPY . .
+ENV IN_TERRAREG_CI=true
+ENV RUNNING_IN_DOCKER=1
 
 ENTRYPOINT [""]
