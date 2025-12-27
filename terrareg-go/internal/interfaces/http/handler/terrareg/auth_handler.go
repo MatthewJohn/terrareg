@@ -304,7 +304,7 @@ func (h *AuthHandler) HandleSAMLACS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create session using the authentication service
-	sessionID, err := h.authService.CreateSessionFromAuthData(ctx, sessionData)
+	err := h.authService.CreateAuthenticatedSession(ctx, w, "saml", sessionData, nil)
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -318,7 +318,6 @@ func (h *AuthHandler) HandleSAMLACS(w http.ResponseWriter, r *http.Request) {
 
 	log.Info().
 		Str("provider", "saml").
-		Str("session_id", sessionID).
 		Msg("SAML authentication completed")
 
 	// Redirect to application

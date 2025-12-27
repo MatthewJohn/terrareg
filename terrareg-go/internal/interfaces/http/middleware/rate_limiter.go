@@ -100,14 +100,13 @@ func getClientIP(req *http.Request) string {
 	// Check X-Forwarded-For header first (for load balancers)
 	if xff := req.Header.Get("X-Forwarded-For"); xff != "" {
 		// X-Forwarded-For can contain multiple IPs, take the first one
-		if idx := len(xff); idx > 0 {
-			if commaIdx := 0; commaIdx < len(xff) && xff[commaIdx] != ','; commaIdx++ {
-				// Find the first comma or end of string
-				for commaIdx < len(xff) && xff[commaIdx] != ',' && xff[commaIdx] != ' ' {
-					commaIdx++
-				}
-				return xff[:commaIdx]
-			}
+		// Find the first comma or space to get the first IP
+		commaIdx := 0
+		for commaIdx < len(xff) && xff[commaIdx] != ',' && xff[commaIdx] != ' ' {
+			commaIdx++
+		}
+		if commaIdx > 0 {
+			return xff[:commaIdx]
 		}
 		return xff
 	}

@@ -14,10 +14,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// AuthFactory handles authentication with immutable AuthMethodFactory implementations
-// It uses factories to create AuthMethod instances with authentication state
+// AuthFactory handles authentication with immutable AuthMethod implementations
+// It uses AuthMethod factories to create AuthContext instances with authentication state
 type AuthFactory struct {
-	authFactories []auth.AuthMethodFactory
+	authMethods   []auth.AuthMethod
 	mutex         sync.RWMutex
 	sessionRepo   repository.SessionRepository
 	userGroupRepo repository.UserGroupRepository
@@ -35,7 +35,7 @@ func NewAuthFactory(
 	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
-		authFactories: make([]auth.AuthMethodFactory, 0),
+		authMethods:   make([]auth.AuthMethod, 0),
 		sessionRepo:   sessionRepo,
 		userGroupRepo: userGroupRepo,
 		config:        config,
@@ -120,17 +120,18 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 	}
 }
 
-// RegisterAuthMethod registers an authentication method factory
-func (af *AuthFactory) RegisterAuthMethod(authFactory auth.AuthMethodFactory) {
+// RegisterAuthMethod registers an authentication method
+func (af *AuthFactory) RegisterAuthMethod(authMethod auth.AuthMethod) {
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
-	af.authFactories = append(af.authFactories, authFactory)
+	af.authMethods = append(af.authMethods, authMethod)
 }
 
 // AuthenticateRequest authenticates an HTTP request using immutable AuthMethods
+// Returns an AuthenticationResponse containing the AuthContext with all permissions
 func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (*model.AuthenticationResponse, error) {
-	af.mutex.Lock()
-	defer af.mutex.Unlock()
+	af.mutex.RLock()
+	defer af.mutex.RUnlock()
 
 	// Extract session ID for auth methods that need it
 	sessionID := af.extractSessionID(headers)
@@ -146,29 +147,28 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 			continue
 		}
 
-		var authenticatedAdapter auth.AuthMethod
+		var authContext auth.AuthContext
 		var err error
 
 		// Each auth method handles its own specific authentication requirements
+		// The Authenticate method now returns AuthContext, not AuthMethod
 		switch method := authMethod.(type) {
-		case *infraAuth.AdminApiKeyAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
-		case *infraAuth.AdminSessionAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
-		case *infraAuth.UploadApiKeyAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
-		case *infraAuth.PublishApiKeyAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
-		case *infraAuth.SamlAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
-		case *infraAuth.OpenidConnectAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, sessionData)
-		case *infraAuth.TerraformOidcAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, authorizationHeader, nil)
-		case *infraAuth.TerraformAnalyticsAuthKeyAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
-		case *infraAuth.TerraformInternalExtractionAuthMethod:
-			authenticatedAdapter, err = method.Authenticate(ctx, headers, formData, queryParams)
+		case auth.HeaderAuthMethod:
+			// Header-based auth methods (AdminApiKey, UploadApiKey, PublishApiKey, etc.)
+			authContext, err = method.Authenticate(ctx, headers, formData, queryParams)
+		case auth.SessionAuthMethod:
+			// Session-based auth methods (SAML, OpenID Connect, AdminSession)
+			authContext, err = method.Authenticate(ctx, sessionData)
+		case auth.TokenAuthMethod:
+			// Token-based auth methods (Terraform OIDC)
+			authContext, err = method.Authenticate(ctx, authorizationHeader)
+		case auth.BearerTokenAuthMethod:
+			// Bearer token auth methods
+			authContext, err = method.Authenticate(ctx, authorizationHeader, nil)
+		default:
+			// Unknown auth method type, skip
+			af.logger.Debug().Str("auth_method", string(authMethod.GetProviderType())).Msg("Unknown auth method type")
+			continue
 		}
 
 		if err != nil {
@@ -177,38 +177,38 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 			continue
 		}
 
-		// If we got an authenticated adapter, build response
-		if authenticatedAdapter != nil && authenticatedAdapter.IsAuthenticated() {
-			// Build response using the adapter
+		// If we got an authenticated context, build response
+		if authContext != nil && authContext.IsAuthenticated() {
+			// Build response using the AuthContext
 			response := model.NewAuthenticationResponse(
 				af.generateRequestID(),
 				true,
-				authenticatedAdapter.GetProviderType(),
+				authContext.GetProviderType(),
 			)
-			response.AuthMethod = authenticatedAdapter.GetProviderType()
-			response.Username = authenticatedAdapter.GetUsername()
-			response.IsAdmin = authenticatedAdapter.IsAdmin()
-			response.UserGroups = authenticatedAdapter.GetUserGroupNames()
-			response.Permissions = authenticatedAdapter.GetAllNamespacePermissions()
-			response.CanPublish = authenticatedAdapter.CanPublishModuleVersion("")
-			response.CanUpload = authenticatedAdapter.CanUploadModuleVersion("")
-			response.CanAccessAPI = authenticatedAdapter.CanAccessReadAPI()
-			response.CanAccessTerraform = authenticatedAdapter.CanAccessTerraformAPI()
-			response.TerraformToken = af.getStringPtr(authenticatedAdapter.GetTerraformAuthToken())
+			response.AuthMethod = authContext.GetProviderType()
+			response.Username = authContext.GetUsername()
+			response.IsAdmin = authContext.IsAdmin()
+			response.UserGroups = authContext.GetUserGroupNames()
+			response.Permissions = authContext.GetAllNamespacePermissions()
+			response.CanPublish = authContext.CanPublishModuleVersion("")
+			response.CanUpload = authContext.CanUploadModuleVersion("")
+			response.CanAccessAPI = authContext.CanAccessReadAPI()
+			response.CanAccessTerraform = authContext.CanAccessTerraformAPI()
+			response.TerraformToken = af.getStringPtr(authContext.GetTerraformAuthToken())
 
 			// Set session ID if available
 			if sessionID != nil {
 				response.SessionID = sessionID
-			} else if data := authenticatedAdapter.GetProviderData(); data != nil {
+			} else if data := authContext.GetProviderData(); data != nil {
 				if authSessionID, ok := data["session_id"].(string); ok && authSessionID != "" {
 					response.SessionID = &authSessionID
 				}
 			}
 
 			af.logger.Info().
-				Str("auth_method", string(authMethod.GetProviderType())).
-				Str("username", authenticatedAdapter.GetUsername()).
-				Bool("is_admin", authenticatedAdapter.IsAdmin()).
+				Str("auth_method", string(authContext.GetProviderType())).
+				Str("username", authContext.GetUsername()).
+				Bool("is_admin", authContext.IsAdmin()).
 				Msg("Authentication successful")
 
 			return response, nil
@@ -216,15 +216,14 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 	}
 
 	// No authentication method succeeded - return NotAuthenticated
-	fallbackMethod := &NotAuthenticatedAuthMethod{}
 	response := model.NewAuthenticationResponse(
 		af.generateRequestID(),
 		false,
 		auth.AuthMethodNotAuthenticated,
 	)
 	response.AuthMethod = auth.AuthMethodNotAuthenticated
-	response.Username = fallbackMethod.GetUsername()
-	response.CanAccessAPI = fallbackMethod.CanAccessReadAPI()
+	response.Username = ""
+	response.CanAccessAPI = true // Not authenticated users can still access read API
 
 	af.logger.Debug().Msg("No authentication method succeeded, returning NotAuthenticated")
 	return response, nil
@@ -270,22 +269,22 @@ func (af *AuthFactory) InvalidateAuthentication() {
 // GetCurrentAuthMethod returns the current authentication method (for application layer compatibility)
 // TODO: This should be removed and the application layer updated to use AuthenticateRequest
 func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
-	// Return NotAuthenticated as default
-	return af.NotAuthenticated()
+	// Return NotAuthenticated as default - this is a placeholder
+	// The application layer should use AuthenticateRequest instead
+	return &NotAuthenticatedAuthMethod{}
 }
 
 // GetCurrentAuthContext returns the current authentication context (for application layer compatibility)
 // TODO: This should be removed and the application layer updated to use AuthenticateRequest
-func (af *AuthFactory) GetCurrentAuthContext() *AuthContextAdapter {
-	// Return an adapter that provides the expected interface
-	return &AuthContextAdapter{
-		authMethod: af.GetCurrentAuthMethod(),
-	}
+func (af *AuthFactory) GetCurrentAuthContext() auth.AuthContext {
+	// Return NotAuthenticated as default - this is a placeholder
+	// The application layer should use AuthenticateRequest instead
+	return NewNotAuthenticatedAuthContext()
 }
 
-// NotAuthenticated returns the NotAuthenticated auth method
-func (af *AuthFactory) NotAuthenticated() auth.AuthMethod {
-	return &NotAuthenticatedAuthMethod{}
+// NotAuthenticated returns the NotAuthenticated auth context
+func (af *AuthFactory) NotAuthenticated() auth.AuthContext {
+	return NewNotAuthenticatedAuthContext()
 }
 
 // generateRequestID generates a unique request ID
@@ -333,42 +332,85 @@ func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
 	return nil
 }
 
-// AuthContextAdapter provides the interface expected by the application layer
-type AuthContextAdapter struct {
-	authMethod auth.AuthMethod
+// NotAuthenticatedAuthContext represents the fallback authentication context for unauthenticated users
+type NotAuthenticatedAuthContext struct {
+	auth.BaseAuthContext
 }
 
-// Permissions returns permissions (stub for application layer compatibility)
-func (a *AuthContextAdapter) Permissions() map[string]string {
-	return a.authMethod.GetAllNamespacePermissions()
-}
-
-// SessionID returns session ID (stub for application layer compatibility)
-func (a *AuthContextAdapter) SessionID() *string {
-	// Extract session ID from provider data if available
-	if data := a.authMethod.GetProviderData(); data != nil {
-		if sessionID, ok := data["session_id"].(string); ok {
-			return &sessionID
-		}
+// NewNotAuthenticatedAuthContext creates a new not authenticated context
+func NewNotAuthenticatedAuthContext() *NotAuthenticatedAuthContext {
+	return &NotAuthenticatedAuthContext{
+		BaseAuthContext: auth.BaseAuthContext{},
 	}
-	return nil
 }
 
-// Username returns username
-func (a *AuthContextAdapter) Username() string {
-	return a.authMethod.GetUsername()
-}
-
-// HasPermission checks if the context has a specific permission (stub)
-func (a *AuthContextAdapter) HasPermission(permission string) bool {
-	// For now, return false - this would need to be implemented in auth contexts
+// Implement AuthContext interface methods
+func (n *NotAuthenticatedAuthContext) IsBuiltInAdmin() bool {
 	return false
 }
 
-// NotAuthenticatedAuthMethod represents the fallback authentication method
-type NotAuthenticatedAuthMethod struct {
-	auth.BaseAuthMethod
+func (n *NotAuthenticatedAuthContext) IsAdmin() bool {
+	return false
 }
+
+func (n *NotAuthenticatedAuthContext) IsAuthenticated() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthContext) RequiresCSRF() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthContext) CheckAuthState() bool {
+	return true
+}
+
+func (n *NotAuthenticatedAuthContext) CanPublishModuleVersion(namespace string) bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthContext) CanUploadModuleVersion(namespace string) bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthContext) CheckNamespaceAccess(permissionType, namespace string) bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthContext) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+
+func (n *NotAuthenticatedAuthContext) GetUsername() string {
+	return ""
+}
+
+func (n *NotAuthenticatedAuthContext) GetUserGroupNames() []string {
+	return []string{}
+}
+
+func (n *NotAuthenticatedAuthContext) CanAccessReadAPI() bool {
+	return true // Unauthenticated users can access the read API
+}
+
+func (n *NotAuthenticatedAuthContext) CanAccessTerraformAPI() bool {
+	return false
+}
+
+func (n *NotAuthenticatedAuthContext) GetTerraformAuthToken() string {
+	return ""
+}
+
+func (n *NotAuthenticatedAuthContext) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}
+
+func (n *NotAuthenticatedAuthContext) GetProviderType() auth.AuthMethodType {
+	return auth.AuthMethodNotAuthenticated
+}
+
+// NotAuthenticatedAuthMethod represents the fallback authentication method factory
+type NotAuthenticatedAuthMethod struct{}
 
 // NewNotAuthenticatedAuthMethod creates a new not authenticated method
 func NewNotAuthenticatedAuthMethod() *NotAuthenticatedAuthMethod {
@@ -376,74 +418,10 @@ func NewNotAuthenticatedAuthMethod() *NotAuthenticatedAuthMethod {
 }
 
 // Implement AuthMethod interface methods
-func (n *NotAuthenticatedAuthMethod) GetType() string {
-	return "NotAuthenticated"
-}
-
-func (n *NotAuthenticatedAuthMethod) IsBuiltInAdmin() bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) IsAdmin() bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) IsAuthenticated() bool {
-	return false
+func (n *NotAuthenticatedAuthMethod) GetProviderType() auth.AuthMethodType {
+	return auth.AuthMethodNotAuthenticated
 }
 
 func (n *NotAuthenticatedAuthMethod) IsEnabled() bool {
 	return true
-}
-
-func (n *NotAuthenticatedAuthMethod) RequiresCSRF() bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) CheckAuthState() bool {
-	return true
-}
-
-func (n *NotAuthenticatedAuthMethod) CanPublishModuleVersion(namespace string) bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) CanUploadModuleVersion(namespace string) bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) GetAllNamespacePermissions() map[string]string {
-	return make(map[string]string)
-}
-
-func (n *NotAuthenticatedAuthMethod) GetUsername() string {
-	return ""
-}
-
-func (n *NotAuthenticatedAuthMethod) GetUserGroupNames() []string {
-	return []string{}
-}
-
-func (n *NotAuthenticatedAuthMethod) CanAccessReadAPI() bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) CanAccessTerraformAPI() bool {
-	return false
-}
-
-func (n *NotAuthenticatedAuthMethod) GetTerraformAuthToken() string {
-	return ""
-}
-
-func (n *NotAuthenticatedAuthMethod) GetProviderData() map[string]interface{} {
-	return make(map[string]interface{})
-}
-
-func (n *NotAuthenticatedAuthMethod) GetProviderType() auth.AuthMethodType {
-	return auth.AuthMethodNotAuthenticated
 }

@@ -57,32 +57,30 @@ func (c *AuthenticateOIDCTokenCommand) Execute(ctx context.Context, req Authenti
 		return nil, fmt.Errorf("expected Terraform OIDC authentication, got: %s", authMethod.GetProviderType())
 	}
 
-	// Validate authentication
-	if !authMethod.IsAuthenticated() {
-		return nil, fmt.Errorf("authentication failed")
-	}
-
 	// Get authentication context
 	authCtx := c.authFactory.GetCurrentAuthContext()
-	if authCtx == nil {
-		return nil, fmt.Errorf("authentication context not found")
+	if authCtx == nil || !authCtx.IsAuthenticated() {
+		return nil, fmt.Errorf("authentication failed")
 	}
 
 	// Convert permissions to string slice
 	permissions := make([]string, 0)
-	for namespace, permType := range authCtx.Permissions() {
+	for namespace, permType := range authCtx.GetAllNamespacePermissions() {
 	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Generate identity ID
 	identityID := "terraform-oidc-user"
-	if authCtx.SessionID() != nil {
-		identityID = *authCtx.SessionID()
+	// Try to get session ID from provider data
+	if providerData := authCtx.GetProviderData(); providerData != nil {
+		if sessionID, ok := providerData["session_id"].(string); ok && sessionID != "" {
+			identityID = sessionID
+		}
 	}
 
 	return &AuthenticateOIDCTokenResponse{
 		IdentityID:   identityID,
-		Subject:      authCtx.Username(),
+		Subject:      authCtx.GetUsername(),
 		Permissions:  permissions,
 		IdentityType: string(authMethod.GetProviderType()),
 	}, nil
@@ -138,14 +136,9 @@ func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenReq
 		return &ValidateTokenResponse{Valid: false}, nil
 	}
 
-	// Check authentication
-	if !authMethod.IsAuthenticated() {
-		return &ValidateTokenResponse{Valid: false}, nil
-	}
-
 	// Get auth context
 	authCtx := c.authFactory.GetCurrentAuthContext()
-	if authCtx == nil {
+	if authCtx == nil || !authCtx.IsAuthenticated() {
 		return &ValidateTokenResponse{Valid: false}, nil
 	}
 
@@ -156,7 +149,7 @@ func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenReq
 			parts := strings.SplitN(requiredPerm, ":", 2)
 			if len(parts) == 2 {
 				// Check if user has the specific permission
-				if !authCtx.HasPermission(requiredPerm) {
+				if !authCtx.CheckNamespaceAccess(parts[1], parts[0]) {
 					return &ValidateTokenResponse{Valid: false}, nil
 				}
 			}
@@ -165,20 +158,23 @@ func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenReq
 
 	// Convert permissions to string slice
 	permissions := make([]string, 0)
-	for namespace, permType := range authCtx.Permissions() {
+	for namespace, permType := range authCtx.GetAllNamespacePermissions() {
 	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Generate identity ID
 	identityID := "terraform-user"
-	if sessionID := authCtx.SessionID(); sessionID != nil {
-		identityID = *sessionID
+	// Try to get session ID from provider data
+	if providerData := authCtx.GetProviderData(); providerData != nil {
+		if sessionID, ok := providerData["session_id"].(string); ok && sessionID != "" {
+			identityID = sessionID
+		}
 	}
 
 	return &ValidateTokenResponse{
 		Valid:        true,
 		IdentityID:   identityID,
-		Subject:      authCtx.Username(),
+		Subject:      authCtx.GetUsername(),
 		Permissions:  permissions,
 		IdentityType: string(authMethod.GetProviderType()),
 	}, nil
@@ -223,8 +219,13 @@ func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUs
 	}
 
 	// Check if session ID matches (using SessionID as identity identifier)
-	sessionID := authCtx.SessionID()
-	sessionMatches := sessionID != nil && *sessionID == identityID
+	sessionID := ""
+	if providerData := authCtx.GetProviderData(); providerData != nil {
+		if id, ok := providerData["session_id"].(string); ok {
+			sessionID = id
+		}
+	}
+	sessionMatches := sessionID != "" && sessionID == identityID
 	if !sessionMatches && identityID != "current-user" {
 		return &GetUserResponse{
 			IdentityID: identityID,
@@ -242,26 +243,26 @@ func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUs
 
 	// Convert permissions to string slice
 	permissions := make([]string, 0)
-	for namespace, permType := range authCtx.Permissions() {
+	for namespace, permType := range authCtx.GetAllNamespacePermissions() {
 	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Create metadata
 	metadata := make(map[string]string)
-	metadata["auth_method"] = string(authMethod.GetProviderType())
-	if authMethod.IsAdmin() {
+	metadata["auth_method"] = string(authCtx.GetProviderType())
+	if authCtx.IsAdmin() {
 		metadata["is_admin"] = "true"
 	}
 
 	// Use provided identityID or fallback to session ID
 	responseIdentityID := identityID
-	if sessionMatches && sessionID != nil {
-		responseIdentityID = *sessionID
+	if sessionMatches && sessionID != "" {
+		responseIdentityID = sessionID
 	}
 
 	return &GetUserResponse{
 		IdentityID:   responseIdentityID,
-		Subject:      authCtx.Username(),
+		Subject:      authCtx.GetUsername(),
 		Permissions:  permissions,
 		IdentityType: string(authMethod.GetProviderType()),
 		IsValid:      true,

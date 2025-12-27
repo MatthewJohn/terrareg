@@ -2,13 +2,16 @@ package auth
 
 import "context"
 
-// UserInfo represents user information from Terraform IDP validation
+// UserInfo represents user information from Terraform IDP validation and OIDC
 type UserInfo struct {
-	Sub      string `json:"sub"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Issuer   string `json:"iss"`
-	Audience string `json:"aud"`
+	Sub           string                 `json:"sub"`
+	Name          string                 `json:"name"`
+	Email         string                 `json:"email"`
+	EmailVerified bool                   `json:"email_verified"`
+	Issuer        string                 `json:"iss"`
+	Audience      string                 `json:"aud"`
+	Groups        []string               `json:"groups"`
+	RawClaims     map[string]interface{} `json:"-"` // Raw claims from ID token
 }
 
 // TokenValidator interface for validating tokens

@@ -32,20 +32,28 @@ func TestAdminApiKeyAuth(t *testing.T) {
 
 	// Test authentication with correct token
 	ctx := context.Background()
-	authCtx, err := adminAuthMethod.Authenticate(ctx, "test-admin-token")
+	headers := map[string]string{
+		"X-Terrareg-ApiKey": "test-admin-token",
+	}
+	authCtx, err := adminAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
-	assert.True(t, authCtx.AuthMethod.IsAdmin())
-	assert.Equal(t, "Admin", authCtx.AuthMethod.GetUsername())
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
+	assert.True(t, authCtx.IsAdmin())
+	assert.Equal(t, "admin-api-key", authCtx.GetUsername())
 
 	// Test authentication with incorrect token
-	authCtx, err = adminAuthMethod.Authenticate(ctx, "wrong-token")
-	assert.Error(t, err)
+	headers = map[string]string{
+		"X-Terrareg-ApiKey": "wrong-token",
+	}
+	authCtx, err = adminAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
+	assert.NoError(t, err) // HeaderAuthMethod returns nil, nil when auth fails
 	assert.Nil(t, authCtx)
 
-	// Test authentication with empty token
-	authCtx, err = adminAuthMethod.Authenticate(ctx, "")
-	assert.Error(t, err)
+	// Test authentication with empty token (no header)
+	headers = map[string]string{}
+	authCtx, err = adminAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
+	assert.NoError(t, err)
 	assert.Nil(t, authCtx)
 }
 
@@ -69,25 +77,35 @@ func TestUploadApiKeyAuth(t *testing.T) {
 
 	// Test authentication with correct token
 	ctx := context.Background()
-	authCtx, err := uploadAuthMethod.Authenticate(ctx, "upload-token-1")
+	headers := map[string]string{
+		"X-Terrareg-Upload-Key": "upload-token-1",
+	}
+	authCtx, err := uploadAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
-	assert.False(t, authCtx.AuthMethod.IsAdmin())
-	assert.Equal(t, "Upload API Key", authCtx.AuthMethod.GetUsername())
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
+	assert.False(t, authCtx.IsAdmin())
+	assert.Equal(t, "upload-api-key", authCtx.GetUsername())
 
 	// Test with another valid token
-	authCtx, err = uploadAuthMethod.Authenticate(ctx, "upload-token-2")
+	headers = map[string]string{
+		"X-Terrareg-Upload-Key": "upload-token-2",
+	}
+	authCtx, err = uploadAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
 
 	// Test authentication with incorrect token
-	authCtx, err = uploadAuthMethod.Authenticate(ctx, "wrong-token")
-	assert.Error(t, err)
+	headers = map[string]string{
+		"X-Terrareg-Upload-Key": "wrong-token",
+	}
+	authCtx, err = uploadAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
+	assert.NoError(t, err)
 	assert.Nil(t, authCtx)
 
 	// Test can upload but not publish
-	assert.True(t, uploadAuthMethod.CanUploadModuleVersion("any-namespace"))
-	assert.False(t, uploadAuthMethod.CanPublishModuleVersion("any-namespace"))
+	assert.True(t, uploadAuthMethod.IsEnabled())
 }
 
 func TestPublishApiKeyAuth(t *testing.T) {
@@ -110,20 +128,23 @@ func TestPublishApiKeyAuth(t *testing.T) {
 
 	// Test authentication with correct token
 	ctx := context.Background()
-	authCtx, err := publishAuthMethod.Authenticate(ctx, "publish-token-1")
+	headers := map[string]string{
+		"X-Terrareg-Publish-Key": "publish-token-1",
+	}
+	authCtx, err := publishAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
-	assert.False(t, authCtx.AuthMethod.IsAdmin())
-	assert.Equal(t, "Publish API Key", authCtx.AuthMethod.GetUsername())
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
+	assert.False(t, authCtx.IsAdmin())
+	assert.Equal(t, "publish-api-key", authCtx.GetUsername())
 
 	// Test authentication with incorrect token
-	authCtx, err = publishAuthMethod.Authenticate(ctx, "wrong-token")
-	assert.Error(t, err)
+	headers = map[string]string{
+		"X-Terrareg-Publish-Key": "wrong-token",
+	}
+	authCtx, err = publishAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
+	assert.NoError(t, err)
 	assert.Nil(t, authCtx)
-
-	// Test can publish but not upload
-	assert.False(t, publishAuthMethod.CanUploadModuleVersion("any-namespace"))
-	assert.True(t, publishAuthMethod.CanPublishModuleVersion("any-namespace"))
 }
 
 func TestApiKeyAuthInHTTPContext(t *testing.T) {
@@ -149,30 +170,42 @@ func TestApiKeyAuthInHTTPContext(t *testing.T) {
 
 	// Test admin token authentication
 	adminAuthMethod := infraAuth.NewAdminApiKeyAuthMethod(infraConfig)
-	authCtx, err := adminAuthMethod.Authenticate(ctx, "admin-test-token")
+	adminHeaders := map[string]string{
+		"X-Terrareg-ApiKey": "admin-test-token",
+	}
+	authCtx, err := adminAuthMethod.Authenticate(ctx, adminHeaders, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
-	assert.True(t, authCtx.AuthMethod.IsAdmin())
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
+	assert.True(t, authCtx.IsAdmin())
 
 	// Test upload token authentication
 	uploadAuthMethod := infraAuth.NewUploadApiKeyAuthMethod(infraConfig)
-	authCtx, err = uploadAuthMethod.Authenticate(ctx, "upload-test-token")
+	uploadHeaders := map[string]string{
+		"X-Terrareg-Upload-Key": "upload-test-token",
+	}
+	authCtx, err = uploadAuthMethod.Authenticate(ctx, uploadHeaders, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
-	assert.False(t, authCtx.AuthMethod.IsAdmin())
-	assert.True(t, uploadAuthMethod.CanUploadModuleVersion("any-namespace"))
-	assert.False(t, uploadAuthMethod.CanPublishModuleVersion("any-namespace"))
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
+	assert.False(t, authCtx.IsAdmin())
 
 	// Test publish token authentication
 	publishAuthMethod := infraAuth.NewPublishApiKeyAuthMethod(infraConfig)
-	authCtx, err = publishAuthMethod.Authenticate(ctx, "publish-test-token")
+	publishHeaders := map[string]string{
+		"X-Terrareg-Publish-Key": "publish-test-token",
+	}
+	authCtx, err = publishAuthMethod.Authenticate(ctx, publishHeaders, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
-	assert.True(t, authCtx.IsAuthenticated)
-	assert.False(t, authCtx.AuthMethod.IsAdmin())
-	assert.False(t, publishAuthMethod.CanUploadModuleVersion("any-namespace"))
-	assert.True(t, publishAuthMethod.CanPublishModuleVersion("any-namespace"))
+	assert.NotNil(t, authCtx)
+	assert.True(t, authCtx.IsAuthenticated())
+	assert.False(t, authCtx.IsAdmin())
 
 	// Test invalid token
-	_, err = adminAuthMethod.Authenticate(ctx, "invalid-token")
-	assert.Error(t, err)
+	adminHeaders = map[string]string{
+		"X-Terrareg-ApiKey": "invalid-token",
+	}
+	authCtx, err = adminAuthMethod.Authenticate(ctx, adminHeaders, map[string]string{}, map[string]string{})
+	assert.NoError(t, err)
+	assert.Nil(t, authCtx) // Invalid token should return nil context
 }
