@@ -10,36 +10,57 @@ import (
 type AuditAction string
 
 const (
-	// Namespace actions
-	AuditActionNamespaceCreate AuditAction = "NAMESPACE_CREATE"
-	AuditActionNamespaceUpdate AuditAction = "NAMESPACE_UPDATE"
-	AuditActionNamespaceDelete AuditAction = "NAMESPACE_DELETE"
+	// Namespace actions (matching Python audit_action.py snake_case format)
+	AuditActionNamespaceCreate            AuditAction = "namespace_create"
+	AuditActionNamespaceModifyName        AuditAction = "namespace_modify_name"
+	AuditActionNamespaceModifyDisplayName AuditAction = "namespace_modify_display_name"
+	AuditActionNamespaceDelete            AuditAction = "namespace_delete"
 
 	// Module provider actions
-	AuditActionModuleProviderCreate AuditAction = "MODULE_PROVIDER_CREATE"
-	AuditActionModuleProviderUpdate AuditAction = "MODULE_PROVIDER_UPDATE"
-	AuditActionModuleProviderDelete AuditAction = "MODULE_PROVIDER_DELETE"
+	AuditActionModuleProviderCreate                    AuditAction = "module_provider_create"
+	AuditActionModuleProviderDelete                    AuditAction = "module_provider_delete"
+	AuditActionModuleProviderUpdateGitTagFormat        AuditAction = "module_provider_update_git_tag_format"
+	AuditActionModuleProviderUpdateGitProvider         AuditAction = "module_provider_update_git_provider"
+	AuditActionModuleProviderUpdateGitPath             AuditAction = "module_provider_update_git_path"
+	AuditActionModuleProviderUpdateArchiveGitPath      AuditAction = "module_provider_update_archive_git_path"
+	AuditActionModuleProviderUpdateGitCustomBaseURL    AuditAction = "module_provider_update_git_custom_base_url"
+	AuditActionModuleProviderUpdateGitCustomCloneURL   AuditAction = "module_provider_update_git_custom_clone_url"
+	AuditActionModuleProviderUpdateGitCustomBrowseURL  AuditAction = "module_provider_update_git_custom_browse_url"
+	AuditActionModuleProviderUpdateVerified            AuditAction = "module_provider_update_verified"
+	AuditActionModuleProviderUpdateNamespace           AuditAction = "module_provider_update_namespace"
+	AuditActionModuleProviderUpdateModuleName          AuditAction = "module_provider_update_module_name"
+	AuditActionModuleProviderUpdateProviderName        AuditAction = "module_provider_update_provider_name"
+	AuditActionModuleProviderRedirectDelete            AuditAction = "module_provider_redirect_delete"
 
 	// Module version actions
-	AuditActionModuleVersionCreate  AuditAction = "MODULE_VERSION_CREATE"
-	AuditActionModuleVersionPublish AuditAction = "MODULE_VERSION_PUBLISH"
-	AuditActionModuleVersionDelete  AuditAction = "MODULE_VERSION_DELETE"
-	AuditActionModuleVersionIndex   AuditAction = "MODULE_VERSION_INDEX"
+	AuditActionModuleVersionIndex   AuditAction = "module_version_index"
+	AuditActionModuleVersionPublish AuditAction = "module_version_publish"
+	AuditActionModuleVersionDelete  AuditAction = "module_version_delete"
 
 	// User group actions
-	AuditActionUserGroupCreate AuditAction = "USER_GROUP_CREATE"
-	AuditActionUserGroupUpdate AuditAction = "USER_GROUP_UPDATE"
-	AuditActionUserGroupDelete AuditAction = "USER_GROUP_DELETE"
+	AuditActionUserGroupCreate                       AuditAction = "user_group_create"
+	AuditActionUserGroupDelete                       AuditAction = "user_group_delete"
+	AuditActionUserGroupNamespacePermissionAdd       AuditAction = "user_group_namespace_permission_add"
+	AuditActionUserGroupNamespacePermissionModify    AuditAction = "user_group_namespace_permission_modify"
+	AuditActionUserGroupNamespacePermissionDelete    AuditAction = "user_group_namespace_permission_delete"
+
+	// User authentication
+	AuditActionUserLogin AuditAction = "user_login"
 
 	// GPG key actions
-	AuditActionGpgKeyCreate AuditAction = "GPG_KEY_CREATE"
-	AuditActionGpgKeyUpdate AuditAction = "GPG_KEY_UPDATE"
-	AuditActionGpgKeyDelete AuditAction = "GPG_KEY_DELETE"
+	AuditActionGpgKeyCreate AuditAction = "gpg_key_create"
+	AuditActionGpgKeyDelete AuditAction = "gpg_key_delete"
 
-	// Integration actions
-	AuditActionIntegrationCreate AuditAction = "INTEGRATION_CREATE"
-	AuditActionIntegrationUpdate AuditAction = "INTEGRATION_UPDATE"
-	AuditActionIntegrationDelete AuditAction = "INTEGRATION_DELETE"
+	// Provider actions
+	AuditActionProviderCreate        AuditAction = "provider_create"
+	AuditActionProviderDelete        AuditAction = "provider_delete"
+	AuditActionProviderVersionIndex  AuditAction = "provider_version_index"
+	AuditActionProviderVersionDelete AuditAction = "provider_version_delete"
+
+	// Repository actions
+	AuditActionRepositoryCreate AuditAction = "repository_create"
+	AuditActionRepositoryUpdate AuditAction = "repository_update"
+	AuditActionRepositoryDelete AuditAction = "repository_delete"
 )
 
 // AuditHistory represents an audit log entry

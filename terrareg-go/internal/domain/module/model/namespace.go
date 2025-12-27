@@ -64,6 +64,11 @@ func ValidateNamespaceName(name string) error {
 		return fmt.Errorf("%w: namespace name must not exceed 128 characters", shared.ErrInvalidNamespace)
 	}
 
+	// Check for double underscores (sequential underscores not allowed)
+	if strings.Contains(name, "__") {
+		return fmt.Errorf("%w: namespace name cannot contain sequential underscores", shared.ErrInvalidNamespace)
+	}
+
 	// Convert to lowercase for validation
 	name = strings.ToLower(name)
 

@@ -87,8 +87,8 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 			username = authCtx.Username
 		}
 
-		// Log the version creation and publish
-		c.auditService.LogModuleVersionCreate(
+		// Log the version index and publish
+		c.auditService.LogModuleVersionIndex(
 			context.Background(),
 			username,
 			req.Namespace,

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -209,4 +210,9 @@ func AssertPaginatedResponse(t *testing.T, w *httptest.ResponseRecorder, expecte
 	assert.Equal(t, float64(expectedPage), meta["page"], "Page should match")
 	assert.Equal(t, float64(expectedLimit), meta["limit"], "Limit should match")
 	assert.Equal(t, float64(expectedTotal), meta["total"], "Total should match")
+}
+
+// Now returns a fixed time for consistent test results
+func Now() time.Time {
+	return time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 }
