@@ -873,6 +873,9 @@ func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSAMLACS(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleSAMLACS(w, r)
 }
+func (s *Server) handleGitHubOAuth(w http.ResponseWriter, r *http.Request) {
+	s.authHandler.HandleGitHubOAuth(w, r)
+}
 func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request) {
 	providerSource := chi.URLParam(r, "provider_source")
 

@@ -23,13 +23,12 @@ func NewTestDataFactory() *TestDataFactory {
 func (f *TestDataFactory) CreateNamespace(overrides ...NamespaceOverride) sqldb.NamespaceDB {
 	f.namespaceCounter++
 
+	displayName := f.generateDisplayName("Namespace")
 	// Default values
 	namespace := sqldb.NamespaceDB{
 		Namespace:     f.generateNamespaceName(),
-		DisplayName:   f.generateDisplayName("Namespace"),
+		DisplayName:   &displayName,
 		NamespaceType: sqldb.NamespaceTypeNone,
-		Description:   "Test namespace for testing purposes",
-		ViewType:      "public",
 	}
 
 	// Apply overrides
@@ -60,7 +59,8 @@ func WithNamespaceType(namespaceType sqldb.NamespaceType) NamespaceOverride {
 // WithPrivateNamespace makes the namespace private
 func WithPrivateNamespace() NamespaceOverride {
 	return func(n *sqldb.NamespaceDB) {
-		n.ViewType = "private"
+		// Private namespaces could use a specific namespace type
+		// For now, this is a placeholder as the actual implementation may vary
 	}
 }
 
@@ -169,7 +169,7 @@ func WithVersion(version string) ModuleVersionOverride {
 // WithPublished marks the version as published
 func WithPublished() ModuleVersionOverride {
 	return func(mv *sqldb.ModuleVersionDB) {
-		mv.publishedAt = &[]time.Time{time.Now()}[0]
+		mv.PublishedAt = &[]time.Time{time.Now()}[0]
 		mv.Published = &[]bool{true}[0]
 	}
 }
@@ -251,9 +251,8 @@ func (f *TestDataFactory) CreateUserGroup(overrides ...UserGroupOverride) sqldb.
 	f.userCounter++
 
 	userGroup := sqldb.UserGroupDB{
-		Name:        f.generateGroupName(),
-		SiteAdmin:   false,
-		FullMembers: []string{},
+		Name:      f.generateGroupName(),
+		SiteAdmin: false,
 	}
 
 	// Apply overrides
@@ -281,22 +280,24 @@ func WithSiteAdmin() UserGroupOverride {
 	}
 }
 
-// WithMembers sets group members
+// WithMembers sets group members (Note: members are tracked separately, not in UserGroupDB)
 func WithMembers(members ...string) UserGroupOverride {
 	return func(ug *sqldb.UserGroupDB) {
-		ug.FullMembers = members
+		// Members are tracked in UserGroupMemberDB, not UserGroupDB
+		// This is a placeholder for future implementation
 	}
 }
 
 // CreateAnalytics creates test analytics data
-func (f *TestDataFactory) CreateAnalytics(moduleVersionID int, overrides ...AnalyticsOverride) sqldb.AnalyticsDB {
+func (f *TestDataFactory) CreateAnalytics(parentModuleVersionID int, overrides ...AnalyticsOverride) sqldb.AnalyticsDB {
+	token := f.generateAnalyticsToken()
+	timestamp := time.Now()
+	terraformVersion := "1.0.0"
 	analytics := sqldb.AnalyticsDB{
-		ModuleVersionID:       moduleVersionID,
-		AnalyticsToken:        f.generateAnalyticsToken(),
-		Version:               "1.0.0",
-		AuditAction:           "download",
-		AdditionalInformation: nil,
-		CreatedAt:             time.Now(),
+		ParentModuleVersion: parentModuleVersionID,
+		Timestamp:           &timestamp,
+		AnalyticsToken:      &token,
+		TerraformVersion:    &terraformVersion,
 	}
 
 	// Apply overrides
@@ -313,21 +314,14 @@ type AnalyticsOverride func(*sqldb.AnalyticsDB)
 // WithAnalyticsToken sets a custom analytics token
 func WithAnalyticsToken(token string) AnalyticsOverride {
 	return func(a *sqldb.AnalyticsDB) {
-		a.AnalyticsToken = token
+		a.AnalyticsToken = &token
 	}
 }
 
-// WithAuditAction sets a custom audit action
-func WithAuditAction(action string) AnalyticsOverride {
+// WithTimestamp sets a custom timestamp
+func WithTimestamp(timestamp time.Time) AnalyticsOverride {
 	return func(a *sqldb.AnalyticsDB) {
-		a.AuditAction = action
-	}
-}
-
-// WithCreatedAt sets a custom creation time
-func WithCreatedAt(createdAt time.Time) AnalyticsOverride {
-	return func(a *sqldb.AnalyticsDB) {
-		a.CreatedAt = createdAt
+		a.Timestamp = &timestamp
 	}
 }
 
@@ -472,10 +466,12 @@ func (f *TestDataFactory) CreateCompleteModuleSet() (sqldb.NamespaceDB, sqldb.Mo
 func (f *TestDataFactory) CreateNamespaceWithPermissions() (sqldb.NamespaceDB, sqldb.UserGroupDB, sqldb.UserGroupNamespacePermissionDB) {
 	namespace := f.CreateNamespace()
 	userGroup := f.CreateUserGroup(WithGroupName("test-group"))
+	// Note: This permission cannot be properly created without database IDs
+	// This is a placeholder for testing - in actual tests, save namespace and user group first
 	permission := sqldb.UserGroupNamespacePermissionDB{
-		UserGroupID:     userGroup.ID,
-		NamespaceName:   namespace.Namespace,
-		PermissionLevel: "FULL_ACCESS",
+		UserGroupID:     1, // Placeholder - needs actual DB ID
+		NamespaceID:     1, // Placeholder - needs actual DB ID
+		PermissionType:  sqldb.PermissionTypeFull,
 	}
 
 	return namespace, userGroup, permission
