@@ -29,7 +29,6 @@ COPY terrareg-go/ ./
 # Build the Go binary
 RUN http_proxy=$http_proxy https_proxy=$https_proxy \
     CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X main.Version=$VERSION" \
     -o server ./cmd/server/main.go
 
 
