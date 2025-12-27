@@ -102,7 +102,7 @@ mysql-integration-selenium-tests:
   needs:
     - unit-integration-selenium-tests
   services:
-    - name: mariadb:10.8
+    - name: mariadb:12.0
       alias: mysql
     - name: minio/minio
       alias: minio
