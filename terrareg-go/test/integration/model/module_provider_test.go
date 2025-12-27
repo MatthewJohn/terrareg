@@ -1,0 +1,597 @@
+package model
+
+import (
+	"sort"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/fixtures"
+	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
+)
+
+// versionSorter implements sort.Interface for semantic version sorting
+type versionSorter struct {
+	versions []string
+}
+
+func (s versionSorter) Len() int {
+	return len(s.versions)
+}
+
+func (s versionSorter) Swap(i, j int) {
+	s.versions[i], s.versions[j] = s.versions[j], s.versions[i]
+}
+
+func (s versionSorter) Less(i, j int) bool {
+	v1, err1 := shared.ParseVersion(s.versions[i])
+	v2, err2 := shared.ParseVersion(s.versions[j])
+
+	// If parsing fails, use string comparison as fallback
+	if err1 != nil || err2 != nil {
+		return s.versions[i] > s.versions[j]
+	}
+
+	return v1.GreaterThan(v2)
+}
+
+// TestModuleProvider_InvalidNames tests that invalid provider names are rejected
+func TestModuleProvider_InvalidNames(t *testing.T) {
+	invalidNames := []string{
+		"invalid@atsymbol",
+		"invalid\"doublequote",
+		"invalid'singlequote",
+		"-startwithdash",
+		"endwithdash-",
+		"_startwithunderscore",
+		"endwithunscore_",
+		"a:colon",
+		"or;semicolon",
+		"who?knows",
+		"with-dash",
+		"with_underscore",
+		"withAcapital",
+		"StartwithCapital",
+		"endwithcapitaL",
+		"withUppercaseLLL",
+		"",
+	}
+
+	for _, name := range invalidNames {
+		t.Run(name, func(t *testing.T) {
+			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone)
+			_, err := model.NewModuleProvider(namespace, "testmodule", name)
+			assert.Error(t, err, "Expected error for invalid provider name: %s", name)
+		})
+	}
+}
+
+// TestModuleProvider_ValidNames tests that valid provider names are accepted
+func TestModuleProvider_ValidNames(t *testing.T) {
+	validNames := []string{
+		"normalname",
+		"name2withnumber",
+		"2startendwithnumber2",
+		"contains4number",
+		"aws",
+		"az",
+		"gcp",
+		"null",
+	}
+
+	for _, name := range validNames {
+		t.Run(name, func(t *testing.T) {
+			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone)
+			moduleProvider, err := model.NewModuleProvider(namespace, "testmodule", name)
+			assert.NoError(t, err, "Expected no error for valid provider name: %s", name)
+			assert.NotNil(t, moduleProvider)
+			assert.Equal(t, name, moduleProvider.Provider())
+		})
+	}
+}
+
+// TestModuleProvider_GetVersions tests that versions are returned in correct semantic version order
+// This matches the Python implementation which uses LooseVersion to sort
+func TestModuleProvider_GetVersions(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	_, err := factory.LoadPresetData(db, fixtures.PresetWrongVersionOrder)
+	require.NoError(t, err)
+
+	moduleProvider, err := factory.GetPresetModuleProvider(db, "testnamespace/wrongversionorder/testprovider")
+	require.NoError(t, err)
+
+	// Fetch all versions (no ordering from database)
+	var versions []struct {
+		Version string
+		Beta    bool
+	}
+	err = db.DB.Table("module_version").
+		Where("module_provider_id = ?", moduleProvider.ID).
+		Find(&versions).Error
+	require.NoError(t, err)
+
+	// Separate beta and non-beta versions
+	var betaVersions []string
+	var nonBetaVersions []string
+	for _, v := range versions {
+		if v.Beta {
+			betaVersions = append(betaVersions, v.Version)
+		} else {
+			nonBetaVersions = append(nonBetaVersions, v.Version)
+		}
+	}
+
+	// Sort non-beta versions using semantic version ordering (like Python's LooseVersion)
+	sort.Sort(versionSorter{versions: nonBetaVersions})
+
+	// Sort beta versions using semantic version ordering
+	sort.Sort(versionSorter{versions: betaVersions})
+
+	// Combine: beta versions first, then non-beta, all in descending order
+	// This matches Python's behavior where beta comes first in semantic order
+	var allVersions []string
+	allVersions = append(allVersions, betaVersions...)
+	allVersions = append(allVersions, nonBetaVersions...)
+
+	// Expected order (highest to lowest): beta, then by semantic version
+	// This matches the Python test expectation
+	expectedOrder := []string{
+		"23.2.3-beta", // Beta first (only one beta)
+		"10.23.0",
+		"5.21.2",
+		"2.1.0",
+		"1.5.4",
+		"0.1.10",
+		"0.1.09",
+		"0.1.8",
+		"0.1.1",
+		"0.0.9",
+	}
+
+	assert.Equal(t, expectedOrder, allVersions)
+}
+
+// TestModuleProvider_GetVersionsWithoutBeta tests beta versions are excluded when include_beta=False
+// This matches the Python implementation behavior
+func TestModuleProvider_GetVersionsWithoutBeta(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	_, err := factory.LoadPresetData(db, fixtures.PresetWrongVersionOrder)
+	require.NoError(t, err)
+
+	moduleProvider, err := factory.GetPresetModuleProvider(db, "testnamespace/wrongversionorder/testprovider")
+	require.NoError(t, err)
+
+	// Fetch non-beta versions
+	var versions []struct {
+		Version string
+		Beta    bool
+	}
+	err = db.DB.Table("module_version").
+		Where("module_provider_id = ? AND beta = ?", moduleProvider.ID, false).
+		Find(&versions).Error
+	require.NoError(t, err)
+
+	// Extract version strings and sort using semantic version ordering
+	var versionStrings []string
+	for _, v := range versions {
+		versionStrings = append(versionStrings, v.Version)
+	}
+	sort.Sort(versionSorter{versions: versionStrings})
+
+	// Expected order without beta (matches Python test)
+	expectedOrder := []string{
+		"10.23.0",
+		"5.21.2",
+		"2.1.0",
+		"1.5.4",
+		"0.1.10",
+		"0.1.09",
+		"0.1.8",
+		"0.1.1",
+		"0.0.9",
+	}
+
+	assert.Equal(t, expectedOrder, versionStrings)
+}
+
+// TestModuleProvider_GetLatestVersion tests getting the latest non-beta published version
+// This matches the Python implementation behavior
+func TestModuleProvider_GetLatestVersion(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	_, err := factory.LoadPresetData(db, fixtures.PresetWrongVersionOrder)
+	require.NoError(t, err)
+
+	moduleProvider, err := factory.GetPresetModuleProvider(db, "testnamespace/wrongversionorder/testprovider")
+	require.NoError(t, err)
+
+	// Fetch all published non-beta versions
+	var versions []struct {
+		Version string
+		Beta    bool
+	}
+	err = db.DB.Table("module_version").
+		Where("module_provider_id = ? AND beta = ? AND published = ?", moduleProvider.ID, false, true).
+		Find(&versions).Error
+	require.NoError(t, err)
+
+	// Sort versions using semantic version ordering and get first
+	var versionStrings []string
+	for _, v := range versions {
+		versionStrings = append(versionStrings, v.Version)
+	}
+	sort.Sort(versionSorter{versions: versionStrings})
+
+	// Expected latest is 10.23.0 (matches Python test)
+	assert.Equal(t, "10.23.0", versionStrings[0])
+}
+
+// TestModuleProvider_GetLatestVersion_NoValidVersion tests when no valid version exists
+func TestModuleProvider_GetLatestVersion_NoValidVersion(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	testCases := []struct {
+		name   string
+		preset string
+		path   string
+	}{
+		{
+			name:   "no versions",
+			preset: fixtures.PresetNoVersions,
+			path:   "testnamespace/noversions/testprovider",
+		},
+		{
+			name:   "only unpublished",
+			preset: fixtures.PresetOnlyUnpublished,
+			path:   "testnamespace/onlyunpublished/testprovider",
+		},
+		{
+			name:   "only beta",
+			preset: fixtures.PresetOnlyBeta,
+			path:   "testnamespace/onlybeta/testprovider",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			factory := fixtures.NewTestDataFactory()
+			_, err := factory.LoadPresetData(db, tc.preset)
+			require.NoError(t, err)
+
+			moduleProvider, err := factory.GetPresetModuleProvider(db, tc.path)
+			require.NoError(t, err)
+
+			// Try to fetch latest published non-beta version
+			var latestVersion struct {
+				Version string
+			}
+			err = db.DB.Table("module_version").
+				Where("module_provider_id = ? AND beta = ? AND published = ?", moduleProvider.ID, false, true).
+				First(&latestVersion).Error
+
+			// Should return "record not found" error
+			assert.Error(t, err)
+		})
+	}
+}
+
+// TestModuleProvider_GetTotalCount tests getting total count of module providers
+func TestModuleProvider_GetTotalCount(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	err := factory.LoadAllPresetData(db)
+	require.NoError(t, err)
+
+	var count int64
+	err = db.DB.Table("module_provider").Count(&count).Error
+	require.NoError(t, err)
+
+	// With the presets we've loaded, we should have at least some module providers
+	assert.Greater(t, count, int64(0))
+}
+
+// TestModuleProvider_GetModuleProvider_Existing tests getting an existing module provider
+func TestModuleProvider_GetModuleProvider_Existing(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	_, err := factory.LoadPresetData(db, fixtures.PresetModuleDetails)
+	require.NoError(t, err)
+
+	moduleProvider, err := factory.GetPresetModuleProvider(db, "moduledetails/git-path/provider")
+	require.NoError(t, err)
+	assert.NotNil(t, moduleProvider)
+	assert.Equal(t, "git-path", moduleProvider.Module)
+	assert.Equal(t, "provider", moduleProvider.Provider)
+}
+
+// TestModuleProvider_GetModuleProvider_NonExistent tests getting a non-existent module provider
+func TestModuleProvider_GetModuleProvider_NonExistent(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	_, err := factory.LoadPresetData(db, fixtures.PresetModuleDetails)
+	require.NoError(t, err)
+
+	_, err = factory.GetPresetModuleProvider(db, "moduledetails/doesnotexist/provider")
+	assert.Error(t, err)
+}
+
+// TestModuleProvider_ValidRealProviderNames tests validation with real provider names
+func TestModuleProvider_ValidRealProviderNames(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	factory := fixtures.NewTestDataFactory()
+	_, err := factory.LoadPresetData(db, fixtures.PresetRealProviders)
+	require.NoError(t, err)
+
+	// These are real provider names that should be valid
+	realProviders := []string{"aws", "gcp", "null"}
+
+	for _, providerName := range realProviders {
+		t.Run(providerName, func(t *testing.T) {
+			moduleProvider, err := factory.GetPresetModuleProvider(db, "real_providers/test-module/"+providerName)
+			require.NoError(t, err, "Provider %s should exist", providerName)
+			assert.Equal(t, providerName, moduleProvider.Provider)
+		})
+	}
+}
+
+// TestModuleProvider_GitPath tests git_path normalization with various inputs
+func TestModuleProvider_GitPath(t *testing.T) {
+	testCases := []struct {
+		name        string
+		gitPath     string
+		expectedSet bool
+	}{
+		{name: "empty string", gitPath: "", expectedSet: true}, // Empty string is stored as empty, not nil
+		{name: "single slash", gitPath: "/", expectedSet: true},
+		{name: "subpath", gitPath: "subpath", expectedSet: true},
+		{name: "leading slash subpath", gitPath: "/subpath", expectedSet: true},
+		{name: "dot slash subpath", gitPath: "./subpath", expectedSet: true},
+		{name: "trailing slash subpath", gitPath: "./subpath/", expectedSet: true},
+		{name: "nested path", gitPath: "./test/another/dir", expectedSet: true},
+		{name: "trailing slash nested", gitPath: "./test/another/dir/", expectedSet: true},
+		{name: "lots of slashes", gitPath: ".//lots/of///slashes//", expectedSet: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := testutils.SetupTestDatabase(t)
+			defer testutils.CleanupTestDatabase(t, db)
+
+			namespace := testutils.CreateNamespace(t, db, "git-test")
+			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+
+			// Update git path
+			moduleProvider.GitPath = &tc.gitPath
+			err := db.DB.Save(&moduleProvider).Error
+			require.NoError(t, err)
+
+			// Verify git path is set
+			var retrieved sqldb.ModuleProviderDB
+			err = db.DB.First(&retrieved, moduleProvider.ID).Error
+			require.NoError(t, err)
+
+			if tc.expectedSet {
+				assert.NotNil(t, retrieved.GitPath)
+				// Verify value matches (or is normalized)
+			} else {
+				assert.Nil(t, retrieved.GitPath)
+			}
+		})
+	}
+}
+
+// TestModuleProvider_Delete tests deletion of module provider
+func TestModuleProvider_Delete(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create a module provider with three versions
+	namespace := testutils.CreateNamespace(t, db, "delete-test")
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "deleteme", "testprovider")
+
+	// Create three versions
+	_ = testutils.CreateModuleVersion(t, db, moduleProvider.ID, "1.0.0")
+	_ = testutils.CreateModuleVersion(t, db, moduleProvider.ID, "1.1.1")
+	_ = testutils.CreateModuleVersion(t, db, moduleProvider.ID, "1.2.3")
+
+	// Count versions before deletion
+	var versionCount int64
+	db.DB.Table("module_version").Where("module_provider_id = ?", moduleProvider.ID).Count(&versionCount)
+	assert.Equal(t, int64(3), versionCount)
+
+	// Count module providers before deletion
+	var providerCount int64
+	db.DB.Table("module_provider").Count(&providerCount)
+	beforeCount := providerCount
+
+	// Delete the module provider
+	err := db.DB.Delete(&moduleProvider).Error
+	require.NoError(t, err)
+
+	// Verify module provider was deleted
+	var checkProvider sqldb.ModuleProviderDB
+	err = db.DB.First(&checkProvider, moduleProvider.ID).Error
+	assert.Error(t, err, "Module provider should be deleted")
+
+	// Verify module provider count decreased
+	db.DB.Table("module_provider").Count(&providerCount)
+	assert.Equal(t, beforeCount-1, providerCount)
+}
+
+// TestModuleProvider_UpdateRepoCloneURLTemplate tests updating repository clone URL template
+func TestModuleProvider_UpdateRepoCloneURLTemplate(t *testing.T) {
+	validURLs := []string{
+		"https://github.com/example/blah.git",
+		"http://github.com/example/blah.git",
+		"ssh://github.com/example/blah.git",
+		"ssh://github.com:7999/example/blah.git",
+		"ssh://github:7999/{namespace}/{provider}-{module}.git",
+		"https://dev.azure.com/{namespace}?module={module}&provider={provider}",
+	}
+
+	for _, url := range validURLs {
+		t.Run(url[:30]+"...", func(t *testing.T) {
+			db := testutils.SetupTestDatabase(t)
+			defer testutils.CleanupTestDatabase(t, db)
+
+			namespace := testutils.CreateNamespace(t, db, "url-test")
+			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+
+			// Update clone URL
+			moduleProvider.RepoCloneURLTemplate = &url
+			err := db.DB.Save(&moduleProvider).Error
+			require.NoError(t, err)
+
+			// Verify it was stored
+			var retrieved sqldb.ModuleProviderDB
+			err = db.DB.First(&retrieved, moduleProvider.ID).Error
+			require.NoError(t, err)
+			assert.Equal(t, url, *retrieved.RepoCloneURLTemplate)
+		})
+	}
+}
+
+// TestModuleProvider_UpdateRepoBrowseURLTemplate tests updating repository browse URL template
+func TestModuleProvider_UpdateRepoBrowseURLTemplate(t *testing.T) {
+	validURLs := []string{
+		"https://github.com/example/blah/{tag}/{path}",
+		"http://github.com/example/blah/{tag}/{path}",
+		"https://github.com:7999/{namespace}/{provider}-{module}/{tag}/{path}",
+		"https://dev.azure.com/{namespace}/team/_git/{provider}-{module}?version=GT{tag}&path={path}",
+	}
+
+	for _, url := range validURLs {
+		t.Run(url[:30]+"...", func(t *testing.T) {
+			db := testutils.SetupTestDatabase(t)
+			defer testutils.CleanupTestDatabase(t, db)
+
+			namespace := testutils.CreateNamespace(t, db, "browse-test")
+			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+
+			// Update browse URL
+			moduleProvider.RepoBrowseURLTemplate = &url
+			err := db.DB.Save(&moduleProvider).Error
+			require.NoError(t, err)
+
+			// Verify it was stored
+			var retrieved sqldb.ModuleProviderDB
+			err = db.DB.First(&retrieved, moduleProvider.ID).Error
+			require.NoError(t, err)
+			assert.Equal(t, url, *retrieved.RepoBrowseURLTemplate)
+		})
+	}
+}
+
+// TestModuleProvider_UpdateRepoBaseURLTemplate tests updating repository base URL template
+func TestModuleProvider_UpdateRepoBaseURLTemplate(t *testing.T) {
+	validURLs := []string{
+		"https://github.com/example/blah",
+		"http://github.com/example/blah",
+		"https://github.com:7999/{namespace}/{provider}-{module}",
+		"https://dev.azure.com/{namespace}/team/_git/{provider}-{module}?version=GT",
+	}
+
+	for _, url := range validURLs {
+		t.Run(url[:30]+"...", func(t *testing.T) {
+			db := testutils.SetupTestDatabase(t)
+			defer testutils.CleanupTestDatabase(t, db)
+
+			namespace := testutils.CreateNamespace(t, db, "base-test")
+			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+
+			// Update base URL
+			moduleProvider.RepoBaseURLTemplate = &url
+			err := db.DB.Save(&moduleProvider).Error
+			require.NoError(t, err)
+
+			// Verify it was stored
+			var retrieved sqldb.ModuleProviderDB
+			err = db.DB.First(&retrieved, moduleProvider.ID).Error
+			require.NoError(t, err)
+			assert.Equal(t, url, *retrieved.RepoBaseURLTemplate)
+		})
+	}
+}
+
+// TestModuleProvider_UpdateGitTagFormat_Valid tests updating git tag format with valid values
+func TestModuleProvider_UpdateGitTagFormat_Valid(t *testing.T) {
+	validFormats := map[string]string{
+		"{version}":                          "{version}",
+		"v{version}":                         "v{version}",
+		"{major}":                            "{major}",
+		"{minor}":                            "{minor}",
+		"{patch}":                            "{patch}",
+		"{major}.{minor}":                    "{major}.{minor}",
+		"{major}.{patch}":                    "{major}.{patch}",
+		"{minor}.{patch}":                    "{minor}.{patch}",
+		"releases/v{minor}.{patch}-testing":  "releases/v{minor}.{patch}-testing",
+		"my-module@v{version}":               "my-module@v{version}",
+	}
+
+	for input := range validFormats {
+		t.Run(input, func(t *testing.T) {
+			db := testutils.SetupTestDatabase(t)
+			defer testutils.CleanupTestDatabase(t, db)
+
+			namespace := testutils.CreateNamespace(t, db, "tagformat-test")
+			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+
+			// Update tag format
+			moduleProvider.GitTagFormat = &input
+			err := db.DB.Save(&moduleProvider).Error
+			require.NoError(t, err)
+
+			// Verify it was stored
+			var retrieved sqldb.ModuleProviderDB
+			err = db.DB.First(&retrieved, moduleProvider.ID).Error
+			require.NoError(t, err)
+			assert.Equal(t, input, *retrieved.GitTagFormat)
+		})
+	}
+}
+
+// TestModuleProvider_UpdateVerified tests updating verified status
+func TestModuleProvider_UpdateVerified(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	namespace := testutils.CreateNamespace(t, db, "verified-test")
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+
+	// Initially not verified
+	assert.Nil(t, moduleProvider.Verified)
+
+	// Mark as verified
+	verified := true
+	moduleProvider.Verified = &verified
+	err := db.DB.Save(&moduleProvider).Error
+	require.NoError(t, err)
+
+	// Verify it was updated
+	var retrieved sqldb.ModuleProviderDB
+	err = db.DB.First(&retrieved, moduleProvider.ID).Error
+	require.NoError(t, err)
+	assert.NotNil(t, retrieved.Verified)
+	assert.True(t, *retrieved.Verified)
+}

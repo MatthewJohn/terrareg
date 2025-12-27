@@ -1,9 +1,22 @@
 package fixtures
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+)
+
+// Preset data set names matching Python integration tests
+const (
+	PresetWrongVersionOrder = "wrongversionorder"
+	PresetModuleDetails     = "moduledetails"
+	PresetModuleSearch      = "modulesearch"
+	PresetNoVersions        = "noversions"
+	PresetOnlyUnpublished   = "onlyunpublished"
+	PresetOnlyBeta          = "onlybeta"
+	PresetRealProviders     = "real_providers"
 )
 
 // TestDataFactory provides factory methods for creating test data
@@ -475,4 +488,261 @@ func (f *TestDataFactory) CreateNamespaceWithPermissions() (sqldb.NamespaceDB, s
 	}
 
 	return namespace, userGroup, permission
+}
+
+// PresetData defines a preset test data set
+type PresetData struct {
+	NamespaceName string
+	Modules       map[string]map[string]PresetModuleProvider // module -> provider -> data
+}
+
+// PresetModuleProvider defines preset module provider data
+type PresetModuleProvider struct {
+	ID                  int
+	Versions            map[string]PresetModuleVersion
+	RepoCloneURLTemplate *string
+	GitTagFormat        *string
+	GitPath             *string
+}
+
+// PresetModuleVersion defines preset module version data
+type PresetModuleVersion struct {
+	Published  bool
+	Beta       bool
+	Owner      *string
+	Terraform  string
+	Readme     string
+	VariableTemplate string
+}
+
+// PresetDataSets returns all predefined preset data sets
+func (f *TestDataFactory) PresetDataSets() map[string]PresetData {
+	return map[string]PresetData{
+		PresetWrongVersionOrder: {
+			NamespaceName: "testnamespace",
+			Modules: map[string]map[string]PresetModuleProvider{
+				"wrongversionorder": {
+					"testprovider": {
+						ID: 17,
+						Versions: map[string]PresetModuleVersion{
+							"1.5.4":     {Published: true},
+							"2.1.0":     {Published: true},
+							"0.1.1":     {Published: true},
+							"10.23.0":   {Published: true},
+							"0.1.10":    {Published: true},
+							"0.0.9":     {Published: true},
+							"0.1.09":    {Published: true},
+							"0.1.8":     {Published: true},
+							"23.2.3-beta": {Published: true, Beta: true},
+							"5.21.2":    {Published: false},
+						},
+					},
+				},
+			},
+		},
+		PresetNoVersions: {
+			NamespaceName: "testnamespace",
+			Modules: map[string]map[string]PresetModuleProvider{
+				"noversions": {
+					"testprovider": {
+						ID:       53,
+						Versions: map[string]PresetModuleVersion{},
+					},
+				},
+			},
+		},
+		PresetOnlyUnpublished: {
+			NamespaceName: "testnamespace",
+			Modules: map[string]map[string]PresetModuleProvider{
+				"onlyunpublished": {
+					"testprovider": {
+						ID: 54,
+						Versions: map[string]PresetModuleVersion{
+							"0.1.8": {Published: false},
+						},
+					},
+				},
+			},
+		},
+		PresetOnlyBeta: {
+			NamespaceName: "testnamespace",
+			Modules: map[string]map[string]PresetModuleProvider{
+				"onlybeta": {
+					"testprovider": {
+						ID: 55,
+						Versions: map[string]PresetModuleVersion{
+							"2.5.0-beta": {Published: true, Beta: true},
+						},
+					},
+				},
+			},
+		},
+		PresetModuleDetails: {
+			NamespaceName: "moduledetails",
+			Modules: map[string]map[string]PresetModuleProvider{
+				"git-path": {
+					"provider": {
+						ID: 41,
+						Versions: map[string]PresetModuleVersion{
+							"1.0.0": {
+								Published: true,
+								Readme:    "# Example Module\n\nThis is an example module.",
+								Terraform: `{"variables": [], "outputs": [], "resources": []}`,
+							},
+						},
+					},
+				},
+			},
+		},
+		PresetRealProviders: {
+			NamespaceName: "real_providers",
+			Modules: map[string]map[string]PresetModuleProvider{
+				"test-module": {
+					"aws": {
+						ID: 22,
+						Versions: map[string]PresetModuleVersion{
+							"1.0.0": {Published: true},
+						},
+					},
+					"gcp": {
+						ID: 23,
+						Versions: map[string]PresetModuleVersion{
+							"1.0.0": {Published: true},
+						},
+					},
+					"null": {
+						ID: 56,
+						Versions: map[string]PresetModuleVersion{
+							"1.0.0": {Published: true},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// LoadPresetData loads a preset test data set into the database
+// Returns the namespace ID for use in tests
+func (f *TestDataFactory) LoadPresetData(db *sqldb.Database, presetName string) (int, error) {
+	presets := f.PresetDataSets()
+	preset, ok := presets[presetName]
+	if !ok {
+		return 0, fmt.Errorf("unknown preset: %s", presetName)
+	}
+
+	// Create namespace
+	namespace := sqldb.NamespaceDB{
+		Namespace:     preset.NamespaceName,
+		DisplayName:   &preset.NamespaceName,
+		NamespaceType: sqldb.NamespaceTypeNone,
+	}
+	if err := db.DB.Create(&namespace).Error; err != nil {
+		return 0, fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	// Create modules and providers
+	for moduleName, providers := range preset.Modules {
+		for providerName, providerData := range providers {
+			moduleProvider := sqldb.ModuleProviderDB{
+				NamespaceID:           namespace.ID,
+				Module:                moduleName,
+				Provider:              providerName,
+				Verified:              nil,
+				GitProviderID:         nil,
+				RepoBaseURLTemplate:   nil,
+				RepoCloneURLTemplate:  providerData.RepoCloneURLTemplate,
+				RepoBrowseURLTemplate: nil,
+				GitTagFormat:          providerData.GitTagFormat,
+				GitPath:               providerData.GitPath,
+				ArchiveGitPath:        false,
+				LatestVersionID:       nil,
+			}
+			if err := db.DB.Create(&moduleProvider).Error; err != nil {
+				return 0, fmt.Errorf("failed to create module provider: %w", err)
+			}
+
+			// Create versions
+			for versionString, versionData := range providerData.Versions {
+				details := sqldb.ModuleDetailsDB{
+					ReadmeContent:    []byte(versionData.Readme),
+					TerraformDocs:    []byte(versionData.Terraform),
+					Tfsec:            []byte(`{"results": [], "summary": {"total": 0}}`),
+					Infracost:        []byte(`{"total_monthly_cost": 0, "projects": []}`),
+					TerraformGraph:   []byte(`{"nodes": [], "edges": []}`),
+					TerraformModules: []byte(`{}`),
+					TerraformVersion: []byte(">= 1.0.0"),
+				}
+				if err := db.DB.Create(&details).Error; err != nil {
+					return 0, fmt.Errorf("failed to create module details: %w", err)
+				}
+
+				moduleVersion := sqldb.ModuleVersionDB{
+					ModuleProviderID: moduleProvider.ID,
+					Version:          versionString,
+					Beta:             versionData.Beta,
+					Internal:         false,
+					Published:        &versionData.Published,
+					Owner:            versionData.Owner,
+					ModuleDetailsID:  &details.ID,
+				}
+				if versionData.Published {
+					now := time.Now()
+					moduleVersion.PublishedAt = &now
+				}
+				if err := db.DB.Create(&moduleVersion).Error; err != nil {
+					return 0, fmt.Errorf("failed to create module version: %w", err)
+				}
+			}
+		}
+	}
+
+	return namespace.ID, nil
+}
+
+// GetPresetModuleProvider retrieves a preset module provider by path
+// Path format: "namespace/module/provider" or "module/provider" (uses testnamespace)
+func (f *TestDataFactory) GetPresetModuleProvider(db *sqldb.Database, path string) (*sqldb.ModuleProviderDB, error) {
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid path format: %s (expected namespace/module/provider or module/provider)", path)
+	}
+
+	var namespace, module, provider string
+	if len(parts) == 3 {
+		namespace, module, provider = parts[0], parts[1], parts[2]
+	} else {
+		namespace, module, provider = "testnamespace", parts[0], parts[1]
+	}
+
+	var moduleProvider sqldb.ModuleProviderDB
+	err := db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", namespace, module, provider).
+		First(&moduleProvider).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("module provider not found: %s: %w", path, err)
+	}
+
+	return &moduleProvider, nil
+}
+
+// LoadAllPresetData loads all preset data sets into the database for comprehensive testing
+func (f *TestDataFactory) LoadAllPresetData(db *sqldb.Database) error {
+	presets := []string{
+		PresetWrongVersionOrder,
+		PresetNoVersions,
+		PresetOnlyUnpublished,
+		PresetOnlyBeta,
+		PresetModuleDetails,
+		PresetRealProviders,
+	}
+
+	for _, preset := range presets {
+		if _, err := f.LoadPresetData(db, preset); err != nil {
+			return fmt.Errorf("failed to load preset %s: %w", preset, err)
+		}
+	}
+
+	return nil
 }
