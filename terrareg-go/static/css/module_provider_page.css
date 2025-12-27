@@ -1,0 +1,48 @@
+#provider-logo-link {
+    margin-top: 30px;
+    max-height: 150px;
+}
+#module-provider-header-content {
+    background-color: #f9f9f9;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+#module-tab-readme h1, h2, h3, h4 {
+    margin-top: 20px;
+}
+.module-provider-tab-content-table {
+    width: 100%;
+}
+#yearly-cost {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+#module-labels {
+    padding-top: 5px;
+    padding-bottom: 20px;
+}
+#current-submodule {
+    font-weight: bold;
+}
+.custom-link {
+    margin-top: 10px;
+}
+#publish-button-container {
+    margin-bottom: 20px;
+}
+#settings-module-version-card {
+    margin-bottom: 15px;
+}
+#module-tab-inputs tr {
+    border: 1px #eeeeee solid;
+}
+#module-tab-inputs th {
+    padding: 10px 5px 10px 5px;
+}
+#module-tab-inputs td {
+    border-left: 1px #eeeeee solid;
+    padding: 10px 5px 10px 5px;
+}
+#module-tab-inputs tr:nth-child(even) {
+    background-color: #fcfcfc;
+}
