@@ -449,6 +449,7 @@ build-pr-image:
 
   script:
     - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+  allow_failure: true
 
 build-golang-pr-image:
   stage: build
@@ -534,12 +535,14 @@ deploy_main_demo:
     auto_stop_in: never
     url: $DYNAMIC_ENVIRONMENT_URL
     on_stop: stop_main_demo
+  allow_failure: true
 
 stop_main_demo:
   extends: stop_review
   environment:
     name: main-demo
     action: stop
+  allow_failure: true
 
 
 # ============================================================================

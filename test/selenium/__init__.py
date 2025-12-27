@@ -14,6 +14,8 @@ from flask import request
 
 from pyvirtualdisplay import Display
 import selenium
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 import pytest
 import werkzeug
@@ -100,7 +102,16 @@ class SeleniumTest(BaseTest):
         if not cls.RUN_INTERACTIVELY:
             cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
             cls.display_instance.start()
-        cls.selenium_instance = selenium.webdriver.Firefox()
+
+        selenium_kwargs = {}
+        # This should be present in all Docker images..
+        # Setting it as selenium manager does not appear to support ARM64 (as used in CI)
+        # but allow use of "selenium manager" (by not specifying location)
+        # outside of this to avoid hard dependencies on local machines.
+        if os.path.isfile("/usr/local/bin/geckodriver"):
+            selenium_kwargs["service"] = Service("/usr/local/bin/geckodriver")
+            selenium_kwargs["options"] = Options()
+        cls.selenium_instance = selenium.webdriver.Firefox(**selenium_kwargs)
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
 

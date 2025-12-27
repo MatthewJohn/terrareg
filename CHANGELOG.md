@@ -1,5 +1,29 @@
 # Changelog
 
+# [4.3.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.2.0...v4.3.0) (2025-12-25)
+
+
+### Bug Fixes
+
+* **build:** Downgrade lxml/xmlsec ([5342ef8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5342ef87327ce186422c36b653fe920391cd02d5)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **build:** Re-instate installation of firefox, as this is required for selenium tests ([9a49236](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9a4923695604cd607af0a6aa7ff76095a6a0e610)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **build:** Remove no-binary config from poetry to avoid issues lxml and xmlsec ([a40c89f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a40c89fdcf762dda8ef0fe267804f635cdfe1e44)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **build:** Remove software-common-properties package installation from Dockerfile.tests as this package no longer exists ([df966e0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/df966e08a86bc2e64e4b4f6baffd0a650033a88a)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **build:** Update poetry lock after fixing package issues ([b3b8002](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b3b80026ec6cfb11462381696aff4b32a8a77a2f)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **build:** Update to fix compile error for xmlsec and saml ([c9a4f9f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c9a4f9fac7fa39add4fe67ba86d8b4ec0c1d9c06)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Downgrade selenium as the newer version uses selenium manager which does not support ARM64 ([7b91982](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7b91982bc6945ee198719572d0e1e00bbd65b357)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Fix expected user agent in download test ([619f192](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/619f192d8da8c4bacd6d948d7526fb48e5e5bcad)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Remove gnome-browser-connector package from test docker fiel as this installs a tonnes of depedencies, it slows down tests (and causes them to fail) and modifies XVFB display ([8e785c8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8e785c818731e610fa96641c9fa544fe5a6a2208)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Update expected sanitised output after update to bleach ([b91dd55](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b91dd55b5f0b220e0b414f1984a50c90a3bfa99e)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Upgrade selenium and disable selenium manager ([93062b8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/93062b89b502e5a654020a07bd2f7b6d97bf1901)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Use assert_equals to handle slow updates in browser in tests ([6e32ee1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6e32ee15743058be551d38fb539d15d4f78ee4c7)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+* **test:** Wait for compatibility to be displayed on cards before checking contents ([ce69768](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ce69768a45ba9c34e6733daf4deefc9da6651a51)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+
+
+### Features
+
+* **build:** Update to python 3.13 and update depdencies that needed upgrading ([2e6ebd9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2e6ebd9e8f277771873825f5cf8b16bb0777000e)), closes [#571](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/571)
+
 # [4.2.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.1.0...v4.2.0) (2025-05-08)
 
 

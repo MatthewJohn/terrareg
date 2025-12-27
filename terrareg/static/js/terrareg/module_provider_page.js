@@ -1,6 +1,35 @@
 
 const router = new Navigo("/");
 
+function validateUrl(url) {
+    // Input validation
+    if (!url || typeof url !== 'string') {
+        return null;
+    }
+
+    // Decode any URL encoding to check actual content
+    let decodedUrl;
+    try {
+        decodedUrl = decodeURIComponent(url);
+    } catch (e) {
+        return null; // Invalid encoding
+    }
+
+    // Strict validation rules
+    const isValid = decodedUrl.startsWith('/') &&
+                   !decodedUrl.startsWith('//') &&
+                   !decodedUrl.includes('..') &&
+                   !decodedUrl.includes('\\') &&
+                   !/javascript:/i.test(decodedUrl) &&
+                   !/data:/i.test(decodedUrl) &&
+                   !/vbscript:/i.test(decodedUrl) &&
+                   !/[<>"'`]/.test(decodedUrl) &&
+                   decodedUrl.length <= 500 &&
+                   /^\/[a-zA-Z0-9\/_.-]+$/.test(decodedUrl);
+
+    return isValid ? decodedUrl : null;
+}
+
 class TabFactory {
     constructor() {
         this._tabs = [];
@@ -1711,23 +1740,67 @@ class UsageBuilderTab extends ModuleDetailsTab {
         });
     }
 
+    // Helper functions for Usage builder to sanitize all output data for vuln
+    sanitizeOutputData(data) {
+        return {
+            additionalContent: this.escapeHtml(data.additionalContent || ''),
+            moduleName: this.escapeHtml(data.moduleName || ''),
+            hostname: this.escapeHtml(data.hostname || ''),
+            analyticsToken: this.escapeHtml(data.analyticsToken || ''),
+            moduleProviderId: this.escapeHtml(data.moduleProviderId || ''),
+            versionString: this.escapeHtml(data.versionString || ''),
+            outputTf: this.escapeHtml(data.outputTf || '')
+        };
+    }
+
+    // HTML escaping function to prevent XSS
+    escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            return '';
+        }
+
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
+            .replace(/\//g, "&#x2F;");
+    }
+
     async updateUsageBuilderOutput() {
         let outputTf = '';
         let additionalContent = '';
         let moduleDetails = globalThis.moduleDetails;
-    
+
         let analytics_token = this._analyticsInput.getValue();
-    
+
         for (let inputRow of this._inputRows) {
             let content = inputRow.getTerraformContent(globalThis.usageBuilderUseOptional);
-            outputTf += content.body
+            outputTf += content.body;
             additionalContent += content.additionalContent;
         }
-        $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${analytics_token}${moduleDetails.module_provider_id}"
-  version = "${moduleDetails.terraform_example_version_string}"
-${outputTf}
-}`);
+
+        // Sanitize and validate all user inputs
+        const sanitizedData = this.sanitizeOutputData({
+            additionalContent,
+            moduleName: moduleDetails.name,
+            hostname: window.location.hostname,
+            analyticsToken: analytics_token,
+            moduleProviderId: moduleDetails.module_provider_id,
+            versionString: moduleDetails.terraform_example_version_string,
+            outputTf
+        });
+
+        // Use text() instead of html() to prevent HTML interpretation
+        const terraformConfig = `${sanitizedData.additionalContent}module "${sanitizedData.moduleName}" {
+  source  = "${sanitizedData.hostname}/${sanitizedData.analyticsToken}${sanitizedData.moduleProviderId}"
+  version = "${sanitizedData.versionString}"
+${sanitizedData.outputTf}
+}`;
+
+        // Safe DOM manipulation - treats content as text, not HTML
+        $('#usageBuilderOutput').text(terraformConfig);
     }
 }
 
@@ -1987,8 +2060,19 @@ function onVersionSelectChange(event) {
     let target_obj = $(event.target)[0].selectedOptions[0];
     let url = target_obj.value;
 
-    // Navigate page to version
-    window.location.href = url;
+    // Validate the URL before navigation
+    const validatedUrl = validateUrl(url);
+    
+    if (validatedUrl) {
+        // Navigate to the validated URL
+        window.location.href = validatedUrl;
+    } else {
+        console.warn('Invalid version URL blocked:', url);
+        // Reset select to previous/default option
+        $(event.target).val($(event.target).find('option:first').val());
+        // Optionally show user feedback
+        showErrorMessage('Invalid version selection');
+    }
 }
 
 /*
@@ -2173,8 +2257,18 @@ function onSubmoduleSelectChange(event) {
     if (url == "none") {
         return;
     }
-    // Navigate page to submodule
-    window.location.href = url;
+
+    // Comprehensive validation
+    const validatedUrl = validateUrl(url);
+    if (validatedUrl) {
+        window.location.href = validatedUrl;
+    } else {
+        console.warn('Blocked potentially malicious URL:', url);
+        // Reset select to default option
+        $(event.target).val('none');
+        // Optionally show user notification
+        showErrorMessage('Invalid module selection');
+    }
 }
 
 /*
@@ -2534,8 +2628,25 @@ function moveModuleProvider(moduleDetails) {
         }),
         contentType: 'application/json'
     }).done(() => {
-        // Redirect to new module provider
-        window.location.href = `/modules/${new_namespace}/${new_module}/${new_provider}`;
+        // Input validation
+        const isValidIdentifier = (str) => {
+            return typeof str === 'string' &&
+                str.length > 0 &&
+                str.length <= 100 &&
+                /^[a-zA-Z0-9\-_\.]+$/.test(str);
+        };
+
+        if (!isValidIdentifier(new_namespace) ||
+            !isValidIdentifier(new_module) ||
+            !isValidIdentifier(new_provider)) {
+            console.error('Invalid parameters for redirect');
+            // Handle error appropriately
+            return;
+        }
+
+        // Safe URL construction
+        const safePath = `/modules/${encodeURIComponent(new_namespace)}/${encodeURIComponent(new_module)}/${encodeURIComponent(new_provider)}`;
+        window.location.href = safePath;
     }).fail((res) => {
         if (res.status == 401) {
             $('#settings-move-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
