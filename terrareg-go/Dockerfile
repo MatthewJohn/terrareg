@@ -90,7 +90,7 @@ COPY terrareg/ ./terrareg/
 COPY scripts ./scripts
 COPY alembic.ini .
 COPY LICENSE .
-COPY LICENSE.third-party .
+# COPY LICENSE.third-party .
 
 # Create licenses directory
 RUN mkdir -p licenses
