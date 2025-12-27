@@ -77,7 +77,7 @@ build-backend = "poetry.core.masonry.api"
 version = "2.1.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "7.4.3"
+pytest = "8.4.2"
 pytest-cov = "3.0.0"
 selenium = "4.34.1"
 pyvirtualdisplay = "3.0"
