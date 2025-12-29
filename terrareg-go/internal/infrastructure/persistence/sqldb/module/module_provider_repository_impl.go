@@ -248,8 +248,14 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 
 	// Namespace filters
 	if len(query.Namespaces) > 0 {
-		whereConditions = append(whereConditions, "namespace.namespace IN ?")
-		whereArgs = append(whereArgs, query.Namespaces)
+		placeholders := make([]string, len(query.Namespaces))
+		for i := range query.Namespaces {
+			placeholders[i] = "?"
+		}
+		whereConditions = append(whereConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
+		for _, ns := range query.Namespaces {
+			whereArgs = append(whereArgs, ns)
+		}
 	}
 
 	// Module filter
@@ -260,8 +266,14 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 
 	// Provider filters
 	if len(query.Providers) > 0 {
-		whereConditions = append(whereConditions, "module_provider.provider IN ?")
-		whereArgs = append(whereArgs, query.Providers)
+		placeholders := make([]string, len(query.Providers))
+		for i := range query.Providers {
+			placeholders[i] = "?"
+		}
+		whereConditions = append(whereConditions, "module_provider.provider IN ("+strings.Join(placeholders, ",")+")")
+		for _, p := range query.Providers {
+			whereArgs = append(whereArgs, p)
+		}
 	}
 
 	// Verified filter
@@ -365,7 +377,8 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	var totalCount struct {
 		Total int64 `json:"total"`
 	}
-	countArgs := append(append([]interface{}{}, args...), whereArgs...)
+	// Count query only uses WHERE args, not the scoring args (since COUNT query doesn't have scoring SELECT clause)
+	countArgs := append([]interface{}{}, whereArgs...)
 	if err := r.GetDBFromContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
 		return nil, fmt.Errorf("failed to count module providers: %w", err)
 	}

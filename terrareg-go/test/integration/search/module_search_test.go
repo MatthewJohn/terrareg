@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 
 	modulequery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
@@ -296,10 +298,13 @@ func TestModuleSearch_OffsetAndLimit(t *testing.T) {
 
 	namespace := testutils.CreateNamespace(t, db, "pagination-ns")
 
-	// Create multiple module providers
+	// Create multiple module providers with unique provider names
+	providers := make([]sqldb.ModuleProviderDB, 5)
 	for i := 1; i <= 5; i++ {
-		provider := testutils.CreateModuleProvider(t, db, namespace.ID, "pagination-module", "provider")
+		providerName := fmt.Sprintf("provider-%d", i)
+		provider := testutils.CreateModuleProvider(t, db, namespace.ID, "pagination-module", providerName)
 		testutils.CreatePublishedModuleVersion(t, db, provider.ID, "1.0.0")
+		providers[i-1] = provider
 	}
 
 	t.Run("Default limit when not specified", func(t *testing.T) {
