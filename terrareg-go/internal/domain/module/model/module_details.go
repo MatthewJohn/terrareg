@@ -127,26 +127,44 @@ func (md *ModuleDetails) ReadmeContent() []byte {
 }
 
 func (md *ModuleDetails) TerraformDocs() []byte {
+	if md == nil {
+		return nil
+	}
 	return md.terraformDocs
 }
 
 func (md *ModuleDetails) Tfsec() []byte {
+	if md == nil {
+		return nil
+	}
 	return md.tfsec
 }
 
 func (md *ModuleDetails) Infracost() []byte {
+	if md == nil {
+		return nil
+	}
 	return md.infracost
 }
 
 func (md *ModuleDetails) TerraformGraph() []byte {
+	if md == nil {
+		return nil
+	}
 	return md.terraformGraph
 }
 
 func (md *ModuleDetails) TerraformModules() []byte {
+	if md == nil {
+		return nil
+	}
 	return md.terraformModules
 }
 
 func (md *ModuleDetails) TerraformVersion() string {
+	if md == nil {
+		return ""
+	}
 	return md.terraformVersion
 }
 
@@ -169,30 +187,48 @@ func (md *ModuleDetails) Equals(other *ModuleDetails) bool {
 
 // HasReadme returns true if there is README content
 func (md *ModuleDetails) HasReadme() bool {
+	if md == nil {
+		return false
+	}
 	return len(md.readmeContent) > 0
 }
 
 // HasTerraformDocs returns true if there are Terraform docs
 func (md *ModuleDetails) HasTerraformDocs() bool {
+	if md == nil {
+		return false
+	}
 	return len(md.terraformDocs) > 0
 }
 
 // HasTfsec returns true if there are tfsec results
 func (md *ModuleDetails) HasTfsec() bool {
+	if md == nil {
+		return false
+	}
 	return len(md.tfsec) > 0
 }
 
 // HasInfracost returns true if there are infracost results
 func (md *ModuleDetails) HasInfracost() bool {
+	if md == nil {
+		return false
+	}
 	return len(md.infracost) > 0
 }
 
 // HasTerraformGraph returns true if there is a terraform graph
 func (md *ModuleDetails) HasTerraformGraph() bool {
+	if md == nil {
+		return false
+	}
 	return len(md.terraformGraph) > 0
 }
 
 // HasTerraformModules returns true if there are terraform modules
 func (md *ModuleDetails) HasTerraformModules() bool {
+	if md == nil {
+		return false
+	}
 	return len(md.terraformModules) > 0
 }

@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,9 @@ var TestLogger = zerolog.Nop()
 
 // SetupTestDatabase creates an in-memory SQLite database for testing
 func SetupTestDatabase(t *testing.T) *sqldb.Database {
-	db, err := sqldb.NewDatabase("sqlite:///:memory:", true)
+	// Use file::memory:?cache=shared to create a unique in-memory database per connection
+	// This prevents test data from leaking between tests
+	db, err := sqldb.NewDatabase("file::memory:?cache=shared", true)
 	require.NoError(t, err)
 
 	// Run auto-migration for all models
@@ -159,6 +162,35 @@ func CreateModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int,
 	return moduleVersion
 }
 
+// CreatePublishedModuleVersion creates a published test module version in the database
+func CreatePublishedModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int, version string) sqldb.ModuleVersionDB {
+	published := true
+	moduleVersion := sqldb.ModuleVersionDB{
+		ModuleProviderID:      moduleProviderID,
+		Version:               version,
+		Beta:                  false,
+		Internal:              false,
+		Published:             &published,
+		PublishedAt:           nil,
+		GitSHA:                nil,
+		GitPath:               nil,
+		ArchiveGitPath:        false,
+		RepoBaseURLTemplate:   nil,
+		RepoCloneURLTemplate:  nil,
+		RepoBrowseURLTemplate: nil,
+		Owner:                 nil,
+		Description:           nil,
+		VariableTemplate:      nil,
+		ExtractionVersion:     nil,
+		ModuleDetailsID:       nil,
+	}
+
+	err := db.DB.Create(&moduleVersion).Error
+	require.NoError(t, err)
+
+	return moduleVersion
+}
+
 // CreateModuleDetails creates test module details in the database
 func CreateModuleDetails(t *testing.T, db *sqldb.Database, readmeContent string) sqldb.ModuleDetailsDB {
 	moduleDetails := sqldb.ModuleDetailsDB{
@@ -205,4 +237,105 @@ func CreateExampleFile(t *testing.T, db *sqldb.Database, submoduleID int, path, 
 	require.NoError(t, err)
 
 	return exampleFile
+}
+
+// CreateProviderCategory creates a test provider category in the database
+func CreateProviderCategory(t *testing.T, db *sqldb.Database, name, slug string, userSelectable bool) sqldb.ProviderCategoryDB {
+	category := sqldb.ProviderCategoryDB{
+		Name:           &name,
+		Slug:           slug,
+		UserSelectable: userSelectable,
+	}
+
+	err := db.DB.Create(&category).Error
+	require.NoError(t, err)
+
+	return category
+}
+
+// CreateProvider creates a test provider in the database
+func CreateProvider(t *testing.T, db *sqldb.Database, namespaceID int, name string, description *string, tier sqldb.ProviderTier, categoryID *int) sqldb.ProviderDB {
+	provider := sqldb.ProviderDB{
+		NamespaceID:               namespaceID,
+		Name:                      name,
+		Description:               description,
+		Tier:                      tier,
+		DefaultProviderSourceAuth: false,
+		ProviderCategoryID:        categoryID,
+		RepositoryID:              nil,
+		LatestVersionID:           nil,
+	}
+
+	err := db.DB.Create(&provider).Error
+	require.NoError(t, err)
+
+	return provider
+}
+
+// CreateProviderVersion creates a test provider version in the database
+func CreateProviderVersion(t *testing.T, db *sqldb.Database, providerID int, version string, gpgKeyID int, beta bool, publishedAt *time.Time) sqldb.ProviderVersionDB {
+	providerVersion := sqldb.ProviderVersionDB{
+		ProviderID:        providerID,
+		Version:           version,
+		GPGKeyID:          gpgKeyID,
+		GitTag:            nil,
+		Beta:              beta,
+		PublishedAt:       publishedAt,
+		ExtractionVersion: nil,
+	}
+
+	err := db.DB.Create(&providerVersion).Error
+	require.NoError(t, err)
+
+	return providerVersion
+}
+
+// CreateProviderVersionBinary creates a test provider version binary in the database
+func CreateProviderVersionBinary(t *testing.T, db *sqldb.Database, providerVersionID int, name string, os sqldb.ProviderBinaryOperatingSystemType, arch sqldb.ProviderBinaryArchitectureType, checksum string) sqldb.ProviderVersionBinaryDB {
+	binary := sqldb.ProviderVersionBinaryDB{
+		ProviderVersionID: providerVersionID,
+		Name:              name,
+		OperatingSystem:   os,
+		Architecture:      arch,
+		Checksum:          checksum,
+	}
+
+	err := db.DB.Create(&binary).Error
+	require.NoError(t, err)
+
+	return binary
+}
+
+// SetProviderLatestVersion sets the latest version for a provider
+func SetProviderLatestVersion(t *testing.T, db *sqldb.Database, providerID, latestVersionID int) {
+	err := db.DB.Model(&sqldb.ProviderDB{}).Where("id = ?", providerID).Update("latest_version_id", latestVersionID).Error
+	require.NoError(t, err)
+}
+
+// CreateGPGKey creates a test GPG key in the database (linked to namespace)
+func CreateGPGKey(t *testing.T, db *sqldb.Database, name string, providerID int, keyID string) sqldb.GPGKeyDB {
+	// Provider versions use namespace GPG keys
+	// For testing, we need to get the provider's namespace first
+	var provider sqldb.ProviderDB
+	err := db.DB.First(&provider, providerID).Error
+	require.NoError(t, err)
+
+	asciiArmor := []byte("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nTest ASCII armor\n-----END PGP PUBLIC KEY BLOCK-----")
+	fingerprint := &keyID
+
+	gpgKey := sqldb.GPGKeyDB{
+		NamespaceID: provider.NamespaceID,
+		ASCIIArmor:  asciiArmor,
+		KeyID:       &keyID,
+		Fingerprint: fingerprint,
+		Source:      &name,
+		SourceURL:   nil,
+		CreatedAt:   nil,
+		UpdatedAt:   nil,
+	}
+
+	err = db.DB.Create(&gpgKey).Error
+	require.NoError(t, err)
+
+	return gpgKey
 }

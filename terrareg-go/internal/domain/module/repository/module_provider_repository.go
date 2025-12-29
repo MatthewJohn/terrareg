@@ -30,6 +30,13 @@ type ModuleProviderRepository interface {
 	Exists(ctx context.Context, namespace, module, provider string) (bool, error)
 }
 
+type OrderDir string
+
+const (
+	OrderDirDesc OrderDir = "DESC"
+	OrderDirAsc  OrderDir = "ASC"
+)
+
 // ModuleSearchQuery represents search criteria
 type ModuleSearchQuery struct {
 	Query                  string

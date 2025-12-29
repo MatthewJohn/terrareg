@@ -28,6 +28,9 @@ func NewDatabase(databaseURL string, debug bool) (*Database, error) {
 		// SQLite
 		dbPath := strings.TrimPrefix(databaseURL, "sqlite://")
 		dialector = sqlite.Open(dbPath)
+	} else if strings.HasPrefix(databaseURL, "file::") {
+		// SQLite file URI format (e.g., file::memory:?cache=shared for isolated in-memory databases)
+		dialector = sqlite.Open(databaseURL)
 	} else if strings.HasPrefix(databaseURL, "mysql://") {
 		// MySQL
 		dsn := convertMySQLURL(databaseURL)

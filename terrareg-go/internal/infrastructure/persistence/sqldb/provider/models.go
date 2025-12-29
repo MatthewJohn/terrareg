@@ -2,24 +2,21 @@ package provider
 
 import (
 	"fmt"
-	"time"
 
 	"gorm.io/gorm"
 )
 
 // ProviderModel represents the database model for providers
 type ProviderModel struct {
-	ID                    int       `gorm:"primaryKey;autoIncrement"`
-	NamespaceID           int       `gorm:"not null;index"`
-	Name                  string    `gorm:"not null;size:255;index:idx_provider_namespace_name"`
-	Description           *string   `gorm:"type:text"`
-	Tier                  string    `gorm:"size:50"`
-	CategoryID            *int      `gorm:"index"`
-	RepositoryID          *int      `gorm:"index"`
-	LatestVersionID       *int      `gorm:"index"`
-	UseProviderSourceAuth bool      `gorm:"default:false"`
-	CreatedAt             time.Time `gorm:"autoCreateTime"`
-	UpdatedAt             time.Time `gorm:"autoUpdateTime"`
+	ID                    int  `gorm:"primaryKey;autoIncrement"`
+	NamespaceID           int  `gorm:"not null;index"`
+	Name                  string `gorm:"not null;size:128"`
+	Description           *string `gorm:"size:1024"`
+	Tier                  string `gorm:"size:9"`
+	CategoryID            *int   `gorm:"index"`
+	RepositoryID          *int   `gorm:"index"`
+	LatestVersionID       *int   `gorm:"index"`
+	UseProviderSourceAuth bool   `gorm:"default:false"`
 
 	// Associations
 	Namespace     NamespaceModel         `gorm:"foreignKey:NamespaceID"`
@@ -34,21 +31,20 @@ type ProviderModel struct {
 
 // TableName specifies the table name for the ProviderModel
 func (ProviderModel) TableName() string {
-	return "providers"
+	return "provider"
 }
 
 // ProviderVersionModel represents the database model for provider versions
 type ProviderVersionModel struct {
 	ID               int     `gorm:"primaryKey;autoIncrement"`
 	ProviderID       int     `gorm:"not null;index"`
-	Version          string  `gorm:"not null;size:50;index:idx_version_provider"`
-	GitTag           *string `gorm:"size:255"`
+	GPGKeyID         int     `gorm:"not null;index"`
+	Version          string  `gorm:"not null;size:128"`
+	GitTag           *string `gorm:"size:128"`
 	Beta             bool    `gorm:"default:false"`
-	PublishedAt      *time.Time
-	GPGKeyID         *int      `gorm:"index"`
-	ProtocolVersions string    `gorm:"type:text"` // JSON array of protocol versions
-	CreatedAt        time.Time `gorm:"autoCreateTime"`
-	UpdatedAt        time.Time `gorm:"autoUpdateTime"`
+	PublishedAt      *string `gorm:"type:datetime"`
+	ExtractionVersion *int    `gorm:"default:null"`
+	ProtocolVersions  []byte  `gorm:"type:blob"` // JSON array of protocol versions stored as blob
 
 	// Associations
 	Provider ProviderModel `gorm:"foreignKey:ProviderID"`
@@ -60,7 +56,7 @@ type ProviderVersionModel struct {
 
 // TableName specifies the table name for the ProviderVersionModel
 func (ProviderVersionModel) TableName() string {
-	return "provider_versions"
+	return "provider_version"
 }
 
 // ProviderBinaryModel represents the database model for provider binaries
@@ -82,7 +78,7 @@ type ProviderBinaryModel struct {
 
 // TableName specifies the table name for the ProviderBinaryModel
 func (ProviderBinaryModel) TableName() string {
-	return "provider_binaries"
+	return "provider_version_binary"
 }
 
 // GPGKeyModel represents the database model for GPG keys
@@ -102,7 +98,7 @@ type GPGKeyModel struct {
 
 // TableName specifies the table name for the GPGKeyModel
 func (GPGKeyModel) TableName() string {
-	return "provider_gpg_keys"
+	return "gpg_key"
 }
 
 // ProviderCategoryModel represents the database model for provider categories
@@ -120,7 +116,7 @@ type ProviderCategoryModel struct {
 
 // TableName specifies the table name for the ProviderCategoryModel
 func (ProviderCategoryModel) TableName() string {
-	return "provider_categories"
+	return "provider_category"
 }
 
 // NamespaceModel represents a minimal namespace model for foreign key reference
@@ -131,7 +127,7 @@ type NamespaceModel struct {
 
 // TableName specifies the table name for the NamespaceModel
 func (NamespaceModel) TableName() string {
-	return "namespaces"
+	return "namespace"
 }
 
 // RepositoryModel represents a minimal repository model for foreign key reference
@@ -144,7 +140,7 @@ type RepositoryModel struct {
 
 // TableName specifies the table name for the RepositoryModel
 func (RepositoryModel) TableName() string {
-	return "repositories"
+	return "repository"
 }
 
 // BeforeCreate hook for ProviderModel

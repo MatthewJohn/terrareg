@@ -666,6 +666,74 @@ func (mv *ModuleVersion) GetTerraformModules() []Module {
 	return []Module{}
 }
 
+// PrepareModule prepares the module for indexing/extraction
+// TODO: Implement module extraction workflow
+// Returns true if module should be auto-published
+func (mv *ModuleVersion) PrepareModule() (bool, error) {
+	// Placeholder until extraction workflow is implemented
+	// This would:
+	// 1. Extract the uploaded archive
+	// 2. Parse terraform-docs
+	// 3. Generate README HTML
+	// 4. Process examples and submodules
+	// 5. Return whether to auto-publish based on configuration
+	return false, nil
+}
+
+// Delete deletes this module version and cascades to related entities
+// TODO: Implement delete with cascade
+func (mv *ModuleVersion) Delete() error {
+	// Placeholder until delete is implemented
+	// This would:
+	// 1. Delete all submodules
+	// 2. Delete all examples
+	// 3. Delete all files
+	// 4. Delete module details
+	// 5. Update parent's latest version
+	return nil
+}
+
+// GetModuleDetailsID returns the module details ID
+func (mv *ModuleVersion) GetModuleDetailsID() *int {
+	// TODO: Return actual module details ID when details persistence is implemented
+	return nil
+}
+
+// GetRepositoryURLs returns all configured repository URLs
+func (mv *ModuleVersion) GetRepositoryURLs() (baseURL, cloneURL, browseURL string) {
+	if mv.repoBaseURLTemplate != nil {
+		baseURL = *mv.repoBaseURLTemplate
+	}
+	if mv.repoCloneURLTemplate != nil {
+		cloneURL = *mv.repoCloneURLTemplate
+	}
+	if mv.repoBrowseURLTemplate != nil {
+		browseURL = *mv.repoBrowseURLTemplate
+	}
+	return
+}
+
+// GetVariableTemplate returns the variable template
+func (mv *ModuleVersion) GetVariableTemplate() []byte {
+	return mv.variableTemplate
+}
+
+// HasSubmodules checks if module version has any submodules
+func (mv *ModuleVersion) HasSubmodules() bool {
+	return len(mv.submodules) > 0
+}
+
+// HasExamples checks if module version has any examples
+func (mv *ModuleVersion) HasExamples() bool {
+	return len(mv.examples) > 0
+}
+
+// GetExampleVersionConstraint returns the version constraint for examples
+// This is used when generating example Terraform code
+func (mv *ModuleVersion) GetExampleVersionConstraint() string {
+	return mv.GetTerraformExampleVersionString()
+}
+
 // GetUsageExample generates a Terraform usage example with the given request domain
 func (mv *ModuleVersion) GetUsageExample(requestDomain string) string {
 	if mv.moduleProvider == nil {
