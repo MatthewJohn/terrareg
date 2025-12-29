@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
@@ -93,15 +93,17 @@ type TfswitchConfig struct {
 
 // TerraformExecutorService handles terraform operations with transaction safety
 type TerraformExecutorService struct {
-	savepointHelper *transaction.SavepointHelper
-	terraformBin    string
-	lockTimeout     time.Duration
-	tfswitchConfig  *TfswitchConfig
+	savepointHelper   *transaction.SavepointHelper
+	commandService    service.SystemCommandService
+	terraformBin      string
+	lockTimeout       time.Duration
+	tfswitchConfig    *TfswitchConfig
 }
 
 // NewTerraformExecutorService creates a new terraform executor service
 func NewTerraformExecutorService(
 	savepointHelper *transaction.SavepointHelper,
+	commandService service.SystemCommandService,
 	terraformBin string,
 	lockTimeout time.Duration,
 	tfswitchConfig *TfswitchConfig,
@@ -112,6 +114,7 @@ func NewTerraformExecutorService(
 
 	return &TerraformExecutorService{
 		savepointHelper: savepointHelper,
+		commandService:  commandService,
 		terraformBin:    terraformBin,
 		lockTimeout:     lockTimeout,
 		tfswitchConfig:  tfswitchConfig,
@@ -184,12 +187,18 @@ func (s *TerraformExecutorService) executeTerraformCommand(
 	modulePath string,
 	args []string,
 ) (string, error) {
-	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), args...)
-	cmd.Dir = modulePath
-	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
+	cmd := &service.Command{
+		Name: s.TerraformBinaryPath(),
+		Args: args,
+		Dir:  modulePath,
+		Env:  append(os.Environ(), "TF_IN_AUTOMATION=true"),
+	}
 
-	output, err := cmd.CombinedOutput()
-	return string(output), err
+	result, err := s.commandService.Execute(ctx, cmd)
+	if err != nil {
+		return result.Stdout, err
+	}
+	return result.Stdout, nil
 }
 
 // executeTerraformInit executes terraform init and returns result
@@ -479,10 +488,13 @@ func (s *TerraformExecutorService) runTfswitch(ctx context.Context, modulePath s
 		tfswitchArgs = append(tfswitchArgs, "--bin", s.tfswitchConfig.BinaryPath)
 	}
 
-	// Create tfswitch command
-	cmd := exec.CommandContext(ctx, "tfswitch", tfswitchArgs...)
-	cmd.Dir = modulePath
-	cmd.Env = tfswitchEnv
+	// Create tfswitch command using SystemCommandService
+	cmd := &service.Command{
+		Name: "tfswitch",
+		Args: tfswitchArgs,
+		Dir:  modulePath,
+		Env:  tfswitchEnv,
+	}
 
 	logger.Debug().
 		Str("command", "tfswitch "+strings.Join(tfswitchArgs, " ")).
@@ -490,17 +502,17 @@ func (s *TerraformExecutorService) runTfswitch(ctx context.Context, modulePath s
 		Msg("Executing tfswitch to set terraform version")
 
 	// Execute tfswitch
-	output, err := cmd.CombinedOutput()
+	result, err := s.commandService.Execute(ctx, cmd)
 	if err != nil {
 		logger.Error().
 			Err(err).
-			Str("tfswitch_output", string(output)).
+			Str("tfswitch_output", result.Stdout).
 			Msg("Tfswitch failed to set terraform version")
-		return fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, string(output))
+		return fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, result.Stdout)
 	}
 
 	logger.Info().
-		Str("tfswitch_output", string(output)).
+		Str("tfswitch_output", result.Stdout).
 		Msg("Terraform version successfully set via tfswitch")
 
 	return nil
@@ -520,18 +532,21 @@ func (s *TerraformExecutorService) RunTerraformWithLock(
 	}
 	defer cleanup()
 
-	// Execute terraform command
-	cmd := exec.CommandContext(ctx, s.TerraformBinaryPath(), terraformArgs...)
-	cmd.Dir = modulePath
-	cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=true")
+	// Execute terraform command using SystemCommandService
+	cmd := &service.Command{
+		Name: s.TerraformBinaryPath(),
+		Args: terraformArgs,
+		Dir:  modulePath,
+		Env:  append(os.Environ(), "TF_IN_AUTOMATION=true"),
+	}
 
-	output, err := cmd.CombinedOutput()
+	result, err := s.commandService.Execute(ctx, cmd)
 	if err != nil {
-		return fmt.Errorf("terraform %s failed: %v\nOutput: %s", terraformArgs[0], err, string(output))
+		return fmt.Errorf("terraform %s failed: %v\nOutput: %s", terraformArgs[0], err, result.Stdout)
 	}
 
 	// Store output for potential processing if needed
-	_ = output
+	_ = result.Stdout
 
 	return nil
 }
@@ -580,16 +595,22 @@ func (s *TerraformExecutorService) SwitchTerraformVersions(
 		tfswitchArgs = append(tfswitchArgs, "--bin", s.tfswitchConfig.BinaryPath)
 	}
 
-	// Create tfswitch command
-	cmd := exec.CommandContext(ctx, "tfswitch", tfswitchArgs...)
-	cmd.Dir = modulePath
-	cmd.Env = tfswitchEnv
+	// Create tfswitch command using SystemCommandService
+	cmd := &service.Command{
+		Name: "tfswitch",
+		Args: tfswitchArgs,
+		Dir:  modulePath,
+		Env:  tfswitchEnv,
+	}
 
 	// Execute tfswitch
-	if output, err := cmd.CombinedOutput(); err != nil {
+	result, err := s.commandService.Execute(ctx, cmd)
+	if err != nil {
 		terraformGlobalLock.Unlock()
-		return nil, fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, string(output))
+		return nil, fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, result.Stdout)
 	}
+
+	_ = result.Stdout // Ignore output on success
 
 	// Return cleanup function to release lock
 	cleanup := func() {

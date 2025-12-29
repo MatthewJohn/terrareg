@@ -8,13 +8,13 @@ import (
 )
 
 func TestNewSecurityScanningService(t *testing.T) {
-	service := NewSecurityScanningService(nil, nil)
+	service := NewSecurityScanningService(nil, nil, nil, nil)
 	assert.NotNil(t, service)
 }
 
 func TestSecurityScanningService_BasicStructure(t *testing.T) {
 	// Basic test to verify the service structure exists
-	service := NewSecurityScanningService(nil, nil)
+	service := NewSecurityScanningService(nil, nil, nil, nil)
 	assert.NotNil(t, service)
 	// These are nil because we passed nil to constructor, which is expected for this test
 	assert.Nil(t, service.moduleFileService)
@@ -23,7 +23,7 @@ func TestSecurityScanningService_BasicStructure(t *testing.T) {
 
 func TestSecurityScanningService_ExecuteSecurityScan_WithoutTfsec(t *testing.T) {
 	// Test that the service handles missing dependencies gracefully
-	service := NewSecurityScanningService(nil, nil)
+	service := NewSecurityScanningService(nil, nil, nil, nil)
 
 	req := &SecurityScanRequest{
 		Namespace:  "test",

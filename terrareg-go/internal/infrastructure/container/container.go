@@ -116,6 +116,7 @@ type Container struct {
 
 	// Infrastructure Services
 	GitClient              gitService.GitClient
+	SystemCommandService   sharedService.SystemCommandService
 	DomainStorageService   storageService.StorageService // Core domain storage (8 methods)
 	ModuleStorageService   moduleService.StorageService  // Module-specific storage with filesystem ops
 	PathBuilder            storageService.PathBuilder
@@ -336,6 +337,7 @@ func NewContainer(
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
+	c.SystemCommandService = sharedService.NewRealSystemCommandService()
 
 	// Initialize consolidated storage services
 	pathConfig := storageService.GetDefaultPathConfig(infraConfig.DataDirectory)
@@ -455,6 +457,7 @@ func NewContainer(
 	terraformLockTimeout := time.Duration(infraConfig.TerraformLockTimeoutSeconds) * time.Second
 	terraformExecutorService := moduleService.NewTerraformExecutorService(
 		savepointHelper,
+		c.SystemCommandService,
 		terraformBinaryPath,
 		terraformLockTimeout,
 		tfswitchConfig,
@@ -497,6 +500,7 @@ func NewContainer(
 		c.ModuleFileService,
 		c.ModuleVersionRepo,
 		savepointHelper,
+		c.SystemCommandService,
 	)
 	c.SecurityScanningService = securityScanningService
 

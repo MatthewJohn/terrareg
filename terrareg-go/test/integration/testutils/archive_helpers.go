@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // CreateTestModuleZip creates a ZIP archive containing the given files.
@@ -55,7 +56,7 @@ func CreateTestTarGz(t *testing.T, files map[string]string) []byte {
 			Name:    path,
 			Mode:    0644,
 			Size:    int64(len(content)),
-			ModTime: t.ModTime(),
+			ModTime: time.Now(),
 		}
 
 		err := tarWriter.WriteHeader(header)
@@ -94,15 +95,7 @@ func ExtractTestArchive(t *testing.T, archive []byte) string {
 		t.Fatalf("failed to create zip reader: %v", err)
 	}
 
-	for {
-		file, err := zipReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("failed to read zip entry: %v", err)
-		}
-
+	for _, file := range zipReader.File {
 		if file.FileInfo().IsDir() {
 			continue
 		}
@@ -121,12 +114,20 @@ func ExtractTestArchive(t *testing.T, archive []byte) string {
 			t.Fatalf("failed to create file %s: %v", targetPath, err)
 		}
 
-		_, err = io.Copy(targetFile, zipReader)
+		// Open the file from the zip archive
+		rc, err := file.Open()
 		if err != nil {
 			targetFile.Close()
+			t.Fatalf("failed to open zip entry %s: %v", file.Name, err)
+		}
+
+		_, err = io.Copy(targetFile, rc)
+		rc.Close()
+		targetFile.Close()
+
+		if err != nil {
 			t.Fatalf("failed to write file %s: %v", targetPath, err)
 		}
-		targetFile.Close()
 	}
 
 	return tempDir
@@ -202,15 +203,7 @@ func ListArchiveContents(t *testing.T, archive []byte) []string {
 	}
 
 	var contents []string
-	for {
-		file, err := zipReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("failed to read zip entry: %v", err)
-		}
-
+	for _, file := range zipReader.File {
 		if !file.FileInfo().IsDir() {
 			contents = append(contents, file.Name)
 		}
@@ -228,17 +221,14 @@ func ReadFileFromArchive(t *testing.T, archive []byte, filename string) []byte {
 		t.Fatalf("failed to create zip reader: %v", err)
 	}
 
-	for {
-		file, err := zipReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("failed to read zip entry: %v", err)
-		}
-
+	for _, file := range zipReader.File {
 		if file.Name == filename {
-			content, err := io.ReadAll(zipReader)
+			rc, err := file.Open()
+			if err != nil {
+				t.Fatalf("failed to open zip entry: %v", err)
+			}
+			content, err := io.ReadAll(rc)
+			rc.Close()
 			if err != nil {
 				t.Fatalf("failed to read file content: %v", err)
 			}
@@ -281,46 +271,33 @@ output "instance_id" {
 
 // CreateREADMEContent creates a standard README.md file content.
 func CreateREADMEContent(moduleName string) string {
-	return fmt.Sprintf(`# %s
-
-A Terraform module for managing resources.
-
-## Usage
-
-```hcl
-module "example" {
-  source = "./path/to/module"
-
-  instance_type = "t2.micro"
-  ami_id        = "ami-12345678"
-}
-```
-
-## Requirements
-
-| Name | Version |
-|------|--------|
-| terraform | >= 0.12 |
-
-## Providers
-
-| Name | Version |
-|------|--------|
-| aws | n/a |
-
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| instance_type | The type of instance to create | `string` | `"t2.micro"` | no |
-| ami_id | The AMI ID to use | `string` | n/a | yes |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| instance_id | The ID of the instance |
-`, moduleName)
+	return fmt.Sprintf("# %s\n\n"+
+		"A Terraform module for managing resources.\n\n"+
+		"## Usage\n\n"+
+		"```hcl\n"+
+		"module \"example\" {\n"+
+		"  source = \"./path/to/module\"\n\n"+
+		"  instance_type = \"t2.micro\"\n"+
+		"  ami_id        = \"ami-12345678\"\n"+
+		"}\n"+
+		"```\n\n"+
+		"## Requirements\n\n"+
+		"| Name | Version |\n"+
+		"|------|--------|\n"+
+		"| terraform | >= 0.12 |\n\n"+
+		"## Providers\n\n"+
+		"| Name | Version |\n"+
+		"|------|--------|\n"+
+		"| aws | n/a |\n\n"+
+		"## Inputs\n\n"+
+		"| Name | Description | Type | Default | Required |\n"+
+		"|------|-------------|------|---------|----------|\n"+
+		"| instance_type | The type of instance to create | `string` | `\"t2.micro\"` | no |\n"+
+		"| ami_id | The AMI ID to use | `string` | n/a | yes |\n\n"+
+		"## Outputs\n\n"+
+		"| Name | Description |\n"+
+		"|------|-------------|\n"+
+		"| instance_id | The ID of the instance |\n", moduleName)
 }
 
 // CreateTerraregMetadata creates a terrareg.json metadata file content.

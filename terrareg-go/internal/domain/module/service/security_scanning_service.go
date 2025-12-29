@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 	"gorm.io/gorm"
 )
@@ -21,6 +21,7 @@ type SecurityScanningService struct {
 	moduleFileService *ModuleFileService
 	moduleVersionRepo moduleRepo.ModuleVersionRepository
 	savepointHelper   *transaction.SavepointHelper
+	commandService    service.SystemCommandService
 }
 
 // NewSecurityScanningService creates a new security scanning service with transaction support
@@ -28,11 +29,13 @@ func NewSecurityScanningService(
 	moduleFileService *ModuleFileService,
 	moduleVersionRepo moduleRepo.ModuleVersionRepository,
 	savepointHelper *transaction.SavepointHelper,
+	commandService service.SystemCommandService,
 ) *SecurityScanningService {
 	return &SecurityScanningService{
 		moduleFileService: moduleFileService,
 		moduleVersionRepo: moduleVersionRepo,
 		savepointHelper:   savepointHelper,
+		commandService:    commandService,
 	}
 }
 
@@ -101,7 +104,7 @@ func (s *SecurityScanningService) ExecuteSecurityScan(ctx context.Context, req *
 	}
 
 	// Run tfsec command
-	results, err := s.runTfsecScan(scanPath)
+	results, err := s.runTfsecScan(ctx, scanPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run tfsec scan: %w", err)
 	}
@@ -173,7 +176,7 @@ func (s *SecurityScanningService) extractModuleFiles(ctx context.Context, req *S
 }
 
 // runTfsecScan executes the tfsec command and returns raw results
-func (s *SecurityScanningService) runTfsecScan(modulePath string) (map[string]interface{}, error) {
+func (s *SecurityScanningService) runTfsecScan(ctx context.Context, modulePath string) (map[string]interface{}, error) {
 	// Build tfsec command with options matching Python implementation
 	args := []string{
 		"--ignore-hcl-errors",
@@ -187,12 +190,13 @@ func (s *SecurityScanningService) runTfsecScan(modulePath string) (map[string]in
 		modulePath,
 	}
 
-	// Execute tfsec command
-	cmd := exec.Command("tfsec", args...)
-	output, err := cmd.CombinedOutput()
-	outputStr := string(output)
+	// Execute tfsec command using SystemCommandService
+	cmd := &service.Command{
+		Name: "tfsec",
+		Args: args,
+	}
 
-	// Check if tfsec command exists
+	result, err := s.commandService.Execute(ctx, cmd)
 	if err != nil && strings.Contains(err.Error(), "executable file not found") {
 		// tfsec is not installed, return empty results instead of failing
 		return map[string]interface{}{
@@ -201,12 +205,14 @@ func (s *SecurityScanningService) runTfsecScan(modulePath string) (map[string]in
 				"passed":  0,
 				"failed":  0,
 				"critical": 0,
-				"high":  0,
-				"medium": 0,
-				"low": 0,
+				"high":    0,
+				"medium":  0,
+				"low":     0,
 			},
 		}, nil
 	}
+
+	outputStr := result.Stdout
 
 	// Log tfsec output for debugging (trimmed if too long)
 	outputPreview := outputStr
@@ -225,9 +231,9 @@ func (s *SecurityScanningService) runTfsecScan(modulePath string) (map[string]in
 				"passed":  0,
 				"failed":  0,
 				"critical": 0,
-				"high":  0,
-				"medium": 0,
-				"low": 0,
+				"high":    0,
+				"medium":  0,
+				"low":     0,
 			},
 		}, nil
 	}
@@ -242,9 +248,9 @@ func (s *SecurityScanningService) runTfsecScan(modulePath string) (map[string]in
 				"passed":  0,
 				"failed":  0,
 				"critical": 0,
-				"high":  0,
-				"medium": 0,
-				"low": 0,
+				"high":    0,
+				"medium":  0,
+				"low":     0,
 			},
 		}, nil
 	}

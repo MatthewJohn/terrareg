@@ -120,13 +120,11 @@ func SetupModuleWithSubmodules(t *testing.T, db *sqldb.Database, namespace, modu
 	submodules := make([]*sqldb.SubmoduleDB, 0)
 
 	submodule1Details := CreateModuleDetails(t, db, "Submodule 1 README")
-	submodule1 := CreateSubmodule(t, db, modVersion.ID, "submodules/submodule1", nil, nil, &submodule1Details.ID)
+	submodule1 := CreateSubmodule(t, db, modVersion.ID, "submodules/submodule1", "", "", &submodule1Details.ID)
 	submodules = append(submodules, &submodule1)
 
 	submodule2Details := CreateModuleDetails(t, db, "Submodule 2 README")
-	submoduleName2 := "Submodule Two"
-	submoduleType := "network"
-	submodule2 := CreateSubmodule(t, db, modVersion.ID, "submodules/submodule2", &submoduleName2, &submoduleType, &submodule2Details.ID)
+	submodule2 := CreateSubmodule(t, db, modVersion.ID, "submodules/submodule2", "Submodule Two", "network", &submodule2Details.ID)
 	submodules = append(submodules, &submodule2)
 
 	return ns, modProvider, modVersion, submodules
@@ -149,8 +147,7 @@ func SetupModuleWithExamples(t *testing.T, db *sqldb.Database, namespace, module
 	examples := make([]*sqldb.SubmoduleDB, 0)
 
 	example1Details := CreateModuleDetails(t, db, "Example 1 README")
-	example1Name := "Simple Example"
-	example1 := CreateSubmodule(t, db, modVersion.ID, "examples/simple", &example1Name, nil, &example1Details.ID)
+	example1 := CreateSubmodule(t, db, modVersion.ID, "examples/simple", "Simple Example", "", &example1Details.ID)
 	examples = append(examples, &example1)
 
 	// Add example files
@@ -158,8 +155,7 @@ func SetupModuleWithExamples(t *testing.T, db *sqldb.Database, namespace, module
 	_ = CreateExampleFile(t, db, example1.ID, "variables.tf", "variable \"example\" {}")
 
 	example2Details := CreateModuleDetails(t, db, "Example 2 README")
-	example2Name := "Advanced Example"
-	example2 := CreateSubmodule(t, db, modVersion.ID, "examples/advanced", &example2Name, nil, &example2Details.ID)
+	example2 := CreateSubmodule(t, db, modVersion.ID, "examples/advanced", "Advanced Example", "", &example2Details.ID)
 	examples = append(examples, &example2)
 
 	_ = CreateExampleFile(t, db, example2.ID, "main.tf", "terraform { ... }")
