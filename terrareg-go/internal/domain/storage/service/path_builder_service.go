@@ -63,27 +63,55 @@ func (p *PathBuilderService) BuildUploadPath(filename string) string {
 
 // SafeJoinPaths safely joins paths to prevent directory traversal
 // This replicates the Python safe_join_paths function from utils.py exactly
+// It resolves the path following symlinks and verifies it stays within the base directory
 func (p *PathBuilderService) SafeJoinPaths(basePath string, subPaths ...string) string {
 	// Ensure basePath doesn't end with separator (Python behavior)
 	basePath = strings.TrimSuffix(basePath, string(filepath.Separator))
 
-	// Build the full path
-	result := basePath
-	for _, subPath := range subPaths {
-		// Ensure sub-path doesn't start with separator (prevents traversal)
-		subPath = strings.TrimPrefix(subPath, string(filepath.Separator))
-		if subPath == "" {
-			continue
-		}
+	// Build the full path by joining all components
+	allPaths := append([]string{basePath}, subPaths...)
+	joinedPath := filepath.Join(allPaths...)
 
-		// Add separator if needed
-		if !strings.HasSuffix(result, string(filepath.Separator)) {
-			result += string(filepath.Separator)
+	// Clean the path to resolve any . or .. components (but not symlinks)
+	cleanPath := filepath.Clean(joinedPath)
+
+	// Convert basePath to absolute path and follow symlinks
+	absBasePath, err := filepath.EvalSymlinks(basePath)
+	if err != nil {
+		// If eval fails, try regular Abs
+		absBasePath, err = filepath.Abs(basePath)
+		if err != nil {
+			return basePath
 		}
-		result += subPath
 	}
 
-	return result
+	// For the joined path, we need to check if the file exists first before evaluating symlinks
+	// If it doesn't exist, we fall back to Abs (which doesn't follow symlinks)
+	absCleanPath, err := filepath.EvalSymlinks(cleanPath)
+	if err != nil {
+		// Path doesn't exist or can't evaluate symlinks
+		// Fall back to cleaning the path manually
+		absCleanPath, err = filepath.Abs(cleanPath)
+		if err != nil {
+			return basePath
+		}
+	}
+
+	// Verify the cleaned path is within the base directory
+	relPath, err := filepath.Rel(absBasePath, absCleanPath)
+	if err != nil {
+		// Can't determine relative path, unsafe
+		return basePath
+	}
+
+	// Check if relative path starts with ".." which means it's outside base directory
+	if strings.HasPrefix(relPath, "..") {
+		// Path traversal detected, return basePath as safe fallback
+		return basePath
+	}
+
+	// Safe path - return the cleaned absolute path
+	return absCleanPath
 }
 
 // ValidatePath validates a path to ensure it's safe

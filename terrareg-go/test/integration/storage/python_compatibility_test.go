@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -52,11 +51,11 @@ func TestPythonStorageStructureCompatibility(t *testing.T) {
 	assert.Equal(t, expectedVersionPath, versionPath)
 
 	// Test archive paths (Python expects source.tar.gz and source.zip)
-	archiveTarGzPath := pathBuilder.GetArchivePath("test-namespace", "test-module", "aws", "1.0.0", "source.tar.gz")
+	archiveTarGzPath := pathBuilder.BuildArchivePath("test-namespace", "test-module", "aws", "1.0.0", "source.tar.gz")
 	expectedTarGzPath := filepath.Join(dataDir, "modules", "test-namespace", "test-module", "aws", "1.0.0", "source.tar.gz")
 	assert.Equal(t, expectedTarGzPath, archiveTarGzPath)
 
-	archiveZipPath := pathBuilder.GetArchivePath("test-namespace", "test-module", "aws", "1.0.0", "source.zip")
+	archiveZipPath := pathBuilder.BuildArchivePath("test-namespace", "test-module", "aws", "1.0.0", "source.zip")
 	expectedZipPath := filepath.Join(dataDir, "modules", "test-namespace", "test-module", "aws", "1.0.0", "source.zip")
 	assert.Equal(t, expectedZipPath, archiveZipPath)
 }
@@ -108,7 +107,7 @@ func TestPythonArchiveNamingCompatibility(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.namespace+"/"+tc.module, func(t *testing.T) {
-			archivePath := pathBuilder.GetArchivePath(tc.namespace, tc.module, tc.provider, tc.version, tc.archiveName)
+			archivePath := pathBuilder.BuildArchivePath(tc.namespace, tc.module, tc.provider, tc.version, tc.archiveName)
 			assert.Equal(t, tc.expectedPath, archivePath)
 
 			// Verify path builder can identify archive paths correctly
@@ -209,8 +208,12 @@ func TestPythonPathTraversalProtection(t *testing.T) {
 			result := pathBuilder.SafeJoinPaths(tc.basePath, tc.subPaths...)
 
 			if tc.expectError {
-				// Should contain path traversal attempts
-				assert.Contains(t, result, "..")
+				// Path traversal should be blocked - result should be basePath (safe fallback)
+				// The new implementation returns basePath when traversal is detected
+				// This prevents .. from appearing in the result
+				assert.NotContains(t, result, "..")
+				// Result should be basePath or an absolute path within basePath
+				assert.True(t, result == tc.basePath || filepath.IsAbs(result))
 			} else {
 				// Should be a valid path without traversal
 				assert.NotContains(t, result, "..")
@@ -218,15 +221,11 @@ func TestPythonPathTraversalProtection(t *testing.T) {
 			}
 
 			// Test path validation
+			// With the new implementation, SafeJoinPaths already prevents traversal
+			// so ValidatePath should not detect path traversal in the result
 			err := pathBuilder.ValidatePath(result)
-			if tc.expectError {
-				assert.Error(t, err)
-				assert.Equal(t, model.ErrPathTraversal, err)
-			} else {
-				// Note: The validation might still error for absolute paths not in base
-				// but should not error for path traversal
-				assert.NotEqual(t, model.ErrPathTraversal, err)
-			}
+			// The result should not have path traversal since it was already blocked
+			assert.NotEqual(t, model.ErrPathTraversal, err)
 		})
 	}
 }
@@ -247,17 +246,20 @@ func TestPythonStorageWorkflowCompatibility(t *testing.T) {
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
+	// Convert service.StoragePathConfig to model.StoragePathConfig
+	modelPathConfig := &model.StoragePathConfig{
+		BasePath:      pathConfig.BasePath,
+		ModulesPath:   pathConfig.ModulesPath,
+		ProvidersPath: pathConfig.ProvidersPath,
+		UploadPath:    pathConfig.UploadPath,
+		TempPath:      pathConfig.TempPath,
+	}
+
 	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		&model.StoragePathConfig{
-			BasePath:      pathConfig.BasePath,
-			ModulesPath:   pathConfig.ModulesPath,
-			ProvidersPath: pathConfig.ProvidersPath,
-			UploadPath:    pathConfig.UploadPath,
-			TempPath:      pathConfig.TempPath,
-		},
+		modelPathConfig,
 	)
 
 	ctx := context.Background()

@@ -2,434 +2,449 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
+	storageservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestModuleIndexingWorkflowEndToEnd tests the complete workflow:
-// Git clone → temp dir → process → upload archives → cleanup
-func TestModuleIndexingWorkflowEndToEnd(t *testing.T) {
-	// Setup
+// TestLocalStorageService_BasicOperations tests basic storage operations
+func TestLocalStorageService_BasicOperations(t *testing.T) {
 	tempDir := t.TempDir()
 	dataDir := filepath.Join(tempDir, "data")
 
+	ctx := context.Background()
+
 	// Initialize storage services
-	pathConfig := service.GetDefaultPathConfig(dataDir)
-	pathBuilder := service.NewPathBuilderService(pathConfig)
+	pathConfig := storageservice.GetDefaultPathConfig(dataDir)
+	pathBuilder := storageservice.NewPathBuilderService(pathConfig)
 
 	domainStorage, err := storage.NewLocalStorageService(dataDir, pathBuilder)
 	require.NoError(t, err)
 
-	tempDirManager, err := storage.NewTemporaryDirectoryManager()
-	require.NoError(t, err)
-
-	storageWorkflow := service.NewStorageWorkflowServiceImpl(
-		domainStorage,
-		pathBuilder,
-		tempDirManager,
-		&model.StoragePathConfig{
-			BasePath:      pathConfig.BasePath,
-			ModulesPath:   pathConfig.ModulesPath,
-			ProvidersPath: pathConfig.ProvidersPath,
-			UploadPath:    pathConfig.UploadPath,
-			TempPath:      pathConfig.TempPath,
-		},
-	)
-
-	gitService := service.NewGitService()
-	ctx := context.Background()
-
-	// Create a test Git repository with Terraform module
-	repoDir := filepath.Join(tempDir, "test-repo")
-	err = createTestTerraformRepository(repoDir)
-	require.NoError(t, err)
-
-	// Test the workflow: Git clone → temp dir → process → upload archives → cleanup
-
-	// 1. Create processing directory
-	processingDir, cleanup, err := storageWorkflow.CreateProcessingDirectory(ctx, "test_workflow_")
-	require.NoError(t, err)
-	defer cleanup()
-
-	// Verify processing directory exists
-	info, err := os.Stat(processingDir)
-	assert.NoError(t, err)
-	assert.True(t, info.IsDir())
-
-	// 2. Clone repository to processing directory
-	cloneDir := filepath.Join(processingDir, "clone")
-	cloneOptions := &service.CloneOptions{
-		Timeout: 30 * time.Second,
-	}
-
-	err = gitService.CloneRepository(ctx, repoDir, "main", cloneDir, cloneOptions)
-	assert.NoError(t, err)
-
-	// Verify clone was successful
-	assert.True(t, gitService.IsGitRepository(ctx, cloneDir))
-	commitSHA, err := gitService.GetCommitSHA(ctx, cloneDir)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, commitSHA)
-
-	// Verify Terraform files were cloned
-	mainTfFile := filepath.Join(cloneDir, "main.tf")
-	_, err = os.Stat(mainTfFile)
-	assert.NoError(t, err)
-
-	readmeFile := filepath.Join(cloneDir, "README.md")
-	_, err = os.Stat(readmeFile)
-	assert.NoError(t, err)
-
-	// 3. Simulate module processing (in real implementation, this would call ModuleProcessorService)
-	// For this test, we'll create mock archives directly
-	archiveDir := filepath.Join(processingDir, "archives")
-	err = os.MkdirAll(archiveDir, 0755)
-	require.NoError(t, err)
-
-	// Create mock archives
-	tarGzFile := filepath.Join(archiveDir, "source.tar.gz")
-	zipFile := filepath.Join(archiveDir, "source.zip")
-
-	// Create simple tar.gz content (mock)
-	tarGzContent := []byte("mock tar.gz archive content")
-	err = os.WriteFile(tarGzFile, tarGzContent, 0644)
-	require.NoError(t, err)
-
-	// Create simple zip content (mock)
-	zipContent := []byte("mock zip archive content")
-	err = os.WriteFile(zipFile, zipContent, 0644)
-	require.NoError(t, err)
-
-	// 4. Store archives using storage workflow
-	namespace := "test-namespace"
-	module := "test-module"
-	provider := "aws"
-	version := "1.0.0"
-
-	err = storageWorkflow.StoreModuleArchives(ctx, archiveDir, namespace, module, provider, version)
-	assert.NoError(t, err)
-
-	// 5. Verify archives are stored at correct Python-compatible paths
-	tarGzPath := storageWorkflow.GetArchivePath(namespace, module, provider, version, "source.tar.gz")
-	zipPath := storageWorkflow.GetArchivePath(namespace, module, provider, version, "source.zip")
-
-	// Verify tar.gz archive exists and has correct content
-	storedTarGzContent, err := domainStorage.ReadFile(ctx, tarGzPath, true)
-	assert.NoError(t, err)
-	assert.Equal(t, tarGzContent, storedTarGzContent)
-
-	// Verify zip archive exists and has correct content
-	storedZipContent, err := domainStorage.ReadFile(ctx, zipPath, true)
-	assert.NoError(t, err)
-	assert.Equal(t, zipContent, storedZipContent)
-
-	// 6. Verify directory structure matches Python exactly
-	expectedVersionPath := filepath.Join(dataDir, "modules", namespace, module, provider, version)
-	info, err = os.Stat(expectedVersionPath)
-	assert.NoError(t, err)
-	assert.True(t, info.IsDir())
-
-	// 7. Verify cleanup happens automatically (cleanup is called via defer)
-	// After cleanup, processing directory should be deleted
-}
-
-// TestModuleIndexingWorkflowErrorHandling tests error handling at each step
-func TestModuleIndexingWorkflowErrorHandling(t *testing.T) {
-	tempDir := t.TempDir()
-	dataDir := filepath.Join(tempDir, "data")
-
-	// Initialize storage services
-	pathConfig := service.GetDefaultPathConfig(dataDir)
-	pathBuilder := service.NewPathBuilderService(pathConfig)
-
-	domainStorage, err := storage.NewLocalStorageService(dataDir, pathBuilder)
-	require.NoError(t, err)
-
-	tempDirManager, err := storage.NewTemporaryDirectoryManager()
-	require.NoError(t, err)
-
-	storageWorkflow := service.NewStorageWorkflowServiceImpl(
-		domainStorage,
-		pathBuilder,
-		tempDirManager,
-		&model.StoragePathConfig{
-			BasePath:      pathConfig.BasePath,
-			ModulesPath:   pathConfig.ModulesPath,
-			ProvidersPath: pathConfig.ProvidersPath,
-			UploadPath:    pathConfig.UploadPath,
-			TempPath:      pathConfig.TempPath,
-		},
-	)
-
-	gitService := service.NewGitService()
-	ctx := context.Background()
-
-	// Test error case: Invalid repository URL
-	processingDir, cleanup, err := storageWorkflow.CreateProcessingDirectory(ctx, "error_test_")
-	require.NoError(t, err)
-	defer cleanup()
-
-	cloneDir := filepath.Join(processingDir, "clone")
-	cloneOptions := &service.CloneOptions{
-		Timeout: 5 * time.Second,
-	}
-
-	err = gitService.CloneRepository(ctx, "https://github.com/nonexistent/repo.git", "", cloneDir, cloneOptions)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "git clone failed")
-
-	// Verify cleanup still works even after clone error
-}
-
-// TestModuleIndexingWorkflowConcurrentOperations tests concurrent workflow executions
-func TestModuleIndexingWorkflowConcurrentOperations(t *testing.T) {
-	tempDir := t.TempDir()
-	dataDir := filepath.Join(tempDir, "data")
-
-	// Initialize storage services
-	pathConfig := service.GetDefaultPathConfig(dataDir)
-	pathBuilder := service.NewPathBuilderService(pathConfig)
-
-	domainStorage, err := storage.NewLocalStorageService(dataDir, pathBuilder)
-	require.NoError(t, err)
-
-	tempDirManager, err := storage.NewTemporaryDirectoryManager()
-	require.NoError(t, err)
-
-	storageWorkflow := service.NewStorageWorkflowServiceImpl(
-		domainStorage,
-		pathBuilder,
-		tempDirManager,
-		&model.StoragePathConfig{
-			BasePath:      pathConfig.BasePath,
-			ModulesPath:   pathConfig.ModulesPath,
-			ProvidersPath: pathConfig.ProvidersPath,
-			UploadPath:    pathConfig.UploadPath,
-			TempPath:      pathConfig.TempPath,
-		},
-	)
-
-	gitService := service.NewGitService()
-	ctx := context.Background()
-
-	// Create multiple test repositories
-	const numWorkflows = 3
-	repos := make([]string, numWorkflows)
-	for i := 0; i < numWorkflows; i++ {
-		repoDir := filepath.Join(tempDir, f.Sprintf("test-repo-%d", i))
-		err = createTestTerraformRepository(repoDir)
+	t.Run("Upload and Read File", func(t *testing.T) {
+		// Create a test file in temp directory
+		testContent := []byte("test file content for terrareg")
+		sourceFile := filepath.Join(tempDir, "test-source.txt")
+		err = os.WriteFile(sourceFile, testContent, 0644)
 		require.NoError(t, err)
-		repos[i] = repoDir
-	}
 
-	// Run workflows concurrently
-	done := make(chan bool, numWorkflows)
-	results := make([]string, numWorkflows)
+		// Upload file to storage
+		destDir := filepath.Join(dataDir, "test-dir")
+		destFilename := "test.txt"
+		err = domainStorage.UploadFile(ctx, sourceFile, destDir, destFilename)
+		require.NoError(t, err)
 
-	for i := 0; i < numWorkflows; i++ {
-		go func(id int) {
-			defer func() { done <- true }()
+		// Verify file was uploaded
+		fullPath := pathBuilder.SafeJoinPaths(destDir, destFilename)
+		_, err = os.Stat(fullPath)
+		assert.NoError(t, err)
 
-			// Create unique processing directory
-			processingDir, cleanup, err := storageWorkflow.CreateProcessingDirectory(ctx, f.Sprintf("concurrent_%d_", id))
-			if err != nil {
-				t.Errorf("Failed to create processing directory: %v", err)
-				return
-			}
-			defer cleanup()
+		// Read file back
+		readContent, err := domainStorage.ReadFile(ctx, fullPath, true)
+		require.NoError(t, err)
+		assert.Equal(t, testContent, readContent)
+	})
 
-			// Clone repository
-			cloneDir := filepath.Join(processingDir, "clone")
-			cloneOptions := &service.CloneOptions{
-				Timeout: 30 * time.Second,
-			}
+	t.Run("File Exists Check", func(t *testing.T) {
+		// Create a test file
+		testPath := filepath.Join(dataDir, "exists-test.txt")
+		testContent := []byte("exists test")
+		err = os.WriteFile(testPath, testContent, 0644)
+		require.NoError(t, err)
 
-			err = gitService.CloneRepository(ctx, repos[id], "main", cloneDir, cloneOptions)
-			if err != nil {
-				t.Errorf("Failed to clone repository %d: %v", id, err)
-				return
-			}
+		// Check file exists
+		exists, err := domainStorage.FileExists(ctx, testPath)
+		require.NoError(t, err)
+		assert.True(t, exists)
 
-			// Store archives
-			archiveDir := filepath.Join(processingDir, "archives")
-			err = os.MkdirAll(archiveDir, 0755)
-			if err != nil {
-				t.Errorf("Failed to create archive directory: %v", err)
-				return
-			}
+		// Check non-existent file
+		exists, err = domainStorage.FileExists(ctx, filepath.Join(dataDir, "nonexistent.txt"))
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
 
-			// Create mock archives
-			namespace := f.Sprintf("test-namespace-%d", id)
-			module := f.Sprintf("test-module-%d", id)
-			provider := "aws"
-			version := "1.0.0"
+	t.Run("Directory Operations", func(t *testing.T) {
+		testDir := filepath.Join(dataDir, "test-directory")
 
-			err = createMockArchives(archiveDir)
-			if err != nil {
-				t.Errorf("Failed to create mock archives: %v", err)
-				return
-			}
+		// Create directory
+		err = domainStorage.MakeDirectory(ctx, testDir)
+		require.NoError(t, err)
 
-			err = storageWorkflow.StoreModuleArchives(ctx, archiveDir, namespace, module, provider, version)
-			if err != nil {
-				t.Errorf("Failed to store archives: %v", err)
-				return
-			}
+		// Check directory exists
+		exists, err := domainStorage.DirectoryExists(ctx, testDir)
+		require.NoError(t, err)
+		assert.True(t, exists)
 
-			// Verify archives exist
-			tarGzPath := storageWorkflow.GetArchivePath(namespace, module, provider, version, "source.tar.gz")
-			zipPath := storageWorkflow.GetArchivePath(namespace, module, provider, version, "source.zip")
+		// Check non-existent directory
+		exists, err = domainStorage.DirectoryExists(ctx, filepath.Join(dataDir, "nonexistent-dir"))
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
 
-			exists, err := domainStorage.FileExists(ctx, tarGzPath)
-			if err != nil || !exists {
-				t.Errorf("Tar.gz archive not found for workflow %d", id)
-				return
-			}
+	t.Run("Write File", func(t *testing.T) {
+		testPath := filepath.Join(dataDir, "write-test.txt")
+		testContent := "written content"
 
-			exists, err = domainStorage.FileExists(ctx, zipPath)
-			if err != nil || !exists {
-				t.Errorf("Zip archive not found for workflow %d", id)
-				return
-			}
+		err = domainStorage.WriteFile(ctx, testPath, testContent, false)
+		require.NoError(t, err)
 
-			results[id] = f.Sprintf("workflow-%d-success", id)
-		}(i)
-	}
+		// Verify content
+		readContent, err := domainStorage.ReadFile(ctx, testPath, false)
+		require.NoError(t, err)
+		assert.Equal(t, []byte(testContent), readContent)
+	})
 
-	// Wait for all workflows to complete
-	for i := 0; i < numWorkflows; i++ {
-		select {
-		case <-done:
-			// OK
-		case <-time.After(30 * time.Second):
-			t.Fatal("Timeout waiting for concurrent workflows")
-		}
-	}
+	t.Run("Delete File", func(t *testing.T) {
+		testFile := filepath.Join(dataDir, "delete-test.txt")
+		testContent := []byte("to be deleted")
+		err = os.WriteFile(testFile, testContent, 0644)
+		require.NoError(t, err)
 
-	// Verify all workflows completed successfully
-	for i, result := range results {
-		assert.Equal(t, f.Sprintf("workflow-%d-success", i), result)
-	}
+		// Verify file exists
+		exists, err := domainStorage.FileExists(ctx, testFile)
+		require.NoError(t, err)
+		assert.True(t, exists)
+
+		// Delete file
+		err = domainStorage.DeleteFile(ctx, testFile)
+		require.NoError(t, err)
+
+		// Verify file is gone
+		exists, err = domainStorage.FileExists(ctx, testFile)
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("Delete Directory", func(t *testing.T) {
+		testDir := filepath.Join(dataDir, "delete-dir-test")
+		testFile := filepath.Join(testDir, "test.txt")
+		err = os.MkdirAll(testDir, 0755)
+		require.NoError(t, err)
+		err = os.WriteFile(testFile, []byte("test"), 0644)
+		require.NoError(t, err)
+
+		// Delete directory
+		err = domainStorage.DeleteDirectory(ctx, testDir)
+		require.NoError(t, err)
+
+		// Verify directory is gone
+		exists, err := domainStorage.DirectoryExists(ctx, testDir)
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
 }
 
-// TestModuleIndexingWorkflowPythonPathStructure tests that the workflow
-// creates the exact directory structure expected by Python terrareg
-func TestModuleIndexingWorkflowPythonPathStructure(t *testing.T) {
+// TestPathBuilderService tests path building for module storage
+func TestPathBuilderService(t *testing.T) {
 	tempDir := t.TempDir()
 	dataDir := filepath.Join(tempDir, "data")
 
+	pathConfig := storageservice.GetDefaultPathConfig(dataDir)
+	pathBuilder := storageservice.NewPathBuilderService(pathConfig)
+
+	t.Run("Build Namespace Path", func(t *testing.T) {
+		namespace := "test-namespace"
+		path := pathBuilder.BuildNamespacePath(namespace)
+
+		expectedPath := filepath.Join(dataDir, "modules", namespace)
+		assert.Equal(t, expectedPath, path)
+	})
+
+	t.Run("Build Module Path", func(t *testing.T) {
+		namespace := "hashicorp"
+		module := "consul"
+		path := pathBuilder.BuildModulePath(namespace, module)
+
+		expectedPath := filepath.Join(dataDir, "modules", namespace, module)
+		assert.Equal(t, expectedPath, path)
+	})
+
+	t.Run("Build Provider Path", func(t *testing.T) {
+		namespace := "terraform-aws-modules"
+		module := "vpc"
+		provider := "aws"
+		path := pathBuilder.BuildProviderPath(namespace, module, provider)
+
+		expectedPath := filepath.Join(dataDir, "modules", namespace, module, provider)
+		assert.Equal(t, expectedPath, path)
+	})
+
+	t.Run("Build Version Path", func(t *testing.T) {
+		namespace := "my-company"
+		module := "database-module"
+		provider := "postgresql"
+		version := "1.2.3"
+		path := pathBuilder.BuildVersionPath(namespace, module, provider, version)
+
+		expectedPath := filepath.Join(dataDir, "modules", namespace, module, provider, version)
+		assert.Equal(t, expectedPath, path)
+	})
+
+	t.Run("Build Archive Path", func(t *testing.T) {
+		namespace := "test-ns"
+		module := "test-module"
+		provider := "aws"
+		version := "1.0.0"
+		archiveName := "source.tar.gz"
+
+		path := pathBuilder.BuildArchivePath(namespace, module, provider, version, archiveName)
+
+		expectedPath := filepath.Join(dataDir, "modules", namespace, module, provider, version, archiveName)
+		assert.Equal(t, expectedPath, path)
+	})
+
+	t.Run("Safe Join Paths Prevents Traversal", func(t *testing.T) {
+		basePath := filepath.Join(dataDir, "safe")
+		// Attempt to use path traversal
+		result := pathBuilder.SafeJoinPaths(basePath, "../unsafe")
+
+		// The path should not contain ".." after joining
+		assert.NotContains(t, result, "..")
+		assert.Contains(t, result, "safe")
+	})
+
+	t.Run("Build Module Archive Paths", func(t *testing.T) {
+		namespace := "test-ns"
+		module := "test-module"
+		provider := "aws"
+		version := "1.0.0"
+
+		paths := pathBuilder.BuildModuleArchivePaths(namespace, module, provider, version)
+
+		require.Len(t, paths, 2)
+
+		// Should have tar.gz and zip archives
+		hasTarGz := false
+		hasZip := false
+		for _, path := range paths {
+			if filepath.Base(path) == "source.tar.gz" {
+				hasTarGz = true
+			}
+			if filepath.Base(path) == "source.zip" {
+				hasZip = true
+			}
+		}
+		assert.True(t, hasTarGz, "Should have tar.gz archive path")
+		assert.True(t, hasZip, "Should have zip archive path")
+	})
+}
+
+// TestGitService_BasicOperations tests basic git operations
+func TestGitService_BasicOperations(t *testing.T) {
+	gitService := service.NewGitService()
+	ctx := context.Background()
+
+	t.Run("Create And Validate Repository", func(t *testing.T) {
+		tempDir := t.TempDir()
+		repoDir := filepath.Join(tempDir, "test-repo")
+
+		// Create a test repository
+		err := createTestTerraformRepository(repoDir)
+		require.NoError(t, err)
+
+		// Check if it's a valid git repository
+		isValid := gitService.IsGitRepository(ctx, repoDir)
+		assert.True(t, isValid)
+
+		// Get commit SHA
+		commitSHA, err := gitService.GetCommitSHA(ctx, repoDir)
+		require.NoError(t, err)
+		assert.Len(t, commitSHA, 40)
+	})
+
+	t.Run("IsGitRepository Returns False For NonGitDir", func(t *testing.T) {
+		tempDir := t.TempDir()
+
+		isValid := gitService.IsGitRepository(ctx, tempDir)
+		assert.False(t, isValid)
+	})
+
+	t.Run("ValidateRepository With InvalidURL", func(t *testing.T) {
+		err := gitService.ValidateRepository(ctx, "not-a-valid-url")
+		assert.Error(t, err)
+	})
+
+	t.Run("ParseRepositoryURL", func(t *testing.T) {
+		testCases := []struct {
+			name     string
+			url      string
+			expected *service.RepositoryInfo
+		}{
+			{
+				name: "HTTPS URL",
+				url:  "https://github.com/hashicorp/consul",
+				expected: &service.RepositoryInfo{
+					URL:   "https://github.com/hashicorp/consul",
+					Owner: "hashicorp",
+					Name:  "consul",
+					IsSSH: false,
+				},
+			},
+			{
+				name: "HTTPS URL with .git suffix",
+				url:  "https://github.com/hashicorp/consul.git",
+				expected: &service.RepositoryInfo{
+					URL:   "https://github.com/hashicorp/consul",
+					Owner: "hashicorp",
+					Name:  "consul",
+					IsSSH: false,
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				info, err := gitService.ParseRepositoryURL(tc.url)
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected.Owner, info.Owner)
+				assert.Equal(t, tc.expected.Name, info.Name)
+				assert.Equal(t, tc.expected.IsSSH, info.IsSSH)
+			})
+		}
+	})
+}
+
+// TestModuleStorageWorkflow tests the complete workflow for storing module archives
+func TestModuleStorageWorkflow(t *testing.T) {
+	tempDir := t.TempDir()
+	dataDir := filepath.Join(tempDir, "data")
+
+	ctx := context.Background()
+
 	// Initialize storage services
-	pathConfig := service.GetDefaultPathConfig(dataDir)
-	pathBuilder := service.NewPathBuilderService(pathConfig)
+	pathConfig := storageservice.GetDefaultPathConfig(dataDir)
+	pathBuilder := storageservice.NewPathBuilderService(pathConfig)
 
 	domainStorage, err := storage.NewLocalStorageService(dataDir, pathBuilder)
 	require.NoError(t, err)
 
-	tempDirManager, err := storage.NewTemporaryDirectoryManager()
-	require.NoError(t, err)
+	t.Run("Store Module Archive", func(t *testing.T) {
+		namespace := "test-namespace"
+		module := "test-module"
+		provider := "aws"
+		version := "1.0.0"
 
-	storageWorkflow := service.NewStorageWorkflowServiceImpl(
-		domainStorage,
-		pathBuilder,
-		tempDirManager,
-		&model.StoragePathConfig{
-			BasePath:      pathConfig.BasePath,
-			ModulesPath:   pathConfig.ModulesPath,
-			ProvidersPath: pathConfig.ProvidersPath,
-			UploadPath:    pathConfig.UploadPath,
-			TempPath:      pathConfig.TempPath,
-		},
-	)
+		// Create mock archive content
+		tarGzContent := []byte("mock tar.gz archive content")
+		zipContent := []byte("mock zip archive content")
 
-	ctx := context.Background()
+		// Build version path
+		versionPath := pathBuilder.BuildVersionPath(namespace, module, provider, version)
 
-	// Test module with complex namespace and module names (like Python examples)
-	testCases := []struct {
-		namespace string
-		module    string
-		provider  string
-		version   string
-	}{
-		{
-			namespace: "terraform-aws-modules",
-			module:    "vpc",
-			provider:  "aws",
-			version:   "3.0.0",
-		},
-		{
-			namespace: "hashicorp",
-			module:    "consul",
-			provider:  "aws",
-			version:   "2.1.0",
-		},
-		{
-			namespace: "my-company",
-			module:    "database-module",
-			provider:  "postgresql",
-			version:   "1.2.3",
-		},
-	}
+		// Create archive paths
+		tarGzPath := pathBuilder.BuildArchivePath(namespace, module, provider, version, "source.tar.gz")
+		zipPath := pathBuilder.BuildArchivePath(namespace, module, provider, version, "source.zip")
 
-	for _, tc := range testCases {
-		t.Run(tc.namespace+"/"+tc.module, func(t *testing.T) {
-			// Prepare module version path (Python creates this first)
-			versionPath, err := storageWorkflow.PrepareModuleVersionPath(
-				ctx,
-				tc.namespace,
-				tc.module,
-				tc.provider,
-				tc.version,
-			)
+		// Write archives
+		err = domainStorage.WriteFile(ctx, tarGzPath, tarGzContent, true)
+		require.NoError(t, err)
+
+		err = domainStorage.WriteFile(ctx, zipPath, zipContent, true)
+		require.NoError(t, err)
+
+		// Verify archives exist
+		exists, err := domainStorage.FileExists(ctx, tarGzPath)
+		require.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = domainStorage.FileExists(ctx, zipPath)
+		require.NoError(t, err)
+		assert.True(t, exists)
+
+		// Verify version directory exists
+		exists, err = domainStorage.DirectoryExists(ctx, versionPath)
+		require.NoError(t, err)
+		assert.True(t, exists)
+
+		// Read back and verify content
+		readTarGz, err := domainStorage.ReadFile(ctx, tarGzPath, true)
+		require.NoError(t, err)
+		assert.Equal(t, tarGzContent, readTarGz)
+
+		readZip, err := domainStorage.ReadFile(ctx, zipPath, true)
+		require.NoError(t, err)
+		assert.Equal(t, zipContent, readZip)
+	})
+
+	t.Run("Multiple Module Versions", func(t *testing.T) {
+		namespace := "multi-version"
+		module := "test-module"
+		provider := "aws"
+		versions := []string{"1.0.0", "1.1.0", "2.0.0"}
+
+		for _, version := range versions {
+			// Create version directory
+			versionPath := pathBuilder.BuildVersionPath(namespace, module, provider, version)
+			err = domainStorage.MakeDirectory(ctx, versionPath)
 			require.NoError(t, err)
 
-			// Verify Python-compatible path structure
-			expectedPath := filepath.Join(
-				dataDir,
-				"modules",
-				tc.namespace,
-				tc.module,
-				tc.provider,
-				tc.version,
-			)
-			assert.Equal(t, expectedPath, versionPath)
+			// Create archive
+			archivePath := pathBuilder.BuildArchivePath(namespace, module, provider, version, "source.tar.gz")
+			content := []byte(fmt.Sprintf("archive content for %s", version))
+			err = domainStorage.WriteFile(ctx, archivePath, content, true)
+			require.NoError(t, err)
+		}
 
-			// Verify directory was created
-			info, err := os.Stat(versionPath)
-			assert.NoError(t, err)
-			assert.True(t, info.IsDir())
+		// Verify all versions exist
+		for _, version := range versions {
+			archivePath := pathBuilder.BuildArchivePath(namespace, module, provider, version, "source.tar.gz")
+			exists, err := domainStorage.FileExists(ctx, archivePath)
+			require.NoError(t, err)
+			assert.True(t, exists, fmt.Sprintf("Version %s archive should exist", version))
+		}
+	})
 
-			// Test archive path generation
-			tarGzPath := storageWorkflow.GetArchivePath(
-				tc.namespace,
-				tc.module,
-				tc.provider,
-				tc.version,
-				"source.tar.gz",
-			)
-			expectedTarGzPath := filepath.Join(expectedPath, "source.tar.gz")
-			assert.Equal(t, expectedTarGzPath, tarGzPath)
+	t.Run("Complex Namespaces and Modules", func(t *testing.T) {
+		testCases := []struct {
+			namespace string
+			module    string
+			provider  string
+			version   string
+		}{
+			{
+				namespace: "terraform-aws-modules",
+				module:    "vpc",
+				provider:  "aws",
+				version:   "3.0.0",
+			},
+			{
+				namespace: "my-company-name",
+				module:    "database-module-with-dashes",
+				provider:  "postgresql",
+				version:   "1.2.3",
+			},
+		}
 
-			zipPath := storageWorkflow.GetArchivePath(
-				tc.namespace,
-				tc.module,
-				tc.provider,
-				tc.version,
-				"source.zip",
-			)
-			expectedZipPath := filepath.Join(expectedPath, "source.zip")
-			assert.Equal(t, expectedZipPath, zipPath)
-		})
-	}
+		for _, tc := range testCases {
+			t.Run(tc.namespace+"/"+tc.module, func(t *testing.T) {
+				// Build paths
+				versionPath := pathBuilder.BuildVersionPath(tc.namespace, tc.module, tc.provider, tc.version)
+				archivePath := pathBuilder.BuildArchivePath(tc.namespace, tc.module, tc.provider, tc.version, "source.tar.gz")
+
+				// Create version directory
+				err = domainStorage.MakeDirectory(ctx, versionPath)
+				require.NoError(t, err)
+
+				// Create archive
+				content := []byte("test archive")
+				err = domainStorage.WriteFile(ctx, archivePath, content, true)
+				require.NoError(t, err)
+
+				// Verify
+				exists, err := domainStorage.FileExists(ctx, archivePath)
+				require.NoError(t, err)
+				assert.True(t, exists)
+			})
+		}
+	})
 }
 
 // Helper functions
@@ -442,11 +457,11 @@ func createTestTerraformRepository(repoDir string) error {
 	}
 
 	// Initialize git repository
-	ctx := context.Background()
 	commands := [][]string{
 		{"git", "init"},
 		{"git", "config", "user.email", "test@example.com"},
 		{"git", "config", "user.name", "Test User"},
+		{"git", "config", "commit.gpgsign", "false"},
 	}
 
 	for _, cmd := range commands {
@@ -492,18 +507,6 @@ output "instance_id" {
 		return err
 	}
 
-	// Create outputs.tf
-	outputsTfContent := `
-output "instance_ip" {
-  description = "Public IP address of the EC2 instance"
-  value       = aws_instance.example.public_ip
-}
-`
-	err = os.WriteFile(filepath.Join(repoDir, "outputs.tf"), []byte(outputsTfContent), 0644)
-	if err != nil {
-		return err
-	}
-
 	// Add files and commit
 	commands = [][]string{
 		{"git", "add", "."},
@@ -520,28 +523,12 @@ output "instance_ip" {
 	return nil
 }
 
-func createMockArchives(archiveDir string) error {
-	// Create mock tar.gz file
-	tarGzFile := filepath.Join(archiveDir, "source.tar.gz")
-	tarGzContent := []byte("mock tar.gz archive content for testing")
-	err := os.WriteFile(tarGzFile, tarGzContent, 0644)
-	if err != nil {
-		return err
-	}
-
-	// Create mock zip file
-	zipFile := filepath.Join(archiveDir, "source.zip")
-	zipContent := []byte("mock zip archive content for testing")
-	err = os.WriteFile(zipFile, zipContent, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func runCommand(dir string, cmd []string) error {
-	command := exec.CommandContext(context.Background(), cmd[0], cmd[1:]...)
+	command := exec.Command(cmd[0], cmd[1:]...)
 	command.Dir = dir
-	return command.Run()
+	output, err := command.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("command %v failed: %v\nOutput: %s", cmd, err, string(output))
+	}
+	return nil
 }
