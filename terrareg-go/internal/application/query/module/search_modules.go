@@ -79,8 +79,11 @@ func (q *SearchModulesQuery) Execute(ctx context.Context, params SearchParams) (
 		}
 	}
 
+	// Note: We preserve the original TotalCount from the repository for pagination purposes.
+	// The TotalCount represents the total number of records matching the query (before LIMIT/OFFSET),
+	// not the number of records returned after filtering or after applying LIMIT.
 	return &SearchResult{
 		Modules:    modulesWithLatestVersion,
-		TotalCount: len(modulesWithLatestVersion), // Update count to match filtered results
+		TotalCount: result.TotalCount, // Use the original count from repository for pagination
 	}, nil
 }

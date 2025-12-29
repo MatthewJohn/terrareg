@@ -476,21 +476,17 @@ output "instance_id" {
 	}
 
 	// Create README.md
-	readmeContent := `# Test Terraform Module
-
-This is a test module for terrareg integration testing.
-
-## Usage
-
-```hcl
-module "test" {
-  source = "./path/to/module"
-
-  providers = {
-    aws = aws
-  }
-}
-```
+	readmeContent := "# Test Terraform Module\n\n" +
+		"This is a test module for terrareg integration testing.\n\n" +
+		"## Usage\n\n" +
+		"```hcl\n" +
+		"module \"test\" {\n" +
+		"  source = \"./path/to/module\"\n\n" +
+		"  providers = {\n" +
+		"    aws = aws\n" +
+		"  }\n" +
+		"}\n" +
+		"```\n"
 	err = os.WriteFile(filepath.Join(repoDir, "README.md"), []byte(readmeContent), 0644)
 	if err != nil {
 		return err

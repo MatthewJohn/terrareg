@@ -390,8 +390,10 @@ func TestModuleSearch_ExcludeModulesWithoutLatestVersion(t *testing.T) {
 
 	result, err := searchQuery.Execute(ctx, params)
 	require.NoError(t, err)
-	// Only the provider with a published version should be included
-	assert.Equal(t, 1, result.TotalCount)
+	// TotalCount should be 2 (both providers match the query)
+	// But only the provider with a published version should be in the results
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Len(t, result.Modules, 1)
 	if len(result.Modules) > 0 {
 		assert.Contains(t, result.Modules[0].Module(), "has-latest")
 	}

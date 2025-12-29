@@ -13,7 +13,6 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
