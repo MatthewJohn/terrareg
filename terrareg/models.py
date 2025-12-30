@@ -3949,7 +3949,7 @@ class ModuleVersion(TerraformSpecsObject):
             url = f'/v1/terrareg/modules/{self.id}'
 
             # If authentication is required, generate pre-signed URL
-            if not config.ALLOW_UNAUTHENTICATED_ACCESS:
+            if not config.ALLOW_UNAUTHENTICATED_ACCESS or config.REQUIRE_PRESIGNED_URL_AUTHENTICATION:
                 presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
                 url = f'{url}/{presign_key}'
             
