@@ -3,14 +3,17 @@ package gpgkey
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
 	gpgkeyModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // gpgKeyRepositoryImpl implements the GPGKeyRepository interface using GORM
+// Uses main sqldb.GPGKeyDB for DDD consistency
 type gpgKeyRepositoryImpl struct {
 	db *gorm.DB
 }
@@ -24,7 +27,7 @@ func NewGPGKeyRepository(db *gorm.DB) repository.GPGKeyRepository {
 
 // FindByID finds a GPG key by its ID
 func (r *gpgKeyRepositoryImpl) FindByID(ctx context.Context, id int) (*gpgkeyModel.GPGKey, error) {
-	var gpgKeyDB GPGKeyDBModel
+	var gpgKeyDB sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
@@ -42,7 +45,7 @@ func (r *gpgKeyRepositoryImpl) FindByID(ctx context.Context, id int) (*gpgkeyMod
 
 // FindByKeyID finds a GPG key by its key ID
 func (r *gpgKeyRepositoryImpl) FindByKeyID(ctx context.Context, keyID string) (*gpgkeyModel.GPGKey, error) {
-	var gpgKeyDB GPGKeyDBModel
+	var gpgKeyDB sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
@@ -61,7 +64,7 @@ func (r *gpgKeyRepositoryImpl) FindByKeyID(ctx context.Context, keyID string) (*
 
 // FindByFingerprint finds a GPG key by its fingerprint
 func (r *gpgKeyRepositoryImpl) FindByFingerprint(ctx context.Context, fingerprint string) (*gpgkeyModel.GPGKey, error) {
-	var gpgKeyDB GPGKeyDBModel
+	var gpgKeyDB sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
@@ -80,13 +83,13 @@ func (r *gpgKeyRepositoryImpl) FindByFingerprint(ctx context.Context, fingerprin
 
 // FindByNamespace finds all GPG keys for a namespace
 func (r *gpgKeyRepositoryImpl) FindByNamespace(ctx context.Context, namespaceName string) ([]*gpgkeyModel.GPGKey, error) {
-	var gpgKeyDBs []GPGKeyDBModel
+	var gpgKeyDBs []sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
 		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
 		Where("namespace.name = ?", namespaceName).
-		Order("gpg_key.created_at DESC").
+		Order("gpg_key.id DESC"). // No created_at, use id for ordering
 		Find(&gpgKeyDBs).Error
 
 	if err != nil {
@@ -98,7 +101,7 @@ func (r *gpgKeyRepositoryImpl) FindByNamespace(ctx context.Context, namespaceNam
 
 // FindByNamespaceAndKeyID finds a GPG key by namespace and key ID
 func (r *gpgKeyRepositoryImpl) FindByNamespaceAndKeyID(ctx context.Context, namespaceName, keyID string) (*gpgkeyModel.GPGKey, error) {
-	var gpgKeyDB GPGKeyDBModel
+	var gpgKeyDB sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
@@ -122,13 +125,13 @@ func (r *gpgKeyRepositoryImpl) FindMultipleByNamespaces(ctx context.Context, nam
 		return []*gpgkeyModel.GPGKey{}, nil
 	}
 
-	var gpgKeyDBs []GPGKeyDBModel
+	var gpgKeyDBs []sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
 		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
 		Where("namespace.name IN ?", namespaceNames).
-		Order("gpg_key.created_at DESC").
+		Order("gpg_key.id DESC").
 		Find(&gpgKeyDBs).Error
 
 	if err != nil {
@@ -167,7 +170,7 @@ func (r *gpgKeyRepositoryImpl) Save(ctx context.Context, gpgKey *gpgkeyModel.GPG
 
 // Delete deletes a GPG key by its ID
 func (r *gpgKeyRepositoryImpl) Delete(ctx context.Context, id int) error {
-	result := r.db.WithContext(ctx).Delete(&GPGKeyDBModel{}, id)
+	result := r.db.WithContext(ctx).Delete(&sqldb.GPGKeyDB{}, id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete GPG key: %w", result.Error)
 	}
@@ -182,7 +185,7 @@ func (r *gpgKeyRepositoryImpl) DeleteByNamespaceAndKeyID(ctx context.Context, na
 	result := r.db.WithContext(ctx).
 		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
 		Where("namespace.name = ? AND gpg_key.key_id = ?", namespaceName, keyID).
-		Delete(&GPGKeyDBModel{})
+		Delete(&sqldb.GPGKeyDB{})
 
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete GPG key: %w", result.Error)
@@ -197,7 +200,7 @@ func (r *gpgKeyRepositoryImpl) DeleteByNamespaceAndKeyID(ctx context.Context, na
 func (r *gpgKeyRepositoryImpl) ExistsByFingerprint(ctx context.Context, fingerprint string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Model(&GPGKeyDBModel{}).
+		Model(&sqldb.GPGKeyDB{}).
 		Where("fingerprint = ?", fingerprint).
 		Count(&count).Error
 
@@ -212,8 +215,8 @@ func (r *gpgKeyRepositoryImpl) ExistsByFingerprint(ctx context.Context, fingerpr
 func (r *gpgKeyRepositoryImpl) IsInUse(ctx context.Context, keyID string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Table("provider_versions").
-		Joins("JOIN gpg_key ON provider_versions.gpg_key_id = gpg_key.id").
+		Table("provider_version").
+		Joins("JOIN gpg_key ON provider_version.gpg_key_id = gpg_key.id").
 		Where("gpg_key.key_id = ?", keyID).
 		Count(&count).Error
 
@@ -228,8 +231,8 @@ func (r *gpgKeyRepositoryImpl) IsInUse(ctx context.Context, keyID string) (bool,
 func (r *gpgKeyRepositoryImpl) GetUsedByVersionCount(ctx context.Context, keyID string) (int, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Table("provider_versions").
-		Joins("JOIN gpg_key ON provider_versions.gpg_key_id = gpg_key.id").
+		Table("provider_version").
+		Joins("JOIN gpg_key ON provider_version.gpg_key_id = gpg_key.id").
 		Where("gpg_key.key_id = ?", keyID).
 		Count(&count).Error
 
@@ -242,11 +245,11 @@ func (r *gpgKeyRepositoryImpl) GetUsedByVersionCount(ctx context.Context, keyID 
 
 // FindAll finds all GPG keys (admin function)
 func (r *gpgKeyRepositoryImpl) FindAll(ctx context.Context) ([]*gpgkeyModel.GPGKey, error) {
-	var gpgKeyDBs []GPGKeyDBModel
+	var gpgKeyDBs []sqldb.GPGKeyDB
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
-		Order("gpg_key.created_at DESC").
+		Order("gpg_key.id DESC").
 		Find(&gpgKeyDBs).Error
 
 	if err != nil {
@@ -257,45 +260,86 @@ func (r *gpgKeyRepositoryImpl) FindAll(ctx context.Context) ([]*gpgkeyModel.GPGK
 }
 
 // Helper methods to convert between domain and DB models
+// Following the same pattern as the module package
 
-func (r *gpgKeyRepositoryImpl) dbModelToDomain(gpgKeyDB *GPGKeyDBModel) *gpgkeyModel.GPGKey {
+func (r *gpgKeyRepositoryImpl) dbModelToDomain(gpgKeyDB *sqldb.GPGKeyDB) *gpgkeyModel.GPGKey {
+	// Handle nullable to non-nullable conversions
+	var keyID, fingerprint, source string
+	if gpgKeyDB.KeyID != nil {
+		keyID = *gpgKeyDB.KeyID
+	}
+	if gpgKeyDB.Fingerprint != nil {
+		fingerprint = *gpgKeyDB.Fingerprint
+	}
+	if gpgKeyDB.Source != nil {
+		source = *gpgKeyDB.Source
+	}
+
+	// ASCIIArmor is []byte in DB, convert to string for domain
+	asciiArmor := string(gpgKeyDB.ASCIIArmor)
+
 	gpgKey, _ := gpgkeyModel.NewGPGKey(
 		gpgKeyDB.NamespaceID,
-		gpgKeyDB.ASCIILArmor,
-		gpgKeyDB.KeyID,
-		gpgKeyDB.Fingerprint,
+		asciiArmor,
+		keyID,
+		fingerprint,
 	)
 
 	gpgKey.SetID(gpgKeyDB.ID)
-	gpgKey.SetSource(gpgKeyDB.Source)
-	gpgKey.SetSourceURL(gpgKeyDB.SourceURL)
-	gpgKey.SetTrustSignature(gpgKeyDB.TrustSignature)
+	gpgKey.SetSource(source)
+	gpgKey.SetSourceURL(gpgKeyDB.SourceURL) // *string
+	// TrustSignature not stored in DB model anymore
 
-	// Set namespace entity
-	namespace := gpgkeyModel.NewNamespace(gpgKeyDB.Namespace.ID, gpgKeyDB.Namespace.Name)
+	// Set namespace entity - NamespaceDB uses "Namespace" field, not "Name"
+	namespace := gpgkeyModel.NewNamespace(gpgKeyDB.Namespace.ID, gpgKeyDB.Namespace.Namespace)
 	gpgKey.SetNamespace(namespace)
 
 	return gpgKey
 }
 
-func (r *gpgKeyRepositoryImpl) domainToDBModel(gpgKey *gpgkeyModel.GPGKey) *GPGKeyDBModel {
-	gpgKeyDB := &GPGKeyDBModel{
-		ID:             gpgKey.ID(),
-		NamespaceID:    gpgKey.NamespaceID(),
-		ASCIILArmor:    gpgKey.ASCIIArmor(),
-		KeyID:          gpgKey.KeyID(),
-		Fingerprint:    gpgKey.Fingerprint(),
-		Source:         gpgKey.Source(),
-		SourceURL:      gpgKey.SourceURL(),
-		TrustSignature: gpgKey.TrustSignature(),
-		CreatedAt:      gpgKey.CreatedAt(),
-		UpdatedAt:      gpgKey.UpdatedAt(),
+func (r *gpgKeyRepositoryImpl) domainToDBModel(gpgKey *gpgkeyModel.GPGKey) *sqldb.GPGKeyDB {
+	// Handle non-nullable to nullable conversions
+	var keyID, fingerprint, source *string
+	if keyIDVal := gpgKey.KeyID(); keyIDVal != "" {
+		keyID = &keyIDVal
+	}
+	if fingerprintVal := gpgKey.Fingerprint(); fingerprintVal != "" {
+		fingerprint = &fingerprintVal
+	}
+	if sourceVal := gpgKey.Source(); sourceVal != "" {
+		source = &sourceVal
+	}
+
+	// ASCIIArmor is string in domain, convert to []byte for DB
+	asciiArmor := []byte(gpgKey.ASCIIArmor())
+
+	// Convert timestamps (time.Time to *time.Time)
+	var createdAt, updatedAt *time.Time
+	createdVal := gpgKey.CreatedAt()
+	if !createdVal.IsZero() {
+		createdAt = &createdVal
+	}
+	updatedVal := gpgKey.UpdatedAt()
+	if !updatedVal.IsZero() {
+		updatedAt = &updatedVal
+	}
+
+	gpgKeyDB := &sqldb.GPGKeyDB{
+		ID:         gpgKey.ID(),
+		NamespaceID: gpgKey.NamespaceID(),
+		ASCIIArmor: asciiArmor,
+		KeyID:      keyID,
+		Fingerprint: fingerprint,
+		Source:     source,
+		SourceURL:  gpgKey.SourceURL(), // Already *string
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
 	}
 
 	return gpgKeyDB
 }
 
-func (r *gpgKeyRepositoryImpl) dbModelsToDomain(gpgKeyDBs []GPGKeyDBModel) []*gpgkeyModel.GPGKey {
+func (r *gpgKeyRepositoryImpl) dbModelsToDomain(gpgKeyDBs []sqldb.GPGKeyDB) []*gpgkeyModel.GPGKey {
 	gpgKeys := make([]*gpgkeyModel.GPGKey, len(gpgKeyDBs))
 	for i, gpgKeyDB := range gpgKeyDBs {
 		gpgKeys[i] = r.dbModelToDomain(&gpgKeyDB)

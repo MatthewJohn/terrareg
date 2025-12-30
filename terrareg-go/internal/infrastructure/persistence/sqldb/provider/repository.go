@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // ProviderRepository implements the provider repository interface using GORM
+// Uses main sqldb models (ProviderDB, ProviderVersionDB, etc.) for DDD consistency
 type ProviderRepository struct {
 	db *gorm.DB
 }
@@ -26,22 +29,24 @@ func NewProviderRepository(db *gorm.DB) repository.ProviderRepository {
 
 // FindAll retrieves all providers with pagination
 func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]*provider.Provider, int, error) {
-	var models []ProviderModel
+	var models []sqldb.ProviderDB
 	var count int64
 
 	// Get total count
-	if err := r.db.WithContext(ctx).Model(&ProviderModel{}).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&sqldb.ProviderDB{}).Count(&count).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count providers: %w", err)
 	}
 
 	// Get providers with pagination
+	// Note: provider table has no created_at, so order by id
 	if err := r.db.WithContext(ctx).
 		Preload("Namespace").
-		Preload("Category").
+		Preload("ProviderCategory").
+		Preload("Repository").
 		Preload("LatestVersion").
 		Offset(offset).
 		Limit(limit).
-		Order("created_at DESC").
+		Order("id DESC").
 		Find(&models).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to find providers: %w", err)
 	}
@@ -49,10 +54,7 @@ func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]
 	// Convert to domain entities
 	providers := make([]*provider.Provider, len(models))
 	for i, model := range models {
-		prov, err := r.modelToDomain(&model)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to convert model to domain: %w", err)
-		}
+		prov := toDomainProvider(&model)
 		providers[i] = prov
 	}
 
@@ -61,11 +63,11 @@ func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]
 
 // Search searches for providers by query
 func (r *ProviderRepository) Search(ctx context.Context, query string, offset, limit int) ([]*provider.Provider, int, error) {
-	var models []ProviderModel
+	var models []sqldb.ProviderDB
 	var count int64
 
 	// Build search query
-	db := r.db.WithContext(ctx).Model(&ProviderModel{})
+	db := r.db.WithContext(ctx).Model(&sqldb.ProviderDB{})
 	if query != "" {
 		searchPattern := "%" + strings.ToLower(query) + "%"
 		db = db.Where("LOWER(name) LIKE ? OR LOWER(description) LIKE ?", searchPattern, searchPattern)
@@ -78,11 +80,12 @@ func (r *ProviderRepository) Search(ctx context.Context, query string, offset, l
 
 	// Get providers with pagination
 	if err := db.Preload("Namespace").
-		Preload("Category").
+		Preload("ProviderCategory").
+		Preload("Repository").
 		Preload("LatestVersion").
 		Offset(offset).
 		Limit(limit).
-		Order("created_at DESC").
+		Order("id DESC").
 		Find(&models).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to search providers: %w", err)
 	}
@@ -90,10 +93,7 @@ func (r *ProviderRepository) Search(ctx context.Context, query string, offset, l
 	// Convert to domain entities
 	providers := make([]*provider.Provider, len(models))
 	for i, model := range models {
-		prov, err := r.modelToDomain(&model)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to convert model to domain: %w", err)
-		}
+		prov := toDomainProvider(&model)
 		providers[i] = prov
 	}
 
@@ -102,16 +102,20 @@ func (r *ProviderRepository) Search(ctx context.Context, query string, offset, l
 
 // FindByNamespaceAndName retrieves a provider by namespace and name
 func (r *ProviderRepository) FindByNamespaceAndName(ctx context.Context, namespace, providerName string) (*provider.Provider, error) {
-	var model ProviderModel
+	var model sqldb.ProviderDB
 
-	// Build query
-	db := r.db.WithContext(ctx).Preload("Namespace").Preload("Category").Preload("LatestVersion")
+	// Build query - use correct table name "provider"
+	db := r.db.WithContext(ctx).
+		Preload("Namespace").
+		Preload("ProviderCategory").
+		Preload("Repository").
+		Preload("LatestVersion")
 	if namespace != "" {
 		// Join with namespace to filter by namespace name
-		db = db.Joins("JOIN namespaces ON namespaces.id = providers.namespace_id").
-			Where("namespaces.name = ? AND providers.name = ?", namespace, providerName)
+		db = db.Joins("JOIN namespace ON namespace.id = provider.namespace_id").
+			Where("namespace.name = ? AND provider.name = ?", namespace, providerName)
 	} else {
-		db = db.Where("providers.name = ?", providerName)
+		db = db.Where("provider.name = ?", providerName)
 	}
 
 	if err := db.First(&model).Error; err != nil {
@@ -122,16 +126,17 @@ func (r *ProviderRepository) FindByNamespaceAndName(ctx context.Context, namespa
 	}
 
 	// Convert to domain entity
-	return r.modelToDomain(&model)
+	return toDomainProvider(&model), nil
 }
 
 // FindByID retrieves a provider by its ID
 func (r *ProviderRepository) FindByID(ctx context.Context, providerID int) (*provider.Provider, error) {
-	var model ProviderModel
+	var model sqldb.ProviderDB
 
 	if err := r.db.WithContext(ctx).
 		Preload("Namespace").
-		Preload("Category").
+		Preload("ProviderCategory").
+		Preload("Repository").
 		Preload("LatestVersion").
 		First(&model, providerID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -141,17 +146,17 @@ func (r *ProviderRepository) FindByID(ctx context.Context, providerID int) (*pro
 	}
 
 	// Convert to domain entity
-	return r.modelToDomain(&model)
+	return toDomainProvider(&model), nil
 }
 
 // FindVersionsByProvider retrieves all versions for a provider
 func (r *ProviderRepository) FindVersionsByProvider(ctx context.Context, providerID int) ([]*provider.ProviderVersion, error) {
-	var models []ProviderVersionModel
+	var models []sqldb.ProviderVersionDB
 
 	if err := r.db.WithContext(ctx).
 		Preload("GPGKey").
 		Where("provider_id = ?", providerID).
-		Order("created_at DESC").
+		Order("id DESC").
 		Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("failed to find provider versions: %w", err)
 	}
@@ -159,10 +164,7 @@ func (r *ProviderRepository) FindVersionsByProvider(ctx context.Context, provide
 	// Convert to domain entities
 	versions := make([]*provider.ProviderVersion, len(models))
 	for i, model := range models {
-		version, err := r.versionModelToDomain(&model)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert version model to domain: %w", err)
-		}
+		version := toDomainProviderVersion(&model)
 		versions[i] = version
 	}
 
@@ -171,7 +173,7 @@ func (r *ProviderRepository) FindVersionsByProvider(ctx context.Context, provide
 
 // FindVersionByProviderAndVersion retrieves a specific version
 func (r *ProviderRepository) FindVersionByProviderAndVersion(ctx context.Context, providerID int, version string) (*provider.ProviderVersion, error) {
-	var model ProviderVersionModel
+	var model sqldb.ProviderVersionDB
 
 	if err := r.db.WithContext(ctx).
 		Preload("GPGKey").
@@ -184,12 +186,12 @@ func (r *ProviderRepository) FindVersionByProviderAndVersion(ctx context.Context
 	}
 
 	// Convert to domain entity
-	return r.versionModelToDomain(&model)
+	return toDomainProviderVersion(&model), nil
 }
 
 // FindVersionByID retrieves a version by its ID
 func (r *ProviderRepository) FindVersionByID(ctx context.Context, versionID int) (*provider.ProviderVersion, error) {
-	var model ProviderVersionModel
+	var model sqldb.ProviderVersionDB
 
 	if err := r.db.WithContext(ctx).
 		Preload("GPGKey").
@@ -201,15 +203,15 @@ func (r *ProviderRepository) FindVersionByID(ctx context.Context, versionID int)
 	}
 
 	// Convert to domain entity
-	return r.versionModelToDomain(&model)
+	return toDomainProviderVersion(&model), nil
 }
 
 // FindBinariesByVersion retrieves all binaries for a provider version
 func (r *ProviderRepository) FindBinariesByVersion(ctx context.Context, versionID int) ([]*provider.ProviderBinary, error) {
-	var models []ProviderBinaryModel
+	var models []sqldb.ProviderVersionBinaryDB
 
 	if err := r.db.WithContext(ctx).
-		Where("version_id = ?", versionID).
+		Where("provider_version_id = ?", versionID).
 		Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("failed to find provider binaries: %w", err)
 	}
@@ -217,7 +219,7 @@ func (r *ProviderRepository) FindBinariesByVersion(ctx context.Context, versionI
 	// Convert to domain entities
 	binaries := make([]*provider.ProviderBinary, len(models))
 	for i, model := range models {
-		binary := r.binaryModelToDomain(&model)
+		binary := toDomainProviderBinary(&model)
 		binaries[i] = binary
 	}
 
@@ -226,10 +228,10 @@ func (r *ProviderRepository) FindBinariesByVersion(ctx context.Context, versionI
 
 // FindBinaryByPlatform retrieves a specific binary for a platform
 func (r *ProviderRepository) FindBinaryByPlatform(ctx context.Context, versionID int, os, arch string) (*provider.ProviderBinary, error) {
-	var model ProviderBinaryModel
+	var model sqldb.ProviderVersionBinaryDB
 
 	if err := r.db.WithContext(ctx).
-		Where("version_id = ? AND operating_system = ? AND architecture = ?", versionID, os, arch).
+		Where("provider_version_id = ? AND operating_system = ? AND architecture = ?", versionID, os, arch).
 		First(&model).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -238,15 +240,26 @@ func (r *ProviderRepository) FindBinaryByPlatform(ctx context.Context, versionID
 	}
 
 	// Convert to domain entity
-	return r.binaryModelToDomain(&model), nil
+	return toDomainProviderBinary(&model), nil
 }
 
 // FindGPGKeysByProvider retrieves all GPG keys for a provider
+// NOTE: GPG keys belong to namespaces, not providers. This method is kept for compatibility
+// but should be deprecated. Use namespace-based GPG key lookup instead.
 func (r *ProviderRepository) FindGPGKeysByProvider(ctx context.Context, providerID int) ([]*provider.GPGKey, error) {
-	var models []GPGKeyModel
+	// First get the provider to find its namespace
+	var providerModel sqldb.ProviderDB
+	if err := r.db.WithContext(ctx).First(&providerModel, providerID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find provider: %w", err)
+	}
 
+	// Now get GPG keys for the namespace
+	var models []sqldb.GPGKeyDB
 	if err := r.db.WithContext(ctx).
-		Where("provider_id = ?", providerID).
+		Where("namespace_id = ?", providerModel.NamespaceID).
 		Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("failed to find GPG keys: %w", err)
 	}
@@ -254,7 +267,7 @@ func (r *ProviderRepository) FindGPGKeysByProvider(ctx context.Context, provider
 	// Convert to domain entities
 	keys := make([]*provider.GPGKey, len(models))
 	for i, model := range models {
-		key := r.gpgKeyModelToDomain(&model)
+		key := toDomainGPGKey(&model)
 		keys[i] = key
 	}
 
@@ -263,7 +276,7 @@ func (r *ProviderRepository) FindGPGKeysByProvider(ctx context.Context, provider
 
 // FindGPGKeyByKeyID retrieves a GPG key by its key identifier
 func (r *ProviderRepository) FindGPGKeyByKeyID(ctx context.Context, keyID string) (*provider.GPGKey, error) {
-	var model GPGKeyModel
+	var model sqldb.GPGKeyDB
 
 	if err := r.db.WithContext(ctx).
 		Where("key_id = ?", keyID).
@@ -275,12 +288,12 @@ func (r *ProviderRepository) FindGPGKeyByKeyID(ctx context.Context, keyID string
 	}
 
 	// Convert to domain entity
-	return r.gpgKeyModelToDomain(&model), nil
+	return toDomainGPGKey(&model), nil
 }
 
 // Save persists a provider aggregate to the database
 func (r *ProviderRepository) Save(ctx context.Context, prov *provider.Provider) error {
-	model := r.domainToModel(prov)
+	model := toDBProvider(prov)
 
 	// Handle create or update
 	if prov.ID() == 0 {
@@ -301,7 +314,7 @@ func (r *ProviderRepository) Save(ctx context.Context, prov *provider.Provider) 
 
 // SaveVersion persists a provider version
 func (r *ProviderRepository) SaveVersion(ctx context.Context, version *provider.ProviderVersion) error {
-	model := r.versionDomainToModel(version)
+	model := toDBProviderVersion(version)
 
 	// Handle create or update
 	if version.ID() == 0 {
@@ -322,7 +335,7 @@ func (r *ProviderRepository) SaveVersion(ctx context.Context, version *provider.
 
 // SaveBinary persists a provider binary
 func (r *ProviderRepository) SaveBinary(ctx context.Context, binary *provider.ProviderBinary) error {
-	model := r.binaryDomainToModel(binary)
+	model := toDBProviderBinary(binary)
 
 	// Handle create or update
 	if binary.ID() == 0 {
@@ -343,7 +356,7 @@ func (r *ProviderRepository) SaveBinary(ctx context.Context, binary *provider.Pr
 
 // SaveGPGKey persists a GPG key
 func (r *ProviderRepository) SaveGPGKey(ctx context.Context, gpgKey *provider.GPGKey) error {
-	model := r.gpgKeyDomainToModel(gpgKey)
+	model := toDBGPGKey(gpgKey)
 
 	// Handle create or update
 	if gpgKey.ID() == 0 {
@@ -364,7 +377,7 @@ func (r *ProviderRepository) SaveGPGKey(ctx context.Context, gpgKey *provider.GP
 
 // DeleteVersion removes a provider version
 func (r *ProviderRepository) DeleteVersion(ctx context.Context, versionID int) error {
-	if err := r.db.WithContext(ctx).Delete(&ProviderVersionModel{}, versionID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&sqldb.ProviderVersionDB{}, versionID).Error; err != nil {
 		return fmt.Errorf("failed to delete provider version: %w", err)
 	}
 	return nil
@@ -372,7 +385,7 @@ func (r *ProviderRepository) DeleteVersion(ctx context.Context, versionID int) e
 
 // DeleteBinary removes a provider binary
 func (r *ProviderRepository) DeleteBinary(ctx context.Context, binaryID int) error {
-	if err := r.db.WithContext(ctx).Delete(&ProviderBinaryModel{}, binaryID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&sqldb.ProviderVersionBinaryDB{}, binaryID).Error; err != nil {
 		return fmt.Errorf("failed to delete provider binary: %w", err)
 	}
 	return nil
@@ -380,7 +393,7 @@ func (r *ProviderRepository) DeleteBinary(ctx context.Context, binaryID int) err
 
 // DeleteGPGKey removes a GPG key
 func (r *ProviderRepository) DeleteGPGKey(ctx context.Context, keyID int) error {
-	if err := r.db.WithContext(ctx).Delete(&GPGKeyModel{}, keyID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&sqldb.GPGKeyDB{}, keyID).Error; err != nil {
 		return fmt.Errorf("failed to delete GPG key: %w", err)
 	}
 	return nil
@@ -389,7 +402,7 @@ func (r *ProviderRepository) DeleteGPGKey(ctx context.Context, keyID int) error 
 // SetLatestVersion updates the latest version for a provider
 func (r *ProviderRepository) SetLatestVersion(ctx context.Context, providerID, versionID int) error {
 	if err := r.db.WithContext(ctx).
-		Model(&ProviderModel{}).
+		Model(&sqldb.ProviderDB{}).
 		Where("id = ?", providerID).
 		Update("latest_version_id", versionID).Error; err != nil {
 		return fmt.Errorf("failed to set latest version: %w", err)
@@ -401,7 +414,7 @@ func (r *ProviderRepository) SetLatestVersion(ctx context.Context, providerID, v
 func (r *ProviderRepository) GetProviderVersionCount(ctx context.Context, providerID int) (int, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).
-		Model(&ProviderVersionModel{}).
+		Model(&sqldb.ProviderVersionDB{}).
 		Where("provider_id = ?", providerID).
 		Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("failed to count provider versions: %w", err)
@@ -415,130 +428,155 @@ func (r *ProviderRepository) GetBinaryDownloadCount(ctx context.Context, binaryI
 	return 0, nil
 }
 
-// Helper methods for converting between domain entities and database models
+// Mapper functions (domain → DB)
+// Following the same pattern as the module package
 
-func (r *ProviderRepository) modelToDomain(model *ProviderModel) (*provider.Provider, error) {
-	return provider.ReconstructProvider(
-		model.ID,
-		model.NamespaceID,
-		model.Name,
-		model.Description,
-		model.Tier,
-		model.CategoryID,
-		model.RepositoryID,
-		model.LatestVersionID,
-		model.UseProviderSourceAuth,
-	), nil
-}
-
-func (r *ProviderRepository) domainToModel(prov *provider.Provider) *ProviderModel {
-	return &ProviderModel{
-		ID:                    prov.ID(),
-		NamespaceID:           prov.NamespaceID(),
-		Name:                  prov.Name(),
-		Description:           prov.Description(),
-		Tier:                  prov.Tier(),
-		CategoryID:            prov.CategoryID(),
-		RepositoryID:          prov.RepositoryID(),
-		LatestVersionID:       prov.LatestVersionID(),
-		UseProviderSourceAuth: prov.UseProviderSourceAuth(),
+func toDBProvider(p *provider.Provider) *sqldb.ProviderDB {
+	return &sqldb.ProviderDB{
+		ID:                        p.ID(),
+		NamespaceID:               p.NamespaceID(),
+		Name:                      p.Name(),
+		Description:               p.Description(),
+		Tier:                      sqldb.ProviderTier(p.Tier()),
+		DefaultProviderSourceAuth: p.UseProviderSourceAuth(),
+		ProviderCategoryID:        p.CategoryID(),
+		RepositoryID:              p.RepositoryID(),
+		LatestVersionID:           p.LatestVersionID(),
 	}
 }
 
-func (r *ProviderRepository) versionModelToDomain(model *ProviderVersionModel) (*provider.ProviderVersion, error) {
-	// Parse protocol versions from JSON
+func toDBProviderVersion(v *provider.ProviderVersion) *sqldb.ProviderVersionDB {
+	// Serialize protocol versions to JSON bytes
+	protocolVersionsJSON, _ := json.Marshal(v.ProtocolVersions())
+
+	return &sqldb.ProviderVersionDB{
+		ID:               v.ID(),
+		ProviderID:       v.ProviderID(),
+		Version:          v.Version(),
+		GitTag:           v.GitTag(),
+		Beta:             v.Beta(),
+		PublishedAt:      v.PublishedAt(),
+		GPGKeyID:         v.GPGKeyID(), // Non-nullable in correct schema
+		ExtractionVersion: nil,
+		ProtocolVersions: protocolVersionsJSON, // []byte, not string
+	}
+}
+
+func toDBProviderBinary(b *provider.ProviderBinary) *sqldb.ProviderVersionBinaryDB {
+	return &sqldb.ProviderVersionBinaryDB{
+		ID:                b.ID(),
+		ProviderVersionID: b.VersionID(),
+		Name:              b.FileName(),
+		OperatingSystem:   sqldb.ProviderBinaryOperatingSystemType(b.OperatingSystem()),
+		Architecture:      sqldb.ProviderBinaryArchitectureType(b.Architecture()),
+		Checksum:          b.FileHash(), // Domain uses FileHash, DB uses Checksum
+	}
+}
+
+func toDBGPGKey(k *provider.GPGKey) *sqldb.GPGKeyDB {
+	// Handle nullable field conversions
+	var keyID *string
+	if keyIDVal := k.KeyID(); keyIDVal != "" {
+		keyID = &keyIDVal
+	}
+
+	// Convert time.Time to *time.Time
+	var createdAt, updatedAt *time.Time
+	if createdVal := k.CreatedAt(); !createdVal.IsZero() {
+		createdAt = &createdVal
+	}
+	if updatedVal := k.UpdatedAt(); !updatedVal.IsZero() {
+		updatedAt = &updatedVal
+	}
+
+	return &sqldb.GPGKeyDB{
+		ID:         k.ID(),
+		NamespaceID: 0, // Will be set by caller (GPG keys belong to namespace, not provider)
+		ASCIIArmor: []byte(k.AsciiArmor()),
+		KeyID:      keyID,
+		Fingerprint: nil, // Not in domain model
+		Source:     nil, // Not in domain model
+		SourceURL:  nil, // Not in domain model
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+	}
+}
+
+// Mapper functions (DB → domain)
+
+func toDomainProvider(db *sqldb.ProviderDB) *provider.Provider {
+	return provider.ReconstructProvider(
+		db.ID,
+		db.NamespaceID,
+		db.Name,
+		db.Description,
+		string(db.Tier),
+		db.ProviderCategoryID, // Field name: ProviderCategoryID
+		db.RepositoryID,
+		db.LatestVersionID,
+		db.DefaultProviderSourceAuth, // Field name: DefaultProviderSourceAuth
+	)
+}
+
+func toDomainProviderVersion(db *sqldb.ProviderVersionDB) *provider.ProviderVersion {
+	// Parse protocol versions from JSON bytes
 	var protocolVersions []string
-	if model.ProtocolVersions != "" {
-		if err := json.Unmarshal([]byte(model.ProtocolVersions), &protocolVersions); err != nil {
+	if len(db.ProtocolVersions) > 0 {
+		if err := json.Unmarshal(db.ProtocolVersions, &protocolVersions); err != nil {
 			// Fallback to default protocol
 			protocolVersions = []string{"5.0"}
 		}
+	} else {
+		protocolVersions = []string{"5.0"}
 	}
 
 	return provider.ReconstructProviderVersion(
-		model.ID,
-		model.ProviderID,
-		model.Version,
-		model.GitTag,
-		model.Beta,
-		model.PublishedAt,
-		func() int {
-			if model.GPGKeyID != nil {
-				return *model.GPGKeyID
-			}
-			return 0
-		}(),
+		db.ID,
+		db.ProviderID,
+		db.Version,
+		db.GitTag,
+		db.Beta,
+		db.PublishedAt,
+		db.GPGKeyID, // Non-nullable in correct schema
 		protocolVersions,
-	), nil
+	)
 }
 
-func (r *ProviderRepository) versionDomainToModel(version *provider.ProviderVersion) *ProviderVersionModel {
-	// Serialize protocol versions to JSON
-	protocolVersionsJSON, _ := json.Marshal(version.ProtocolVersions())
-
-	return &ProviderVersionModel{
-		ID:          version.ID(),
-		ProviderID:  version.ProviderID(),
-		Version:     version.Version(),
-		GitTag:      version.GitTag(),
-		Beta:        version.Beta(),
-		PublishedAt: version.PublishedAt(),
-		GPGKeyID: func() *int {
-			if version.GPGKeyID() > 0 {
-				id := version.GPGKeyID()
-				return &id
-			}
-			return nil
-		}(),
-		ProtocolVersions: string(protocolVersionsJSON),
-	}
-}
-
-func (r *ProviderRepository) binaryModelToDomain(model *ProviderBinaryModel) *provider.ProviderBinary {
+func toDomainProviderBinary(db *sqldb.ProviderVersionBinaryDB) *provider.ProviderBinary {
 	return provider.ReconstructProviderBinary(
-		model.ID,
-		model.VersionID,
-		model.OperatingSystem,
-		model.Architecture,
-		model.FileName,
-		model.FileSize,
-		model.FileHash,
-		model.DownloadURL,
+		db.ID,
+		db.ProviderVersionID,
+		string(db.OperatingSystem),
+		string(db.Architecture),
+		db.Name,       // DB field: Name, domain: FileName
+		0,            // FileSize - not stored in DB
+		db.Checksum,   // DB field: Checksum, domain: FileHash
+		"",           // DownloadURL - not stored in DB
 	)
 }
 
-func (r *ProviderRepository) binaryDomainToModel(binary *provider.ProviderBinary) *ProviderBinaryModel {
-	return &ProviderBinaryModel{
-		ID:              binary.ID(),
-		VersionID:       binary.VersionID(),
-		OperatingSystem: binary.OperatingSystem(),
-		Architecture:    binary.Architecture(),
-		FileName:        binary.FileName(),
-		FileSize:        binary.FileSize(),
-		FileHash:        binary.FileHash(),
-		DownloadURL:     binary.DownloadURL(),
+func toDomainGPGKey(db *sqldb.GPGKeyDB) *provider.GPGKey {
+	// Handle nullable to non-nullable conversions
+	var keyID string
+	if db.KeyID != nil {
+		keyID = *db.KeyID
 	}
-}
 
-func (r *ProviderRepository) gpgKeyModelToDomain(model *GPGKeyModel) *provider.GPGKey {
+	var createdAt, updatedAt time.Time
+	if db.CreatedAt != nil {
+		createdAt = *db.CreatedAt
+	}
+	if db.UpdatedAt != nil {
+		updatedAt = *db.UpdatedAt
+	}
+
 	return provider.ReconstructGPGKey(
-		model.ID,
-		model.KeyText,
-		model.AsciiArmor,
-		model.KeyID,
-		model.TrustSignature,
-		model.CreatedAt,
-		model.UpdatedAt,
+		db.ID,
+		"",      // KeyText - not in DB
+		string(db.ASCIIArmor),
+		keyID,
+		nil,     // TrustSignature - not in DB
+		createdAt,
+		updatedAt,
 	)
-}
-
-func (r *ProviderRepository) gpgKeyDomainToModel(gpgKey *provider.GPGKey) *GPGKeyModel {
-	return &GPGKeyModel{
-		ID:             gpgKey.ID(),
-		ProviderID:     0, // Will be set when saving
-		KeyText:        gpgKey.KeyText(),
-		AsciiArmor:     gpgKey.AsciiArmor(),
-		KeyID:          gpgKey.KeyID(),
-		TrustSignature: gpgKey.TrustSignature(),
-	}
 }
