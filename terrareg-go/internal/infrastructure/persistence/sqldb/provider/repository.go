@@ -80,12 +80,18 @@ func (r *ProviderRepository) Search(ctx context.Context, query string, offset, l
 	}
 
 	// Get providers with pagination
-	if err := db.Preload("Namespace").
+	queryBuilder := db.Preload("Namespace").
 		Preload("ProviderCategory").
 		Preload("Repository").
 		Preload("LatestVersion").
-		Offset(offset).
-		Limit(limit).
+		Offset(offset)
+
+	// Only apply limit if it's greater than 0 (0 means no limit, matching module repository behavior)
+	if limit > 0 {
+		queryBuilder = queryBuilder.Limit(limit)
+	}
+
+	if err := queryBuilder.
 		Order("id DESC").
 		Find(&models).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to search providers: %w", err)
