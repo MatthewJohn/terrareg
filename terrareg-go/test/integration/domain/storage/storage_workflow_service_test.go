@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,23 +18,27 @@ import (
 func TestStorageWorkflowService_PrepareModuleVersionPath(t *testing.T) {
 	// Setup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -60,23 +65,27 @@ func TestStorageWorkflowService_PrepareModuleVersionPath(t *testing.T) {
 func TestStorageWorkflowService_GetArchivePath(t *testing.T) {
 	// Setup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	// Test archive path generation for tar.gz
@@ -123,23 +132,27 @@ func TestStorageWorkflowService_GetArchivePath(t *testing.T) {
 func TestStorageWorkflowService_CreateProcessingDirectory(t *testing.T) {
 	// Setup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -169,23 +182,27 @@ func TestStorageWorkflowService_CreateProcessingDirectory(t *testing.T) {
 func TestStorageWorkflowService_CreateExtractionDirectory(t *testing.T) {
 	// Setup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -216,23 +233,27 @@ func TestStorageWorkflowService_CreateExtractionDirectory(t *testing.T) {
 func TestStorageWorkflowService_StoreModuleArchives(t *testing.T) {
 	// Setup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -301,23 +322,27 @@ func TestStorageWorkflowService_StoreModuleArchives(t *testing.T) {
 func TestStorageWorkflowService_CleanupDirectory(t *testing.T) {
 	// Setup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -360,23 +385,27 @@ func TestStorageWorkflowService_IntegrationWorkflow(t *testing.T) {
 	// 3. Cleanup
 
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -471,23 +500,27 @@ func TestStorageWorkflowService_IntegrationWorkflow(t *testing.T) {
 func TestStorageWorkflowService_ConcurrentOperations(t *testing.T) {
 	// Test concurrent processing directory creation and cleanup
 	tempDir := t.TempDir()
-	pathConfig := &model.StoragePathConfig{
+	servicePathConfig := &service.StoragePathConfig{
+		BasePath:    tempDir,
+		ModulesPath: filepath.Join(tempDir, "modules"),
+	}
+	modelPathConfig := &model.StoragePathConfig{
 		BasePath:    tempDir,
 		ModulesPath: filepath.Join(tempDir, "modules"),
 	}
 
-	pathBuilder := NewPathBuilderService(pathConfig)
+	pathBuilder := service.NewPathBuilderService(servicePathConfig)
 	domainStorage, err := storage.NewLocalStorageService(tempDir, pathBuilder)
 	require.NoError(t, err)
 
 	tempDirManager, err := storage.NewTemporaryDirectoryManager()
 	require.NoError(t, err)
 
-	workflow := NewStorageWorkflowServiceImpl(
+	workflow := service.NewStorageWorkflowServiceImpl(
 		domainStorage,
 		pathBuilder,
 		tempDirManager,
-		pathConfig,
+		modelPathConfig,
 	)
 
 	ctx := context.Background()
@@ -502,7 +535,7 @@ func TestStorageWorkflowService_ConcurrentOperations(t *testing.T) {
 		go func(id int) {
 			defer func() { done <- true }()
 
-			tempPath, cleanup, err := workflow.CreateProcessingDirectory(ctx, f.Sprintf("concurrent_%d_", id))
+			tempPath, cleanup, err := workflow.CreateProcessingDirectory(ctx, fmt.Sprintf("concurrent_%d_", id))
 			assert.NoError(t, err)
 			assert.NotNil(t, cleanup)
 
