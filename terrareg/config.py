@@ -1174,3 +1174,49 @@ class Config:
             return False
 
         raise InvalidBooleanConfigurationError('Boolean config value not valid. Must be one of: true, yes, 1, false, no, 0')
+
+    @property
+    def REQUIRE_PRESIGNED_URL_AUTHENTICATION(self):
+        """
+        Whether authentication is required to download module sources.
+
+        If enabled, all module downloads (even for public modules) will require authentication.
+        """
+        return self.convert_boolean(os.environ.get('REQUIRE_PRESIGNED_URL_AUTHENTICATION', 'False'))
+
+    @property
+    def GITHUB_APPS_JSON(self):
+        """
+        JSON configuration for one or more GitHub Apps used for cloning repositories.
+
+        This is intended to support both github.com and GitHub Enterprise.
+
+        Expected JSON formats:
+          - List form:
+              [
+                {
+                  "host": "github.com",
+                  "app_id": "12345",
+                  "installation_id": "67890",
+                  "private_key_pem": "-----BEGIN RSA PRIVATE KEY-----\\n...\\n-----END RSA PRIVATE KEY-----\\n",
+                  "api_base_url": "https://api.github.com"
+                },
+                {
+                  "host": "ghe.example.com",
+                  "app_id": "11111",
+                  "installation_id": "22222",
+                  "private_key_pem": "-----BEGIN RSA PRIVATE KEY-----\\n...\\n-----END RSA PRIVATE KEY-----\\n",
+                  "api_base_url": "https://ghe.example.com/api/v3"
+                }
+              ]
+
+          - Object form:
+              { "apps": [ ...same objects as above... ] }
+
+        Notes:
+          - api_base_url is optional. Defaults to:
+              * github.com  -> https://api.github.com
+              * other hosts -> https://<host>/api/v3
+          - private_key_pem must be a PEM string (newlines can be encoded as \\n).
+        """
+        return os.environ.get('GITHUB_APPS_JSON', '')
