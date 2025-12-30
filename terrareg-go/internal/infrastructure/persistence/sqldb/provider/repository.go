@@ -113,8 +113,9 @@ func (r *ProviderRepository) FindByNamespaceAndName(ctx context.Context, namespa
 		Preload("LatestVersion")
 	if namespace != "" {
 		// Join with namespace to filter by namespace name
+		// Note: namespace table uses 'namespace' as column name, not 'name'
 		db = db.Joins("JOIN namespace ON namespace.id = provider.namespace_id").
-			Where("namespace.name = ? AND provider.name = ?", namespace, providerName)
+			Where("namespace.namespace = ? AND provider.name = ?", namespace, providerName)
 	} else {
 		db = db.Where("provider.name = ?", providerName)
 	}

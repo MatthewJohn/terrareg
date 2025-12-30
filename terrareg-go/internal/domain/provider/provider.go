@@ -615,3 +615,25 @@ func ExtractKeyIDFromText(keyText string) (string, error) {
 	}
 	return "", fmt.Errorf("could not extract key ID from key text")
 }
+
+// RepositoryNameToProviderName converts a repository name to a provider name.
+// Returns empty string if the repository name doesn't match the expected format.
+// Python reference: /app/test/integration/terrareg/models/test_provider.py::test_repository_name_to_provider_name
+func RepositoryNameToProviderName(repositoryName string) string {
+	if repositoryName == "" {
+		return ""
+	}
+
+	// Check if it starts with "terraform-provider-"
+	prefix := "terraform-provider-"
+	if strings.HasPrefix(repositoryName, prefix) {
+		// Remove the prefix to get the provider name
+		providerName := strings.TrimPrefix(repositoryName, prefix)
+		if providerName != "" {
+			return providerName
+		}
+	}
+
+	// If it doesn't match the expected format, return empty string
+	return ""
+}

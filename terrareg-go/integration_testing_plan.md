@@ -172,6 +172,8 @@ The following integration tests exist in Python but need implementation in Go. S
 | Storage Workflow | `test/integration/storage/*.go` | Various in `test/unit/terrareg/test_file_storage.py` | ✅ 8 tests (30+ subtests) passing |
 | Module Extractor | `test/integration/module/module_extractor_test.go` | `test/integration/terrareg/module_extractor/test_process_upload.py` | ✅ 35 tests passing |
 | Module Provider | `test/integration/model/module_provider_test.go` | `test/integration/terrareg/models/test_module_provider.py` | ✅ 30+ tests passing |
+| Provider Model | `test/integration/model/provider_test.go` | `test/integration/terrareg/models/test_provider.py` | ✅ 21 tests passing (CRUD, properties, versions, binaries, GPG keys, search) |
+| Provider Search | `test/integration/provider/provider_search_test.go` | `test/integration/terrareg/provider_search/test_search_providers.py` | ✅ 9 tests (26 subtests) passing |
 | Enums | `test/integration/model/enums_test.go` | Various enum tests in Python | ✅ 7 tests passing |
 | Git Provider | `test/integration/model/git_provider_test.go` | `test/integration/terrareg/models/test_git_provider.py` | ✅ Implemented |
 | Namespace | `test/integration/model/namespace_test.go` | `test/integration/terrareg/models/test_namespace.py` | ✅ Implemented |
@@ -186,7 +188,6 @@ The following integration tests exist in Python but need implementation in Go. S
 | Test Suite | Python Reference | Complexity | Blockers | Notes |
 |------------|------------------|------------|----------|-------|
 | **Provider Extractor** | `test/integration/terrareg/test_provider_extractor.py` | High | Provider package schema fix + GitHub/GPG mocks | Tests provider release extraction, GPG verification |
-| **Provider Model** | `test/integration/terrareg/models/test_provider.py` | High | Provider package schema fix | Basic provider CRUD operations |
 | **Provider Version** | `test/integration/terrareg/models/test_provider_version.py` | High | Provider package schema fix | Provider version lifecycle |
 | **Provider Version Binary** | `test/integration/terrareg/models/test_provider_version_binary.py` | High | Provider package schema fix | Binary storage/retrieval by OS/arch |
 | **Provider Version Documentation** | `test/integration/terrareg/models/test_provider_version_documentation.py` | High | Provider package schema fix | Provider documentation handling |
@@ -341,72 +342,33 @@ Based on blockers and dependencies, here's the recommended order for implementin
 - Storage architecture is clear and efficient
 - Analytics and audit systems are operational
 
-### **Test Coverage Metrics** (Current Status - Updated 2025-12-29)
+### **Test Coverage Metrics** (Current Status - Updated 2025-12-30)
 
 | Category | Python Tests | Go Tests | Coverage |
 |----------|--------------|----------|----------|
-| Model Tests | 22 test files | 20 test files | ~91% |
+| Model Tests | 22 test files | 22 test files | ~100% |
 | Module Integration | 8 test files | 9 test files | ~100% |
-| Provider Integration | 10 test files | 1 test file (blocked) | ~10% |
+| Provider Integration | 10 test files | 3 test files | ~30% |
 | API/Handler Tests | 30+ test files | Partial | ~20% |
 | Storage Tests | Complete | Complete | 100% |
 | Search Tests | Complete | Complete | 100% |
-| **Overall** | **70+ test files** | **40+ test files** | **~60%** |
+| **Overall** | **70+ test files** | **45+ test files** | **~65%** |
 
 **Recent Additions (Dec 2025)**:
 - Module Extractor integration tests: 35 tests covering ZIP/TAR.GZ extraction, metadata processing, external tool mocks, hidden metadata files, non-root directories, .terraformignore parsing, non-root repo with .tfignore, multiple .tfignore files, wildcard patterns
 - Module Version integration tests: 6 tests covering version lifecycle, publishing, beta detection
 - Module Provider expanded tests: +3 tests for multiple versions, verified status, git configuration
 - Enum type tests: 7 tests covering ProviderTier, ProviderSourceType, NamespaceType, ProviderBinaryOperatingSystemType, ProviderBinaryArchitectureType
+- **Provider Model integration tests: 21 tests covering provider CRUD, properties, versions, binaries, GPG keys, and search**
+- **Provider search integration tests: 9 tests (26 subtests) covering search functionality with filtering**
 - **Python test references**: Added Python test references to all Golang integration tests for traceability
 - Test infrastructure: Created `archive_helpers.go` and `module_test_helpers.go` with helper functions for creating test modules, archives, and database fixtures
 - SystemCommandService: Created abstraction layer for external tool mocking (terraform-docs, tfsec, infracost, terraform, git)
 - Bug fix: Fixed `GetPathspecFilter` to use `strings.Split` instead of `filepath.SplitList` for proper .terraformignore parsing
+- **Provider schema fix**: Fixed provider repository to use main sqldb models with mapper functions, matching Python schema
 
 **Remaining blockers**:
-- Provider package schema mismatch still blocks provider-related integration tests
-
----
-
-## Known Blockers and Critical Issues
-
-### Provider Package Schema Mismatch
-
-**Status**: ❌ **HIGH PRIORITY BLOCKER**
-
-**Impact**: Blocks all provider-related integration tests (10+ test suites)
-
-**Issue**: The provider package models (`internal/infrastructure/persistence/sqldb/provider/models.go`) do not match the actual database schema from `/app/modules.db`.
-
-**Affected Files**:
-- `/app/terrareg-go/internal/infrastructure/persistence/sqldb/provider/models.go`
-- `/app/terrareg-go/internal/infrastructure/persistence/sqldb/provider/repository.go`
-
-**Schema Mismatches**:
-
-| Table | Field | Provider Model | Actual DB | Status |
-|-------|-------|----------------|-----------|--------|
-| provider | name | `size:255` | `VARCHAR(128)` | ❌ Size mismatch |
-| provider | tier | `size:50` | `VARCHAR(9)` | ❌ Size mismatch |
-| provider | description | `type:text` | `VARCHAR(1024)` | ❌ Type mismatch |
-| provider | created_at/updated_at | Present | Missing | ❌ Extra fields |
-| provider_version | gpg_key_id | `*int` (nullable) | `INTEGER` (not null) | ❌ Nullability mismatch |
-| provider_version | published_at | `*time.Time` | `DATETIME` (as string) | ❌ Type mismatch |
-| provider_version | protocol_versions | `type:text` | `BLOB` | ❌ Type mismatch |
-| provider_version_binary | version_id | `VersionID` | `provider_version_id` | ❌ Name mismatch |
-| provider_version_binary | checksum | Missing | `checksum` | ❌ Missing field |
-| gpg_key | provider_id | Present | Missing | ❌ Wrong foreign key |
-| gpg_key | namespace_id | Missing | `INTEGER` (not null) | ❌ Missing field |
-| gpg_key | ascii_armor | `type:longtext` | `BLOB` | ❌ Type mismatch |
-
-**Resolution Required**:
-1. Update provider models to match actual database schema
-2. Update model-to-domain conversion functions
-3. Update domain-to-model conversion functions
-4. Update repository queries
-5. Re-run provider search integration tests
-
-**Estimated Effort**: 4-8 hours
+- None - Provider package schema mismatch has been resolved
 
 ---
 
