@@ -40,6 +40,7 @@ func (s versionSorter) Less(i, j int) bool {
 }
 
 // TestModuleProvider_InvalidNames tests that invalid provider names are rejected
+// Python reference: test_module_provider.py::TestModuleProvider::test_invalid_module_provider_names
 func TestModuleProvider_InvalidNames(t *testing.T) {
 	invalidNames := []string{
 		"invalid@atsymbol",
@@ -71,6 +72,7 @@ func TestModuleProvider_InvalidNames(t *testing.T) {
 }
 
 // TestModuleProvider_ValidNames tests that valid provider names are accepted
+// Python reference: test_module_provider.py::TestModuleProvider::test_valid_module_provider_names
 func TestModuleProvider_ValidNames(t *testing.T) {
 	validNames := []string{
 		"normalname",
@@ -95,7 +97,7 @@ func TestModuleProvider_ValidNames(t *testing.T) {
 }
 
 // TestModuleProvider_GetVersions tests that versions are returned in correct semantic version order
-// This matches the Python implementation which uses LooseVersion to sort
+// Python reference: test_module_provider.py::TestModuleProvider::test_module_provider_get_versions
 func TestModuleProvider_GetVersions(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -159,7 +161,7 @@ func TestModuleProvider_GetVersions(t *testing.T) {
 }
 
 // TestModuleProvider_GetVersionsWithoutBeta tests beta versions are excluded when include_beta=False
-// This matches the Python implementation behavior
+// Python reference: test_module_provider.py::TestModuleProvider::test_module_provider_get_versions_without_beta
 func TestModuleProvider_GetVersionsWithoutBeta(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -205,7 +207,7 @@ func TestModuleProvider_GetVersionsWithoutBeta(t *testing.T) {
 }
 
 // TestModuleProvider_GetLatestVersion tests getting the latest non-beta published version
-// This matches the Python implementation behavior
+// Python reference: test_module_provider.py::TestModuleProvider::test_module_provider_get_latest_version
 func TestModuleProvider_GetLatestVersion(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -239,6 +241,7 @@ func TestModuleProvider_GetLatestVersion(t *testing.T) {
 }
 
 // TestModuleProvider_GetLatestVersion_NoValidVersion tests when no valid version exists
+// Python reference: test_module_provider.py::TestModuleProvider::test_module_provider_get_latest_version_with_no_version
 func TestModuleProvider_GetLatestVersion_NoValidVersion(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -289,6 +292,7 @@ func TestModuleProvider_GetLatestVersion_NoValidVersion(t *testing.T) {
 }
 
 // TestModuleProvider_GetTotalCount tests getting total count of module providers
+// Python reference: test_module_provider.py::TestModuleProvider::test_get_total_count
 func TestModuleProvider_GetTotalCount(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -306,6 +310,7 @@ func TestModuleProvider_GetTotalCount(t *testing.T) {
 }
 
 // TestModuleProvider_GetModuleProvider_Existing tests getting an existing module provider
+// Python reference: test_module_provider.py::TestModuleProvider::test_get_module_provider_existing
 func TestModuleProvider_GetModuleProvider_Existing(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -322,6 +327,7 @@ func TestModuleProvider_GetModuleProvider_Existing(t *testing.T) {
 }
 
 // TestModuleProvider_GetModuleProvider_NonExistent tests getting a non-existent module provider
+// Python reference: test_module_provider.py::TestModuleProvider::test_get_module_provider_non_existent
 func TestModuleProvider_GetModuleProvider_NonExistent(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -356,6 +362,7 @@ func TestModuleProvider_ValidRealProviderNames(t *testing.T) {
 }
 
 // TestModuleProvider_GitPath tests git_path normalization with various inputs
+// Python reference: test_module_provider.py::TestModuleProvider::test_git_path
 func TestModuleProvider_GitPath(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -402,6 +409,7 @@ func TestModuleProvider_GitPath(t *testing.T) {
 }
 
 // TestModuleProvider_Delete tests deletion of module provider
+// Python reference: test_module_provider.py::TestModuleProvider::test_delete
 func TestModuleProvider_Delete(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -440,6 +448,7 @@ func TestModuleProvider_Delete(t *testing.T) {
 }
 
 // TestModuleProvider_UpdateRepoCloneURLTemplate tests updating repository clone URL template
+// Python reference: test_module_provider.py::TestModuleProvider::test_update_repo_clone_url_template
 func TestModuleProvider_UpdateRepoCloneURLTemplate(t *testing.T) {
 	validURLs := []string{
 		"https://github.com/example/blah.git",
@@ -473,6 +482,7 @@ func TestModuleProvider_UpdateRepoCloneURLTemplate(t *testing.T) {
 }
 
 // TestModuleProvider_UpdateRepoBrowseURLTemplate tests updating repository browse URL template
+// Python reference: test_module_provider.py::TestModuleProvider::test_update_repo_browse_url_template
 func TestModuleProvider_UpdateRepoBrowseURLTemplate(t *testing.T) {
 	validURLs := []string{
 		"https://github.com/example/blah/{tag}/{path}",
@@ -504,6 +514,7 @@ func TestModuleProvider_UpdateRepoBrowseURLTemplate(t *testing.T) {
 }
 
 // TestModuleProvider_UpdateRepoBaseURLTemplate tests updating repository base URL template
+// Python reference: test_module_provider.py::TestModuleProvider::test_update_repo_base_url_template
 func TestModuleProvider_UpdateRepoBaseURLTemplate(t *testing.T) {
 	validURLs := []string{
 		"https://github.com/example/blah",
@@ -535,6 +546,7 @@ func TestModuleProvider_UpdateRepoBaseURLTemplate(t *testing.T) {
 }
 
 // TestModuleProvider_UpdateGitTagFormat_Valid tests updating git tag format with valid values
+// Python reference: test_module_provider.py::TestModuleProvider::test_update_git_tag_format_valid
 func TestModuleProvider_UpdateGitTagFormat_Valid(t *testing.T) {
 	validFormats := map[string]string{
 		"{version}":                          "{version}",
@@ -597,6 +609,7 @@ func TestModuleProvider_UpdateVerified(t *testing.T) {
 }
 
 // TestModuleProvider_CalculateLatestVersion tests calculating latest version matches Python behavior
+// Python reference: test_module_provider.py::TestModuleProvider::test_module_provider_calculate_latest_version
 func TestModuleProvider_CalculateLatestVersion(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -830,4 +843,119 @@ func TestModuleProvider_GetVersionFromTag(t *testing.T) {
 			assert.Equal(t, tc.tagFormat, *retrieved.GitTagFormat)
 		})
 	}
+}
+
+// TestModuleProvider_WithMultipleVersions tests provider with multiple versions
+func TestModuleProvider_WithMultipleVersions(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	namespace := testutils.CreateNamespace(t, db, "multiversion")
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-module", "aws")
+
+	// Create multiple versions
+	versions := []string{"1.0.0", "1.1.0", "2.0.0", "2.1.0"}
+	for _, version := range versions {
+		_ = testutils.CreateModuleVersion(t, db, moduleProvider.ID, version)
+	}
+
+	// Verify all versions were created
+	var versionList []sqldb.ModuleVersionDB
+	err := db.DB.Where("module_provider_id = ?", moduleProvider.ID).Find(&versionList).Error
+	require.NoError(t, err)
+	assert.Len(t, versionList, 4)
+
+	// Publish all versions
+	for _, v := range versionList {
+		published := true
+		err = db.DB.Model(&v).Update("published", published).Error
+		require.NoError(t, err)
+	}
+
+	// Verify all are published
+	var publishedVersions []sqldb.ModuleVersionDB
+	err = db.DB.Where("module_provider_id = ? AND published = ?", moduleProvider.ID, true).Find(&publishedVersions).Error
+	require.NoError(t, err)
+	assert.Len(t, publishedVersions, 4)
+}
+
+// TestModuleProvider_VerifiedStatusPropagation tests verified flag handling
+func TestModuleProvider_VerifiedStatusPropagation(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	namespace := testutils.CreateNamespace(t, db, "verified-test")
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-module", "aws")
+
+	// Initially not verified
+	assert.Nil(t, moduleProvider.Verified)
+
+	// Mark as verified
+	verified := true
+	moduleProvider.Verified = &verified
+	err := db.DB.Save(&moduleProvider).Error
+	require.NoError(t, err)
+
+	// Verify the update
+	var retrieved sqldb.ModuleProviderDB
+	err = db.DB.First(&retrieved, moduleProvider.ID).Error
+	require.NoError(t, err)
+	assert.NotNil(t, retrieved.Verified)
+	assert.True(t, *retrieved.Verified)
+
+	// Unmark as verified
+	notVerified := false
+	retrieved.Verified = &notVerified
+	err = db.DB.Save(&retrieved).Error
+	require.NoError(t, err)
+
+	// Verify unmark
+	err = db.DB.First(&moduleProvider, moduleProvider.ID).Error
+	require.NoError(t, err)
+	assert.NotNil(t, moduleProvider.Verified)
+	assert.False(t, *moduleProvider.Verified)
+}
+
+// TestModuleProvider_GitConfigHandling tests git repository configuration
+func TestModuleProvider_GitConfigHandling(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create a git provider directly
+	gitProvider := sqldb.GitProviderDB{
+		Name:              "github",
+		BaseURLTemplate:   "https://github.com",
+		CloneURLTemplate:  "https://github.com",
+		BrowseURLTemplate: "https://github.com",
+		GitPathTemplate:   "https://github.com",
+	}
+	err := db.DB.Create(&gitProvider).Error
+	require.NoError(t, err)
+
+	namespace := testutils.CreateNamespace(t, db, "gitconfig")
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-module", "aws")
+
+	// Associate with git provider
+	moduleProvider.GitProviderID = &gitProvider.ID
+	err = db.DB.Save(&moduleProvider).Error
+	require.NoError(t, err)
+
+	// Set git configuration
+	gitPath := "terraform"
+	tagFormat := "v{version}"
+	moduleProvider.GitPath = &gitPath
+	moduleProvider.GitTagFormat = &tagFormat
+	err = db.DB.Save(&moduleProvider).Error
+	require.NoError(t, err)
+
+	// Verify the configuration
+	var retrieved sqldb.ModuleProviderDB
+	err = db.DB.First(&retrieved, moduleProvider.ID).Error
+	require.NoError(t, err)
+	assert.NotNil(t, retrieved.GitProviderID)
+	assert.Equal(t, gitProvider.ID, *retrieved.GitProviderID)
+	assert.NotNil(t, retrieved.GitPath)
+	assert.Equal(t, gitPath, *retrieved.GitPath)
+	assert.NotNil(t, retrieved.GitTagFormat)
+	assert.Equal(t, tagFormat, *retrieved.GitTagFormat)
 }

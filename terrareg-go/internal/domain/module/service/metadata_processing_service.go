@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,14 +16,14 @@ import (
 
 // TerraregMetadata represents terrareg.json metadata
 type TerraregMetadata struct {
-	Owner            *string                `json:"owner"`
-	Description      *string                `json:"description"`
-	RepoCloneURL     *string                `json:"repo_clone_url"`
-	RepoBrowseURL    *string                `json:"repo_browse_url"`
-	IssuesURL        *string                `json:"issues_url"`
-	License          *string                `json:"license"`
-	Provider         map[string]*string     `json:"provider"`
-	VariableTemplate map[string]interface{} `json:"variable_template"`
+	Owner            *string                 `json:"owner"`
+	Description      *string                 `json:"description"`
+	RepoCloneURL     *string                 `json:"repo_clone_url"`
+	RepoBrowseURL    *string                 `json:"repo_browse_url"`
+	IssuesURL        *string                 `json:"issues_url"`
+	License          *string                 `json:"license"`
+	Provider         map[string]*string      `json:"provider"`
+	VariableTemplate []map[string]interface{} `json:"variable_template"`
 }
 
 // MetadataProcessingRequest represents a request to process metadata
@@ -222,12 +223,14 @@ func (s *MetadataProcessingService) GetPathspecFilter(ctx context.Context, modul
 		return nil, fmt.Errorf("failed to read .terraformignore file: %w", err)
 	}
 
-	// Parse ignore patterns (simplified - would use pathspec library in full implementation)
-	lines := filepath.SplitList(string(data))
+	// Parse ignore patterns - split by newlines and filter comments/empty lines
+	lines := strings.Split(string(data), "\n")
 	var rules []string
 	for _, line := range lines {
-		line = filepath.Clean(line)
-		if line != "" && !startsWith(line, "#") {
+		// Trim whitespace from both ends
+		line = strings.TrimSpace(line)
+		// Skip empty lines and comments
+		if line != "" && !strings.HasPrefix(line, "#") {
 			rules = append(rules, line)
 		}
 	}
