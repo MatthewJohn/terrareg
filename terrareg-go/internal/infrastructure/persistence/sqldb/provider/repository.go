@@ -67,7 +67,8 @@ func (r *ProviderRepository) Search(ctx context.Context, query string, offset, l
 	var count int64
 
 	// Build search query
-	db := r.db.WithContext(ctx).Model(&sqldb.ProviderDB{})
+	// Filter to only include providers with a latest version (matching Python behavior)
+	db := r.db.WithContext(ctx).Model(&sqldb.ProviderDB{}).Where("latest_version_id IS NOT NULL AND latest_version_id > 0")
 	if query != "" {
 		searchPattern := "%" + strings.ToLower(query) + "%"
 		db = db.Where("LOWER(name) LIKE ? OR LOWER(description) LIKE ?", searchPattern, searchPattern)
