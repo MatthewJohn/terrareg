@@ -451,23 +451,23 @@ build-pr-image:
     - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
   allow_failure: true
 
-build-golang-pr-image:
-  stage: build
-  extends: .pr_deployment_golang
-  # Use tags to limit to the nomad runner
-  tags: [nomad]
+# build-golang-pr-image:
+#   stage: build
+#   extends: .pr_deployment_golang
+#   # Use tags to limit to the nomad runner
+#   tags: [nomad]
 
-  rules:
-    - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
-      when: never
-    - if: $CI_PIPELINE_SOURCE == 'push'
+#   rules:
+#     - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
+#       when: never
+#     - if: $CI_PIPELINE_SOURCE == 'push'
 
-  # Use docker without docker-in-docker, as we're
-  # passing through the docker socket
-  image: docker:latest
+#   # Use docker without docker-in-docker, as we're
+#   # passing through the docker socket
+#   image: docker:latest
 
-  script:
-    - cd terrareg-go; docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+#   script:
+#     - cd terrareg-go; docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
 
 deploy_review:
   stage: deploy
@@ -550,79 +550,79 @@ stop_main_demo:
 # ============================================================================
 
 # Deploy Go review environment
-deploy_golang_review:
-  stage: deploy
-  extends: .pr_deployment_golang
-  tags: [nomad]
-  needs: [ build-golang-pr-image ]
-  rules:
-    - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
-      when: never
-    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
-  image:
-    name: hashicorp/terraform:1.5
-    entrypoint: ["/bin/sh", "-c"]
-  environment:
-    name: review-golang/$CI_COMMIT_REF_NAME
-    url: $DYNAMIC_ENVIRONMENT_URL
-    auto_stop_in: 1 week
-    on_stop: stop_golang_review
-  variables:
-    NOMAD_ADDR: ${NOMAD_ADDR}
-    NOMAD_TOKEN: ${NOMAD_TOKEN}
-  script:
-    - git clone https://gitlab.dockstudios.co.uk/pub/terra/terrareg-nomad-pipeline
-    - cd terrareg-nomad-pipeline
-    - apk add idn2-utils jq
-    - ./gitlab-terraform plan
-    - ./gitlab-terraform apply
-    - echo "DYNAMIC_ENVIRONMENT_URL=https://$(./gitlab-terraform output -json | jq -r '.domain.value')" >> ../deploy.env
-  artifacts:
-    reports:
-      dotenv: deploy.env
+# deploy_golang_review:
+#   stage: deploy
+#   extends: .pr_deployment_golang
+#   tags: [nomad]
+#   needs: [ build-golang-pr-image ]
+#   rules:
+#     - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
+#       when: never
+#     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+#   image:
+#     name: hashicorp/terraform:1.5
+#     entrypoint: ["/bin/sh", "-c"]
+#   environment:
+#     name: review-golang/$CI_COMMIT_REF_NAME
+#     url: $DYNAMIC_ENVIRONMENT_URL
+#     auto_stop_in: 1 week
+#     on_stop: stop_golang_review
+#   variables:
+#     NOMAD_ADDR: ${NOMAD_ADDR}
+#     NOMAD_TOKEN: ${NOMAD_TOKEN}
+#   script:
+#     - git clone https://gitlab.dockstudios.co.uk/pub/terra/terrareg-nomad-pipeline
+#     - cd terrareg-nomad-pipeline
+#     - apk add idn2-utils jq
+#     - ./gitlab-terraform plan
+#     - ./gitlab-terraform apply
+#     - echo "DYNAMIC_ENVIRONMENT_URL=https://$(./gitlab-terraform output -json | jq -r '.domain.value')" >> ../deploy.env
+#   artifacts:
+#     reports:
+#       dotenv: deploy.env
 
-# Stop Go review environment
-stop_golang_review:
-  stage: deploy
-  extends: .pr_deployment_golang
-  tags: [nomad]
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
-      when: manual
-  image:
-    name: hashicorp/terraform:1.5
-    entrypoint: ["/bin/sh", "-c"]
-  variables:
-    GIT_STRATEGY: none
-    NOMAD_ADDR: ${NOMAD_ADDR}
-    NOMAD_TOKEN: ${NOMAD_TOKEN}
-  environment:
-    name: review-golang/$CI_COMMIT_REF_NAME
-    action: stop
-  script:
-    - git clone https://gitlab.dockstudios.co.uk/pub/terra/terrareg-nomad-pipeline
-    - cd terrareg-nomad-pipeline
-    - apk add idn2-utils
-    - ./gitlab-terraform destroy
-  allow_failure: true
+# # Stop Go review environment
+# stop_golang_review:
+#   stage: deploy
+#   extends: .pr_deployment_golang
+#   tags: [nomad]
+#   rules:
+#     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+#       when: manual
+#   image:
+#     name: hashicorp/terraform:1.5
+#     entrypoint: ["/bin/sh", "-c"]
+#   variables:
+#     GIT_STRATEGY: none
+#     NOMAD_ADDR: ${NOMAD_ADDR}
+#     NOMAD_TOKEN: ${NOMAD_TOKEN}
+#   environment:
+#     name: review-golang/$CI_COMMIT_REF_NAME
+#     action: stop
+#   script:
+#     - git clone https://gitlab.dockstudios.co.uk/pub/terra/terrareg-nomad-pipeline
+#     - cd terrareg-nomad-pipeline
+#     - apk add idn2-utils
+#     - ./gitlab-terraform destroy
+#   allow_failure: true
 
-# Deploy Go main demo environment
-deploy_golang_main_demo:
-  extends: deploy_golang_review
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-  environment:
-    name: golang-main-demo
-    auto_stop_in: never
-    url: $DYNAMIC_ENVIRONMENT_URL
-    on_stop: stop_golang_main_demo
+# # Deploy Go main demo environment
+# deploy_golang_main_demo:
+#   extends: deploy_golang_review
+#   rules:
+#     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+#   environment:
+#     name: golang-main-demo
+#     auto_stop_in: never
+#     url: $DYNAMIC_ENVIRONMENT_URL
+#     on_stop: stop_golang_main_demo
 
-# Stop Go main demo environment
-stop_golang_main_demo:
-  extends: stop_golang_review
-  environment:
-    name: golang-main-demo
-    action: stop
+# # Stop Go main demo environment
+# stop_golang_main_demo:
+#   extends: stop_golang_review
+#   environment:
+#     name: golang-main-demo
+#     action: stop
 
 release:
   stage: deploy
