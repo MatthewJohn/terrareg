@@ -136,21 +136,25 @@ func (a *AdminSessionAuthMethod) getUserPermissions(ctx context.Context, userID 
 // AuthMethod interface implementation for the base AdminSessionAuthMethod
 // These return default values since the actual auth state is in the AdminSessionAuthContext
 
-func (a *AdminSessionAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (a *AdminSessionAuthMethod) IsAdmin() bool                     { return false }
-func (a *AdminSessionAuthMethod) IsAuthenticated() bool              { return false }
-func (a *AdminSessionAuthMethod) RequiresCSRF() bool                   { return true }
-func (a *AdminSessionAuthMethod) CheckAuthState() bool                  { return false }
-func (a *AdminSessionAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (a *AdminSessionAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (a *AdminSessionAuthMethod) IsBuiltInAdmin() bool                     { return false }
+func (a *AdminSessionAuthMethod) IsAdmin() bool                            { return false }
+func (a *AdminSessionAuthMethod) IsAuthenticated() bool                    { return false }
+func (a *AdminSessionAuthMethod) RequiresCSRF() bool                       { return true }
+func (a *AdminSessionAuthMethod) CheckAuthState() bool                     { return false }
+func (a *AdminSessionAuthMethod) CanPublishModuleVersion(string) bool      { return false }
+func (a *AdminSessionAuthMethod) CanUploadModuleVersion(string) bool       { return false }
 func (a *AdminSessionAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (a *AdminSessionAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (a *AdminSessionAuthMethod) GetUsername() string                { return "" }
-func (a *AdminSessionAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (a *AdminSessionAuthMethod) CanAccessReadAPI() bool             { return false }
-func (a *AdminSessionAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (a *AdminSessionAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (a *AdminSessionAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+func (a *AdminSessionAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+func (a *AdminSessionAuthMethod) GetUsername() string           { return "" }
+func (a *AdminSessionAuthMethod) GetUserGroupNames() []string   { return []string{} }
+func (a *AdminSessionAuthMethod) CanAccessReadAPI() bool        { return false }
+func (a *AdminSessionAuthMethod) CanAccessTerraformAPI() bool   { return false }
+func (a *AdminSessionAuthMethod) GetTerraformAuthToken() string { return "" }
+func (a *AdminSessionAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}
 
 // UserInfo represents user information extracted from session
 type UserInfo struct {

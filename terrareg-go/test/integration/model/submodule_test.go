@@ -375,7 +375,7 @@ func TestSubmodule_MultipleVersions(t *testing.T) {
 
 	// Create different submodules for each version
 	versions := []struct {
-		versionID int
+		versionID  int
 		submodules []string
 	}{
 		{version1.ID, []string{"sub1", "sub2"}},

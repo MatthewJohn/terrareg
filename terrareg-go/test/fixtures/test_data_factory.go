@@ -482,9 +482,9 @@ func (f *TestDataFactory) CreateNamespaceWithPermissions() (sqldb.NamespaceDB, s
 	// Note: This permission cannot be properly created without database IDs
 	// This is a placeholder for testing - in actual tests, save namespace and user group first
 	permission := sqldb.UserGroupNamespacePermissionDB{
-		UserGroupID:     1, // Placeholder - needs actual DB ID
-		NamespaceID:     1, // Placeholder - needs actual DB ID
-		PermissionType:  sqldb.PermissionTypeFull,
+		UserGroupID:    1, // Placeholder - needs actual DB ID
+		NamespaceID:    1, // Placeholder - needs actual DB ID
+		PermissionType: sqldb.PermissionTypeFull,
 	}
 
 	return namespace, userGroup, permission
@@ -498,20 +498,20 @@ type PresetData struct {
 
 // PresetModuleProvider defines preset module provider data
 type PresetModuleProvider struct {
-	ID                  int
-	Versions            map[string]PresetModuleVersion
+	ID                   int
+	Versions             map[string]PresetModuleVersion
 	RepoCloneURLTemplate *string
-	GitTagFormat        *string
-	GitPath             *string
+	GitTagFormat         *string
+	GitPath              *string
 }
 
 // PresetModuleVersion defines preset module version data
 type PresetModuleVersion struct {
-	Published  bool
-	Beta       bool
-	Owner      *string
-	Terraform  string
-	Readme     string
+	Published        bool
+	Beta             bool
+	Owner            *string
+	Terraform        string
+	Readme           string
 	VariableTemplate string
 }
 
@@ -525,16 +525,16 @@ func (f *TestDataFactory) PresetDataSets() map[string]PresetData {
 					"testprovider": {
 						ID: 17,
 						Versions: map[string]PresetModuleVersion{
-							"1.5.4":     {Published: true},
-							"2.1.0":     {Published: true},
-							"0.1.1":     {Published: true},
-							"10.23.0":   {Published: true},
-							"0.1.10":    {Published: true},
-							"0.0.9":     {Published: true},
-							"0.1.09":    {Published: true},
-							"0.1.8":     {Published: true},
+							"1.5.4":       {Published: true},
+							"2.1.0":       {Published: true},
+							"0.1.1":       {Published: true},
+							"10.23.0":     {Published: true},
+							"0.1.10":      {Published: true},
+							"0.0.9":       {Published: true},
+							"0.1.09":      {Published: true},
+							"0.1.8":       {Published: true},
 							"23.2.3-beta": {Published: true, Beta: true},
-							"5.21.2":    {Published: false},
+							"5.21.2":      {Published: false},
 						},
 					},
 				},

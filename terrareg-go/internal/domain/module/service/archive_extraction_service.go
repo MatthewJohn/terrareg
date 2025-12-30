@@ -182,7 +182,6 @@ func (s *ArchiveExtractionService) extractArchiveWithSavepoint(
 		Duration: 0,
 	}
 
-
 	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		return s.extractArchive(ctx, req)
 	})

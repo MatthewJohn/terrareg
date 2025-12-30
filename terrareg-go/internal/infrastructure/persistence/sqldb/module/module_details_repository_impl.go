@@ -119,6 +119,7 @@ func (r *ModuleDetailsRepositoryImpl) FindByModuleVersionID(ctx context.Context,
 
 	return fromDBModuleDetails(&dbDetails), nil
 }
+
 // SaveAndReturnID saves a new module details entity and returns the database ID
 func (r *ModuleDetailsRepositoryImpl) SaveAndReturnID(ctx context.Context, details *model.ModuleDetails) (int, error) {
 	db := r.GetDBFromContext(ctx)

@@ -66,7 +66,7 @@ func (c *AuthenticateOIDCTokenCommand) Execute(ctx context.Context, req Authenti
 	// Convert permissions to string slice
 	permissions := make([]string, 0)
 	for namespace, permType := range authCtx.GetAllNamespacePermissions() {
-	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Generate identity ID
@@ -159,7 +159,7 @@ func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenReq
 	// Convert permissions to string slice
 	permissions := make([]string, 0)
 	for namespace, permType := range authCtx.GetAllNamespacePermissions() {
-	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Generate identity ID
@@ -244,7 +244,7 @@ func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUs
 	// Convert permissions to string slice
 	permissions := make([]string, 0)
 	for namespace, permType := range authCtx.GetAllNamespacePermissions() {
-	permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
 	}
 
 	// Create metadata

@@ -23,11 +23,11 @@ type OpenidConnectAuthContext struct {
 func NewOpenidConnectAuthContext(ctx context.Context, sub string, claims map[string]interface{}) *OpenidConnectAuthContext {
 	return &OpenidConnectAuthContext{
 		BaseAuthContext: BaseAuthContext{ctx: ctx},
-		sub:            sub,
-		claims:         claims,
-		userGroups:     make([]*UserGroup, 0),
-		permissions:    make(map[string]string),
-		isAdmin:        false,
+		sub:             sub,
+		claims:          claims,
+		userGroups:      make([]*UserGroup, 0),
+		permissions:     make(map[string]string),
+		isAdmin:         false,
 	}
 }
 
@@ -296,11 +296,11 @@ func (o *OpenidConnectAuthContext) GetTerraformAuthToken() string {
 // GetProviderData returns provider-specific data for the OpenID Connect authentication
 func (o *OpenidConnectAuthContext) GetProviderData() map[string]interface{} {
 	data := map[string]interface{}{
-		"sub":       o.sub,
-		"username":  o.username,
-		"email":     o.email,
-		"name":      o.name,
-		"is_admin":  o.isAdmin,
+		"sub":         o.sub,
+		"username":    o.username,
+		"email":       o.email,
+		"name":        o.name,
+		"is_admin":    o.isAdmin,
 		"auth_method": string(AuthMethodOpenIDConnect),
 	}
 

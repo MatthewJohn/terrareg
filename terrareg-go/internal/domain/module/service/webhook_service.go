@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
@@ -104,7 +104,7 @@ func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namesp
 
 	// Execute the module import
 	domainReq := DomainImportRequest{
-		Input:             domainInput,
+		Input: domainInput,
 		ProcessingOptions: ProcessingOptions{
 			SkipArchiveExtraction:   false,
 			SkipTerraformProcessing: false,
@@ -230,7 +230,7 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 
 					// Execute the actual module import
 					domainReq := DomainImportRequest{
-						Input:             domainInput,
+						Input: domainInput,
 						ProcessingOptions: ProcessingOptions{
 							SkipArchiveExtraction:   false,
 							SkipTerraformProcessing: false,
@@ -248,18 +248,18 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 						GenerateArchives:   true,
 					}
 
-				result, err := ws.moduleImporterService.ImportModuleVersionWithTransaction(ctx, domainReq)
-				if err != nil {
-					return err
-				}
-				if !result.Success {
-					errorMsg := ""
-					if result.Error != nil {
-						errorMsg = *result.Error
+					result, err := ws.moduleImporterService.ImportModuleVersionWithTransaction(ctx, domainReq)
+					if err != nil {
+						return err
 					}
-					return fmt.Errorf("module import failed: %s", errorMsg)
-				}
-				return nil
+					if !result.Success {
+						errorMsg := ""
+						if result.Error != nil {
+							errorMsg = *result.Error
+						}
+						return fmt.Errorf("module import failed: %s", errorMsg)
+					}
+					return nil
 				},
 			)
 		})

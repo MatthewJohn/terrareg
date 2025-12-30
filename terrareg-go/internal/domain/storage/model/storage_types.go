@@ -26,10 +26,10 @@ func (st StorageType) String() string {
 
 // StorageConfig represents storage configuration
 type StorageConfig struct {
-	Type           StorageType `json:"type"`
-	DataDirectory  string      `json:"data_directory"`
-	UploadDirectory string     `json:"upload_directory"`
-	S3Config       *S3Config   `json:"s3_config,omitempty"`
+	Type            StorageType `json:"type"`
+	DataDirectory   string      `json:"data_directory"`
+	UploadDirectory string      `json:"upload_directory"`
+	S3Config        *S3Config   `json:"s3_config,omitempty"`
 }
 
 // S3Config represents S3-specific configuration
@@ -43,18 +43,18 @@ type S3Config struct {
 
 // FileInfo represents basic information about a stored file (simplified)
 type FileInfo struct {
-	Path         string    `json:"path"`
-	Size         int64     `json:"size"`
-	LastModified time.Time `json:"last_modified"`
+	Path         string      `json:"path"`
+	Size         int64       `json:"size"`
+	LastModified time.Time   `json:"last_modified"`
 	StorageType  StorageType `json:"storage_type"`
 }
 
 // DirectoryInfo represents information about a directory
 type DirectoryInfo struct {
-	Path         string    `json:"path"`
-	FileCount    int       `json:"file_count"`
-	TotalSize    int64     `json:"total_size"`
-	LastModified time.Time `json:"last_modified"`
+	Path         string      `json:"path"`
+	FileCount    int         `json:"file_count"`
+	TotalSize    int64       `json:"total_size"`
+	LastModified time.Time   `json:"last_modified"`
 	StorageType  StorageType `json:"storage_type"`
 }
 
@@ -81,7 +81,6 @@ type ArchivePath struct {
 	ArchiveName string `json:"archive_name"` // e.g., "source.tar.gz", "source.zip"
 }
 
-
 // StorageError represents storage-specific errors
 type StorageError struct {
 	Code    string `json:"code"`
@@ -98,13 +97,13 @@ func (e *StorageError) Error() string {
 
 // Common error types
 var (
-	ErrFileNotFound     = &StorageError{Code: "FILE_NOT_FOUND", Message: "File not found"}
+	ErrFileNotFound      = &StorageError{Code: "FILE_NOT_FOUND", Message: "File not found"}
 	ErrDirectoryNotFound = &StorageError{Code: "DIRECTORY_NOT_FOUND", Message: "Directory not found"}
-	ErrPermissionDenied = &StorageError{Code: "PERMISSION_DENIED", Message: "Permission denied"}
-	ErrStorageFull      = &StorageError{Code: "STORAGE_FULL", Message: "Storage full"}
-	ErrInvalidPath      = &StorageError{Code: "INVALID_PATH", Message: "Invalid path"}
-	ErrPathTraversal    = &StorageError{Code: "PATH_TRAVERSAL", Message: "Path traversal detected"}
-	ErrUploadFailed     = &StorageError{Code: "UPLOAD_FAILED", Message: "Upload failed"}
-	ErrDeleteFailed     = &StorageError{Code: "DELETE_FAILED", Message: "Delete failed"}
-	ErrConfigInvalid    = &StorageError{Code: "CONFIG_INVALID", Message: "Invalid configuration"}
+	ErrPermissionDenied  = &StorageError{Code: "PERMISSION_DENIED", Message: "Permission denied"}
+	ErrStorageFull       = &StorageError{Code: "STORAGE_FULL", Message: "Storage full"}
+	ErrInvalidPath       = &StorageError{Code: "INVALID_PATH", Message: "Invalid path"}
+	ErrPathTraversal     = &StorageError{Code: "PATH_TRAVERSAL", Message: "Path traversal detected"}
+	ErrUploadFailed      = &StorageError{Code: "UPLOAD_FAILED", Message: "Upload failed"}
+	ErrDeleteFailed      = &StorageError{Code: "DELETE_FAILED", Message: "Delete failed"}
+	ErrConfigInvalid     = &StorageError{Code: "CONFIG_INVALID", Message: "Invalid configuration"}
 )

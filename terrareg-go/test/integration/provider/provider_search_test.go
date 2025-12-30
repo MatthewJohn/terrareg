@@ -10,9 +10,9 @@ import (
 
 	providerquery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	providerrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
 

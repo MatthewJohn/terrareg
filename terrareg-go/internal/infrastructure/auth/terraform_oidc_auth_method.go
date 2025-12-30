@@ -10,14 +10,14 @@ import (
 
 // TerraformOidcAuthMethod implements immutable Terraform OIDC authentication
 type TerraformOidcAuthMethod struct {
-	config            *config.InfrastructureConfig
+	config              *config.InfrastructureConfig
 	terraformIdpService auth.TerraformIdpValidator
 }
 
 // NewTerraformOidcAuthMethod creates a new immutable Terraform OIDC auth method
 func NewTerraformOidcAuthMethod(config *config.InfrastructureConfig, terraformIdpService auth.TerraformIdpValidator) *TerraformOidcAuthMethod {
 	return &TerraformOidcAuthMethod{
-		config:            config,
+		config:              config,
 		terraformIdpService: terraformIdpService,
 	}
 }
@@ -62,21 +62,25 @@ func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, authorizatio
 
 // AuthMethod interface implementation for the base TerraformOidcAuthMethod
 
-func (t *TerraformOidcAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (t *TerraformOidcAuthMethod) IsAdmin() bool                     { return false }
-func (t *TerraformOidcAuthMethod) IsAuthenticated() bool              { return false }
-func (t *TerraformOidcAuthMethod) RequiresCSRF() bool                   { return false }
-func (t *TerraformOidcAuthMethod) CheckAuthState() bool                  { return false }
-func (t *TerraformOidcAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (t *TerraformOidcAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (t *TerraformOidcAuthMethod) IsBuiltInAdmin() bool                     { return false }
+func (t *TerraformOidcAuthMethod) IsAdmin() bool                            { return false }
+func (t *TerraformOidcAuthMethod) IsAuthenticated() bool                    { return false }
+func (t *TerraformOidcAuthMethod) RequiresCSRF() bool                       { return false }
+func (t *TerraformOidcAuthMethod) CheckAuthState() bool                     { return false }
+func (t *TerraformOidcAuthMethod) CanPublishModuleVersion(string) bool      { return false }
+func (t *TerraformOidcAuthMethod) CanUploadModuleVersion(string) bool       { return false }
 func (t *TerraformOidcAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (t *TerraformOidcAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (t *TerraformOidcAuthMethod) GetUsername() string                { return "" }
-func (t *TerraformOidcAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (t *TerraformOidcAuthMethod) CanAccessReadAPI() bool             { return false }
-func (t *TerraformOidcAuthMethod) CanAccessTerraformAPI() bool       { return true }  // OIDC is specifically for Terraform
-func (t *TerraformOidcAuthMethod) GetTerraformAuthToken() string     { return "" }  // Uses standard OIDC tokens
-func (t *TerraformOidcAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+func (t *TerraformOidcAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+func (t *TerraformOidcAuthMethod) GetUsername() string           { return "" }
+func (t *TerraformOidcAuthMethod) GetUserGroupNames() []string   { return []string{} }
+func (t *TerraformOidcAuthMethod) CanAccessReadAPI() bool        { return false }
+func (t *TerraformOidcAuthMethod) CanAccessTerraformAPI() bool   { return true } // OIDC is specifically for Terraform
+func (t *TerraformOidcAuthMethod) GetTerraformAuthToken() string { return "" }   // Uses standard OIDC tokens
+func (t *TerraformOidcAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}
 
 func (t *TerraformOidcAuthMethod) GetProviderType() auth.AuthMethodType {
 	return auth.AuthMethodTerraformOIDC

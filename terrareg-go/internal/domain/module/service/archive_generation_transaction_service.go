@@ -53,15 +53,15 @@ func (af ArchiveFormat) String() string {
 
 // ArchiveGenerationRequest represents a request to generate archives
 type ArchiveGenerationRequest struct {
-	ModuleVersionID               int
-	SourcePath                    string // Path to source files
-	ArchivePath                   string // Output directory for archives
-	Formats                       []ArchiveFormat
-	PathspecFilter                *PathspecFilter // For filtering files (from .terraformignore)
-	TransactionCtx                context.Context
+	ModuleVersionID int
+	SourcePath      string // Path to source files
+	ArchivePath     string // Output directory for archives
+	Formats         []ArchiveFormat
+	PathspecFilter  *PathspecFilter // For filtering files (from .terraformignore)
+	TransactionCtx  context.Context
 	// Archive hosting configuration
-	GitCloneURL                   string              // Module's git clone URL (empty if not externally hosted)
-	DeleteExternallyHostedArtifacts bool                // Whether to skip archive generation for externally hosted modules
+	GitCloneURL                     string // Module's git clone URL (empty if not externally hosted)
+	DeleteExternallyHostedArtifacts bool   // Whether to skip archive generation for externally hosted modules
 }
 
 // ArchiveGenerationResult represents the result of archive generation

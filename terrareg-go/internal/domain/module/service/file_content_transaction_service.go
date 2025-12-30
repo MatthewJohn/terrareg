@@ -273,7 +273,7 @@ func (s *FileContentTransactionService) ProcessExampleFiles(
 				ModuleVersionID: moduleVersionID,
 				Files:           []FileContentItem{fileItem},
 				TransactionCtx:  ctx,
-								ProcessContent:  true,
+				ProcessContent:  true,
 				ValidatePaths:   true,
 			}
 

@@ -16,8 +16,8 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
 )
 
@@ -47,7 +47,7 @@ type ModuleHandler struct {
 	createModuleProviderRedirectCmd *moduleCmd.CreateModuleProviderRedirectCommand
 	deleteModuleProviderRedirectCmd *moduleCmd.DeleteModuleProviderRedirectCommand
 	getModuleProviderRedirectsQuery *moduleQuery.GetModuleProviderRedirectsQuery
-	recordModuleDownloadCmd          *analyticsCmd.RecordModuleDownloadCommand
+	recordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -110,7 +110,7 @@ func NewModuleHandler(
 		createModuleProviderRedirectCmd: createModuleProviderRedirectCmd,
 		deleteModuleProviderRedirectCmd: deleteModuleProviderRedirectCmd,
 		getModuleProviderRedirectsQuery: getModuleProviderRedirectsQuery,
-		recordModuleDownloadCmd:        recordModuleDownloadCmd,
+		recordModuleDownloadCmd:         recordModuleDownloadCmd,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -861,8 +861,8 @@ func (h *ModuleHandler) HandleModuleVersionCreate(w http.ResponseWriter, r *http
 		Namespace: namespace,
 		Module:    moduleName,
 		Provider:  provider,
-		Version:   nil,      // Don't provide version when using git tag (validation requires exactly one)
-		GitTag:    gitTag,   // Use provided or derived git tag for cloning
+		Version:   nil,    // Don't provide version when using git tag (validation requires exactly one)
+		GitTag:    gitTag, // Use provided or derived git tag for cloning
 	}
 
 	// Execute import command

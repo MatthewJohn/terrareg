@@ -23,11 +23,11 @@ type SamlAuthContext struct {
 func NewSamlAuthContext(ctx context.Context, nameID string, attributes map[string][]string) *SamlAuthContext {
 	return &SamlAuthContext{
 		BaseAuthContext: BaseAuthContext{ctx: ctx},
-		nameID:         nameID,
-		attributes:     attributes,
-		userGroups:     make([]*UserGroup, 0),
-		permissions:    make(map[string]string),
-		isAdmin:        false,
+		nameID:          nameID,
+		attributes:      attributes,
+		userGroups:      make([]*UserGroup, 0),
+		permissions:     make(map[string]string),
+		isAdmin:         false,
 	}
 }
 
@@ -289,13 +289,13 @@ func (s *SamlAuthContext) GetTerraformAuthToken() string {
 // GetProviderData returns provider-specific data for the SAML authentication
 func (s *SamlAuthContext) GetProviderData() map[string]interface{} {
 	return map[string]interface{}{
-		"name_id":    s.nameID,
-		"username":   s.username,
-		"email":      s.email,
-		"first_name": s.firstName,
-		"last_name":  s.lastName,
-		"attributes": s.attributes,
-		"is_admin":   s.isAdmin,
+		"name_id":     s.nameID,
+		"username":    s.username,
+		"email":       s.email,
+		"first_name":  s.firstName,
+		"last_name":   s.lastName,
+		"attributes":  s.attributes,
+		"is_admin":    s.isAdmin,
 		"auth_method": string(AuthMethodSAML),
 	}
 }

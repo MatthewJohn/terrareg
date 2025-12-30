@@ -16,7 +16,7 @@ import (
 type GenerateModuleSourceCommand struct {
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
 	moduleFileService  *moduleService.ModuleFileService
-	storageService    storageService.StorageService
+	storageService     storageService.StorageService
 }
 
 // NewGenerateModuleSourceCommand creates a new generate module source command
@@ -28,7 +28,7 @@ func NewGenerateModuleSourceCommand(
 	return &GenerateModuleSourceCommand{
 		moduleProviderRepo: moduleProviderRepo,
 		moduleFileService:  moduleFileService,
-		storageService:    storageService,
+		storageService:     storageService,
 	}
 }
 

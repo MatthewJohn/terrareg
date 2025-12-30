@@ -150,7 +150,7 @@ func (a *ApiKeyAuthContext) GetTerraformAuthToken() string {
 func (a *ApiKeyAuthContext) GetProviderData() map[string]interface{} {
 	return map[string]interface{}{
 		"permission_level": int(a.permissionLevel),
-		"username":       a.username,
-		"auth_method":    string(a.authMethodType),
+		"username":         a.username,
+		"auth_method":      string(a.authMethodType),
 	}
 }

@@ -48,7 +48,6 @@ type StorageService interface {
 	GetFileSize(ctx context.Context, path string) (int64, error)
 }
 
-
 // StorageFactory defines the interface for creating storage services
 type StorageFactory interface {
 	CreateStorageService(config *model.StorageConfig) (StorageService, error)
@@ -80,9 +79,9 @@ type TemporaryDirectoryManager interface {
 
 // StoragePathConfig represents path configuration matching Python implementation
 type StoragePathConfig struct {
-	BasePath        string `json:"base_path"`
-	ModulesPath     string `json:"modules_path"`
-	ProvidersPath   string `json:"providers_path"`
-	UploadPath      string `json:"upload_path"`
-	TempPath        string `json:"temp_path"`
+	BasePath      string `json:"base_path"`
+	ModulesPath   string `json:"modules_path"`
+	ProvidersPath string `json:"providers_path"`
+	UploadPath    string `json:"upload_path"`
+	TempPath      string `json:"temp_path"`
 }

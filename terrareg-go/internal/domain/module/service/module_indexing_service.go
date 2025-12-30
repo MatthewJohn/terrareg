@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rs/zerolog"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
+	"github.com/rs/zerolog"
 )
 
 // ModuleIndexingService orchestrates the complete module indexing workflow
@@ -28,8 +28,8 @@ type IndexModuleVersionRequest struct {
 	Version   string `json:"version"`
 
 	// Git repository information
-	GitURL string `json:"git_url"`
-	GitTag string `json:"git_tag"`
+	GitURL  string `json:"git_url"`
+	GitTag  string `json:"git_tag"`
 	GitPath string `json:"git_path"` // Optional: Path within repository to module
 
 	// Processing options
@@ -57,7 +57,7 @@ func NewModuleIndexingServiceImpl(
 		gitService:       gitService,
 		storageWorkflow:  storageWorkflow,
 		moduleProcessor:  moduleProcessor,
-	archiveGenerator: archiveGenerator,
+		archiveGenerator: archiveGenerator,
 		logger:           logger,
 	}
 }
@@ -122,10 +122,10 @@ func (s *ModuleIndexingServiceImpl) IndexModuleVersion(ctx context.Context, req 
 
 	processingMetadata := &ModuleProcessingMetadata{
 		ModuleVersionID: 0, // Set from database in real implementation
-		GitTag:         req.GitTag,
-		GitURL:         req.GitURL,
-		GitPath:        req.GitPath,
-		CommitSHA:      commitSHA,
+		GitTag:          req.GitTag,
+		GitURL:          req.GitURL,
+		GitPath:         req.GitPath,
+		CommitSHA:       commitSHA,
 	}
 
 	result, err := s.moduleProcessor.ProcessModule(ctx, sourceDir, processingMetadata)
@@ -184,48 +184,48 @@ type ModuleProcessorService interface {
 // ModuleProcessingMetadata contains metadata for module processing
 type ModuleProcessingMetadata struct {
 	ModuleVersionID int
-	GitTag         string
-	GitURL         string
-	GitPath        string
-	CommitSHA      string
+	GitTag          string
+	GitURL          string
+	GitPath         string
+	CommitSHA       string
 }
 
 // ModuleProcessingResult contains results from module processing
 type ModuleProcessingResult struct {
-	ModuleMetadata    *ModuleMetadata    `json:"module_metadata"`
-	Submodules        []SubmoduleInfo      `json:"submodules"`
-	Examples          []ExampleInfo        `json:"examples"`
-	ReadmeContent     string               `json:"readme_content"`
-	VariableTemplate  string               `json:"variable_template"`
-	ProcessedFiles    []string             `json:"processed_files"`
+	ModuleMetadata   *ModuleMetadata `json:"module_metadata"`
+	Submodules       []SubmoduleInfo `json:"submodules"`
+	Examples         []ExampleInfo   `json:"examples"`
+	ReadmeContent    string          `json:"readme_content"`
+	VariableTemplate string          `json:"variable_template"`
+	ProcessedFiles   []string        `json:"processed_files"`
 }
 
 // ModuleMetadata contains extracted module metadata
 type ModuleMetadata struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Version     string            `json:"version"`
-	Providers   []ProviderInfo    `json:"providers"`
-	Variables   []VariableInfo    `json:"variables"`
-	Outputs     []OutputInfo      `json:"outputs"`
-	Resources  []ResourceInfo    `json:"resources"`
+	Name         string           `json:"name"`
+	Description  string           `json:"description"`
+	Version      string           `json:"version"`
+	Providers    []ProviderInfo   `json:"providers"`
+	Variables    []VariableInfo   `json:"variables"`
+	Outputs      []OutputInfo     `json:"outputs"`
+	Resources    []ResourceInfo   `json:"resources"`
 	Dependencies []DependencyInfo `json:"dependencies"`
 }
 
 // ProviderInfo represents a Terraform provider
 type ProviderInfo struct {
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Source   string `json:"source"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Source  string `json:"source"`
 }
 
 // VariableInfo represents a Terraform variable
 type VariableInfo struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
+	Name        string      `json:"name"`
+	Type        string      `json:"type"`
+	Description string      `json:"description"`
 	Default     interface{} `json:"default"`
-	Required    bool   `json:"required"`
+	Required    bool        `json:"required"`
 }
 
 // OutputInfo represents a Terraform output
@@ -244,7 +244,7 @@ type ResourceInfo struct {
 
 // DependencyInfo represents a module dependency
 type DependencyInfo struct {
-	Source string `json:"source"`
+	Source  string `json:"source"`
 	Version string `json:"version"`
 }
 

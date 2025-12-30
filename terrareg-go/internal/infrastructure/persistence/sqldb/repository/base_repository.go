@@ -3,21 +3,21 @@ package repository
 import (
 	"context"
 
-	"gorm.io/gorm"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
+	"gorm.io/gorm"
 )
 
 // BaseRepository provides common database context handling for all repositories
 // This eliminates duplicate getDBFromContext implementations across repositories
 type BaseRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
 	helper *transaction.SavepointHelper
 }
 
 // NewBaseRepository creates a new base repository
 func NewBaseRepository(db *gorm.DB) *BaseRepository {
 	return &BaseRepository{
-		db: db,
+		db:     db,
 		helper: transaction.NewSavepointHelper(db),
 	}
 }
@@ -41,4 +41,3 @@ func (r *BaseRepository) GetDBFromContext(ctx context.Context) *gorm.DB {
 func (r *BaseRepository) IsTransactionActive(ctx context.Context) bool {
 	return r.helper.IsTransactionActive(ctx)
 }
-

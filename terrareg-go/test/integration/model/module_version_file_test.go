@@ -140,8 +140,8 @@ func TestModuleVersionFile_IsMarkdown(t *testing.T) {
 // TestModuleVersionFile_ContentType tests content type detection
 func TestModuleVersionFile_ContentType(t *testing.T) {
 	testCases := []struct {
-		path            string
-		expectedType    string
+		path         string
+		expectedType string
 	}{
 		{"README.md", "text/markdown"},
 		{"file.md", "text/markdown"},

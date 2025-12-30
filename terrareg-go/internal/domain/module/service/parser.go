@@ -16,15 +16,15 @@ type ModuleParser interface {
 
 // ParseResult contains the results of parsing a module
 type ParseResult struct {
-	Description        string
-	ReadmeContent      string
-	RawTerraformDocs   []byte
-	Owner              string
-	Variables          []Variable
-	Outputs            []Output
-	ProviderVersions   []ProviderVersion
-	Resources          []Resource
-	Dependencies       []model.Dependency
+	Description           string
+	ReadmeContent         string
+	RawTerraformDocs      []byte
+	Owner                 string
+	Variables             []Variable
+	Outputs               []Output
+	ProviderVersions      []ProviderVersion
+	Resources             []Resource
+	Dependencies          []model.Dependency
 	TerraformRequirements []TerraformRequirement
 }
 

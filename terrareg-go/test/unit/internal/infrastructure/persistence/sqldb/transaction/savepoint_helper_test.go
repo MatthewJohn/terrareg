@@ -14,9 +14,9 @@ import (
 func TestSavepointNameSanitization(t *testing.T) {
 	// Test cases for problematic savepoint names that would cause SQL errors
 	testCases := []struct {
-		name         string
-		description  string
-		expectError  bool
+		name        string
+		description string
+		expectError bool
 	}{
 		{
 			name:        "domain_import_terraform-aws-modules_terraform-aws-eks_aws_1234567890",

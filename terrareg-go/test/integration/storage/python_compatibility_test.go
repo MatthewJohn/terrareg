@@ -72,35 +72,35 @@ func TestPythonArchiveNamingCompatibility(t *testing.T) {
 
 	// Test all possible archive names that Python expects
 	testCases := []struct {
-		namespace   string
-		module      string
-		provider    string
-		version     string
-		archiveName string
+		namespace    string
+		module       string
+		provider     string
+		version      string
+		archiveName  string
 		expectedPath string
 	}{
 		{
-			namespace:   "hashicorp",
-			module:      "consul",
-			provider:    "aws",
-			version:     "2.1.0",
-			archiveName: "source.tar.gz",
+			namespace:    "hashicorp",
+			module:       "consul",
+			provider:     "aws",
+			version:      "2.1.0",
+			archiveName:  "source.tar.gz",
 			expectedPath: filepath.Join(dataDir, "modules", "hashicorp", "consul", "aws", "2.1.0", "source.tar.gz"),
 		},
 		{
-			namespace:   "terraform-aws-modules",
-			module:      "vpc",
-			provider:    "aws",
-			version:     "3.0.0",
-			archiveName: "source.zip",
+			namespace:    "terraform-aws-modules",
+			module:       "vpc",
+			provider:     "aws",
+			version:      "3.0.0",
+			archiveName:  "source.zip",
 			expectedPath: filepath.Join(dataDir, "modules", "terraform-aws-modules", "vpc", "aws", "3.0.0", "source.zip"),
 		},
 		{
-			namespace:   "my-company",
-			module:      "database",
-			provider:    "postgresql",
-			version:     "1.2.3",
-			archiveName: "source.tar.gz",
+			namespace:    "my-company",
+			module:       "database",
+			provider:     "postgresql",
+			version:      "1.2.3",
+			archiveName:  "source.tar.gz",
 			expectedPath: filepath.Join(dataDir, "modules", "my-company", "database", "postgresql", "1.2.3", "source.tar.gz"),
 		},
 	}

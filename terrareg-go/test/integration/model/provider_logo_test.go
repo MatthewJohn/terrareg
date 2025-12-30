@@ -44,9 +44,9 @@ func TestProviderLogo_Exists(t *testing.T) {
 // TestProviderLogo_Tos tests the terms of service text for provider logos
 func TestProviderLogo_Tos(t *testing.T) {
 	testCases := []struct {
-		name        string
+		name         string
 		providerName string
-		expectedTos string
+		expectedTos  string
 	}{
 		{
 			"aws provider tos",
@@ -166,8 +166,8 @@ func TestProviderLogo_Link(t *testing.T) {
 // TestProviderLogo_Source tests the image source paths for provider logos
 func TestProviderLogo_Source(t *testing.T) {
 	testCases := []struct {
-		name         string
-		providerName string
+		name           string
+		providerName   string
 		expectedSource string
 	}{
 		{

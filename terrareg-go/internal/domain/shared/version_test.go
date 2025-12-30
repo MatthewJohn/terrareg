@@ -165,7 +165,7 @@ func TestVersion_Compare(t *testing.T) {
 // TestVersion_IsPrerelease tests prerelease detection
 func TestVersion_IsPrerelease(t *testing.T) {
 	tests := []struct {
-		version     string
+		version      string
 		isPrerelease bool
 	}{
 		{"1.2.3", false},
@@ -249,10 +249,10 @@ func TestParseVersionConstraint(t *testing.T) {
 // TestVersionConstraint_Matches tests constraint matching
 func TestVersionConstraint_Matches(t *testing.T) {
 	tests := []struct {
-		name      string
+		name       string
 		constraint string
-		version   string
-		expected  bool
+		version    string
+		expected   bool
 	}{
 		{"exact match", "=1.2.3", "1.2.3", true},
 		{"exact no match", "=1.2.3", "1.2.4", false},

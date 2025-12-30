@@ -20,10 +20,10 @@ type SessionAuthMethodConfig struct {
 // SessionAuthMethod implements immutable session-based authentication
 type SessionAuthMethod struct {
 	auth.BaseAuthMethod
-	config          *SessionAuthMethodConfig
-	sessionRepo     repository.SessionRepository
-	userGroupRepo   repository.UserGroupRepository
-	httpClient      *http.Client
+	config        *SessionAuthMethodConfig
+	sessionRepo   repository.SessionRepository
+	userGroupRepo repository.UserGroupRepository
+	httpClient    *http.Client
 }
 
 // NewSessionAuthMethod creates a new immutable session auth method
@@ -82,18 +82,22 @@ func (a *SessionAuthMethod) Authenticate(ctx context.Context, sessionID string) 
 }
 
 // Default AuthMethod implementations (returning false/empty values)
-func (a *SessionAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (a *SessionAuthMethod) IsAdmin() bool                     { return false }
-func (a *SessionAuthMethod) IsAuthenticated() bool              { return false }
-func (a *SessionAuthMethod) RequiresCSRF() bool                   { return true }
-func (a *SessionAuthMethod) CheckAuthState() bool                  { return false }
-func (a *SessionAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (a *SessionAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (a *SessionAuthMethod) IsBuiltInAdmin() bool                     { return false }
+func (a *SessionAuthMethod) IsAdmin() bool                            { return false }
+func (a *SessionAuthMethod) IsAuthenticated() bool                    { return false }
+func (a *SessionAuthMethod) RequiresCSRF() bool                       { return true }
+func (a *SessionAuthMethod) CheckAuthState() bool                     { return false }
+func (a *SessionAuthMethod) CanPublishModuleVersion(string) bool      { return false }
+func (a *SessionAuthMethod) CanUploadModuleVersion(string) bool       { return false }
 func (a *SessionAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (a *SessionAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (a *SessionAuthMethod) GetUsername() string                { return "" }
-func (a *SessionAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (a *SessionAuthMethod) CanAccessReadAPI() bool             { return false }
-func (a *SessionAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (a *SessionAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (a *SessionAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+func (a *SessionAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+func (a *SessionAuthMethod) GetUsername() string           { return "" }
+func (a *SessionAuthMethod) GetUserGroupNames() []string   { return []string{} }
+func (a *SessionAuthMethod) CanAccessReadAPI() bool        { return false }
+func (a *SessionAuthMethod) CanAccessTerraformAPI() bool   { return false }
+func (a *SessionAuthMethod) GetTerraformAuthToken() string { return "" }
+func (a *SessionAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}

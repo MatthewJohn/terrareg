@@ -15,7 +15,7 @@ import (
 // PublishModuleVersionCommand handles publishing a new module version
 type PublishModuleVersionCommand struct {
 	moduleProviderRepo repository.ModuleProviderRepository
-	auditService      *service.ModuleAuditService
+	auditService       *service.ModuleAuditService
 }
 
 // NewPublishModuleVersionCommand creates a new publish module version command
@@ -25,7 +25,7 @@ func NewPublishModuleVersionCommand(
 ) *PublishModuleVersionCommand {
 	return &PublishModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,
-		auditService:      auditService,
+		auditService:       auditService,
 	}
 }
 

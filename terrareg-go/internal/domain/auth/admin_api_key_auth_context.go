@@ -15,7 +15,7 @@ type AdminApiKeyAuthContext struct {
 func NewAdminApiKeyAuthContext(ctx context.Context, apiKey string) *AdminApiKeyAuthContext {
 	return &AdminApiKeyAuthContext{
 		BaseAuthContext: BaseAuthContext{ctx: ctx},
-		apiKey:         apiKey,
+		apiKey:          apiKey,
 	}
 }
 

@@ -65,18 +65,22 @@ func (u *UploadApiKeyAuthMethod) Authenticate(ctx context.Context, headers, form
 // AuthMethod interface implementation for the base UploadApiKeyAuthMethod
 // These return default values since the actual auth state is in the UploadApiKeyAuthContext
 
-func (u *UploadApiKeyAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (u *UploadApiKeyAuthMethod) IsAdmin() bool                     { return false }
-func (u *UploadApiKeyAuthMethod) IsAuthenticated() bool              { return false }
-func (u *UploadApiKeyAuthMethod) RequiresCSRF() bool                   { return false }
-func (u *UploadApiKeyAuthMethod) CheckAuthState() bool                  { return false }
-func (u *UploadApiKeyAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (u *UploadApiKeyAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (u *UploadApiKeyAuthMethod) IsBuiltInAdmin() bool                     { return false }
+func (u *UploadApiKeyAuthMethod) IsAdmin() bool                            { return false }
+func (u *UploadApiKeyAuthMethod) IsAuthenticated() bool                    { return false }
+func (u *UploadApiKeyAuthMethod) RequiresCSRF() bool                       { return false }
+func (u *UploadApiKeyAuthMethod) CheckAuthState() bool                     { return false }
+func (u *UploadApiKeyAuthMethod) CanPublishModuleVersion(string) bool      { return false }
+func (u *UploadApiKeyAuthMethod) CanUploadModuleVersion(string) bool       { return false }
 func (u *UploadApiKeyAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (u *UploadApiKeyAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (u *UploadApiKeyAuthMethod) GetUsername() string                { return "" }
-func (u *UploadApiKeyAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (u *UploadApiKeyAuthMethod) CanAccessReadAPI() bool             { return false }
-func (u *UploadApiKeyAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (u *UploadApiKeyAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (u *UploadApiKeyAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+func (u *UploadApiKeyAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+func (u *UploadApiKeyAuthMethod) GetUsername() string           { return "" }
+func (u *UploadApiKeyAuthMethod) GetUserGroupNames() []string   { return []string{} }
+func (u *UploadApiKeyAuthMethod) CanAccessReadAPI() bool        { return false }
+func (u *UploadApiKeyAuthMethod) CanAccessTerraformAPI() bool   { return false }
+func (u *UploadApiKeyAuthMethod) GetTerraformAuthToken() string { return "" }
+func (u *UploadApiKeyAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}

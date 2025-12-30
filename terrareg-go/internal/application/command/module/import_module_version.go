@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // ImportModuleVersionCommand handles importing module versions from Git
@@ -73,10 +73,10 @@ func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req module.Imp
 
 	// Convert application request to domain request
 	domainReq := moduleService.DomainImportRequest{
-		Input:             domainInput,
-		ProcessingOptions: importReq.ProcessingOptions,
-		SourceType:        importReq.SourceType,
-		GenerateArchives:  importReq.GenerateArchives,
+		Input:              domainInput,
+		ProcessingOptions:  importReq.ProcessingOptions,
+		SourceType:         importReq.SourceType,
+		GenerateArchives:   importReq.GenerateArchives,
 		EnableSecurityScan: importReq.EnableSecurityScan,
 	}
 

@@ -36,15 +36,15 @@ type ModuleImportRequest struct {
 // ModuleImportResult represents the result of module import
 // This is an application-layer response type
 type ModuleImportResult struct {
-	Success             bool                              `json:"success"`
-	ModuleVersionID     *int                              `json:"module_version_id,omitempty"`
-	Version             string                            `json:"version"`
-	ProcessingResult    *domainService.ProcessingResult   `json:"processing_result,omitempty"`
-	GeneratedArchives   []domainService.GeneratedArchive   `json:"generated_archives,omitempty"`
+	Success             bool                                `json:"success"`
+	ModuleVersionID     *int                                `json:"module_version_id,omitempty"`
+	Version             string                              `json:"version"`
+	ProcessingResult    *domainService.ProcessingResult     `json:"processing_result,omitempty"`
+	GeneratedArchives   []domainService.GeneratedArchive    `json:"generated_archives,omitempty"`
 	SecurityResults     *domainService.SecurityScanResponse `json:"security_results,omitempty"`
-	Error               *string                           `json:"error,omitempty"`
-	SavepointRolledBack bool                              `json:"savepoint_rolled_back"`
-	Timestamp           string                            `json:"timestamp"` // Application-layer formatting
+	Error               *string                             `json:"error,omitempty"`
+	SavepointRolledBack bool                                `json:"savepoint_rolled_back"`
+	Timestamp           string                              `json:"timestamp"` // Application-layer formatting
 }
 
 // BatchModuleImportRequest represents a batch import request
@@ -62,12 +62,12 @@ type BatchImportOptions struct {
 
 // BatchModuleImportResult represents the result of batch imports
 type BatchModuleImportResult struct {
-	TotalModules      int                        `json:"total_modules"`
-	SuccessfulImports []ModuleImportResult       `json:"successful_imports"`
-	FailedImports     []ModuleImportResult       `json:"failed_imports"`
-	PartialSuccess    bool                       `json:"partial_success"`
-	OverallSuccess    bool                       `json:"overall_success"`
-	FailureSummary    string                     `json:"failure_summary,omitempty"`
-	TotalDuration     string                     `json:"total_duration"` // Application-layer formatting
-	Timestamp         string                     `json:"timestamp"`     // Application-layer formatting
+	TotalModules      int                  `json:"total_modules"`
+	SuccessfulImports []ModuleImportResult `json:"successful_imports"`
+	FailedImports     []ModuleImportResult `json:"failed_imports"`
+	PartialSuccess    bool                 `json:"partial_success"`
+	OverallSuccess    bool                 `json:"overall_success"`
+	FailureSummary    string               `json:"failure_summary,omitempty"`
+	TotalDuration     string               `json:"total_duration"` // Application-layer formatting
+	Timestamp         string               `json:"timestamp"`      // Application-layer formatting
 }

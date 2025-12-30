@@ -13,7 +13,7 @@ import (
 // TestUserGroupNamespacePermission_Create tests creating namespace permissions
 func TestUserGroupNamespacePermission_Create(t *testing.T) {
 	testCases := []struct {
-		name          string
+		name           string
 		permissionType string
 	}{
 		{"FULL permission", "FULL"},

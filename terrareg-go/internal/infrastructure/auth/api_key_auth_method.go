@@ -94,18 +94,22 @@ func (a *ApiKeyAuthMethod) Authenticate(ctx context.Context, apiKey string) (aut
 
 // The AuthMethod interface methods return default values for the base method
 // Actual authentication state is provided by the adapter
-func (a *ApiKeyAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (a *ApiKeyAuthMethod) IsAdmin() bool                     { return false }
-func (a *ApiKeyAuthMethod) IsAuthenticated() bool              { return false }
-func (a *ApiKeyAuthMethod) RequiresCSRF() bool                   { return false }
-func (a *ApiKeyAuthMethod) CheckAuthState() bool                  { return false }
-func (a *ApiKeyAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (a *ApiKeyAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (a *ApiKeyAuthMethod) IsBuiltInAdmin() bool                     { return false }
+func (a *ApiKeyAuthMethod) IsAdmin() bool                            { return false }
+func (a *ApiKeyAuthMethod) IsAuthenticated() bool                    { return false }
+func (a *ApiKeyAuthMethod) RequiresCSRF() bool                       { return false }
+func (a *ApiKeyAuthMethod) CheckAuthState() bool                     { return false }
+func (a *ApiKeyAuthMethod) CanPublishModuleVersion(string) bool      { return false }
+func (a *ApiKeyAuthMethod) CanUploadModuleVersion(string) bool       { return false }
 func (a *ApiKeyAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (a *ApiKeyAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (a *ApiKeyAuthMethod) GetUsername() string                { return "" }
-func (a *ApiKeyAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (a *ApiKeyAuthMethod) CanAccessReadAPI() bool             { return false }
-func (a *ApiKeyAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (a *ApiKeyAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (a *ApiKeyAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+func (a *ApiKeyAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+func (a *ApiKeyAuthMethod) GetUsername() string           { return "" }
+func (a *ApiKeyAuthMethod) GetUserGroupNames() []string   { return []string{} }
+func (a *ApiKeyAuthMethod) CanAccessReadAPI() bool        { return false }
+func (a *ApiKeyAuthMethod) CanAccessTerraformAPI() bool   { return false }
+func (a *ApiKeyAuthMethod) GetTerraformAuthToken() string { return "" }
+func (a *ApiKeyAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}

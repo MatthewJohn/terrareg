@@ -9,8 +9,8 @@ import (
 
 	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
@@ -73,10 +73,10 @@ func TestArchiveHostingLogic_DeleteExternallyHostedEnabled(t *testing.T) {
 
 	// Mock expectation: ArchiveGenerationRequest should have GitCloneURL set and DeleteExternallyHostedArtifacts true
 	expectedGenReq := service.ArchiveGenerationRequest{
-		ModuleVersionID:               1,
-		SourcePath:                    "/tmp/module",
-		Formats:                       []service.ArchiveFormat{service.ArchiveFormatZIP, service.ArchiveFormatTarGz},
-		GitCloneURL:                   gitCloneURL,
+		ModuleVersionID:                 1,
+		SourcePath:                      "/tmp/module",
+		Formats:                         []service.ArchiveFormat{service.ArchiveFormatZIP, service.ArchiveFormatTarGz},
+		GitCloneURL:                     gitCloneURL,
 		DeleteExternallyHostedArtifacts: true,
 	}
 
@@ -154,16 +154,16 @@ func TestArchiveHostingLogic_DeleteExternallyHostedDisabled(t *testing.T) {
 
 	// Mock expectation: ArchiveGenerationRequest should have GitCloneURL set but DeleteExternallyHostedArtifacts false
 	expectedGenReq := service.ArchiveGenerationRequest{
-		ModuleVersionID:               1,
-		SourcePath:                    "/tmp/module",
-		Formats:                       []service.ArchiveFormat{service.ArchiveFormatZIP, service.ArchiveFormatTarGz},
-		GitCloneURL:                   gitCloneURL,
+		ModuleVersionID:                 1,
+		SourcePath:                      "/tmp/module",
+		Formats:                         []service.ArchiveFormat{service.ArchiveFormatZIP, service.ArchiveFormatTarGz},
+		GitCloneURL:                     gitCloneURL,
 		DeleteExternallyHostedArtifacts: false,
 	}
 
 	// Mock response: Archives generated successfully
 	mockResult := &service.ArchiveGenerationResult{
-		Success:            true,
+		Success: true,
 		GeneratedArchives: []service.GeneratedArchive{
 			{Format: service.ArchiveFormatZIP, Path: "/tmp/module.zip", Size: 1024},
 			{Format: service.ArchiveFormatTarGz, Path: "/tmp/module.tar.gz", Size: 2048},
@@ -239,16 +239,16 @@ func TestArchiveHostingLogic_NoGitCloneURL(t *testing.T) {
 
 	// Mock expectation: ArchiveGenerationRequest should have empty GitCloneURL and DeleteExternallyHostedArtifacts true
 	expectedGenReq := service.ArchiveGenerationRequest{
-		ModuleVersionID:               1,
-		SourcePath:                    "/tmp/module",
-		Formats:                       []service.ArchiveFormat{service.ArchiveFormatZIP, service.ArchiveFormatTarGz},
-		GitCloneURL:                   "", // Empty because no git clone URL configured
+		ModuleVersionID:                 1,
+		SourcePath:                      "/tmp/module",
+		Formats:                         []service.ArchiveFormat{service.ArchiveFormatZIP, service.ArchiveFormatTarGz},
+		GitCloneURL:                     "", // Empty because no git clone URL configured
 		DeleteExternallyHostedArtifacts: true,
 	}
 
 	// Mock response: Archives generated (because module is not externally hosted)
 	mockResult := &service.ArchiveGenerationResult{
-		Success:            true,
+		Success: true,
 		GeneratedArchives: []service.GeneratedArchive{
 			{Format: service.ArchiveFormatZIP, Path: "/tmp/module.zip", Size: 1024},
 		},

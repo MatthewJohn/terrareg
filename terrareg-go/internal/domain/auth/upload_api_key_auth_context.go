@@ -15,7 +15,7 @@ type UploadApiKeyAuthContext struct {
 func NewUploadApiKeyAuthContext(ctx context.Context, apiKey string) *UploadApiKeyAuthContext {
 	return &UploadApiKeyAuthContext{
 		BaseAuthContext: BaseAuthContext{ctx: ctx},
-		apiKey:         apiKey,
+		apiKey:          apiKey,
 	}
 }
 

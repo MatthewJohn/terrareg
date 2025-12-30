@@ -16,13 +16,13 @@ import (
 
 // TerraregMetadata represents terrareg.json metadata
 type TerraregMetadata struct {
-	Owner            *string                 `json:"owner"`
-	Description      *string                 `json:"description"`
-	RepoCloneURL     *string                 `json:"repo_clone_url"`
-	RepoBrowseURL    *string                 `json:"repo_browse_url"`
-	IssuesURL        *string                 `json:"issues_url"`
-	License          *string                 `json:"license"`
-	Provider         map[string]*string      `json:"provider"`
+	Owner            *string                  `json:"owner"`
+	Description      *string                  `json:"description"`
+	RepoCloneURL     *string                  `json:"repo_clone_url"`
+	RepoBrowseURL    *string                  `json:"repo_browse_url"`
+	IssuesURL        *string                  `json:"issues_url"`
+	License          *string                  `json:"license"`
+	Provider         map[string]*string       `json:"provider"`
 	VariableTemplate []map[string]interface{} `json:"variable_template"`
 }
 
@@ -76,7 +76,6 @@ func (s *MetadataProcessingService) ProcessMetadataWithTransaction(
 		MissingAttributes: req.RequiredAttributes,
 		Duration:          0,
 	}
-
 
 	err := s.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 		// Check if metadata file exists

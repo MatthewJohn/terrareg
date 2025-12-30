@@ -21,8 +21,8 @@ import (
 func TestProvider_RepositoryNameToProviderName(t *testing.T) {
 	testCases := []struct {
 		name           string
-		repositoryName  string
-		expectedResult  string
+		repositoryName string
+		expectedResult string
 	}{
 		{"terraform-provider-jmon", "terraform-provider-jmon", "jmon"},
 		{"terraform-provider-some-service", "terraform-provider-some-service", "some-service"},

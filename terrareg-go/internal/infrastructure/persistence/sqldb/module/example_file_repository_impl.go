@@ -95,4 +95,3 @@ func (r *ExampleFileRepositoryImpl) DeleteByModuleVersion(ctx context.Context, m
 
 	return nil
 }
-

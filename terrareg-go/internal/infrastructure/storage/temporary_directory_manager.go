@@ -88,7 +88,6 @@ func (m *TemporaryDirectoryManagerImpl) CleanupTemporaryDirectory(ctx context.Co
 	return nil
 }
 
-
 // CleanupOldDirectories removes temporary directories older than maxAge
 func (m *TemporaryDirectoryManagerImpl) CleanupOldDirectories(ctx context.Context, maxAge time.Duration) error {
 	m.mu.RLock()

@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
 	"github.com/rs/zerolog"
+	"gorm.io/gorm"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
@@ -393,7 +393,7 @@ func (s *ModuleImporterService) prepareGitSource(
 
 	// Clone repository
 	cloneOptions := gitService.CloneOptions{
-		Timeout: time.Duration(s.infraConfig.GitCloneTimeout) * time.Second,
+		Timeout:  time.Duration(s.infraConfig.GitCloneTimeout) * time.Second,
 		NeedTags: req.Input.GitTag != nil, // Fetch all tags when we need to checkout a specific tag
 	}
 
@@ -484,7 +484,6 @@ func (s *ModuleImporterService) cleanupSource(sourcePath string) {
 		_ = os.RemoveAll(sourcePath)
 	}
 }
-
 
 // BatchModuleImportResult represents the result of batch enhanced imports
 type BatchModuleImportResult struct {

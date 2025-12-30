@@ -52,10 +52,10 @@ func TestModule_ValidNames(t *testing.T) {
 		"withAcapital",
 		"StartwithCaptital",
 		"endwithcapitaL",
-		"tl",      // Two letters
-		"11",      // Two numbers
-		"a-z",     // Two characters with dash
-		"a_z",     // Two characters with underscore
+		"tl",  // Two letters
+		"11",  // Two numbers
+		"a-z", // Two characters with dash
+		"a_z", // Two characters with underscore
 	}
 
 	for _, name := range validNames {

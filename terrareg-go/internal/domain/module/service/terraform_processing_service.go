@@ -93,11 +93,11 @@ type TfswitchConfig struct {
 
 // TerraformExecutorService handles terraform operations with transaction safety
 type TerraformExecutorService struct {
-	savepointHelper   *transaction.SavepointHelper
-	commandService    service.SystemCommandService
-	terraformBin      string
-	lockTimeout       time.Duration
-	tfswitchConfig    *TfswitchConfig
+	savepointHelper *transaction.SavepointHelper
+	commandService  service.SystemCommandService
+	terraformBin    string
+	lockTimeout     time.Duration
+	tfswitchConfig  *TfswitchConfig
 }
 
 // NewTerraformExecutorService creates a new terraform executor service
@@ -258,10 +258,6 @@ func (s *TerraformExecutorService) executeTerraformInit(ctx context.Context, mod
 	return result
 }
 
-
-
-
-
 // executeTerraformGraph executes terraform graph and returns result
 // Following Python's _get_graph_data pattern
 // Assumes global lock is already held by RunTerraformWithCallback
@@ -403,7 +399,6 @@ func (s *TerraformExecutorService) executeTerraformModules(ctx context.Context, 
 
 	return result
 }
-
 
 // TerraformBinaryPath returns the path to the terraform binary
 func (s *TerraformExecutorService) TerraformBinaryPath() string {

@@ -17,20 +17,20 @@ const (
 	AuditActionNamespaceDelete            AuditAction = "namespace_delete"
 
 	// Module provider actions
-	AuditActionModuleProviderCreate                    AuditAction = "module_provider_create"
-	AuditActionModuleProviderDelete                    AuditAction = "module_provider_delete"
-	AuditActionModuleProviderUpdateGitTagFormat        AuditAction = "module_provider_update_git_tag_format"
-	AuditActionModuleProviderUpdateGitProvider         AuditAction = "module_provider_update_git_provider"
-	AuditActionModuleProviderUpdateGitPath             AuditAction = "module_provider_update_git_path"
-	AuditActionModuleProviderUpdateArchiveGitPath      AuditAction = "module_provider_update_archive_git_path"
-	AuditActionModuleProviderUpdateGitCustomBaseURL    AuditAction = "module_provider_update_git_custom_base_url"
-	AuditActionModuleProviderUpdateGitCustomCloneURL   AuditAction = "module_provider_update_git_custom_clone_url"
-	AuditActionModuleProviderUpdateGitCustomBrowseURL  AuditAction = "module_provider_update_git_custom_browse_url"
-	AuditActionModuleProviderUpdateVerified            AuditAction = "module_provider_update_verified"
-	AuditActionModuleProviderUpdateNamespace           AuditAction = "module_provider_update_namespace"
-	AuditActionModuleProviderUpdateModuleName          AuditAction = "module_provider_update_module_name"
-	AuditActionModuleProviderUpdateProviderName        AuditAction = "module_provider_update_provider_name"
-	AuditActionModuleProviderRedirectDelete            AuditAction = "module_provider_redirect_delete"
+	AuditActionModuleProviderCreate                   AuditAction = "module_provider_create"
+	AuditActionModuleProviderDelete                   AuditAction = "module_provider_delete"
+	AuditActionModuleProviderUpdateGitTagFormat       AuditAction = "module_provider_update_git_tag_format"
+	AuditActionModuleProviderUpdateGitProvider        AuditAction = "module_provider_update_git_provider"
+	AuditActionModuleProviderUpdateGitPath            AuditAction = "module_provider_update_git_path"
+	AuditActionModuleProviderUpdateArchiveGitPath     AuditAction = "module_provider_update_archive_git_path"
+	AuditActionModuleProviderUpdateGitCustomBaseURL   AuditAction = "module_provider_update_git_custom_base_url"
+	AuditActionModuleProviderUpdateGitCustomCloneURL  AuditAction = "module_provider_update_git_custom_clone_url"
+	AuditActionModuleProviderUpdateGitCustomBrowseURL AuditAction = "module_provider_update_git_custom_browse_url"
+	AuditActionModuleProviderUpdateVerified           AuditAction = "module_provider_update_verified"
+	AuditActionModuleProviderUpdateNamespace          AuditAction = "module_provider_update_namespace"
+	AuditActionModuleProviderUpdateModuleName         AuditAction = "module_provider_update_module_name"
+	AuditActionModuleProviderUpdateProviderName       AuditAction = "module_provider_update_provider_name"
+	AuditActionModuleProviderRedirectDelete           AuditAction = "module_provider_redirect_delete"
 
 	// Module version actions
 	AuditActionModuleVersionIndex   AuditAction = "module_version_index"
@@ -38,11 +38,11 @@ const (
 	AuditActionModuleVersionDelete  AuditAction = "module_version_delete"
 
 	// User group actions
-	AuditActionUserGroupCreate                       AuditAction = "user_group_create"
-	AuditActionUserGroupDelete                       AuditAction = "user_group_delete"
-	AuditActionUserGroupNamespacePermissionAdd       AuditAction = "user_group_namespace_permission_add"
-	AuditActionUserGroupNamespacePermissionModify    AuditAction = "user_group_namespace_permission_modify"
-	AuditActionUserGroupNamespacePermissionDelete    AuditAction = "user_group_namespace_permission_delete"
+	AuditActionUserGroupCreate                    AuditAction = "user_group_create"
+	AuditActionUserGroupDelete                    AuditAction = "user_group_delete"
+	AuditActionUserGroupNamespacePermissionAdd    AuditAction = "user_group_namespace_permission_add"
+	AuditActionUserGroupNamespacePermissionModify AuditAction = "user_group_namespace_permission_modify"
+	AuditActionUserGroupNamespacePermissionDelete AuditAction = "user_group_namespace_permission_delete"
 
 	// User authentication
 	AuditActionUserLogin AuditAction = "user_login"

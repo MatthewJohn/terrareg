@@ -183,7 +183,7 @@ func (h *SavepointHelper) WithSavepointOrTransaction(ctx context.Context, savepo
 	// Check if transaction already exists in context
 	if tx, exists := h.getTransactionFromContext(ctx); exists {
 		// Use existing transaction and create savepoint
-	// IMPORTANT: Ensure the context has the transaction stored for consistency
+		// IMPORTANT: Ensure the context has the transaction stored for consistency
 		// Even though tx exists in ctx, we double-verify for nested calls
 		ctxWithTx := context.WithValue(ctx, TransactionDBKey, tx)
 		return h.withSavepointAndTx(tx, savepointName, func(txDB *gorm.DB) error {

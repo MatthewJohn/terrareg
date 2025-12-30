@@ -297,10 +297,10 @@ func (h *AuthHandler) HandleSAMLACS(w http.ResponseWriter, r *http.Request) {
 	// Create basic session data for now - in production, this should use the SAML service
 	// to validate the response and extract user information
 	sessionData := map[string]interface{}{
-		"auth_method":    "saml",
-		"authenticated":  true,
-		"relay_state":    relayState,
-		"saml_response":  samlResponse,
+		"auth_method":   "saml",
+		"authenticated": true,
+		"relay_state":   relayState,
+		"saml_response": samlResponse,
 	}
 
 	// Create session using the authentication service

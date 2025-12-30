@@ -9,18 +9,18 @@ import (
 
 // AuthEvent represents an authentication event for audit logging
 type AuthEvent struct {
-	Timestamp   time.Time `json:"timestamp"`
-	Provider    string    `json:"provider"`
-	Username    string    `json:"username,omitempty"`
-	Success     bool      `json:"success"`
-	IPAddress   string    `json:"ip_address"`
-	UserAgent   string    `json:"user_agent"`
-	SessionID   string    `json:"session_id,omitempty"`
-	Error       string    `json:"error,omitempty"`
-	Endpoint    string    `json:"endpoint,omitempty"`
-	Method      string    `json:"method,omitempty"`
-	Namespace   string    `json:"namespace,omitempty"`
-	Action      string    `json:"action,omitempty"`
+	Timestamp time.Time `json:"timestamp"`
+	Provider  string    `json:"provider"`
+	Username  string    `json:"username,omitempty"`
+	Success   bool      `json:"success"`
+	IPAddress string    `json:"ip_address"`
+	UserAgent string    `json:"user_agent"`
+	SessionID string    `json:"session_id,omitempty"`
+	Error     string    `json:"error,omitempty"`
+	Endpoint  string    `json:"endpoint,omitempty"`
+	Method    string    `json:"method,omitempty"`
+	Namespace string    `json:"namespace,omitempty"`
+	Action    string    `json:"action,omitempty"`
 }
 
 // AuditLogger handles comprehensive audit logging for authentication events

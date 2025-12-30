@@ -549,16 +549,16 @@ func TestModuleProvider_UpdateRepoBaseURLTemplate(t *testing.T) {
 // Python reference: test_module_provider.py::TestModuleProvider::test_update_git_tag_format_valid
 func TestModuleProvider_UpdateGitTagFormat_Valid(t *testing.T) {
 	validFormats := map[string]string{
-		"{version}":                          "{version}",
-		"v{version}":                         "v{version}",
-		"{major}":                            "{major}",
-		"{minor}":                            "{minor}",
-		"{patch}":                            "{patch}",
-		"{major}.{minor}":                    "{major}.{minor}",
-		"{major}.{patch}":                    "{major}.{patch}",
-		"{minor}.{patch}":                    "{minor}.{patch}",
-		"releases/v{minor}.{patch}-testing":  "releases/v{minor}.{patch}-testing",
-		"my-module@v{version}":               "my-module@v{version}",
+		"{version}":                         "{version}",
+		"v{version}":                        "v{version}",
+		"{major}":                           "{major}",
+		"{minor}":                           "{minor}",
+		"{patch}":                           "{patch}",
+		"{major}.{minor}":                   "{major}.{minor}",
+		"{major}.{patch}":                   "{major}.{patch}",
+		"{minor}.{patch}":                   "{minor}.{patch}",
+		"releases/v{minor}.{patch}-testing": "releases/v{minor}.{patch}-testing",
+		"my-module@v{version}":              "my-module@v{version}",
 	}
 
 	for input := range validFormats {
@@ -798,10 +798,10 @@ func TestModuleProvider_UpdateGitTagFormat_Invalid(t *testing.T) {
 // TestModuleProvider_GetVersionFromTag tests extracting version from tag with format
 func TestModuleProvider_GetVersionFromTag(t *testing.T) {
 	testCases := []struct {
-		name       string
-		tagFormat  string
-		tag        string
-		expected   string
+		name      string
+		tagFormat string
+		tag       string
+		expected  string
 	}{
 		{
 			name:      "simple format",

@@ -13,40 +13,40 @@ import (
 // TestNewTerraformSession tests creating a new TerraformSession
 func TestNewTerraformSession(t *testing.T) {
 	tests := []struct {
-		name                 string
-		authorizationCode    string
-		clientID             string
-		redirectURI          string
-		scope                string
-		state                string
-		codeChallenge        *string
-		codeChallengeMethod  *string
-		nonce                *string
-		expectError          bool
+		name                string
+		authorizationCode   string
+		clientID            string
+		redirectURI         string
+		scope               string
+		state               string
+		codeChallenge       *string
+		codeChallengeMethod *string
+		nonce               *string
+		expectError         bool
 	}{
 		{
-			name:              "valid session with all fields",
-			authorizationCode: "auth-code-123",
-			clientID:          "terraform-cli",
-			redirectURI:       "http://localhost:10000/login",
-			scope:             "openid",
-			state:             "state-123",
-			codeChallenge:     strPtr("challenge-123"),
+			name:                "valid session with all fields",
+			authorizationCode:   "auth-code-123",
+			clientID:            "terraform-cli",
+			redirectURI:         "http://localhost:10000/login",
+			scope:               "openid",
+			state:               "state-123",
+			codeChallenge:       strPtr("challenge-123"),
 			codeChallengeMethod: strPtr("S256"),
-			nonce:             strPtr("nonce-123"),
-			expectError:       false,
+			nonce:               strPtr("nonce-123"),
+			expectError:         false,
 		},
 		{
-			name:              "valid session with optional fields nil",
-			authorizationCode: "auth-code-456",
-			clientID:          "terraform-cli",
-			redirectURI:       "http://localhost:10001/login",
-			scope:             "",
-			state:             "",
-			codeChallenge:     nil,
+			name:                "valid session with optional fields nil",
+			authorizationCode:   "auth-code-456",
+			clientID:            "terraform-cli",
+			redirectURI:         "http://localhost:10001/login",
+			scope:               "",
+			state:               "",
+			codeChallenge:       nil,
 			codeChallengeMethod: nil,
-			nonce:             nil,
-			expectError:       false,
+			nonce:               nil,
+			expectError:         false,
 		},
 		{
 			name:              "empty authorization code",
@@ -137,7 +137,7 @@ func TestTerraformSession_IsExpired(t *testing.T) {
 			nil,
 			nil,
 			pastTime,
-			time.Now().Add(-2 * time.Hour),
+			time.Now().Add(-2*time.Hour),
 			nil,
 			nil,
 			"",
@@ -232,7 +232,7 @@ func TestTerraformSession_Exchange(t *testing.T) {
 			nil,
 			nil,
 			pastTime,
-			time.Now().Add(-2 * time.Hour),
+			time.Now().Add(-2*time.Hour),
 			nil,
 			nil,
 			"",
@@ -261,34 +261,34 @@ func TestTerraformSession_SetSubjectIdentifier(t *testing.T) {
 // TestNewTerraformAccessToken tests creating a new TerraformAccessToken
 func TestNewTerraformAccessToken(t *testing.T) {
 	tests := []struct {
-		name                  string
-		tokenValue            string
-		tokenType             string
-		expiresAt             time.Time
-		scopes                []string
-		subjectIdentifier     string
-		authorizationCodeID   *string
-		expectError           bool
+		name                string
+		tokenValue          string
+		tokenType           string
+		expiresAt           time.Time
+		scopes              []string
+		subjectIdentifier   string
+		authorizationCodeID *string
+		expectError         bool
 	}{
 		{
-			name:              "valid access token",
-			tokenValue:        "access-token-123",
-			tokenType:         "Bearer",
-			expiresAt:         time.Now().Add(1 * time.Hour),
-			scopes:            []string{"openid", "profile"},
-			subjectIdentifier: "user-123",
+			name:                "valid access token",
+			tokenValue:          "access-token-123",
+			tokenType:           "Bearer",
+			expiresAt:           time.Now().Add(1 * time.Hour),
+			scopes:              []string{"openid", "profile"},
+			subjectIdentifier:   "user-123",
 			authorizationCodeID: strPtr("auth-code-123"),
-			expectError:       false,
+			expectError:         false,
 		},
 		{
-			name:              "valid token without authorization code ID",
-			tokenValue:        "access-token-456",
-			tokenType:         "Bearer",
-			expiresAt:         time.Now().Add(30 * time.Minute),
-			scopes:            []string{"openid"},
-			subjectIdentifier: "user-456",
+			name:                "valid token without authorization code ID",
+			tokenValue:          "access-token-456",
+			tokenType:           "Bearer",
+			expiresAt:           time.Now().Add(30 * time.Minute),
+			scopes:              []string{"openid"},
+			subjectIdentifier:   "user-456",
 			authorizationCodeID: nil,
-			expectError:       false,
+			expectError:         false,
 		},
 		{
 			name:              "empty token value",

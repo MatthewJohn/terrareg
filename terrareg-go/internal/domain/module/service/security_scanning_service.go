@@ -202,12 +202,12 @@ func (s *SecurityScanningService) runTfsecScan(ctx context.Context, modulePath s
 		return map[string]interface{}{
 			"results": []interface{}{},
 			"summary": map[string]interface{}{
-				"passed":  0,
-				"failed":  0,
+				"passed":   0,
+				"failed":   0,
 				"critical": 0,
-				"high":    0,
-				"medium":  0,
-				"low":     0,
+				"high":     0,
+				"medium":   0,
+				"low":      0,
 			},
 		}, nil
 	}
@@ -228,12 +228,12 @@ func (s *SecurityScanningService) runTfsecScan(ctx context.Context, modulePath s
 		return map[string]interface{}{
 			"results": []interface{}{},
 			"summary": map[string]interface{}{
-				"passed":  0,
-				"failed":  0,
+				"passed":   0,
+				"failed":   0,
 				"critical": 0,
-				"high":    0,
-				"medium":  0,
-				"low":     0,
+				"high":     0,
+				"medium":   0,
+				"low":      0,
 			},
 		}, nil
 	}
@@ -245,12 +245,12 @@ func (s *SecurityScanningService) runTfsecScan(ctx context.Context, modulePath s
 		return map[string]interface{}{
 			"results": []interface{}{},
 			"summary": map[string]interface{}{
-				"passed":  0,
-				"failed":  0,
+				"passed":   0,
+				"failed":   0,
 				"critical": 0,
-				"high":    0,
-				"medium":  0,
-				"low":     0,
+				"high":     0,
+				"medium":   0,
+				"low":      0,
 			},
 		}, nil
 	}
@@ -414,7 +414,6 @@ type BatchSecurityScanRequest struct {
 	Version         string
 }
 
-
 // ScanWithTransaction executes a security scan within a transaction savepoint
 // If the scan fails or results cannot be stored, the savepoint is rolled back
 func (s *SecurityScanningService) ScanWithTransaction(
@@ -467,7 +466,6 @@ func (s *SecurityScanningService) ScanWithTransaction(
 
 	return result, nil
 }
-
 
 // ScanBatchModules executes security scans for multiple module versions with individual savepoints
 // Each scan gets its own savepoint for isolation

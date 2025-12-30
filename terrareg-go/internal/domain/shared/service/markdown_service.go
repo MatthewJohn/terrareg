@@ -174,4 +174,3 @@ func (s *MarkdownService) SanitizeHTML(html string) string {
 
 	return html
 }
-

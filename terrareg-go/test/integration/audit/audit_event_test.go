@@ -10,8 +10,8 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
-	auditrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	auditrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
 

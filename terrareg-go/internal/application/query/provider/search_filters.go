@@ -13,14 +13,14 @@ import (
 type SearchFiltersQuery struct {
 	providerRepo  providerRepo.ProviderRepository
 	namespaceRepo repository.NamespaceRepository
-	domainConfig   *configModel.DomainConfig
+	domainConfig  *configModel.DomainConfig
 }
 
 // SearchFilterCounts represents the filter counts for provider search
 type SearchFilterCounts struct {
-	Contributed       int            `json:"contributed"`
-	TrustedNamespaces int            `json:"trusted_namespaces"`
-	Namespaces        map[string]int `json:"namespaces"`
+	Contributed        int            `json:"contributed"`
+	TrustedNamespaces  int            `json:"trusted_namespaces"`
+	Namespaces         map[string]int `json:"namespaces"`
 	ProviderCategories map[string]int `json:"provider_categories"`
 }
 
@@ -29,7 +29,7 @@ func NewSearchFiltersQuery(providerRepo providerRepo.ProviderRepository, namespa
 	return &SearchFiltersQuery{
 		providerRepo:  providerRepo,
 		namespaceRepo: namespaceRepo,
-		domainConfig:   domainConfig,
+		domainConfig:  domainConfig,
 	}
 }
 
@@ -42,7 +42,7 @@ func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*
 	}
 
 	counts := &SearchFilterCounts{
-		Namespaces:        make(map[string]int),
+		Namespaces:         make(map[string]int),
 		ProviderCategories: make(map[string]int),
 	}
 

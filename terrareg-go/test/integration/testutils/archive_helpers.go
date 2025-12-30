@@ -2,9 +2,9 @@ package testutils
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"archive/zip"
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"

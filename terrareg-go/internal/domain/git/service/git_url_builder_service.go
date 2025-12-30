@@ -22,13 +22,13 @@ func NewGitURLBuilderService() *GitURLBuilderService {
 
 // URLBuilderRequest contains parameters for URL building
 type URLBuilderRequest struct {
-	Template     string                `json:"template"`
-	Namespace    string                `json:"namespace"`
-	Module       string                `json:"module"`
-	Provider     string                `json:"provider"`
-	GitTag       *string               `json:"git_tag,omitempty"`
-	Version      *shared.Version       `json:"version,omitempty"`
-	Credentials  *model.GitCredentials  `json:"credentials,omitempty"`
+	Template    string                `json:"template"`
+	Namespace   string                `json:"namespace"`
+	Module      string                `json:"module"`
+	Provider    string                `json:"provider"`
+	GitTag      *string               `json:"git_tag,omitempty"`
+	Version     *shared.Version       `json:"version,omitempty"`
+	Credentials *model.GitCredentials `json:"credentials,omitempty"`
 }
 
 // BuildCloneURL builds a clone URL from template with variable substitution
@@ -86,11 +86,11 @@ func (s *GitURLBuilderService) BuildArchiveURL(template string, namespace, modul
 	}
 
 	req := &URLBuilderRequest{
-		Template: template,
+		Template:  template,
 		Namespace: namespace,
-		Module:   module,
-		Provider: provider,
-		Version:  version,
+		Module:    module,
+		Provider:  provider,
+		Version:   version,
 	}
 
 	renderedURL := s.substitutePlaceholders(urlTemplate.Raw, req)

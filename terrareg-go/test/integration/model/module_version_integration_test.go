@@ -129,11 +129,11 @@ func TestModuleVersion_BetaDetection(t *testing.T) {
 
 	// Create various versions and test beta detection
 	versions := []string{
-		"1.0.0",      // stable
-		"1.0.0-beta", // beta
-		"1.0.0-alpha",// alpha (beta)
-		"1.0.0-rc1",  // rc (beta)
-		"2.0.0",      // stable
+		"1.0.0",       // stable
+		"1.0.0-beta",  // beta
+		"1.0.0-alpha", // alpha (beta)
+		"1.0.0-rc1",   // rc (beta)
+		"2.0.0",       // stable
 	}
 
 	expectedBeta := []bool{false, true, true, true, false}

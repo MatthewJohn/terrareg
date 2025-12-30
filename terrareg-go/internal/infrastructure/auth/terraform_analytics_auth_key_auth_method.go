@@ -117,21 +117,25 @@ func (t *TerraformAnalyticsAuthKeyAuthMethod) validateAnalyticsAuthKey(authKey s
 // AuthMethod interface implementation for the base TerraformAnalyticsAuthKeyAuthMethod
 // These return default values since the actual auth state is in the TerraformAnalyticsAuthKeyAuthContext
 
-func (t *TerraformAnalyticsAuthKeyAuthMethod) IsBuiltInAdmin() bool               { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) IsAdmin() bool                     { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) IsAuthenticated() bool              { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) RequiresCSRF() bool                   { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) CheckAuthState() bool                  { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) CanPublishModuleVersion(string) bool { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) CanUploadModuleVersion(string) bool  { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) IsBuiltInAdmin() bool                     { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) IsAdmin() bool                            { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) IsAuthenticated() bool                    { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) RequiresCSRF() bool                       { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) CheckAuthState() bool                     { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) CanPublishModuleVersion(string) bool      { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) CanUploadModuleVersion(string) bool       { return false }
 func (t *TerraformAnalyticsAuthKeyAuthMethod) CheckNamespaceAccess(string, string) bool { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) GetAllNamespacePermissions() map[string]string { return make(map[string]string) }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) GetUsername() string                { return "" }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) GetUserGroupNames() []string       { return []string{} }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) CanAccessReadAPI() bool             { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) CanAccessTerraformAPI() bool       { return false }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) GetTerraformAuthToken() string     { return "" }
-func (t *TerraformAnalyticsAuthKeyAuthMethod) GetProviderData() map[string]interface{} { return make(map[string]interface{}) }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+func (t *TerraformAnalyticsAuthKeyAuthMethod) GetUsername() string           { return "" }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) GetUserGroupNames() []string   { return []string{} }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) CanAccessReadAPI() bool        { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) CanAccessTerraformAPI() bool   { return false }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) GetTerraformAuthToken() string { return "" }
+func (t *TerraformAnalyticsAuthKeyAuthMethod) GetProviderData() map[string]interface{} {
+	return make(map[string]interface{})
+}
 
 // TerraformAnalyticsAuthKeyError represents a Terraform analytics auth key authentication error
 type TerraformAnalyticsAuthKeyError struct {

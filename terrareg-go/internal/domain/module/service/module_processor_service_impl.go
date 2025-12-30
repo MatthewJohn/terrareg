@@ -42,11 +42,11 @@ type ProcessedExampleFile struct {
 
 // ModuleProcessorServiceImpl implements the ModuleProcessorService interface
 type ModuleProcessorServiceImpl struct {
-	moduleParser       ModuleParser
-	moduleDetailsRepo  repository.ModuleDetailsRepository
-	moduleVersionRepo  repository.ModuleVersionRepository
-	submoduleRepo      repository.SubmoduleRepository
-	exampleFileRepo    repository.ExampleFileRepository
+	moduleParser      ModuleParser
+	moduleDetailsRepo repository.ModuleDetailsRepository
+	moduleVersionRepo repository.ModuleVersionRepository
+	submoduleRepo     repository.SubmoduleRepository
+	exampleFileRepo   repository.ExampleFileRepository
 	config            *configModel.DomainConfig
 	logger            zerolog.Logger
 }
@@ -62,11 +62,11 @@ func NewModuleProcessorServiceImpl(
 	logger zerolog.Logger,
 ) ModuleProcessorService {
 	return &ModuleProcessorServiceImpl{
-		moduleParser:       moduleParser,
-		moduleDetailsRepo:  moduleDetailsRepo,
-		moduleVersionRepo:  moduleVersionRepo,
-		submoduleRepo:      submoduleRepo,
-		exampleFileRepo:    exampleFileRepo,
+		moduleParser:      moduleParser,
+		moduleDetailsRepo: moduleDetailsRepo,
+		moduleVersionRepo: moduleVersionRepo,
+		submoduleRepo:     submoduleRepo,
+		exampleFileRepo:   exampleFileRepo,
 		config:            config,
 		logger:            logger,
 	}
@@ -102,8 +102,8 @@ func (s *ModuleProcessorServiceImpl) ProcessModule(
 	details := model.NewCompleteModuleDetails(
 		[]byte(parseResult.ReadmeContent),
 		parseResult.RawTerraformDocs,
-		nil, // tfsec - to be implemented later
-		nil, // infracost - to be implemented later
+		nil,                                // tfsec - to be implemented later
+		nil,                                // infracost - to be implemented later
 		s.extractTerraformGraph(moduleDir), // terraform graph
 		s.extractTerraformModules(parseResult.TerraformRequirements),
 		terraformVersion,
@@ -214,13 +214,13 @@ func (s *ModuleProcessorServiceImpl) ExtractMetadata(ctx context.Context, module
 
 	// Create basic metadata without Git information
 	metadata := &ModuleMetadata{
-		Name:        filepath.Base(moduleDir),
-		Description: parseResult.Description,
-		Version:     "", // Will be filled by caller
-		Providers:   s.convertProviderVersions(parseResult.ProviderVersions),
-		Variables:   s.convertVariables(parseResult.Variables),
-		Outputs:     s.convertOutputs(parseResult.Outputs),
-		Resources:   s.convertResources(parseResult.Resources),
+		Name:         filepath.Base(moduleDir),
+		Description:  parseResult.Description,
+		Version:      "", // Will be filled by caller
+		Providers:    s.convertProviderVersions(parseResult.ProviderVersions),
+		Variables:    s.convertVariables(parseResult.Variables),
+		Outputs:      s.convertOutputs(parseResult.Outputs),
+		Resources:    s.convertResources(parseResult.Resources),
 		Dependencies: s.convertDependencies(parseResult.Dependencies),
 	}
 
@@ -230,13 +230,13 @@ func (s *ModuleProcessorServiceImpl) ExtractMetadata(ctx context.Context, module
 // convertToModuleMetadata converts ParseResult to ModuleMetadata
 func (s *ModuleProcessorServiceImpl) convertToModuleMetadata(parseResult *ParseResult, metadata *ModuleProcessingMetadata) *ModuleMetadata {
 	return &ModuleMetadata{
-		Name:        filepath.Base(metadata.GitPath),
-		Description: parseResult.Description,
-		Version:     metadata.GitTag,
-		Providers:   s.convertProviderVersions(parseResult.ProviderVersions),
-		Variables:   s.convertVariables(parseResult.Variables),
-		Outputs:     s.convertOutputs(parseResult.Outputs),
-		Resources:   s.convertResources(parseResult.Resources),
+		Name:         filepath.Base(metadata.GitPath),
+		Description:  parseResult.Description,
+		Version:      metadata.GitTag,
+		Providers:    s.convertProviderVersions(parseResult.ProviderVersions),
+		Variables:    s.convertVariables(parseResult.Variables),
+		Outputs:      s.convertOutputs(parseResult.Outputs),
+		Resources:    s.convertResources(parseResult.Resources),
 		Dependencies: s.convertDependencies(parseResult.Dependencies),
 	}
 }
@@ -263,7 +263,7 @@ func (s *ModuleProcessorServiceImpl) convertOutputs(outputs []Output) []OutputIn
 		result = append(result, OutputInfo{
 			Name:        o.Name,
 			Description: o.Description,
-			Value:       nil, // Outputs don't have values during extraction
+			Value:       nil,   // Outputs don't have values during extraction
 			Sensitive:   false, // service.Output doesn't have Sensitive field, default to false
 		})
 	}
@@ -334,6 +334,7 @@ func (s *ModuleProcessorServiceImpl) generateVariableTemplate(variables []Variab
 
 	return string(jsonBytes)
 }
+
 // extractTerraformVersion extracts the terraform version for a module directory
 func (s *ModuleProcessorServiceImpl) extractTerraformVersion(moduleDir string) (string, error) {
 	// Run terraform version command

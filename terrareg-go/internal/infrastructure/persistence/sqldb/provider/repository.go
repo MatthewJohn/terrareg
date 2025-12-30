@@ -458,15 +458,15 @@ func toDBProviderVersion(v *provider.ProviderVersion) *sqldb.ProviderVersionDB {
 	protocolVersionsJSON, _ := json.Marshal(v.ProtocolVersions())
 
 	return &sqldb.ProviderVersionDB{
-		ID:               v.ID(),
-		ProviderID:       v.ProviderID(),
-		Version:          v.Version(),
-		GitTag:           v.GitTag(),
-		Beta:             v.Beta(),
-		PublishedAt:      v.PublishedAt(),
-		GPGKeyID:         v.GPGKeyID(), // Non-nullable in correct schema
+		ID:                v.ID(),
+		ProviderID:        v.ProviderID(),
+		Version:           v.Version(),
+		GitTag:            v.GitTag(),
+		Beta:              v.Beta(),
+		PublishedAt:       v.PublishedAt(),
+		GPGKeyID:          v.GPGKeyID(), // Non-nullable in correct schema
 		ExtractionVersion: nil,
-		ProtocolVersions: protocolVersionsJSON, // []byte, not string
+		ProtocolVersions:  protocolVersionsJSON, // []byte, not string
 	}
 }
 
@@ -498,15 +498,15 @@ func toDBGPGKey(k *provider.GPGKey) *sqldb.GPGKeyDB {
 	}
 
 	return &sqldb.GPGKeyDB{
-		ID:         k.ID(),
+		ID:          k.ID(),
 		NamespaceID: 0, // Will be set by caller (GPG keys belong to namespace, not provider)
-		ASCIIArmor: []byte(k.AsciiArmor()),
-		KeyID:      keyID,
+		ASCIIArmor:  []byte(k.AsciiArmor()),
+		KeyID:       keyID,
 		Fingerprint: nil, // Not in domain model
-		Source:     nil, // Not in domain model
-		SourceURL:  nil, // Not in domain model
-		CreatedAt:  createdAt,
-		UpdatedAt:  updatedAt,
+		Source:      nil, // Not in domain model
+		SourceURL:   nil, // Not in domain model
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 }
 
@@ -556,10 +556,10 @@ func toDomainProviderBinary(db *sqldb.ProviderVersionBinaryDB) *provider.Provide
 		db.ProviderVersionID,
 		string(db.OperatingSystem),
 		string(db.Architecture),
-		db.Name,       // DB field: Name, domain: FileName
-		0,            // FileSize - not stored in DB
-		db.Checksum,   // DB field: Checksum, domain: FileHash
-		"",           // DownloadURL - not stored in DB
+		db.Name,     // DB field: Name, domain: FileName
+		0,           // FileSize - not stored in DB
+		db.Checksum, // DB field: Checksum, domain: FileHash
+		"",          // DownloadURL - not stored in DB
 	)
 }
 
@@ -580,10 +580,10 @@ func toDomainGPGKey(db *sqldb.GPGKeyDB) *provider.GPGKey {
 
 	return provider.ReconstructGPGKey(
 		db.ID,
-		"",      // KeyText - not in DB
+		"", // KeyText - not in DB
 		string(db.ASCIIArmor),
 		keyID,
-		nil,     // TrustSignature - not in DB
+		nil, // TrustSignature - not in DB
 		createdAt,
 		updatedAt,
 	)

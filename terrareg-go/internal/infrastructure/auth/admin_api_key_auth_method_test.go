@@ -38,7 +38,7 @@ func TestNewAdminApiKeyAuthMethod_WithToken(t *testing.T) {
 
 func TestAdminApiKeyAuthMethod_Authenticate_ValidKey(t *testing.T) {
 	config := &config.InfrastructureConfig{
-	AdminAuthenticationToken: "test-admin-token",
+		AdminAuthenticationToken: "test-admin-token",
 	}
 	authMethod := NewAdminApiKeyAuthMethod(config)
 

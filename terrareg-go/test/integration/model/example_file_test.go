@@ -408,9 +408,9 @@ func TestExampleFile_MultipleExamples(t *testing.T) {
 
 	// Create multiple example submodules
 	examples := []struct {
-		path       string
-		name       string
-		fileCount  int
+		path      string
+		name      string
+		fileCount int
 	}{
 		{"examples/basic", "Basic Example", 2},
 		{"examples/advanced", "Advanced Example", 4},

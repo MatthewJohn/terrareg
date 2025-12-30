@@ -133,7 +133,7 @@ type TerraformDocs struct {
 		Description string `json:"description"`
 	} `json:"outputs"`
 	Providers []struct {
-		Name    string `json:"name"`
+		Name    string  `json:"name"`
 		Alias   *string `json:"alias"`
 		Version *string `json:"version"`
 	} `json:"providers"`

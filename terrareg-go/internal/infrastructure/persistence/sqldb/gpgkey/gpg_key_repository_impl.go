@@ -325,15 +325,15 @@ func (r *gpgKeyRepositoryImpl) domainToDBModel(gpgKey *gpgkeyModel.GPGKey) *sqld
 	}
 
 	gpgKeyDB := &sqldb.GPGKeyDB{
-		ID:         gpgKey.ID(),
+		ID:          gpgKey.ID(),
 		NamespaceID: gpgKey.NamespaceID(),
-		ASCIIArmor: asciiArmor,
-		KeyID:      keyID,
+		ASCIIArmor:  asciiArmor,
+		KeyID:       keyID,
 		Fingerprint: fingerprint,
-		Source:     source,
-		SourceURL:  gpgKey.SourceURL(), // Already *string
-		CreatedAt:  createdAt,
-		UpdatedAt:  updatedAt,
+		Source:      source,
+		SourceURL:   gpgKey.SourceURL(), // Already *string
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 
 	return gpgKeyDB

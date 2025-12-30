@@ -63,7 +63,7 @@ func TestNewModuleVersion(t *testing.T) {
 
 	t.Run("valid versions with beta detection", func(t *testing.T) {
 		testCases := []struct {
-			version     string
+			version      string
 			expectedBeta bool
 		}{
 			{"1.1.1", false},
@@ -581,44 +581,44 @@ func TestModuleVersion_GetUsageExample(t *testing.T) {
 // TestModuleVersion_GetTerraformExampleVersionString tests example version constraint
 func TestModuleVersion_GetTerraformExampleVersionString(t *testing.T) {
 	testCases := []struct {
-		name     string
-		version  string
-		beta     bool
+		name      string
+		version   string
+		beta      bool
 		published bool
-		template string
-		expected string
+		template  string
+		expected  string
 	}{
 		{
-			name:     "published non-beta latest",
-			version:  "1.5.0",
-			beta:     false,
+			name:      "published non-beta latest",
+			version:   "1.5.0",
+			beta:      false,
 			published: true,
-			template: "{major}.{minor}.{patch}",
-			expected: "1.5.0",
+			template:  "{major}.{minor}.{patch}",
+			expected:  "1.5.0",
 		},
 		{
-			name:     "published non-beta pre-major",
-			version:  "0.1.5",
-			beta:     false,
+			name:      "published non-beta pre-major",
+			version:   "0.1.5",
+			beta:      false,
 			published: true,
-			template: "{major}.{minor}.{patch}",
-			expected: "0.1.5",
+			template:  "{major}.{minor}.{patch}",
+			expected:  "0.1.5",
 		},
 		{
-			name:     "beta version",
-			version:  "5.6.23-beta",
-			beta:     true,
+			name:      "beta version",
+			version:   "5.6.23-beta",
+			beta:      true,
 			published: true,
-			template: "{major}.{minor}.{patch}",
-			expected: "5.6.23-beta",
+			template:  "{major}.{minor}.{patch}",
+			expected:  "5.6.23-beta",
 		},
 		{
-			name:     "non-published version",
-			version:  "5.6.25",
-			beta:     false,
+			name:      "non-published version",
+			version:   "5.6.25",
+			beta:      false,
 			published: false,
-			template: "{major}.{minor}.{patch}",
-			expected: "5.6.25",
+			template:  "{major}.{minor}.{patch}",
+			expected:  "5.6.25",
 		},
 	}
 

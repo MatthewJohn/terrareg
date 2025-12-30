@@ -8,18 +8,18 @@ import (
 // It holds the authentication state and permission logic for Terraform analytics
 type TerraformAnalyticsAuthKeyAuthContext struct {
 	BaseAuthContext
-	authKey         string
-	canAccessAll    bool
-	allowedModules  []string
+	authKey        string
+	canAccessAll   bool
+	allowedModules []string
 }
 
 // NewTerraformAnalyticsAuthKeyAuthContext creates a new Terraform analytics auth key auth context
 func NewTerraformAnalyticsAuthKeyAuthContext(ctx context.Context, authKey string) *TerraformAnalyticsAuthKeyAuthContext {
 	return &TerraformAnalyticsAuthKeyAuthContext{
 		BaseAuthContext: BaseAuthContext{ctx: ctx},
-		authKey:        authKey,
-		canAccessAll:   false,
-		allowedModules: make([]string, 0),
+		authKey:         authKey,
+		canAccessAll:    false,
+		allowedModules:  make([]string, 0),
 	}
 }
 

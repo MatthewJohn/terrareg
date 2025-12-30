@@ -12,14 +12,14 @@ import (
 // OpenidConnectAuthMethod implements immutable OpenID Connect authentication factory
 // This is a factory that creates OpenID Connect auth contexts with actual permission logic
 type OpenidConnectAuthMethod struct {
-	config     *config.InfrastructureConfig
+	config      *config.InfrastructureConfig
 	oidcService auth.OIDCValidator
 }
 
 // NewOpenidConnectAuthMethod creates a new immutable OpenID Connect auth method factory
 func NewOpenidConnectAuthMethod(config *config.InfrastructureConfig, oidcService auth.OIDCValidator) *OpenidConnectAuthMethod {
 	return &OpenidConnectAuthMethod{
-		config:     config,
+		config:      config,
 		oidcService: oidcService,
 	}
 }

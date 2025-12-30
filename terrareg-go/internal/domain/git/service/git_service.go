@@ -28,7 +28,6 @@ type GitService interface {
 	IsGitRepository(ctx context.Context, dir string) bool
 }
 
-
 // GitServiceImpl implements GitService
 type GitServiceImpl struct{}
 
@@ -57,7 +56,6 @@ func (g *GitServiceImpl) CloneRepository(ctx context.Context, repoURL, branch, t
 		args = append(args, "--branch", branch)
 	}
 
-	
 	// Create command context with timeout if specified
 	cmdCtx := ctx
 	if options.Timeout > 0 {
@@ -79,7 +77,6 @@ func (g *GitServiceImpl) CloneRepository(ctx context.Context, repoURL, branch, t
 			env = append(env, fmt.Sprintf("GIT_PASSWORD=%s", options.Credentials.Password))
 		}
 
-		
 		cmd.Env = env
 	}
 
@@ -198,10 +195,10 @@ func (g *GitServiceImpl) ParseRepositoryURL(repoURL string) (*RepositoryInfo, er
 	}
 
 	return &RepositoryInfo{
-		URL:    repoURL,
-		Owner:  owner,
-		Name:   name,
-		IsSSH:  isSSH,
+		URL:   repoURL,
+		Owner: owner,
+		Name:  name,
+		IsSSH: isSSH,
 	}, nil
 }
 

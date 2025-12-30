@@ -15,7 +15,7 @@ import (
 // LocalStorageService implements StorageService for local filesystem
 // This replicates the Python LocalFileStorage class
 type LocalStorageService struct {
-	basePath string
+	basePath    string
 	pathBuilder service.PathBuilder
 }
 
@@ -381,4 +381,3 @@ func (s *LocalStorageService) GetFileSize(ctx context.Context, path string) (int
 
 	return fileInfo.Size(), nil
 }
-

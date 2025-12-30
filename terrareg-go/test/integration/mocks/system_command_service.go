@@ -12,12 +12,12 @@ import (
 // MockSystemCommandService provides a mock implementation for testing
 // It implements the service.SystemCommandService interface
 type MockSystemCommandService struct {
-	mu              sync.RWMutex
-	mockOutputs     map[string]*service.CommandResult
-	mockErrors      map[string]error
-	commandHistory  []*CommandCall
-	shouldFail      bool
-	failureMessage  string
+	mu             sync.RWMutex
+	mockOutputs    map[string]*service.CommandResult
+	mockErrors     map[string]error
+	commandHistory []*CommandCall
+	shouldFail     bool
+	failureMessage string
 }
 
 // CommandCall records a command invocation for testing assertions

@@ -29,9 +29,9 @@ type ModuleProviderRepositoryImpl struct {
 // NewModuleProviderRepository creates a new module provider repository
 func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, domainConfig *configModel.DomainConfig) repository.ModuleProviderRepository {
 	return &ModuleProviderRepositoryImpl{
-		BaseRepository: baserepo.NewBaseRepository(db),
-		namespaceRepo:  namespaceRepo,
-		domainConfig:   domainConfig,
+		BaseRepository:  baserepo.NewBaseRepository(db),
+		namespaceRepo:   namespaceRepo,
+		domainConfig:    domainConfig,
 		submoduleLoader: NewSubmoduleLoader(db),
 	}
 }

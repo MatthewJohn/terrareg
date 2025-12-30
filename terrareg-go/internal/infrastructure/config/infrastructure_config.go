@@ -100,10 +100,10 @@ type InfrastructureConfig struct {
 	UpstreamGitCredentialsPassword string `env:"UPSTREAM_GIT_CREDENTIALS_PASSWORD"`
 
 	// Terraform Configuration
-	TerraformBinaryPath    string `env:"TERRAFORM_BINARY_PATH"`
+	TerraformBinaryPath     string `env:"TERRAFORM_BINARY_PATH"`
 	TerraformDefaultVersion string `env:"TERRAFORM_DEFAULT_VERSION" envDefault:"1.5.7"`
-	TerraformProduct       string `env:"TERRAFORM_PRODUCT" envDefault:"terraform"`
-	TerraformArchiveMirror string `env:"TERRAFORM_ARCHIVE_MIRROR"`
+	TerraformProduct        string `env:"TERRAFORM_PRODUCT" envDefault:"terraform"`
+	TerraformArchiveMirror  string `env:"TERRAFORM_ARCHIVE_MIRROR"`
 
 	// Server Configuration
 	ServerType       model.ServerType `env:"SERVER"`
@@ -111,11 +111,11 @@ type InfrastructureConfig struct {
 	AllowedProviders []string         `env:"ALLOWED_PROVIDERS"`
 
 	// HTTP Timeouts (in seconds)
-	StandardRequestTimeoutSeconds int `env:"STANDARD_REQUEST_TIMEOUT_SECONDS" envDefault:"60"`   // 1 minute default
+	StandardRequestTimeoutSeconds int `env:"STANDARD_REQUEST_TIMEOUT_SECONDS" envDefault:"60"`  // 1 minute default
 	ModuleIndexingTimeoutSeconds  int `env:"MODULE_INDEXING_TIMEOUT_SECONDS" envDefault:"1800"` // 30 minutes default
 
 	// Terraform Processing Timeouts (in seconds)
-	TerraformLockTimeoutSeconds   int `env:"TERRAFORM_LOCK_TIMEOUT_SECONDS" envDefault:"1800"`   // 30 minutes default
+	TerraformLockTimeoutSeconds int `env:"TERRAFORM_LOCK_TIMEOUT_SECONDS" envDefault:"1800"` // 30 minutes default
 
 	// Terraform Presigned URL Configuration
 	TerraformPresignedUrlSecret        string `env:"TERRAFORM_PRESIGNED_URL_SECRET"`

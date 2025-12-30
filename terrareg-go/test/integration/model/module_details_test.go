@@ -398,22 +398,22 @@ func TestModuleDetails_GetGraphJson(t *testing.T) {
 			"nodes": []map[string]interface{}{
 				{
 					"data": map[string]interface{}{
-						"id": "root",
-						"label": "Root Module",
+						"id":          "root",
+						"label":       "Root Module",
 						"child_count": 1,
-						"parent": "",
+						"parent":      "",
 					},
 					"style": map[string]interface{}{
 						"background-color": "#F8F7F9",
-						"font-weight": "bold",
+						"font-weight":      "bold",
 					},
 				},
 				{
 					"data": map[string]interface{}{
-						"id": "aws_s3_bucket.test",
-						"label": "aws_s3_bucket.test",
+						"id":          "aws_s3_bucket.test",
+						"label":       "aws_s3_bucket.test",
 						"child_count": 0,
-						"parent": "root",
+						"parent":      "root",
 					},
 					"style": map[string]interface{}{},
 				},
@@ -421,7 +421,7 @@ func TestModuleDetails_GetGraphJson(t *testing.T) {
 			"edges": []map[string]interface{}{
 				{
 					"data": map[string]interface{}{
-						"id": "root.aws_s3_bucket.test",
+						"id":     "root.aws_s3_bucket.test",
 						"source": "aws_s3_bucket.test",
 						"target": "root",
 					},

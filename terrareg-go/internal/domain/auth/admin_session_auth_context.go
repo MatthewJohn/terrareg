@@ -206,11 +206,11 @@ func (a *AdminSessionAuthContext) GetTerraformAuthToken() string {
 // GetProviderData returns provider-specific data for the admin session
 func (a *AdminSessionAuthContext) GetProviderData() map[string]interface{} {
 	return map[string]interface{}{
-		"user_id":    a.userID,
-		"username":   a.username,
-		"email":      a.email,
-		"session_id": a.sessionID,
-		"is_admin":   a.isAdmin,
+		"user_id":     a.userID,
+		"username":    a.username,
+		"email":       a.email,
+		"session_id":  a.sessionID,
+		"is_admin":    a.isAdmin,
 		"auth_method": string(AuthMethodAdminSession),
 	}
 }

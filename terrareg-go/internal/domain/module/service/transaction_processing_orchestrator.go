@@ -505,10 +505,10 @@ func (o *TransactionProcessingOrchestrator) executeModuleContentExtractionPhase(
 
 	processingMetadata := &ModuleProcessingMetadata{
 		ModuleVersionID: moduleVersion.ID(),
-		GitTag:         gitTag,
-		GitURL:         "", // Will be populated if needed
-		GitPath:        req.ModulePath,
-		CommitSHA:      "", // Will be populated if needed
+		GitTag:          gitTag,
+		GitURL:          "", // Will be populated if needed
+		GitPath:         req.ModulePath,
+		CommitSHA:       "", // Will be populated if needed
 	}
 
 	o.logger.Debug().
@@ -694,11 +694,11 @@ func (o *TransactionProcessingOrchestrator) executeArchiveGenerationPhase(
 
 	// Integrate with the archive generation service
 	genReq := ArchiveGenerationRequest{
-		ModuleVersionID:               moduleVersion.ID(),
-		SourcePath:                    req.ModulePath,
-		Formats:                       []ArchiveFormat{ArchiveFormatZIP, ArchiveFormatTarGz},
-		TransactionCtx:                ctx,
-		GitCloneURL:                   gitCloneURL,
+		ModuleVersionID:                 moduleVersion.ID(),
+		SourcePath:                      req.ModulePath,
+		Formats:                         []ArchiveFormat{ArchiveFormatZIP, ArchiveFormatTarGz},
+		TransactionCtx:                  ctx,
+		GitCloneURL:                     gitCloneURL,
 		DeleteExternallyHostedArtifacts: o.domainConfig.DeleteExternallyHostedArtifacts,
 	}
 

@@ -9,13 +9,13 @@ import (
 
 // MockAuthConfig configures mock authentication for tests
 type MockAuthConfig struct {
-	AuthMethod     auth.AuthMethodType
-	IsAuthenticated bool
-	IsAdmin         bool
-	IsBuiltInAdmin  bool
-	Username        string
-	UserGroups      []string
-	Permissions     map[string]string // namespace -> permission
+	AuthMethod       auth.AuthMethodType
+	IsAuthenticated  bool
+	IsAdmin          bool
+	IsBuiltInAdmin   bool
+	Username         string
+	UserGroups       []string
+	Permissions      map[string]string // namespace -> permission
 	CanAccessReadAPI bool
 }
 
@@ -125,13 +125,13 @@ func SetupMockAuth(config MockAuthConfig) func(http.Handler) http.Handler {
 // WithAdminAuth returns a handler with admin authentication mocked
 func WithAdminAuth(handler http.Handler) http.Handler {
 	return SetupMockAuth(MockAuthConfig{
-		AuthMethod:      auth.AuthMethodAdminApiKey,
-		IsAuthenticated: true,
-		IsAdmin:         true,
-		IsBuiltInAdmin:  false,
-		Username:        "admin-test-user",
-		UserGroups:      []string{},
-		Permissions:     map[string]string{},
+		AuthMethod:       auth.AuthMethodAdminApiKey,
+		IsAuthenticated:  true,
+		IsAdmin:          true,
+		IsBuiltInAdmin:   false,
+		Username:         "admin-test-user",
+		UserGroups:       []string{},
+		Permissions:      map[string]string{},
 		CanAccessReadAPI: true,
 	})(handler)
 }
@@ -139,13 +139,13 @@ func WithAdminAuth(handler http.Handler) http.Handler {
 // WithNoAuth returns a handler without authentication
 func WithNoAuth(handler http.Handler) http.Handler {
 	return SetupMockAuth(MockAuthConfig{
-		AuthMethod:      auth.AuthMethodNotAuthenticated,
-		IsAuthenticated: false,
-		IsAdmin:         false,
-		IsBuiltInAdmin:  false,
-		Username:        "",
-		UserGroups:      []string{},
-		Permissions:     map[string]string{},
+		AuthMethod:       auth.AuthMethodNotAuthenticated,
+		IsAuthenticated:  false,
+		IsAdmin:          false,
+		IsBuiltInAdmin:   false,
+		Username:         "",
+		UserGroups:       []string{},
+		Permissions:      map[string]string{},
 		CanAccessReadAPI: true,
 	})(handler)
 }
@@ -153,13 +153,13 @@ func WithNoAuth(handler http.Handler) http.Handler {
 // WithNamespacePermission returns a handler with specific namespace permissions
 func WithNamespacePermission(handler http.Handler, namespace, permission string) http.Handler {
 	return SetupMockAuth(MockAuthConfig{
-		AuthMethod:      auth.AuthMethodAdminApiKey,
-		IsAuthenticated: true,
-		IsAdmin:         false,
-		IsBuiltInAdmin:  false,
-		Username:        "test-user",
-		UserGroups:      []string{"test-group"},
-		Permissions:     map[string]string{namespace: permission},
+		AuthMethod:       auth.AuthMethodAdminApiKey,
+		IsAuthenticated:  true,
+		IsAdmin:          false,
+		IsBuiltInAdmin:   false,
+		Username:         "test-user",
+		UserGroups:       []string{"test-group"},
+		Permissions:      map[string]string{namespace: permission},
 		CanAccessReadAPI: true,
 	})(handler)
 }
@@ -167,13 +167,13 @@ func WithNamespacePermission(handler http.Handler, namespace, permission string)
 // WithUploadAuth returns a handler with upload permissions
 func WithUploadAuth(handler http.Handler) http.Handler {
 	return SetupMockAuth(MockAuthConfig{
-		AuthMethod:      auth.AuthMethodUploadApiKey,
-		IsAuthenticated: true,
-		IsAdmin:         false,
-		IsBuiltInAdmin:  false,
-		Username:        "upload-api-key",
-		UserGroups:      []string{},
-		Permissions:     map[string]string{},
+		AuthMethod:       auth.AuthMethodUploadApiKey,
+		IsAuthenticated:  true,
+		IsAdmin:          false,
+		IsBuiltInAdmin:   false,
+		Username:         "upload-api-key",
+		UserGroups:       []string{},
+		Permissions:      map[string]string{},
 		CanAccessReadAPI: true,
 	})(handler)
 }
@@ -181,13 +181,13 @@ func WithUploadAuth(handler http.Handler) http.Handler {
 // WithPublishAuth returns a handler with publish permissions
 func WithPublishAuth(handler http.Handler) http.Handler {
 	return SetupMockAuth(MockAuthConfig{
-		AuthMethod:      auth.AuthMethodPublishApiKey,
-		IsAuthenticated: true,
-		IsAdmin:         false,
-		IsBuiltInAdmin:  false,
-		Username:        "publish-api-key",
-		UserGroups:      []string{},
-		Permissions:     map[string]string{},
+		AuthMethod:       auth.AuthMethodPublishApiKey,
+		IsAuthenticated:  true,
+		IsAdmin:          false,
+		IsBuiltInAdmin:   false,
+		Username:         "publish-api-key",
+		UserGroups:       []string{},
+		Permissions:      map[string]string{},
 		CanAccessReadAPI: true,
 	})(handler)
 }
@@ -200,9 +200,9 @@ func GetAuthContextFromRequest(r *http.Request) auth.AuthContext {
 	}
 	// Return a mock not authenticated context
 	return &mockAuthContext{config: MockAuthConfig{
-		IsAuthenticated: false,
-		IsAdmin:        false,
-		Username:       "",
+		IsAuthenticated:  false,
+		IsAdmin:          false,
+		Username:         "",
 		CanAccessReadAPI: true,
 	}}
 }

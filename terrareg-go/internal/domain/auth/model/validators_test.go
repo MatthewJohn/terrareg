@@ -42,8 +42,8 @@ func TestValidateUsername(t *testing.T) {
 // TestValidateEmail tests email validation
 func TestValidateEmail(t *testing.T) {
 	tests := []struct {
-		name     string
-		email    string
+		name      string
+		email     string
 		expectErr error
 	}{
 		{"valid email", "user@example.com", nil},

@@ -544,7 +544,7 @@ func TestModuleSearch_TrustedNamespaceFilter(t *testing.T) {
 		trusted := true
 		params := modulequery.SearchParams{
 			Query:             "trust-module",
-			TrustedNamespaces:  &trusted,
+			TrustedNamespaces: &trusted,
 			Limit:             10,
 		}
 
@@ -556,9 +556,9 @@ func TestModuleSearch_TrustedNamespaceFilter(t *testing.T) {
 	t.Run("Filter for contributed (untrusted) namespaces only", func(t *testing.T) {
 		contributed := true
 		params := modulequery.SearchParams{
-			Query:      "trust-module",
+			Query:       "trust-module",
 			Contributed: &contributed,
-			Limit:      10,
+			Limit:       10,
 		}
 
 		result, err := searchQuery.Execute(ctx, params)

@@ -15,7 +15,7 @@ type PublishApiKeyAuthContext struct {
 func NewPublishApiKeyAuthContext(ctx context.Context, apiKey string) *PublishApiKeyAuthContext {
 	return &PublishApiKeyAuthContext{
 		BaseAuthContext: BaseAuthContext{ctx: ctx},
-		apiKey:         apiKey,
+		apiKey:          apiKey,
 	}
 }
 

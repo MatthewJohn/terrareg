@@ -16,10 +16,10 @@ import (
 // ModuleCreationWrapperService handles module creation with prepare/extract/publish pattern
 // This matches the Python module_create_extraction_wrapper context manager
 type ModuleCreationWrapperService struct {
-	moduleVersionRepo     repository.ModuleVersionRepository
-	moduleProviderRepo    repository.ModuleProviderRepository
-	savepointHelper       *transaction.SavepointHelper
-	domainConfig          *configModel.DomainConfig
+	moduleVersionRepo  repository.ModuleVersionRepository
+	moduleProviderRepo repository.ModuleProviderRepository
+	savepointHelper    *transaction.SavepointHelper
+	domainConfig       *configModel.DomainConfig
 }
 
 // NewModuleCreationWrapperService creates a new module creation wrapper service

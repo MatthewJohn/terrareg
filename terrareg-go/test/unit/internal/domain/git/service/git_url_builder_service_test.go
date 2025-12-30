@@ -29,7 +29,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 				Provider:  "aws",
 			},
 			expectedURL: "https://github.com/test-org/test-module.git",
-			expectError:  false,
+			expectError: false,
 		},
 		{
 			name: "Template with all placeholders",
@@ -42,7 +42,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 				Version:   shared.NewVersion(1, 0, 0),
 			},
 			expectedURL: "https://gitlab.com/mycompany/terraform-aws.git",
-			expectError:  false,
+			expectError: false,
 		},
 		{
 			name: "Template with git tag substitution",
@@ -54,7 +54,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 				GitTag:    stringPtr("v2.0.0"),
 			},
 			expectedURL: "https://github.com/hashicorp/terraform.git?ref=v2.0.0",
-			expectError:  false,
+			expectError: false,
 		},
 		{
 			name: "Template with version substitution",
@@ -66,7 +66,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 				Version:   shared.NewVersion(5, 1, 0),
 			},
 			expectedURL: "https://github.com/terraform-aws-modules/vpc-provider/archive/v5.1.0.tar.gz",
-			expectError:  false,
+			expectError: false,
 		},
 		{
 			name: "SSH template",
@@ -77,7 +77,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 				Provider:  "provider",
 			},
 			expectedURL: "git@github.com:org/repo.git",
-			expectError:  false,
+			expectError: false,
 		},
 		{
 			name: "Invalid template",
@@ -88,7 +88,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 				Provider:  "provider",
 			},
 			expectedURL: "",
-			expectError:  true,
+			expectError: true,
 		},
 	}
 
@@ -118,7 +118,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		{
 			name: "HTTPS with username only",
 			request: &gitservice.URLBuilderRequest{
-				Template: "https://github.com/{namespace}/{module}.git",
+				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
 				Provider:  "provider",
@@ -131,7 +131,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		{
 			name: "HTTPS with username and password",
 			request: &gitservice.URLBuilderRequest{
-				Template: "https://github.com/{namespace}/{module}.git",
+				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
 				Provider:  "provider",
@@ -145,7 +145,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		{
 			name: "HTTPS with credentials containing special characters",
 			request: &gitservice.URLBuilderRequest{
-				Template: "https://github.com/{namespace}/{module}.git",
+				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
 				Provider:  "provider",
@@ -159,7 +159,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		{
 			name: "SSH with credentials (should not inject)",
 			request: &gitservice.URLBuilderRequest{
-				Template: "git@github.com:{namespace}/{module}.git",
+				Template:  "git@github.com:{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
 				Provider:  "provider",
@@ -173,10 +173,10 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		{
 			name: "No credentials",
 			request: &gitservice.URLBuilderRequest{
-				Template:  "https://github.com/{namespace}/{module}.git",
-				Namespace: "org",
-				Module:    "repo",
-				Provider:  "provider",
+				Template:    "https://github.com/{namespace}/{module}.git",
+				Namespace:   "org",
+				Module:      "repo",
+				Provider:    "provider",
 				Credentials: &gitmodel.GitCredentials{},
 			},
 			expectedURL: "https://github.com/org/repo.git",
@@ -375,38 +375,38 @@ func TestGitURLBuilderService_ParseTemplateVariables(t *testing.T) {
 	gitService := gitservice.NewGitURLBuilderService()
 
 	tests := []struct {
-		name             string
-		template         string
+		name              string
+		template          string
 		expectedVariables []string
 		expectError       bool
 	}{
 		{
-			name:             "Template with single variable",
-			template:         "https://github.com/{namespace}/repo.git",
+			name:              "Template with single variable",
+			template:          "https://github.com/{namespace}/repo.git",
 			expectedVariables: []string{"{namespace}"},
 			expectError:       false,
 		},
 		{
-			name:             "Template with multiple variables",
-			template:         "https://github.com/{namespace}/{module}-{provider}.git",
+			name:              "Template with multiple variables",
+			template:          "https://github.com/{namespace}/{module}-{provider}.git",
 			expectedVariables: []string{"{namespace}", "{module}", "{provider}"},
 			expectError:       false,
 		},
 		{
-			name:             "Template with all variables",
-			template:         "https://github.com/{namespace}/{module}/{provider}/archive/v{version}.tar.gz?ref={git_tag}",
+			name:              "Template with all variables",
+			template:          "https://github.com/{namespace}/{module}/{provider}/archive/v{version}.tar.gz?ref={git_tag}",
 			expectedVariables: []string{"{namespace}", "{module}", "{provider}", "{version}", "{git_tag}"},
 			expectError:       false,
 		},
 		{
-			name:             "Template with no variables",
-			template:         "https://github.com/fixed/repo.git",
+			name:              "Template with no variables",
+			template:          "https://github.com/fixed/repo.git",
 			expectedVariables: []string{},
 			expectError:       false,
 		},
 		{
-			name:             "Invalid template",
-			template:         "https://github.com/{namespace}/{invalid}.git",
+			name:              "Invalid template",
+			template:          "https://github.com/{namespace}/{invalid}.git",
 			expectedVariables: nil,
 			expectError:       true,
 		},
@@ -540,9 +540,9 @@ func TestGitURLBuilderService_IntegrationTest(t *testing.T) {
 
 func TestURLTemplate_Model(t *testing.T) {
 	tests := []struct {
-		name         string
-		templateStr  string
-		expected     *gitmodel.URLTemplate
+		name        string
+		templateStr string
+		expected    *gitmodel.URLTemplate
 	}{
 		{
 			name:        "Valid template",
@@ -581,8 +581,8 @@ func TestURLTemplate_Model(t *testing.T) {
 
 func TestURLTemplate_GetPlaceholders(t *testing.T) {
 	tests := []struct {
-		name             string
-		template         string
+		name                 string
+		template             string
 		expectedPlaceholders []string
 	}{
 		{

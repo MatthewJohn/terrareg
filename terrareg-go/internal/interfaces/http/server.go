@@ -17,8 +17,8 @@ import (
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
-	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	http_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
+	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
 
@@ -199,7 +199,7 @@ func (s *Server) setupRoutes() {
 
 		// Terrareg Custom API
 		r.Route("/terrareg", func(r chi.Router) {
-						r.With(s.authMiddleware.OptionalAuth).Get("/config", s.handleConfig)
+			r.With(s.authMiddleware.OptionalAuth).Get("/config", s.handleConfig)
 			r.With(s.authMiddleware.OptionalAuth).Get("/git_providers", s.handleGitProviders)
 			r.With(s.authMiddleware.OptionalAuth).Get("/health", s.handleHealth)
 			r.With(s.authMiddleware.OptionalAuth).Get("/version", s.handleVersion)
@@ -248,15 +248,15 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
 			r.With(
 				s.authMiddleware.RequireUploadPermission("{namespace}"),
-				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
+				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds)*time.Second),
 			).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
 			r.With(
-				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
+				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds)*time.Second),
 				s.authMiddleware.RequireAuth,
 			).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
 			r.With(
 				s.authMiddleware.RequireUploadPermission("{namespace}"),
-				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
+				middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds)*time.Second),
 			).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
@@ -357,16 +357,16 @@ func (s *Server) setupRoutes() {
 	// Webhooks with extended timeout
 	s.router.With(
 		s.authMiddleware.OptionalAuth,
-		middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
+		middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds)*time.Second),
 	).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", s.handleGitHubWebhook)
 	s.router.With(
 		s.authMiddleware.OptionalAuth,
-		middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds) * time.Second),
+		middleware.Timeout(time.Duration(s.infraConfig.ModuleIndexingTimeoutSeconds)*time.Second),
 	).Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.handleBitBucketWebhook)
 
 	// Test route without auth to test timeout middleware
 	s.router.With(
-		middleware.Timeout(30 * time.Minute), // 30 minutes
+		middleware.Timeout(30*time.Minute), // 30 minutes
 	).Post("/v1/terrareg/test-timeout", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Timeout test successful"))

@@ -271,7 +271,7 @@ func TestModuleExtractor_MetadataRequiredAttributes(t *testing.T) {
 
 	// Create metadata missing required attributes
 	files := map[string]string{
-		"main.tf":       testutils.CreateValidMainTF(),
+		"main.tf": testutils.CreateValidMainTF(),
 		"terrareg.json": testutils.CreateTerraregMetadata(map[string]interface{}{
 			"owner": "testowner",
 		}),
@@ -408,7 +408,7 @@ func TestModuleExtractor_CompleteWorkflow(t *testing.T) {
 
 	// Create complete module with all features
 	files := map[string]string{
-		"main.tf": testutils.CreateValidMainTF(),
+		"main.tf":   testutils.CreateValidMainTF(),
 		"README.md": testutils.CreateREADMEContent("complete-module"),
 		"terrareg.json": testutils.CreateTerraregMetadata(map[string]interface{}{
 			"description": "Complete test module",
@@ -566,7 +566,7 @@ func TestModuleExtractor_MultipleVersions(t *testing.T) {
 		_ = testutils.CreateModuleVersion(t, db, moduleProvider.ID, version)
 
 		files := map[string]string{
-			"main.tf": testutils.CreateValidMainTF(),
+			"main.tf":   testutils.CreateValidMainTF(),
 			"README.md": testutils.CreateREADMEContent("test-module-" + version),
 		}
 		archive := testutils.CreateTestModuleZip(t, files)
@@ -919,9 +919,9 @@ func TestModuleExtractor_HiddenTerraregJson(t *testing.T) {
 	}`, description)
 
 	files := map[string]string{
-		"main.tf":         testutils.CreateValidMainTF(),
-		".terrareg.json":  metadataJSON, // Hidden file
-		"README.md":       testutils.CreateREADMEContent("test-module"),
+		"main.tf":        testutils.CreateValidMainTF(),
+		".terrareg.json": metadataJSON, // Hidden file
+		"README.md":      testutils.CreateREADMEContent("test-module"),
 	}
 
 	// Use CreateTestModuleZip - it handles hidden files correctly
@@ -956,7 +956,7 @@ func TestModuleExtractor_NonRootDirectory(t *testing.T) {
 	// Simulate module in subdirectory structure
 	// Create archive with module in subdirectory
 	files := map[string]string{
-		"subdirectory/module/main.tf": testutils.CreateValidMainTF(),
+		"subdirectory/module/main.tf":   testutils.CreateValidMainTF(),
 		"subdirectory/module/README.md": testutils.CreateREADMEContent("test-module"),
 	}
 	archive := testutils.CreateTestModuleZip(t, files)
@@ -995,9 +995,9 @@ modules/testmodule1/file_to_ignore.txt
 `
 
 	files := map[string]string{
-		"main.tf":             testutils.CreateValidMainTF(),
-		".terraformignore":    ignoreContent,
-		"README.md":           testutils.CreateREADMEContent("test-module"),
+		"main.tf":          testutils.CreateValidMainTF(),
+		".terraformignore": ignoreContent,
+		"README.md":        testutils.CreateREADMEContent("test-module"),
 	}
 	archive := testutils.CreateTestModuleZip(t, files)
 
@@ -1112,9 +1112,9 @@ modules/ignored_dir/
 `
 
 	files := map[string]string{
-		"subdirectory/module/main.tf":           testutils.CreateValidMainTF(),
-		"subdirectory/module/README.md":         testutils.CreateREADMEContent("test-module"),
-		"subdirectory/module/.terraformignore":  ignoreContent, // .terraformignore in module subdirectory
+		"subdirectory/module/main.tf":          testutils.CreateValidMainTF(),
+		"subdirectory/module/README.md":        testutils.CreateREADMEContent("test-module"),
+		"subdirectory/module/.terraformignore": ignoreContent, // .terraformignore in module subdirectory
 	}
 	archive := testutils.CreateTestModuleZip(t, files)
 
@@ -1160,10 +1160,10 @@ sub-only.txt
 `
 
 	files := map[string]string{
-		"main.tf":                           testutils.CreateValidMainTF(),
-		".terraformignore":                   rootIgnore,
-		"subdirectory/main.tf":               testutils.CreateValidMainTF(),
-		"subdirectory/.terraformignore":      subIgnore,
+		"main.tf":                       testutils.CreateValidMainTF(),
+		".terraformignore":              rootIgnore,
+		"subdirectory/main.tf":          testutils.CreateValidMainTF(),
+		"subdirectory/.terraformignore": subIgnore,
 	}
 	archive := testutils.CreateTestModuleZip(t, files)
 
@@ -1214,8 +1214,8 @@ prefix_*.txt
 `
 
 	files := map[string]string{
-		"main.tf":           testutils.CreateValidMainTF(),
-		".terraformignore":  ignoreContent,
+		"main.tf":          testutils.CreateValidMainTF(),
+		".terraformignore": ignoreContent,
 	}
 	archive := testutils.CreateTestModuleZip(t, files)
 
