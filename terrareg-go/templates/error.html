@@ -1,0 +1,33 @@
+{{ define "title" }}Error{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        {{ if not .root_bread_brumb }}
+        <li><a href="/modules">Modules</a></li>
+        {{ else }}
+        <li class="is-active"><a href="#">{{ .root_bread_brumb }}</a></li>
+        {{ end }}
+        {{ if .namespace }}<li><a href="/modules/{{ .namespace.name }}">{{ .namespace.name }}</a></li>{{ end }}
+        {{ if .module }}<li><a href="/modules/{{ .namespace.name }}/{{ .module.name }}">{{ .module.name }}</a></li>{{ end }}
+        {{ if .module_provider_name }}<li class="is-active"><a href="#">{{ .module_provider_name }}</a></li>{{ end }}
+    </ul>
+</nav>
+
+
+<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+    <div class="column is-two-fifths">
+        <p id="error-title" class="title is-4">
+            {{ .error_title }}
+        </p>
+        <br />
+        <p id="error-content" class="subtitle is-5">
+            {{ .error_description }}
+        </p>
+    </div>
+</div>
+
+{{ end }}
+
+{{ template "template.html" . }}

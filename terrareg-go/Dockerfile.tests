@@ -1,0 +1,70 @@
+FROM golang:1.25.4-trixie
+
+WORKDIR /app
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install test dependencies
+RUN apt-get update && \
+    apt-get install --assume-yes \
+        curl unzip git wget zip \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl \
+        xmlsec1 libgraphviz-dev libmagic1 \
+        gcc g++ libffi-dev python3-gpg \
+        ca-certificates && \
+    apt-get clean all
+
+# Download terraform-docs
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then arch=arm64; else arch=amd64; fi; \
+    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-${arch}.tar.gz && \
+    tar -zxvf terraform-docs-v0.19.0-linux-${arch}.tar.gz && \
+    chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && \
+    rm terraform-docs-v0.19.0-linux-${arch}.tar.gz'
+
+# Download tfsec
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then arch=arm64; else arch=amd64; fi; \
+    wget https://github.com/aquasecurity/tfsec/releases/download/v1.28.4/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
+    chmod +x /usr/local/bin/tfsec'
+
+# Download Infracost
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then arch=arm64; else arch=amd64; fi; \
+    wget https://github.com/infracost/infracost/releases/download/v0.10.22/infracost-linux-${arch}.tar.gz -O /tmp/infracost.tar.gz && \
+    tar -zxvf /tmp/infracost.tar.gz infracost-linux-${arch} && \
+    mv infracost-linux-${arch} /usr/local/bin/infracost && \
+    chmod +x /usr/local/bin/infracost && \
+    rm /tmp/infracost.tar.gz'
+
+# Download tfswitch
+RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 1.2.2'
+
+# Download tfplugindocs
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then arch=arm64; else arch=amd64; fi; \
+    wget https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.16.0/tfplugindocs_0.16.0_linux_${arch}.zip -O /tmp/tfplugindocs.zip && \
+    unzip /tmp/tfplugindocs.zip tfplugindocs && \
+    mv tfplugindocs /usr/local/bin/ && \
+    chmod +x /usr/local/bin/tfplugindocs && \
+    rm /tmp/tfplugindocs.zip'
+
+# Install Go testing tools
+RUN go install github.com/jstemmer/go-junit-report/v2@latest && \
+    go install honnef.co/go/tools/cmd/staticcheck@latest && \
+    go install golang.org/x/tools/cmd/cover@latest
+
+# Copy source code
+COPY . .
+
+# Set up Go module cache
+WORKDIR /app/terrareg-go
+RUN go mod download
+
+# Set working directory back to /app for tests
+WORKDIR /app
+
+ENV IN_TERRAREG_CI=true
+ENV RUNNING_IN_DOCKER=1
+
+ENTRYPOINT [""]

@@ -1,0 +1,63 @@
+
+.result-card-label {
+    margin-left: 8px;
+    padding: 4px
+}
+
+.default-hidden {
+    display: none !important;
+}
+
+.module-provider-card-provider-text {
+    vertical-align: middle;
+}
+.module-provider-card-provider-text > button {
+    height: 100%;
+    vertical-align: middle;
+}
+
+#search-results-header {
+    padding: 10px;
+}
+
+table.dataTable tr.dtrg-group th {
+    background-color: #EDEDED !important;
+}
+
+table.dataTable .select {
+    height: auto !important;
+}
+
+#module-tab-usage-builder .dt-buttons {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.input,.select select,.textarea{
+    color: black;
+}
+
+/* Remove right padding to join first result count span
+   with the icon
+*/
+#result-card-label-security-issues-icon {
+    padding-right: 3px !important;
+}
+/* First visible security issue result tag */
+.result-card-label-security-issue-result-tag:not(.default-hidden) {
+    padding-left: 3px !important;
+}
+/* All subsequent security issues result tags */
+.result-card-label-security-issue-result-tag:not(.default-hidden) ~ .result-card-label-security-issue-result-tag:not(.default-hidden) {
+    padding-left: .75em !important;
+}
+
+#site-warning {
+    width: 100%;
+    height: 40px;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    padding-top: 7px;
+}
