@@ -73,19 +73,20 @@ func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*
 			}
 		}
 		counts.TrustedNamespaces = trustedModulesWithLatestVersion
-
-		contributedQuery := searchQuery
-		contributedQuery.Contributed = boolPtr(true)
-		contributedResult, _ := q.moduleProviderRepo.Search(ctx, contributedQuery)
-		// Filter out modules without latest versions
-		contributedModulesWithLatestVersion := 0
-		for _, module := range contributedResult.Modules {
-			if module.GetLatestVersion() != nil {
-				contributedModulesWithLatestVersion++
-			}
-		}
-		counts.Contributed = contributedModulesWithLatestVersion
 	}
+
+	// Get contributed count (modules not in trusted namespaces)
+	contributedQuery := searchQuery
+	contributedQuery.Contributed = boolPtr(true)
+	contributedResult, _ := q.moduleProviderRepo.Search(ctx, contributedQuery)
+	// Filter out modules without latest versions
+	contributedModulesWithLatestVersion := 0
+	for _, module := range contributedResult.Modules {
+		if module.GetLatestVersion() != nil {
+			contributedModulesWithLatestVersion++
+		}
+	}
+	counts.Contributed = contributedModulesWithLatestVersion
 
 	// Count providers and namespaces
 	for _, module := range result.Modules {
