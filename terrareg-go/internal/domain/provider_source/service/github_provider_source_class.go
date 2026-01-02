@@ -84,17 +84,8 @@ func (g *GithubProviderSourceClass) GenerateDBConfigFromSourceConfig(sourceConfi
 		}
 	}
 
-	// Handle both naming conventions for backwards compatibility
-	if val, ok := sourceConfig["auto_generate_namespaces"]; ok {
-		if boolVal, ok := val.(bool); ok {
-			config.AutoGenerateNamespaces = boolVal
-		} else {
-			return nil, model.NewInvalidProviderSourceConfigError(
-				"auto_generate_namespaces must be a boolean",
-			)
-		}
-	}
-
+	// Boolean attributes
+	// Python reference: github.py line 46 uses "auto_generate_github_organisation_namespaces"
 	if val, ok := sourceConfig["auto_generate_github_organisation_namespaces"]; ok {
 		if boolVal, ok := val.(bool); ok {
 			config.AutoGenerateNamespaces = boolVal

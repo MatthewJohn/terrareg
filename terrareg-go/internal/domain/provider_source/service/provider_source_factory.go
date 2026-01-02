@@ -229,25 +229,10 @@ func (f *ProviderSourceFactory) InitialiseFromConfig(ctx context.Context, config
 			)
 		}
 
-		// Extract nested config values (Python passes the nested "config" dict to the class method)
-		// The JSON structure is: {"name": "...", "type": "...", "config": {...}}
-		// We need to pass the nested "config" map to GenerateDBConfigFromSourceConfig
-		configMap, configOk := providerSourceConfig["config"]
-		var configForGeneration map[string]interface{}
-		if configOk {
-			// Config is nested under "config" key
-			if configDict, ok := configMap.(map[string]interface{}); ok {
-				configForGeneration = configDict
-			} else {
-				return model.NewInvalidProviderSourceConfigError("Provider source config must be a valid object")
-			}
-		} else {
-			// For backwards compatibility, use the full config if no nested "config" key
-			configForGeneration = providerSourceConfig
-		}
-
 		// Generate DB config from source config
-		providerDBConfig, err := providerSourceClass.GenerateDBConfigFromSourceConfig(configForGeneration)
+		// Python reference: factory.py line 179 passes the full provider_source_config dict
+		// The dict has keys: name, type, and all the config values at the top level
+		providerDBConfig, err := providerSourceClass.GenerateDBConfigFromSourceConfig(providerSourceConfig)
 		if err != nil {
 			// Convert to InvalidProviderSourceConfigError if needed
 			if _, ok := err.(*model.InvalidProviderSourceConfigError); ok {

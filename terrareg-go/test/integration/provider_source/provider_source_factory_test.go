@@ -370,16 +370,13 @@ func TestInitialiseFromConfig_Create(t *testing.T) {
 	configJSON := `[{
 		"name": "Test Create 1",
 		"type": "github",
-		"config": {
-			"base_url": "https://github.com",
-			"api_url": "https://api.github.com",
-			"client_id": "test-client-id",
-			"client_secret": "test-client-secret",
-			"login_button_text": "Sign in with GitHub",
-			"private_key_path": "/path/to/key",
-			"app_id": "123456",
-			"some_test": "config"
-		}
+		"base_url": "https://github.com",
+		"api_url": "https://api.github.com",
+		"client_id": "test-client-id",
+		"client_secret": "test-client-secret",
+		"login_button_text": "Sign in with GitHub",
+		"private_key_path": "/path/to/key",
+		"app_id": "123456"
 	}]`
 
 	err := factory.InitialiseFromConfig(ctx, configJSON)
@@ -413,16 +410,14 @@ func TestInitialiseFromConfig_InvalidConfig(t *testing.T) {
 			name: "invalid type",
 			configJSON: `[{
 				"name": "Test Provider 1",
-				"type": "invalid Type",
-				"config": {}
+				"type": "invalid Type"
 			}]`,
 			expectedError: "Invalid provider source type. Valid types: github",
 		},
 		{
 			name: "no type",
 			configJSON: `[{
-				"name": "Test Provider 1",
-				"config": {}
+				"name": "Test Provider 1"
 			}]`,
 			expectedError: "Provider source config does not contain required attribute: type",
 		},
@@ -438,16 +433,14 @@ func TestInitialiseFromConfig_InvalidConfig(t *testing.T) {
 			name: "invalid name",
 			configJSON: `[{
 				"name": "  --  ",
-				"type": "github",
-				"config": {}
+				"type": "github"
 			}]`,
 			expectedError: "Invalid provider source config: Name must contain some alphanumeric characters",
 		},
 		{
 			name: "missing name",
 			configJSON: `[{
-				"type": "github",
-				"config": {}
+				"type": "github"
 			}]`,
 			expectedError: "Provider source config does not contain required attribute: name",
 		},
@@ -509,15 +502,13 @@ func TestInitialiseFromConfig_UpdateExisting(t *testing.T) {
 	configJSON := `[{
 		"name": "Test Pre-existing",
 		"type": "github",
-		"config": {
-			"base_url": "https://github.com",
-			"api_url": "https://api.github.com",
-			"client_id": "new-client-id",
-			"client_secret": "new-client-secret",
-			"login_button_text": "New Button Text",
-			"private_key_path": "/new/path",
-			"app_id": "222222"
-		}
+		"base_url": "https://github.com",
+		"api_url": "https://api.github.com",
+		"client_id": "new-client-id",
+		"client_secret": "new-client-secret",
+		"login_button_text": "New Button Text",
+		"private_key_path": "/new/path",
+		"app_id": "222222"
 	}]`
 
 	err := factory.InitialiseFromConfig(ctx, configJSON)
@@ -549,27 +540,23 @@ func TestInitialiseFromConfig_Duplicate(t *testing.T) {
 	configJSON := `[{
 		"name": "Test Duplicate",
 		"type": "github",
-		"config": {
-			"base_url": "https://github.com",
-			"api_url": "https://api.github.com",
-			"client_id": "client-1",
-			"client_secret": "secret-1",
-			"login_button_text": "Button 1",
-			"private_key_path": "/path/1",
-			"app_id": "111111"
-		}
+		"base_url": "https://github.com",
+		"api_url": "https://api.github.com",
+		"client_id": "client-1",
+		"client_secret": "secret-1",
+		"login_button_text": "Button 1",
+		"private_key_path": "/path/1",
+		"app_id": "111111"
 	}, {
 		"name": "Test Duplicate",
 		"type": "github",
-		"config": {
-			"base_url": "https://github.com",
-			"api_url": "https://api.github.com",
-			"client_id": "client-2",
-			"client_secret": "secret-2",
-			"login_button_text": "Button 2",
-			"private_key_path": "/path/2",
-			"app_id": "222222"
-		}
+		"base_url": "https://github.com",
+		"api_url": "https://api.github.com",
+		"client_id": "client-2",
+		"client_secret": "secret-2",
+		"login_button_text": "Button 2",
+		"private_key_path": "/path/2",
+		"app_id": "222222"
 	}]`
 
 	err := factory.InitialiseFromConfig(ctx, configJSON)
