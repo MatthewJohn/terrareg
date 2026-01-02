@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
-	infraAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
+	httpMiddleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // MockAuthMethod for testing
@@ -161,7 +160,7 @@ func TestRequireUploadPermission(t *testing.T) {
 			// For now, we'll test the middleware structure
 
 			// Create middleware
-			middleware := NewAuthMiddleware(domainConfig, authFactory)
+			middleware := httpMiddleware.NewAuthMiddleware(domainConfig, authFactory)
 
 			// Create test handler
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -196,7 +195,7 @@ func TestRequireUploadPermission(t *testing.T) {
 func TestRequireUploadPermission_MissingNamespace(t *testing.T) {
 	domainConfig := &model.DomainConfig{}
 	authFactory := authservice.NewAuthFactory(nil, nil, nil, nil, nil)
-	middleware := NewAuthMiddleware(domainConfig, authFactory)
+	middleware := httpMiddleware.NewAuthMiddleware(domainConfig, authFactory)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

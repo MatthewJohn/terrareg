@@ -1,9 +1,33 @@
 package sqldb
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 )
+
+// EncodeBlob encodes a value to JSON bytes for blob storage
+// Python reference: database.py::encode_blob()
+func EncodeBlob(value interface{}) []byte {
+	if value == nil {
+		return []byte{}
+	}
+	jsonBytes, err := json.Marshal(value)
+	if err != nil {
+		// Fallback to empty byte slice on error
+		return []byte{}
+	}
+	return jsonBytes
+}
+
+// DecodeBlob decodes JSON bytes from blob storage to the target type
+// Python reference: database.py::decode_blob()
+func DecodeBlob(data []byte, target interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
+	return json.Unmarshal(data, target)
+}
 
 // Common constants for column sizes (matching Python version)
 const (
