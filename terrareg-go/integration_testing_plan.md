@@ -278,11 +278,11 @@ Based on blockers and dependencies, here's the recommended order for implementin
 1. ~~**Module Extractor Tests**~~ - ✅ **COMPLETED** (35 tests)
 2. ~~**Module Version Integration Tests**~~ - ✅ **COMPLETED** (6 tests)
 3. ~~**Module Provider Integration Tests**~~ - ✅ **COMPLETED** (30+ tests)
-4. ~~**Enum Type Tests**~~ - ✅ **COMPLETED** (7 tests)
-5. **Example Model Tests** - Simple model tests (NOT example_file - that's done)
-6. **Base Submodule Tests** - Low complexity
-7. **Utility/Feature Tests** - Provider tier (partial), source type, documentation type, repository kind, registry resource type, repository release metadata
-8. **Search Filter Tests** - Search filter validation
+4. ~~**Enum Type Tests**~~ - ✅ **COMPLETED** (8 tests - tier, source type, namespace, OS, architecture, documentation type, plus string conversion tests)
+5. ~~**Search Filter Tests**~~ - ✅ **COMPLETED** (20 tests - 10 module + 10 provider)
+6. **Example Model Tests** - Requires markdown/HTML conversion service (not implemented)
+7. **Base Submodule Tests** - Requires git_path calculation service (not implemented)
+8. **Utility/Feature Tests** - ~~Provider tier~~ (partial), ~~source type~~ (done), ~~documentation type~~ (done), repository kind, registry resource type, repository release metadata
 
 ### **Phase 2: After Provider Package Schema Fix**
 1. **Provider Model Tests** - All provider-related tests
@@ -354,13 +354,17 @@ Based on blockers and dependencies, here's the recommended order for implementin
 | Search Tests | Complete | Complete | 100% |
 | **Overall** | **70+ test files** | **45+ test files** | **~65%** |
 
-**Recent Additions (Dec 2025)**:
+**Recent Additions (Dec 2025 - Jan 2026)**:
 - Module Extractor integration tests: 35 tests covering ZIP/TAR.GZ extraction, metadata processing, external tool mocks, hidden metadata files, non-root directories, .terraformignore parsing, non-root repo with .tfignore, multiple .tfignore files, wildcard patterns
 - Module Version integration tests: 6 tests covering version lifecycle, publishing, beta detection
 - Module Provider expanded tests: +3 tests for multiple versions, verified status, git configuration
-- Enum type tests: 7 tests covering ProviderTier, ProviderSourceType, NamespaceType, ProviderBinaryOperatingSystemType, ProviderBinaryArchitectureType
+- **Enum type tests: 8 tests covering ProviderTier, ProviderSourceType, NamespaceType, ProviderBinaryOperatingSystemType, ProviderBinaryArchitectureType, ProviderDocumentationType, plus full string conversion tests**
 - **Provider Model integration tests: 21 tests covering provider CRUD, properties, versions, binaries, GPG keys, and search**
 - **Provider search integration tests: 9 tests (26 subtests) covering search functionality with filtering**
+- **Provider search filters integration tests: 10 tests covering search filter counts with trusted/contributed namespaces**
+- **Module search filters integration tests: 10 tests covering search filter counts with trusted/contributed namespaces**
+- **Bug fix**: Fixed Contributed count calculation in search filters when no trusted namespaces configured
+- **Bug fix**: Fixed provider repository limit=0 handling to return all results (matching module repository behavior)
 - **Python test references**: Added Python test references to all Golang integration tests for traceability
 - Test infrastructure: Created `archive_helpers.go` and `module_test_helpers.go` with helper functions for creating test modules, archives, and database fixtures
 - SystemCommandService: Created abstraction layer for external tool mocking (terraform-docs, tfsec, infracost, terraform, git)

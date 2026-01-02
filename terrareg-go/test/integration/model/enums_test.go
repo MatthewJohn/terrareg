@@ -139,3 +139,65 @@ func TestProviderBinaryArchitectureType_Values(t *testing.T) {
 		assert.Equal(t, expectedValues[i], string(archType), "Architecture type should have correct string value")
 	}
 }
+
+// TestProviderDocumentationType_Values tests provider documentation type enum values
+// Python reference: test_provider_documentation_type.py
+func TestProviderDocumentationType_Values(t *testing.T) {
+	validTypes := []sqldb.ProviderDocumentationType{
+		sqldb.ProviderDocTypeOverview,
+		sqldb.ProviderDocTypeResource,
+		sqldb.ProviderDocTypeDataSource,
+		sqldb.ProviderDocTypeGuide,
+		sqldb.ProviderDocTypeFunction,
+	}
+
+	expectedValues := []string{
+		"overview",
+		"resource",
+		"data-source",
+		"guide",
+		"function",
+	}
+
+	for i, docType := range validTypes {
+		assert.Equal(t, expectedValues[i], string(docType), "Documentation type should have correct string value")
+	}
+}
+
+// TestEnum_FullStringConversion tests that all enum types convert correctly to strings
+// This is an extended version of TestEnum_StringConversion that includes all enums
+func TestEnum_FullStringConversion(t *testing.T) {
+	// ProviderTier to string conversion
+	assert.Equal(t, "official", string(sqldb.ProviderTierOfficial))
+	assert.Equal(t, "partner", string(sqldb.ProviderTierPartner))
+	assert.Equal(t, "community", string(sqldb.ProviderTierCommunity))
+
+	// ProviderSourceType to string conversion
+	assert.Equal(t, "github", string(sqldb.ProviderSourceTypeGithub))
+	assert.Equal(t, "gitlab", string(sqldb.ProviderSourceTypeGitlab))
+	assert.Equal(t, "bitbucket", string(sqldb.ProviderSourceTypeBitbucket))
+
+	// ProviderDocumentationType to string conversion
+	assert.Equal(t, "overview", string(sqldb.ProviderDocTypeOverview))
+	assert.Equal(t, "resource", string(sqldb.ProviderDocTypeResource))
+	assert.Equal(t, "data-source", string(sqldb.ProviderDocTypeDataSource))
+	assert.Equal(t, "guide", string(sqldb.ProviderDocTypeGuide))
+	assert.Equal(t, "function", string(sqldb.ProviderDocTypeFunction))
+
+	// NamespaceType to string conversion
+	assert.Equal(t, "NONE", string(sqldb.NamespaceTypeNone))
+	assert.Equal(t, "GITHUB_USER", string(sqldb.NamespaceTypeGithubUser))
+	assert.Equal(t, "GITHUB_ORGANISATION", string(sqldb.NamespaceTypeGithubOrg))
+
+	// ProviderBinaryOperatingSystemType to string conversion
+	assert.Equal(t, "linux", string(sqldb.OSLinux))
+	assert.Equal(t, "windows", string(sqldb.OSWindows))
+	assert.Equal(t, "darwin", string(sqldb.OSDarwin))
+	assert.Equal(t, "freebsd", string(sqldb.OSFreeBSD))
+
+	// ProviderBinaryArchitectureType to string conversion
+	assert.Equal(t, "amd64", string(sqldb.ArchAMD64))
+	assert.Equal(t, "arm", string(sqldb.ArchARM))
+	assert.Equal(t, "arm64", string(sqldb.ArchARM64))
+	assert.Equal(t, "386", string(sqldb.Arch386))
+}
