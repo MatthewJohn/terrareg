@@ -5,6 +5,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
+// FromDBGitProvider converts DB model to domain model
 func FromDBGitProvider(db *sqldb.GitProviderDB) *gitmodel.GitProvider {
 	if db == nil {
 		return nil
@@ -16,5 +17,20 @@ func FromDBGitProvider(db *sqldb.GitProviderDB) *gitmodel.GitProvider {
 		CloneURLTemplate:  db.CloneURLTemplate,
 		BrowseURLTemplate: db.BrowseURLTemplate,
 		GitPathTemplate:   db.GitPathTemplate,
+	}
+}
+
+// ToDBGitProvider converts domain model to DB model
+func ToDBGitProvider(domain *gitmodel.GitProvider) *sqldb.GitProviderDB {
+	if domain == nil {
+		return nil
+	}
+	return &sqldb.GitProviderDB{
+		ID:                domain.ID,
+		Name:              domain.Name,
+		BaseURLTemplate:   domain.BaseURLTemplate,
+		CloneURLTemplate:  domain.CloneURLTemplate,
+		BrowseURLTemplate: domain.BrowseURLTemplate,
+		GitPathTemplate:   domain.GitPathTemplate,
 	}
 }

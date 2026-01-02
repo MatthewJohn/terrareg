@@ -48,6 +48,7 @@ type Server struct {
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
 	configHandler               *terrareg.ConfigHandler
 	versionHandler              *terrareg.VersionHandler
+	gitProvidersHandler         *terrareg.GitProvidersHandler
 	providerLogosHandler        *terrareg.ProviderLogosHandler
 	searchFiltersHandler        *terrareg.SearchFiltersHandler
 	moduleWebhookHandler        *webhook.ModuleWebhookHandler
@@ -80,6 +81,7 @@ func NewServer(
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler,
 	configHandler *terrareg.ConfigHandler,
 	versionHandler *terrareg.VersionHandler,
+	gitProvidersHandler *terrareg.GitProvidersHandler,
 	providerLogosHandler *terrareg.ProviderLogosHandler,
 	searchFiltersHandler *terrareg.SearchFiltersHandler,
 	moduleWebhookHandler *webhook.ModuleWebhookHandler,
@@ -110,6 +112,7 @@ func NewServer(
 		terraformStaticTokenHandler: terraformStaticTokenHandler,
 		configHandler:               configHandler,
 		versionHandler:              versionHandler,
+		gitProvidersHandler:         gitProvidersHandler,
 		providerLogosHandler:        providerLogosHandler,
 		searchFiltersHandler:        searchFiltersHandler,
 		moduleWebhookHandler:        moduleWebhookHandler,
@@ -598,7 +601,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	s.configHandler.HandleConfig(w, r)
 }
 func (s *Server) handleGitProviders(w http.ResponseWriter, r *http.Request) {
-	s.providerHandler.HandleProviderList(w, r)
+	s.gitProvidersHandler.ServeHTTP(w, r)
 }
 func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleGlobalStatsSummary(w, r)

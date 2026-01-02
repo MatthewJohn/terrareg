@@ -60,6 +60,7 @@ import (
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
 	auditPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
+	gitPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/git"
 	gpgkeyPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/gpgkey"
 	graphPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/graph"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
@@ -113,6 +114,9 @@ type Container struct {
 	// GPG Keys
 	GPGKeyRepo    gpgkeyRepo.GPGKeyRepository
 	GPGKeyService *gpgkeyService.GPGKeyService
+
+	// Git Providers
+	GitProviderFactory *gitService.GitProviderFactory
 
 	// Infrastructure Services
 	GitClient              gitService.GitClient
@@ -286,8 +290,9 @@ type Container struct {
 	TemplateRenderer *template.Renderer
 
 	// Config/Version Handlers
-	ConfigHandler  *terrareg.ConfigHandler
-	VersionHandler *terrareg.VersionHandler
+	ConfigHandler       *terrareg.ConfigHandler
+	VersionHandler      *terrareg.VersionHandler
+	GitProvidersHandler *terrareg.GitProvidersHandler
 
 	// Search Filters
 	SearchFiltersQuery   *moduleQuery.SearchFiltersQuery
@@ -332,6 +337,17 @@ func NewContainer(
 	c.AuditHistoryRepo = auditPersistence.NewAuditHistoryRepository(db.DB)
 	c.GraphRepo = graphPersistence.NewDependencyGraphRepository(db.DB)
 	c.GPGKeyRepo = gpgkeyPersistence.NewGPGKeyRepository(db.DB)
+
+	// Initialize Git Provider repository and factory
+	gitProviderRepo := gitPersistence.NewGitProviderRepository(db)
+	c.GitProviderFactory = gitService.NewGitProviderFactory(gitProviderRepo)
+
+	// Load git providers from config if GIT_PROVIDER_CONFIG is set
+	if infraConfig.GitProviderConfig != "" {
+		if err := c.GitProviderFactory.InitialiseFromConfig(context.Background(), infraConfig.GitProviderConfig); err != nil {
+			logger.Warn().Err(err).Msg("Failed to initialize git providers from config")
+		}
+	}
 
 	c.URLService = urlservice.NewURLService(infraConfig)
 
@@ -700,6 +716,7 @@ func NewContainer(
 	// Initialize config/version handlers
 	c.ConfigHandler = terrareg.NewConfigHandler(c.GetConfigQuery)
 	c.VersionHandler = terrareg.NewVersionHandler(c.GetVersionQuery)
+	c.GitProvidersHandler = terrareg.NewGitProvidersHandler(c.GitProviderFactory)
 
 	// Initialize initial setup handler
 	c.InitialSetupHandler = terrareg.NewInitialSetupHandler(c.GetInitialSetupQuery)
@@ -844,6 +861,7 @@ func NewContainer(
 		c.TerraformStaticTokenHandler,
 		c.ConfigHandler,
 		c.VersionHandler,
+		c.GitProvidersHandler,
 		c.ProviderLogosHandler,
 		c.SearchFiltersHandler,
 		c.ModuleWebhookHandler, // Add webhook handler
