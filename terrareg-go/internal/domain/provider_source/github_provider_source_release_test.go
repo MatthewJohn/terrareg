@@ -9,9 +9,11 @@ import (
 
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
-	repository_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/repository/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // TestGetCommitHashByRelease tests the GetCommitHashByRelease method
@@ -76,16 +78,13 @@ func TestGetCommitHashByRelease(t *testing.T) {
 
 			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
 
-			repo := repository_model.ReconstructRepository(
-				1,
-				nil,
-				"test-owner",
-				"test-repo",
-				nil,
-				nil,
-				nil,
-				"test-name",
-			)
+			owner := "test-owner"
+			name := "test-repo"
+			repo := &sqldb.RepositoryDB{
+				Owner:              &owner,
+				Name:               &name,
+				ProviderSourceName: "test-name",
+			}
 
 			hash, err := gh.GetCommitHashByRelease(context.Background(), repo, "v1.0.0", "test-token")
 
@@ -156,16 +155,13 @@ func TestGetReleaseArtifactsMetadata(t *testing.T) {
 
 			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
 
-			repo := repository_model.ReconstructRepository(
-				1,
-				nil,
-				"test-owner",
-				"test-repo",
-				nil,
-				nil,
-				nil,
-				"test-name",
-			)
+			owner := "test-owner"
+			name := "test-repo"
+			repo := &sqldb.RepositoryDB{
+				Owner:              &owner,
+				Name:               &name,
+				ProviderSourceName: "test-name",
+			}
 
 			artifacts, err := gh.GetReleaseArtifactsMetadata(context.Background(), repo, 12345, "test-token")
 
@@ -231,16 +227,13 @@ func TestGetReleaseArtifact(t *testing.T) {
 
 			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
 
-			repo := repository_model.ReconstructRepository(
-				1,
-				nil,
-				"test-owner",
-				"test-repo",
-				nil,
-				nil,
-				nil,
-				"test-name",
-			)
+			owner := "test-owner"
+			name := "test-repo"
+			repo := &sqldb.RepositoryDB{
+				Owner:              &owner,
+				Name:               &name,
+				ProviderSourceName: "test-name",
+			}
 
 			artifact := provider_source_model.NewReleaseArtifactMetadata("test-artifact.zip", 123)
 
@@ -308,16 +301,15 @@ func TestGetReleaseArchive(t *testing.T) {
 
 			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
 
-			repo := repository_model.ReconstructRepository(
-				1,
-				nil,
-				"test-owner",
-				"test-repo",
-				nil,
-				nil,
-				nil,
-				"test-name",
-			)
+			owner := "test-owner"
+			name := "test-repo"
+			cloneURL := "https://github.com/test-owner/test-repo.git"
+			repo := &sqldb.RepositoryDB{
+				Owner:              &owner,
+				Name:               &name,
+				CloneURL:           &cloneURL,
+				ProviderSourceName: "test-name",
+			}
 
 			releaseMetadata := provider_source_model.NewRepositoryReleaseMetadata(
 				"Test Release",
@@ -341,12 +333,12 @@ func TestGetReleaseArchive(t *testing.T) {
 // TestAddRepository tests the AddRepository method
 func TestAddRepository(t *testing.T) {
 	tests := []struct {
-		name                string
-		repositoryMetadata  map[string]interface{}
-		expectCreate        bool
-		expectedProviderID  string
-		expectedOwner       string
-		expectedName        string
+		name               string
+		repositoryMetadata map[string]interface{}
+		expectCreate       bool
+		expectedProviderID string
+		expectedOwner      string
+		expectedName       string
 	}{
 		{
 			name: "valid repository",
@@ -356,11 +348,12 @@ func TestAddRepository(t *testing.T) {
 				"owner": map[string]interface{}{
 					"login": "test-owner",
 				},
+				"clone_url": "https://github.com/test-owner/terraform-provider-test.git",
 			},
 			expectCreate:       true,
 			expectedProviderID: "12345",
 			expectedOwner:      "test-owner",
-			expectedName:        "terraform-provider-test",
+			expectedName:       "terraform-provider-test",
 		},
 		{
 			name: "missing id",
@@ -369,6 +362,7 @@ func TestAddRepository(t *testing.T) {
 				"owner": map[string]interface{}{
 					"login": "test-owner",
 				},
+				"clone_url": "https://github.com/test-owner/test-repo.git",
 			},
 			expectCreate: false,
 		},
@@ -376,6 +370,14 @@ func TestAddRepository(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Set up in-memory database
+			db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+			require.NoError(t, err)
+			err = db.AutoMigrate(&sqldb.RepositoryDB{})
+			require.NoError(t, err)
+
+			database := &sqldb.Database{DB: db}
+
 			mockPSRepo := &MockProviderSourceRepository{
 				findByNameFunc: func(ctx context.Context, name string) (*provider_source_model.ProviderSource, error) {
 					return provider_source_model.NewProviderSource(
@@ -390,69 +392,21 @@ func TestAddRepository(t *testing.T) {
 
 			gh := NewGithubProviderSource("test-source-name", mockPSRepo, ghClass)
 
-			var createdRepo *repository_model.Repository
-			mockRepoRepo := &MockRepositoryRepository{
-				existsFunc: func(ctx context.Context, providerSourceName string, providerID string) (bool, error) {
-					return false, nil
-				},
-				createFunc: func(ctx context.Context, repository *repository_model.Repository) (*repository_model.Repository, error) {
-					createdRepo = repository
-					return repository, nil
-				},
-			}
-
-			err := gh.AddRepository(context.Background(), mockRepoRepo, tt.repositoryMetadata)
+			err = gh.AddRepository(context.Background(), database, tt.repositoryMetadata)
 
 			assert.NoError(t, err)
 
 			if tt.expectCreate {
-				require.NotNil(t, createdRepo)
-				assert.Equal(t, tt.expectedProviderID, *createdRepo.ProviderID())
-				assert.Equal(t, tt.expectedOwner, createdRepo.Owner())
-				assert.Equal(t, tt.expectedName, createdRepo.Name())
+				// Verify repository was created
+				var repos []sqldb.RepositoryDB
+				db.Find(&repos)
+				require.Len(t, repos, 1)
+				assert.Equal(t, tt.expectedProviderID, *repos[0].ProviderID)
+				assert.Equal(t, tt.expectedOwner, *repos[0].Owner)
+				assert.Equal(t, tt.expectedName, *repos[0].Name)
 			}
 		})
 	}
-}
-
-// MockRepositoryRepository is a mock for RepositoryRepository
-type MockRepositoryRepository struct {
-	existsFunc func(ctx context.Context, providerSourceName string, providerID string) (bool, error)
-	createFunc func(ctx context.Context, repository *repository_model.Repository) (*repository_model.Repository, error)
-}
-
-func (m *MockRepositoryRepository) FindByID(ctx context.Context, id int) (*repository_model.Repository, error) {
-	return nil, nil
-}
-
-func (m *MockRepositoryRepository) FindByProviderSourceAndProviderID(ctx context.Context, providerSourceName string, providerID string) (*repository_model.Repository, error) {
-	return nil, nil
-}
-
-func (m *MockRepositoryRepository) FindByOwnerList(ctx context.Context, owners []string) ([]*repository_model.Repository, error) {
-	return nil, nil
-}
-
-func (m *MockRepositoryRepository) Create(ctx context.Context, repository *repository_model.Repository) (*repository_model.Repository, error) {
-	if m.createFunc != nil {
-		return m.createFunc(ctx, repository)
-	}
-	return repository, nil
-}
-
-func (m *MockRepositoryRepository) Update(ctx context.Context, repository *repository_model.Repository) error {
-	return nil
-}
-
-func (m *MockRepositoryRepository) Delete(ctx context.Context, id int) error {
-	return nil
-}
-
-func (m *MockRepositoryRepository) Exists(ctx context.Context, providerSourceName string, providerID string) (bool, error) {
-	if m.existsFunc != nil {
-		return m.existsFunc(ctx, providerSourceName, providerID)
-	}
-	return false, nil
 }
 
 // TestUpdateRepositories tests the UpdateRepositories method
@@ -463,10 +417,10 @@ func TestUpdateRepositories(t *testing.T) {
 		expectedPages       int
 		expectedAddRepoCall int
 	}{
-		{"no results", 0, 1, 0},
-		{"one result", 1, 1, 1},
-		{"100 results", 100, 2, 100},
-		{"101 results", 101, 2, 101},
+		{"no_results", 0, 1, 0},
+		{"one_result", 1, 1, 1},
+		{"100_results", 100, 2, 100},
+		{"101_results", 101, 2, 101},
 	}
 
 	for _, tt := range tests {
@@ -481,8 +435,8 @@ func TestUpdateRepositories(t *testing.T) {
 				for i := 0; i < count; i++ {
 					repoID := startIdx + i
 					results = append(results, map[string]interface{}{
-						"id":   float64(repoID),
-						"name": "terraform-provider-test",
+						"id":        float64(repoID),
+						"name":      "terraform-provider-test",
 						"owner": map[string]interface{}{
 							"login": "test-owner",
 						},
@@ -520,21 +474,22 @@ func TestUpdateRepositories(t *testing.T) {
 
 			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
 
-			addRepoCallCount := 0
-			mockRepoRepo := &MockRepositoryRepository{
-				existsFunc: func(ctx context.Context, providerSourceName string, providerID string) (bool, error) {
-					return false, nil
-				},
-				createFunc: func(ctx context.Context, repository *repository_model.Repository) (*repository_model.Repository, error) {
-					addRepoCallCount++
-					return repository, nil
-				},
-			}
+			// Set up unique in-memory database for this test
+			db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{})
+			require.NoError(t, err)
+			err = db.AutoMigrate(&sqldb.RepositoryDB{})
+			require.NoError(t, err)
 
-			err := gh.UpdateRepositories(context.Background(), mockRepoRepo, "test-token")
+			database := &sqldb.Database{DB: db}
+
+			err = gh.UpdateRepositories(context.Background(), database, "test-token")
 
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedAddRepoCall, addRepoCallCount)
+
+			// Verify repository count
+			var count int64
+			db.Model(&sqldb.RepositoryDB{}).Count(&count)
+			assert.Equal(t, int64(tt.expectedAddRepoCall), count)
 		})
 	}
 }

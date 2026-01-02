@@ -3,7 +3,7 @@ package model
 import (
 	"regexp"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/repository/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // tagRegex matches semantic version tags (v1.2.3 or v1.2.3-beta)
@@ -18,7 +18,7 @@ type RepositoryReleaseMetadata struct {
 	ArchiveURL      string
 	CommitHash      string
 	ProviderID      int
-	Repository      model.Repository
+	Repository      sqldb.RepositoryDB
 	ReleaseArtifacts []*ReleaseArtifactMetadata
 }
 
@@ -60,7 +60,7 @@ func NewRepositoryReleaseMetadata(
 	archiveURL string,
 	commitHash string,
 	providerID int,
-	repository model.Repository,
+	repository sqldb.RepositoryDB,
 	releaseArtifacts []*ReleaseArtifactMetadata,
 ) *RepositoryReleaseMetadata {
 	return &RepositoryReleaseMetadata{

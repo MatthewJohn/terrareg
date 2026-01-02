@@ -19,8 +19,7 @@ import (
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/repository/model"
-	repository_repository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/repository/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // Repository represents a source code repository
@@ -283,8 +282,7 @@ func (g *GithubProviderSource) GetUserAccessToken(ctx context.Context, code stri
 
 	if resp.StatusCode == 200 {
 		// Parse response as query string format
-		body := make([]byte, resp.ContentLength)
-		_, err = resp.Body.Read(body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return "", err
 		}
@@ -746,13 +744,22 @@ func (g *GithubProviderSource) GetAccessTokenForProvider(ctx context.Context, na
 
 // GetCommitHashByRelease returns the commit hash for a given tag
 // Python reference: github.py::_get_commit_hash_by_release
-func (g *GithubProviderSource) GetCommitHashByRelease(ctx context.Context, repo *model.Repository, tagName string, accessToken string) (string, error) {
+func (g *GithubProviderSource) GetCommitHashByRelease(ctx context.Context, repo *sqldb.RepositoryDB, tagName string, accessToken string) (string, error) {
 	apiURL, err := g.apiURL(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/git/ref/tags/%s", apiURL, repo.Owner(), repo.Name(), tagName)
+	owner := ""
+	if repo.Owner != nil {
+		owner = *repo.Owner
+	}
+	name := ""
+	if repo.Name != nil {
+		name = *repo.Name
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/%s/git/ref/tags/%s", apiURL, owner, name, tagName)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return "", err
@@ -787,13 +794,22 @@ func (g *GithubProviderSource) GetCommitHashByRelease(ctx context.Context, repo 
 
 // GetReleaseArtifactsMetadata gets the artifacts metadata for a release
 // Python reference: github.py::_get_release_artifacts_metadata
-func (g *GithubProviderSource) GetReleaseArtifactsMetadata(ctx context.Context, repo *model.Repository, releaseID int, accessToken string) ([]*provider_source_model.ReleaseArtifactMetadata, error) {
+func (g *GithubProviderSource) GetReleaseArtifactsMetadata(ctx context.Context, repo *sqldb.RepositoryDB, releaseID int, accessToken string) ([]*provider_source_model.ReleaseArtifactMetadata, error) {
 	apiURL, err := g.apiURL(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/releases/%d/assets", apiURL, repo.Owner(), repo.Name(), releaseID)
+	owner := ""
+	if repo.Owner != nil {
+		owner = *repo.Owner
+	}
+	name := ""
+	if repo.Name != nil {
+		name = *repo.Name
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/%s/releases/%d/assets", apiURL, owner, name, releaseID)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -833,13 +849,22 @@ func (g *GithubProviderSource) GetReleaseArtifactsMetadata(ctx context.Context, 
 
 // GetReleaseArtifact downloads a release artifact
 // Python reference: github.py::get_release_artifact
-func (g *GithubProviderSource) GetReleaseArtifact(ctx context.Context, repo *model.Repository, artifact *provider_source_model.ReleaseArtifactMetadata, accessToken string) ([]byte, error) {
+func (g *GithubProviderSource) GetReleaseArtifact(ctx context.Context, repo *sqldb.RepositoryDB, artifact *provider_source_model.ReleaseArtifactMetadata, accessToken string) ([]byte, error) {
 	apiURL, err := g.apiURL(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/releases/assets/%d", apiURL, repo.Owner(), repo.Name(), artifact.ProviderID)
+	owner := ""
+	if repo.Owner != nil {
+		owner = *repo.Owner
+	}
+	name := ""
+	if repo.Name != nil {
+		name = *repo.Name
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/%s/releases/assets/%d", apiURL, owner, name, artifact.ProviderID)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -863,15 +888,24 @@ func (g *GithubProviderSource) GetReleaseArtifact(ctx context.Context, repo *mod
 
 // GetReleaseArchive downloads the release archive tarball
 // Python reference: github.py::get_release_archive
-func (g *GithubProviderSource) GetReleaseArchive(ctx context.Context, repo *model.Repository, releaseMetadata *provider_source_model.RepositoryReleaseMetadata, accessToken string) ([]byte, string, error) {
+func (g *GithubProviderSource) GetReleaseArchive(ctx context.Context, repo *sqldb.RepositoryDB, releaseMetadata *provider_source_model.RepositoryReleaseMetadata, accessToken string) ([]byte, string, error) {
 	apiURL, err := g.apiURL(ctx)
 	if err != nil {
 		return nil, "", err
 	}
 
-	archiveID := fmt.Sprintf("%s-%s-%s", repo.Owner(), repo.Name(), releaseMetadata.CommitHash[:7])
+	owner := ""
+	if repo.Owner != nil {
+		owner = *repo.Owner
+	}
+	name := ""
+	if repo.Name != nil {
+		name = *repo.Name
+	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/tarball/%s", apiURL, repo.Owner(), repo.Name(), releaseMetadata.Tag)
+	archiveID := fmt.Sprintf("%s-%s-%s", owner, name, releaseMetadata.CommitHash[:7])
+
+	url := fmt.Sprintf("%s/repos/%s/%s/tarball/%s", apiURL, owner, name, releaseMetadata.Tag)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, archiveID, err
@@ -896,71 +930,97 @@ func (g *GithubProviderSource) GetReleaseArchive(ctx context.Context, repo *mode
 
 // AddRepository creates a repository from GitHub API metadata
 // Python reference: github.py::_add_repository
-func (g *GithubProviderSource) AddRepository(ctx context.Context, repoRepo repository_repository.RepositoryRepository, repositoryMetadata map[string]interface{}) error {
-	// Extract required fields
-	repoIDFloat, ok := repositoryMetadata["id"].(float64)
+func (g *GithubProviderSource) AddRepository(ctx context.Context, db *sqldb.Database, repositoryMetadata map[string]interface{}) error {
+	// Validate required fields
+	repoID, ok := repositoryMetadata["id"]
 	if !ok {
 		return nil
 	}
-	repoID := strconv.FormatFloat(repoIDFloat, 'f', -1, 64)
-
-	repoName, ok := repositoryMetadata["name"].(string)
+	repoName, ok := repositoryMetadata["name"]
+	if !ok {
+		return nil
+	}
+	ownerData, ok := repositoryMetadata["owner"]
+	if !ok {
+		return nil
+	}
+	ownerMap, ok := ownerData.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	ownerName, ok := ownerMap["login"]
+	if !ok {
+		return nil
+	}
+	cloneURL, ok := repositoryMetadata["clone_url"]
 	if !ok {
 		return nil
 	}
 
-	ownerObj, ok := repositoryMetadata["owner"].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	ownerName, _ := ownerObj["login"].(string)
-	if ownerName == "" {
+	// Convert provider_id to string
+	var providerID string
+	switch v := repoID.(type) {
+	case float64:
+		providerID = fmt.Sprintf("%.0f", v)
+	case int:
+		providerID = fmt.Sprintf("%d", v)
+	case string:
+		providerID = v
+	default:
 		return nil
 	}
 
-	cloneURL, _ := repositoryMetadata["clone_url"].(string)
+	// Get name and clone_url as strings
+	name, _ := repoName.(string)
+	cloneURLStr, _ := cloneURL.(string)
+	ownerStr, _ := ownerName.(string)
 
-	// Extract optional fields
-	var description *string
+	// Get optional fields
+	var description []byte
 	if desc, ok := repositoryMetadata["description"].(string); ok && desc != "" {
-		description = &desc
+		description = []byte(desc)
 	}
 
 	var logoURL *string
-	if avatar, ok := ownerObj["avatar_url"].(string); ok && avatar != "" {
-		logoURL = &avatar
+	if avatarURL, ok := ownerMap["avatar_url"].(string); ok && avatarURL != "" {
+		logoURL = &avatarURL
 	}
 
 	// Check if repository already exists
-	exists, err := repoRepo.Exists(ctx, g.Name(), repoID)
+	var count int64
+	err := db.DB.WithContext(ctx).
+		Model(&sqldb.RepositoryDB{}).
+		Where("provider_source_name = ? AND provider_id = ?", g.Name(), providerID).
+		Count(&count).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check if repository exists: %w", err)
 	}
-	if exists {
-		return nil
+	if count > 0 {
+		return nil // Already exists, return nil (no error)
 	}
 
 	// Create new repository
-	newRepo, err := model.NewRepository(
-		&repoID,
-		ownerName,
-		repoName,
-		description,
-		&cloneURL,
-		logoURL,
-		g.Name(),
-	)
-	if err != nil {
-		return err
+	repo := &sqldb.RepositoryDB{
+		ProviderID:         &providerID,
+		Owner:              &ownerStr,
+		Name:               &name,
+		Description:        description,
+		CloneURL:           &cloneURLStr,
+		LogoURL:            logoURL,
+		ProviderSourceName: g.Name(),
 	}
 
-	_, err = repoRepo.Create(ctx, newRepo)
-	return err
+	err = db.DB.WithContext(ctx).Create(repo).Error
+	if err != nil {
+		return fmt.Errorf("failed to create repository: %w", err)
+	}
+
+	return nil
 }
 
-// UpdateRepositories refreshes the list of repositories from GitHub
+// UpdateRepositories fetches and updates repositories from GitHub API
 // Python reference: github.py::update_repositories
-func (g *GithubProviderSource) UpdateRepositories(ctx context.Context, repoRepo repository_repository.RepositoryRepository, accessToken string) error {
+func (g *GithubProviderSource) UpdateRepositories(ctx context.Context, db *sqldb.Database, accessToken string) error {
 	apiURL, err := g.apiURL(ctx)
 	if err != nil {
 		return err
@@ -968,7 +1028,9 @@ func (g *GithubProviderSource) UpdateRepositories(ctx context.Context, repoRepo 
 
 	page := 1
 	for {
+		// Build URL with query parameters
 		url := fmt.Sprintf("%s/user/repos?visibility=public&affiliation=owner,organization_member&sort=created&direction=desc&per_page=100&page=%d", apiURL, page)
+
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			return err
@@ -990,14 +1052,18 @@ func (g *GithubProviderSource) UpdateRepositories(ctx context.Context, repoRepo 
 		var results []map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
 			resp.Body.Close()
-			return err
+			return fmt.Errorf("failed to decode response: %w", err)
 		}
 		resp.Body.Close()
 
+		// Process each repository
 		for _, repository := range results {
-			g.AddRepository(ctx, repoRepo, repository)
+			if err := g.AddRepository(ctx, db, repository); err != nil {
+				return err
+			}
 		}
 
+		// Check if we need to paginate
 		if len(results) < 100 {
 			break
 		}
