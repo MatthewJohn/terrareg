@@ -278,19 +278,20 @@ Based on blockers and dependencies, here's the recommended order for implementin
 1. ~~**Module Extractor Tests**~~ - ✅ **COMPLETED** (35 tests)
 2. ~~**Module Version Integration Tests**~~ - ✅ **COMPLETED** (6 tests)
 3. ~~**Module Provider Integration Tests**~~ - ✅ **COMPLETED** (30+ tests)
-4. ~~**Enum Type Tests**~~ - ✅ **COMPLETED** (8 tests - tier, source type, namespace, OS, architecture, documentation type, plus string conversion tests)
+4. ~~**Enum Type Tests**~~ - ✅ **COMPLETED** (12 tests - tier, source type, namespace, OS, architecture, documentation type, repository kind, registry resource type, plus string conversion tests)
 5. ~~**Search Filter Tests**~~ - ✅ **COMPLETED** (20 tests - 10 module + 10 provider)
 6. **Example Model Tests** - Requires markdown/HTML conversion service (not implemented)
 7. **Base Submodule Tests** - Requires git_path calculation service (not implemented)
-8. **Utility/Feature Tests** - ~~Provider tier~~ (partial), ~~source type~~ (done), ~~documentation type~~ (done), repository kind, registry resource type, repository release metadata
+8. ~~**Utility/Feature Tests**~~ - ✅ **COMPLETED** (Provider tier, source type, documentation type, repository kind, registry resource type, repository release metadata)
 
 ### **Phase 2: After Provider Package Schema Fix**
 1. ~~**Provider Model Tests**~~ - ✅ **COMPLETED** (21 tests)
 2. ~~**Provider Version Tests**~~ - ✅ **COMPLETED** (10 tests)
 3. ~~**Provider Version Binary Tests**~~ - ✅ **COMPLETED** (6 test functions, 28 subtests)
 4. ~~**Provider Version Documentation Tests**~~ - ✅ **COMPLETED** (8 test functions, 52+ subtests including full parameterization)
-5. **Provider Category/Source Factory Tests** - Factory pattern tests
-6. **Provider Source Tests** (Base and GitHub)
+5. ~~**Provider Category Tests**~~ - ✅ **COMPLETED** (existing tests in provider_category_test.go)
+6. **Provider Source Factory Tests** - Requires factory pattern, provider source base class, GitHub implementation (complex)
+7. **Provider Source Tests** (Base and GitHub) - Requires provider source domain models (complex)
 
 ### **Phase 3: API/Handler Level Tests**
 1. **Module Upload Endpoints** - Critical for module publishing
