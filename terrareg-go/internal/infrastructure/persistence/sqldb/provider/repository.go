@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -436,6 +437,106 @@ func (r *ProviderRepository) GetBinaryDownloadCount(ctx context.Context, binaryI
 	return 0, nil
 }
 
+// FindDocumentationByID retrieves documentation by its ID
+func (r *ProviderRepository) FindDocumentationByID(ctx context.Context, id int) (*provider.ProviderVersionDocumentation, error) {
+	var dbDoc sqldb.ProviderVersionDocumentationDB
+
+	if err := r.db.WithContext(ctx).
+		Where("id = ?", id).
+		First(&dbDoc).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return toDomainProviderDocumentation(&dbDoc), nil
+}
+
+// FindDocumentationByVersion retrieves all documentation for a provider version
+func (r *ProviderRepository) FindDocumentationByVersion(ctx context.Context, versionID int) ([]*provider.ProviderVersionDocumentation, error) {
+	var dbDocs []sqldb.ProviderVersionDocumentationDB
+
+	if err := r.db.WithContext(ctx).
+		Where("provider_version_id = ?", versionID).
+		Order("id ASC").
+		Find(&dbDocs).Error; err != nil {
+		return nil, err
+	}
+
+	docs := make([]*provider.ProviderVersionDocumentation, len(dbDocs))
+	for i := range dbDocs {
+		docs[i] = toDomainProviderDocumentation(&dbDocs[i])
+	}
+
+	return docs, nil
+}
+
+// FindDocumentationByTypeSlugAndLanguage retrieves documentation by type, slug, and language
+func (r *ProviderRepository) FindDocumentationByTypeSlugAndLanguage(ctx context.Context, versionID int, docType, slug, language string) (*provider.ProviderVersionDocumentation, error) {
+	var dbDoc sqldb.ProviderVersionDocumentationDB
+
+	if err := r.db.WithContext(ctx).
+		Where("provider_version_id = ? AND documentation_type = ? AND slug = ? AND language = ?",
+			versionID, docType, slug, language).
+		First(&dbDoc).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return toDomainProviderDocumentation(&dbDoc), nil
+}
+
+// SearchDocumentation searches for documentation by category, slug, and language
+func (r *ProviderRepository) SearchDocumentation(ctx context.Context, versionID int, category, slug, language string) ([]*provider.ProviderVersionDocumentation, error) {
+	var dbDocs []sqldb.ProviderVersionDocumentationDB
+
+	query := r.db.WithContext(ctx).Where("provider_version_id = ?", versionID)
+
+	if category != "" {
+		query = query.Where("documentation_type = ?", category)
+	}
+	if slug != "" {
+		query = query.Where("slug = ?", slug)
+	}
+	if language != "" {
+		query = query.Where("language = ?", language)
+	}
+
+	if err := query.Order("id ASC").Find(&dbDocs).Error; err != nil {
+		return nil, err
+	}
+
+	docs := make([]*provider.ProviderVersionDocumentation, len(dbDocs))
+	for i := range dbDocs {
+		docs[i] = toDomainProviderDocumentation(&dbDocs[i])
+	}
+
+	return docs, nil
+}
+
+// SaveDocumentation persists provider documentation
+func (r *ProviderRepository) SaveDocumentation(ctx context.Context, doc *provider.ProviderVersionDocumentation) error {
+	dbDoc := toDBProviderDocumentation(doc)
+
+	if doc.ID() == 0 {
+		// Insert new documentation
+		if err := r.db.WithContext(ctx).Create(dbDoc).Error; err != nil {
+			return err
+		}
+		doc.SetID(dbDoc.ID)
+	} else {
+		// Update existing documentation
+		if err := r.db.WithContext(ctx).Save(dbDoc).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Mapper functions (domain → DB)
 // Following the same pattern as the module package
 
@@ -507,6 +608,22 @@ func toDBGPGKey(k *provider.GPGKey) *sqldb.GPGKeyDB {
 		SourceURL:   nil, // Not in domain model
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
+	}
+}
+
+func toDBProviderDocumentation(d *provider.ProviderVersionDocumentation) *sqldb.ProviderVersionDocumentationDB {
+	return &sqldb.ProviderVersionDocumentationDB{
+		ID:                d.ID(),
+		ProviderVersionID: d.ProviderVersionID(),
+		Name:              d.Name(),
+		Slug:              d.Slug(),
+		Title:             d.Title(),
+		Description:       d.Description(),
+		Language:          d.Language(),
+		Subcategory:       d.Subcategory(),
+		Filename:          d.Filename(),
+		DocumentationType: sqldb.ProviderDocumentationType(d.DocumentationType()),
+		Content:           d.Content(),
 	}
 }
 
@@ -586,5 +703,21 @@ func toDomainGPGKey(db *sqldb.GPGKeyDB) *provider.GPGKey {
 		nil, // TrustSignature - not in DB
 		createdAt,
 		updatedAt,
+	)
+}
+
+func toDomainProviderDocumentation(db *sqldb.ProviderVersionDocumentationDB) *provider.ProviderVersionDocumentation {
+	return provider.ReconstructProviderVersionDocumentation(
+		db.ID,
+		db.ProviderVersionID,
+		db.Name,
+		db.Slug,
+		db.Title,
+		db.Description,
+		db.Language,
+		db.Subcategory,
+		db.Filename,
+		string(db.DocumentationType),
+		db.Content,
 	)
 }

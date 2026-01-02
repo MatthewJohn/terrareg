@@ -276,6 +276,157 @@ func (pv *ProviderVersion) AddBinary(binary *ProviderBinary) error {
 	return nil
 }
 
+// ProviderVersionDocumentation represents documentation for a provider version
+type ProviderVersionDocumentation struct {
+	id                int
+	providerVersionID int
+	name              string
+	slug              string
+	title             *string
+	description       []byte
+	language          string
+	subcategory       *string
+	filename          string
+	documentationType string
+	content           []byte
+}
+
+// NewProviderVersionDocumentation creates a new ProviderVersionDocumentation instance
+func NewProviderVersionDocumentation(
+	providerVersionID int,
+	name string,
+	slug string,
+	title *string,
+	description []byte,
+	language string,
+	subcategory *string,
+	filename string,
+	documentationType string,
+	content []byte,
+) *ProviderVersionDocumentation {
+	return &ProviderVersionDocumentation{
+		providerVersionID: providerVersionID,
+		name:              name,
+		slug:              slug,
+		title:             title,
+		description:       description,
+		language:          language,
+		subcategory:       subcategory,
+		filename:          filename,
+		documentationType: documentationType,
+		content:           content,
+	}
+}
+
+// ReconstructProviderVersionDocumentation reconstructs a ProviderVersionDocumentation from persistence
+func ReconstructProviderVersionDocumentation(
+	id int,
+	providerVersionID int,
+	name string,
+	slug string,
+	title *string,
+	description []byte,
+	language string,
+	subcategory *string,
+	filename string,
+	documentationType string,
+	content []byte,
+) *ProviderVersionDocumentation {
+	return &ProviderVersionDocumentation{
+		id:                id,
+		providerVersionID: providerVersionID,
+		name:              name,
+		slug:              slug,
+		title:             title,
+		description:       description,
+		language:          language,
+		subcategory:       subcategory,
+		filename:          filename,
+		documentationType: documentationType,
+		content:           content,
+	}
+}
+
+// Getters
+func (d *ProviderVersionDocumentation) ID() int                 { return d.id }
+func (d *ProviderVersionDocumentation) ProviderVersionID() int  { return d.providerVersionID }
+func (d *ProviderVersionDocumentation) Name() string            { return d.name }
+func (d *ProviderVersionDocumentation) Slug() string            { return d.slug }
+func (d *ProviderVersionDocumentation) Title() *string          { return d.title }
+func (d *ProviderVersionDocumentation) Description() []byte     { return d.description }
+func (d *ProviderVersionDocumentation) Language() string        { return d.language }
+func (d *ProviderVersionDocumentation) Subcategory() *string     { return d.subcategory }
+func (d *ProviderVersionDocumentation) Filename() string        { return d.filename }
+func (d *ProviderVersionDocumentation) DocumentationType() string { return d.documentationType }
+func (d *ProviderVersionDocumentation) Content() []byte          { return d.content }
+
+// GetDisplayTitle returns the title or a derived title from the name
+func (d *ProviderVersionDocumentation) GetDisplayTitle() string {
+	if d.title != nil && *d.title != "" {
+		return *d.title
+	}
+	// Remove file extension from name
+	displayTitle := d.name
+	if len(displayTitle) > 0 {
+		// Remove .md, .html, .markdown extensions
+		for _, ext := range []string{".md", ".html", ".markdown"} {
+			if strings.HasSuffix(displayTitle, ext) {
+				displayTitle = strings.TrimSuffix(displayTitle, ext)
+				break
+			}
+		}
+	}
+	return displayTitle
+}
+
+// Setters for repository operations
+func (d *ProviderVersionDocumentation) SetID(id int)                            { d.id = id }
+func (d *ProviderVersionDocumentation) SetProviderVersionID(versionID int)      { d.providerVersionID = versionID }
+func (d *ProviderVersionDocumentation) SetName(name string)                    { d.name = name }
+func (d *ProviderVersionDocumentation) SetSlug(slug string)                    { d.slug = slug }
+func (d *ProviderVersionDocumentation) SetTitle(title *string)                 { d.title = title }
+func (d *ProviderVersionDocumentation) SetDescription(description []byte)      { d.description = description }
+func (d *ProviderVersionDocumentation) SetLanguage(language string)            { d.language = language }
+func (d *ProviderVersionDocumentation) SetSubcategory(subcategory *string)      { d.subcategory = subcategory }
+func (d *ProviderVersionDocumentation) SetFilename(filename string)            { d.filename = filename }
+func (d *ProviderVersionDocumentation) SetDocumentationType(docType string)    { d.documentationType = docType }
+func (d *ProviderVersionDocumentation) SetContent(content []byte)              { d.content = content }
+
+// GenerateSlugFromName generates a URL-friendly slug from a documentation name
+// Python reference: provider_version_documentation_model.py::generate_slug_from_name
+func GenerateSlugFromName(name string) string {
+	// Remove file extensions
+	// Python loops through ALL extensions without break, so we do the same
+	for _, ext := range []string{".md", ".markdown", ".html"} {
+		if strings.HasSuffix(name, ext) {
+			name = name[:len(name)-len(ext)]
+		}
+	}
+
+	// Convert to lowercase
+	name = strings.ToLower(name)
+
+	// Replace any non-standard characters (not a-z, 0-9, _, -) with underscores
+	reg := regexp.MustCompile(`[^a-z0-9_\-]`)
+	name = reg.ReplaceAllString(name, "_")
+
+	// Replace two or more consecutive dashes with a single underscore
+	reg = regexp.MustCompile(`--+`)
+	name = reg.ReplaceAllString(name, "_")
+
+	// Trim leading dash or underscore
+	if strings.HasPrefix(name, "-") || strings.HasPrefix(name, "_") {
+		name = name[1:]
+	}
+
+	// Trim trailing dash or underscore
+	if strings.HasSuffix(name, "-") || strings.HasSuffix(name, "_") {
+		name = name[:len(name)-1]
+	}
+
+	return name
+}
+
 // Provider represents a Terraform provider aggregate root
 type Provider struct {
 	id                    int

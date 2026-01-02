@@ -35,6 +35,21 @@ type ProviderRepository interface {
 	// FindBinaryByPlatform retrieves a specific binary for a platform
 	FindBinaryByPlatform(ctx context.Context, versionID int, os, arch string) (*provider.ProviderBinary, error)
 
+	// FindDocumentationByID retrieves documentation by its ID
+	FindDocumentationByID(ctx context.Context, id int) (*provider.ProviderVersionDocumentation, error)
+
+	// FindDocumentationByVersion retrieves all documentation for a provider version
+	FindDocumentationByVersion(ctx context.Context, versionID int) ([]*provider.ProviderVersionDocumentation, error)
+
+	// FindDocumentationByTypeSlugAndLanguage retrieves documentation by type, slug, and language
+	FindDocumentationByTypeSlugAndLanguage(ctx context.Context, versionID int, docType, slug, language string) (*provider.ProviderVersionDocumentation, error)
+
+	// SearchDocumentation searches for documentation by category, slug, and language
+	SearchDocumentation(ctx context.Context, versionID int, category, slug, language string) ([]*provider.ProviderVersionDocumentation, error)
+
+	// SaveDocumentation persists provider documentation
+	SaveDocumentation(ctx context.Context, documentation *provider.ProviderVersionDocumentation) error
+
 	// FindGPGKeysByProvider retrieves all GPG keys for a provider
 	FindGPGKeysByProvider(ctx context.Context, providerID int) ([]*provider.GPGKey, error)
 

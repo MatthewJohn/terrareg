@@ -335,6 +335,27 @@ func CreateGPGKeyWithNamespace(t *testing.T, db *sqldb.Database, name string, na
 	return gpgKey
 }
 
+// CreateProviderVersionDocumentation creates a test provider version documentation in the database
+func CreateProviderVersionDocumentation(t *testing.T, db *sqldb.Database, providerVersionID int, name, slug string, docType sqldb.ProviderDocumentationType) sqldb.ProviderVersionDocumentationDB {
+	doc := sqldb.ProviderVersionDocumentationDB{
+		ProviderVersionID: providerVersionID,
+		Name:              name,
+		Slug:              slug,
+		Title:             nil,
+		Description:       nil,
+		Language:          "hcl",
+		Subcategory:       nil,
+		Filename:          "docs/" + name,
+		DocumentationType: docType,
+		Content:           []byte("# Test Documentation\n\nSome content here."),
+	}
+
+	err := db.DB.Create(&doc).Error
+	require.NoError(t, err)
+
+	return doc
+}
+
 // CreateGPGKey creates a test GPG key in the database (linked to namespace)
 // Deprecated: Use CreateGPGKeyWithNamespace for clarity
 func CreateGPGKey(t *testing.T, db *sqldb.Database, name string, providerID int, keyID string) sqldb.GPGKeyDB {
