@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"strings"
 	"time"
 )
 
@@ -73,6 +74,22 @@ const (
 	ArchARM64 ProviderBinaryArchitectureType = "arm64"
 	ArchARM   ProviderBinaryArchitectureType = "arm"
 	Arch386   ProviderBinaryArchitectureType = "386"
+)
+
+// RepositoryKind represents the kind of repository (module or provider)
+type RepositoryKind string
+
+const (
+	RepositoryKindModule   RepositoryKind = "module"
+	RepositoryKindProvider RepositoryKind = "provider"
+)
+
+// RegistryResourceType represents the type of resource in the registry (module or provider)
+type RegistryResourceType string
+
+const (
+	RegistryResourceTypeModule   RegistryResourceType = "module"
+	RegistryResourceTypeProvider RegistryResourceType = "provider"
 )
 
 type AuditAction string
@@ -478,6 +495,23 @@ type RepositoryDB struct {
 
 func (RepositoryDB) TableName() string {
 	return "repository"
+}
+
+// Kind returns the repository kind based on the repository name
+// Python reference: repository_model.py::RepositoryModel::kind
+func (r *RepositoryDB) Kind() *RepositoryKind {
+	if r.Name == nil {
+		return nil
+	}
+	if strings.HasPrefix(*r.Name, "terraform-provider-") {
+		kind := RepositoryKindProvider
+		return &kind
+	}
+	if strings.HasPrefix(*r.Name, "terraform-") {
+		kind := RepositoryKindModule
+		return &kind
+	}
+	return nil
 }
 
 // ProviderDB represents providers

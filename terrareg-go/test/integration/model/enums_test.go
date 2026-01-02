@@ -201,3 +201,39 @@ func TestEnum_FullStringConversion(t *testing.T) {
 	assert.Equal(t, "arm64", string(sqldb.ArchARM64))
 	assert.Equal(t, "386", string(sqldb.Arch386))
 }
+
+// TestRepositoryKind_Values tests repository kind enum values
+// Python reference: test_repository_kind.py::TestRepositoryKind
+func TestRepositoryKind_Values(t *testing.T) {
+	validKinds := []sqldb.RepositoryKind{
+		sqldb.RepositoryKindModule,
+		sqldb.RepositoryKindProvider,
+	}
+
+	expectedValues := []string{
+		"module",
+		"provider",
+	}
+
+	for i, kind := range validKinds {
+		assert.Equal(t, expectedValues[i], string(kind), "Repository kind should have correct string value")
+	}
+}
+
+// TestRegistryResourceType_Values tests registry resource type enum values
+// Python reference: test_registry_resource_type.py::TestRegistryResourceType
+func TestRegistryResourceType_Values(t *testing.T) {
+	validTypes := []sqldb.RegistryResourceType{
+		sqldb.RegistryResourceTypeModule,
+		sqldb.RegistryResourceTypeProvider,
+	}
+
+	expectedValues := []string{
+		"module",
+		"provider",
+	}
+
+	for i, resourceType := range validTypes {
+		assert.Equal(t, expectedValues[i], string(resourceType), "Registry resource type should have correct string value")
+	}
+}
