@@ -312,7 +312,31 @@ func SetProviderLatestVersion(t *testing.T, db *sqldb.Database, providerID, late
 	require.NoError(t, err)
 }
 
+// CreateGPGKeyWithNamespace creates a test GPG key in the database linked to a namespace
+// This is the preferred method as GPG keys belong to namespaces, not providers
+func CreateGPGKeyWithNamespace(t *testing.T, db *sqldb.Database, name string, namespaceID int, keyID string) sqldb.GPGKeyDB {
+	asciiArmor := []byte("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nTest ASCII armor\n-----END PGP PUBLIC KEY BLOCK-----")
+	fingerprint := &keyID
+
+	gpgKey := sqldb.GPGKeyDB{
+		NamespaceID: namespaceID,
+		ASCIIArmor:  asciiArmor,
+		KeyID:       &keyID,
+		Fingerprint: fingerprint,
+		Source:      &name,
+		SourceURL:   nil,
+		CreatedAt:   nil,
+		UpdatedAt:   nil,
+	}
+
+	err := db.DB.Create(&gpgKey).Error
+	require.NoError(t, err)
+
+	return gpgKey
+}
+
 // CreateGPGKey creates a test GPG key in the database (linked to namespace)
+// Deprecated: Use CreateGPGKeyWithNamespace for clarity
 func CreateGPGKey(t *testing.T, db *sqldb.Database, name string, providerID int, keyID string) sqldb.GPGKeyDB {
 	// Provider versions use namespace GPG keys
 	// For testing, we need to get the provider's namespace first
