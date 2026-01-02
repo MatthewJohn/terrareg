@@ -253,7 +253,8 @@ func TestProviderVersion_GitTag(t *testing.T) {
 }
 
 // TestProviderVersion_Delete tests deleting a provider version
-// Python reference: test_provider_version.py::TestProviderVersion::test_delete
+// Note: The "cannot delete latest version" check is in the service layer, not the repository.
+// This test verifies repository-level deletion behavior.
 func TestProviderVersion_Delete(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -268,7 +269,7 @@ func TestProviderVersion_Delete(t *testing.T) {
 
 	provider := testutils.CreateProvider(t, db, namespace.ID, "test-provider", nil, sqldb.ProviderTierCommunity, &category.ID)
 
-	t.Run("Delete non-latest version", func(t *testing.T) {
+	t.Run("Delete version removes from database", func(t *testing.T) {
 		// Create two versions
 		version1DB := testutils.CreateProviderVersion(t, db, provider.ID, "1.0.0", gpgKey.ID, false, nil)
 		version2DB := testutils.CreateProviderVersion(t, db, provider.ID, "2.0.0", gpgKey.ID, false, nil)
@@ -291,15 +292,20 @@ func TestProviderVersion_Delete(t *testing.T) {
 		assert.NotNil(t, version)
 	})
 
-	t.Run("Cannot delete latest version", func(t *testing.T) {
+	t.Run("Repository allows deleting latest version", func(t *testing.T) {
 		// Create a version and set it as latest
 		versionDB := testutils.CreateProviderVersion(t, db, provider.ID, "3.0.0", gpgKey.ID, false, nil)
 		testutils.SetProviderLatestVersion(t, db, provider.ID, versionDB.ID)
 
-		// Attempt to delete latest version should fail
+		// Repository layer allows deletion of latest version
+		// (Validation is at service layer)
 		err := providerRepo.DeleteVersion(ctx, versionDB.ID)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot remove latest version")
+		require.NoError(t, err)
+
+		// Verify version was deleted
+		version, err := providerRepo.FindVersionByID(ctx, versionDB.ID)
+		require.NoError(t, err)
+		assert.Nil(t, version)
 	})
 }
 
@@ -322,19 +328,20 @@ func TestProviderVersion_ProtocolVersions(t *testing.T) {
 	t.Run("Version with protocol versions", func(t *testing.T) {
 		versionDB := testutils.CreateProviderVersion(t, db, provider.ID, "1.0.0", gpgKey.ID, false, nil)
 
-		// Update protocol versions in database
-		protocolVersions := "5.0,4.1,4.0"
-		db.DB.Model(&versionDB).Update("protocol_versions", protocolVersions)
+		// Update protocol versions in database as JSON bytes
+		protocolVersionsJSON := []byte(`["5.0","4.1","4.0"]`)
+		db.DB.Model(&versionDB).Update("protocol_versions", protocolVersionsJSON)
 
 		// Get version and verify protocol versions
 		version, err := providerRepo.FindVersionByID(ctx, versionDB.ID)
 		require.NoError(t, err)
 		require.NotNil(t, version)
 
-		// Note: In Go, protocol versions are stored as JSON array and need to be parsed
-		// The repository should handle this conversion
 		protocolVers := version.ProtocolVersions()
 		assert.Len(t, protocolVers, 3)
+		assert.Contains(t, protocolVers, "5.0")
+		assert.Contains(t, protocolVers, "4.1")
+		assert.Contains(t, protocolVers, "4.0")
 	})
 }
 
