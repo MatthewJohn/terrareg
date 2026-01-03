@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -1274,6 +1276,11 @@ func (g *GithubProviderSource) GetNewReleases(
 			// Process release - returns nil if invalid or already exists
 			releaseMetadata, err := g.ProcessRelease(ctx, repo, githubRelease, accessToken)
 			if err != nil {
+				// If version already exists, stop processing and return empty list
+				// This signals to the caller that pagination should stop
+				if errors.Is(err, shared.ErrAlreadyExists) {
+					return []*provider_source_model.RepositoryReleaseMetadata{}, nil
+				}
 				continue
 			}
 

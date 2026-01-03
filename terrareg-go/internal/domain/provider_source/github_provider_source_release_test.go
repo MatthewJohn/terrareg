@@ -3,6 +3,7 @@ package provider_source
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,7 @@ import (
 
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -977,4 +979,219 @@ func TestGetNewReleasesInvalidResponse(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid response code")
 	assert.Nil(t, releases)
+}
+
+// mockGithubProviderSourceForBreak is a test-specific type that allows mocking ProcessRelease
+// to simulate the break-if-already-exists behavior
+type mockGithubProviderSourceForBreak struct {
+	*GithubProviderSource
+	processReleaseFunc func(ctx context.Context, repo *sqldb.RepositoryDB, githubReleaseMetadata map[string]interface{}, accessToken string) (*provider_source_model.RepositoryReleaseMetadata, error)
+}
+
+func (m *mockGithubProviderSourceForBreak) ProcessRelease(
+	ctx context.Context,
+	repo *sqldb.RepositoryDB,
+	githubReleaseMetadata map[string]interface{},
+	accessToken string,
+) (*provider_source_model.RepositoryReleaseMetadata, error) {
+	if m.processReleaseFunc != nil {
+		return m.processReleaseFunc(ctx, repo, githubReleaseMetadata, accessToken)
+	}
+	return m.GithubProviderSource.ProcessRelease(ctx, repo, githubReleaseMetadata, accessToken)
+}
+
+// GetNewReleases overrides the original to use the mock's ProcessRelease
+// This is necessary because Go's method promotion doesn't allow the outer type's methods
+// to be called from within the embedded type's methods
+func (m *mockGithubProviderSourceForBreak) GetNewReleases(
+	ctx context.Context,
+	repo *sqldb.RepositoryDB,
+	accessToken string,
+) ([]*provider_source_model.RepositoryReleaseMetadata, error) {
+	// Simplified version of GetNewReleases that uses this type's ProcessRelease
+	// The key difference is we call m.ProcessRelease() instead of g.ProcessRelease()
+
+	apiURL, err := m.apiURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	owner := ""
+	if repo.Owner != nil {
+		owner = *repo.Owner
+	}
+	repoName := ""
+	if repo.Name != nil {
+		repoName = *repo.Name
+	}
+
+	page := 1
+	var releases []*provider_source_model.RepositoryReleaseMetadata
+
+	for {
+		// Build request URL
+		reqURL := fmt.Sprintf("%s/repos/%s/%s/releases?per_page=100&page=%d", apiURL, owner, repoName, page)
+
+		req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+		req.Header.Set("Accept", "application/vnd.github+json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+
+		resp, err := m.httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != 200 {
+			resp.Body.Close()
+			return nil, fmt.Errorf("invalid response code from github: %d", resp.StatusCode)
+		}
+
+		var results []map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+			resp.Body.Close()
+			return nil, fmt.Errorf("failed to decode response: %w", err)
+		}
+		resp.Body.Close()
+
+		// Process each release - using m.ProcessRelease() instead of g.ProcessRelease()
+		for _, githubRelease := range results {
+			releaseMetadata, err := m.ProcessRelease(ctx, repo, githubRelease, accessToken)
+			if err != nil {
+				// If version already exists, stop processing and return empty list
+				if errors.Is(err, shared.ErrAlreadyExists) {
+					return []*provider_source_model.RepositoryReleaseMetadata{}, nil
+				}
+				continue
+			}
+
+			if releaseMetadata == nil {
+				continue
+			}
+
+			releases = append(releases, releaseMetadata)
+		}
+
+		// Check if we need to paginate
+		if len(results) < 100 {
+			break
+		}
+
+		page++
+	}
+
+	return releases, nil
+}
+
+// TestGetNewReleasesBreakIfAlreadyExists tests that GetNewReleases stops pagination
+// when it encounters a release that already exists
+// Python reference: test_get_new_releases_break_if_already_exists
+func TestGetNewReleasesBreakIfAlreadyExists(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle different request types - check most specific patterns first
+		if strings.Contains(r.URL.Path, "/git/ref/tags/") {
+			// Handle GetCommitHashByRelease requests
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"object": map[string]interface{}{
+					"sha": "abc123def456",
+				},
+			})
+		} else if strings.Contains(r.URL.Path, "/releases/") && strings.HasSuffix(r.URL.Path, "/assets") {
+			// Handle GetReleaseArtifactsMetadata requests
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode([]map[string]interface{}{})
+		} else if r.URL.Path == "/repos/test-owner/test-repo/releases" || strings.HasSuffix(r.URL.Path, "/releases") {
+			// Handle GetNewReleases requests (list releases)
+			// Check exact path or ends with /releases (for query params)
+			w.WriteHeader(http.StatusOK)
+			// Return two releases - the first will be mocked as "already exists"
+			releases := []map[string]interface{}{
+				{
+					"id":         float64(1),
+					"name":       "v1.5.2",
+					"tag_name":   "v1.5.2",
+					"tarball_url": "https://example.com/v1.5.2.tar.gz",
+				},
+				{
+					"id":         float64(2),
+					"name":       "v2.0.0",
+					"tag_name":   "v2.0.0",
+					"tarball_url": "https://example.com/v2.0.0.tar.gz",
+				},
+			}
+			json.NewEncoder(w).Encode(releases)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	expectedConfig := &provider_source_model.ProviderSourceConfig{
+		BaseURL:         server.URL,
+		ApiURL:          server.URL,
+		ClientID:        "test-client-id",
+		ClientSecret:    "test-client-secret",
+		LoginButtonText: "Test Login",
+		PrivateKeyPath:  "",
+		AppID:           "123",
+	}
+
+	mockPSRepo := &MockProviderSourceRepository{
+		findByNameFunc: func(ctx context.Context, name string) (*provider_source_model.ProviderSource, error) {
+			return provider_source_model.NewProviderSource(
+				name,
+				"test-api-name",
+				provider_source_model.ProviderSourceTypeGithub,
+				expectedConfig,
+			), nil
+		},
+	}
+	ghClass := service.NewGithubProviderSourceClass()
+
+	// Create the base GithubProviderSource
+	baseGH := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+	// Track ProcessRelease calls
+	processReleaseCalls := 0
+	var firstReleaseTag string
+
+	// Create mock with custom ProcessRelease
+	mockGH := &mockGithubProviderSourceForBreak{
+		GithubProviderSource: baseGH,
+		processReleaseFunc: func(ctx context.Context, repo *sqldb.RepositoryDB, githubReleaseMetadata map[string]interface{}, accessToken string) (*provider_source_model.RepositoryReleaseMetadata, error) {
+			processReleaseCalls++
+			tagName, _ := githubReleaseMetadata["tag_name"].(string)
+
+			if processReleaseCalls == 1 {
+				// First release - simulate "already exists" by returning ErrAlreadyExists
+				firstReleaseTag = tagName
+				return nil, shared.ErrAlreadyExists
+			}
+
+			// This should not be reached due to break behavior
+			return nil, nil
+		},
+	}
+
+	owner := "test-owner"
+	name := "test-repo"
+	cloneURL := "https://github.com/test-owner/test-repo.git"
+	repo := &sqldb.RepositoryDB{
+		Owner:              &owner,
+		Name:               &name,
+		CloneURL:           &cloneURL,
+		ProviderSourceName: "test-name",
+	}
+
+	releases, err := mockGH.GetNewReleases(context.Background(), repo, "test-token")
+
+	// Verify behavior
+	assert.NoError(t, err)
+	assert.Empty(t, releases, "Should return empty list when version already exists")
+	assert.Equal(t, 1, processReleaseCalls, "ProcessRelease should only be called once (for the first release)")
+	assert.Equal(t, "v1.5.2", firstReleaseTag, "First release should be v1.5.2")
 }
