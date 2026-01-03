@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
@@ -704,6 +705,691 @@ func TestGithubProviderSource_GetDefaultAccessToken(t *testing.T) {
 			token, err := gh.GetDefaultAccessToken(context.Background())
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedToken, token)
+		})
+	}
+}
+
+// TestGithubProviderSource_GenerateAppInstallationToken tests the GenerateAppInstallationToken method
+// Python reference: test_generate_app_installation_token
+func TestGithubProviderSource_GenerateAppInstallationToken(t *testing.T) {
+	tests := []struct {
+		name                string
+		installationID      string
+		responseCode        int
+		responseBody        map[string]interface{}
+		providePrivateKey   bool
+		expectedToken       string
+		expectedError       bool
+	}{
+		{
+			name:           "valid token generation",
+			installationID: "unittest-installation-id1",
+			responseCode:   201,
+			responseBody:   map[string]interface{}{"token": "unittest-access-token"},
+			providePrivateKey: true,
+			expectedToken:  "unittest-access-token",
+		},
+		{
+			name:           "no token in response",
+			installationID: "unittest-installation-id2",
+			responseCode:   201,
+			responseBody:   map[string]interface{}{},
+			providePrivateKey: true,
+			expectedToken:  "",
+		},
+		{
+			name:           "invalid response code",
+			installationID: "unittest-installation-id3",
+			responseCode:   403,
+			responseBody:   map[string]interface{}{},
+			providePrivateKey: true,
+			expectedError:  true,
+		},
+		{
+			name:           "no installation ID",
+			installationID: "",
+			responseCode:   201,
+			responseBody:   map[string]interface{}{"token": "unittest-access-token"},
+			providePrivateKey: true,
+			expectedToken:  "",
+		},
+		{
+			name:           "no private key",
+			installationID: "unittest-installation-id4",
+			responseCode:   201,
+			responseBody:   map[string]interface{}{"token": "unittest-access-token"},
+			providePrivateKey: false,
+			expectedToken:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "POST", r.Method)
+				assert.Equal(t, "/app/installations/"+tt.installationID+"/access_tokens", r.URL.Path)
+				assert.Equal(t, "2022-11-28", r.Header.Get("X-GitHub-Api-Version"))
+				assert.Equal(t, "application/vnd.github+json", r.Header.Get("Accept"))
+				// Check Authorization header contains Bearer token (JWT)
+				authHeader := r.Header.Get("Authorization")
+				if tt.installationID != "" {
+					assert.True(t, len(authHeader) > 0 && authHeader[:7] == "Bearer ")
+				}
+				w.WriteHeader(tt.responseCode)
+				json.NewEncoder(w).Encode(tt.responseBody)
+			}))
+			defer server.Close()
+
+			privateKeyPath := ""
+			if tt.providePrivateKey {
+				privateKeyPath = "/tmp/test_github_private_key.pem"
+			}
+
+			expectedConfig := &model.ProviderSourceConfig{
+				BaseURL:         server.URL,
+				ApiURL:          server.URL,
+				ClientID:        "test-client-id",
+				ClientSecret:    "test-client-secret",
+				LoginButtonText: "Test Login",
+				PrivateKeyPath:  privateKeyPath,
+				AppID:           "954956",
+			}
+
+			mockPSRepo := &MockProviderSourceRepository{
+				findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+					return model.NewProviderSource(
+						name,
+						"test-api-name",
+						model.ProviderSourceTypeGithub,
+						expectedConfig,
+					), nil
+				},
+			}
+			ghClass := service.NewGithubProviderSourceClass()
+
+			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+			token, err := gh.GenerateAppInstallationToken(context.Background(), tt.installationID)
+
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedToken, token)
+			}
+		})
+	}
+}
+
+// TestGithubProviderSource_GenerateJWT tests the generateJWT method
+// Python reference: test__generate_jwt
+func TestGithubProviderSource_GenerateJWT(t *testing.T) {
+	tests := []struct {
+		name              string
+		providePrivateKey bool
+		expectError       bool
+	}{
+		{
+			name:              "valid JWT generation",
+			providePrivateKey: true,
+			expectError:       false,
+		},
+		{
+			name:              "no private key",
+			providePrivateKey: false,
+			expectError:       false, // Returns empty string, not error
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			privateKeyPath := ""
+			if tt.providePrivateKey {
+				privateKeyPath = "/tmp/test_github_private_key.pem"
+			}
+
+			expectedConfig := &model.ProviderSourceConfig{
+				BaseURL:         "https://github.example-test.com",
+				ApiURL:          "https://api.github.example-test.com",
+				ClientID:        "test-client-id",
+				ClientSecret:    "test-client-secret",
+				LoginButtonText: "Test Login",
+				PrivateKeyPath:  privateKeyPath,
+				AppID:           "954956",
+			}
+
+			mockPSRepo := &MockProviderSourceRepository{
+				findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+					return model.NewProviderSource(
+						name,
+						"test-api-name",
+						model.ProviderSourceTypeGithub,
+						expectedConfig,
+					), nil
+				},
+			}
+			ghClass := service.NewGithubProviderSourceClass()
+
+			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+			jwt, err := gh.generateJWT(context.Background())
+
+			assert.NoError(t, err)
+
+			if tt.providePrivateKey {
+				assert.NotEmpty(t, jwt)
+				// JWT should have three parts separated by dots
+				parts := strings.Split(jwt, ".")
+				assert.Len(t, parts, 3)
+			} else {
+				assert.Empty(t, jwt)
+			}
+		})
+	}
+}
+
+// TestGithubProviderSource_GetAppMetadata tests the GetAppMetadata method
+// Python reference: test__get_app_metadata
+func TestGithubProviderSource_GetAppMetadata(t *testing.T) {
+	tests := []struct {
+		name              string
+		responseCode      int
+		responseBody      map[string]interface{}
+		providePrivateKey bool
+		expectedError     bool
+		expectedID        string
+		expectedName      string
+	}{
+		{
+			name:         "valid metadata",
+			responseCode: 200,
+			responseBody: map[string]interface{}{
+				"id":   "abcd-1234",
+				"name": "test-org",
+			},
+			providePrivateKey: true,
+			expectedError:    false,
+			expectedID:       "abcd-1234",
+			expectedName:     "test-org",
+		},
+		{
+			name:         "invalid response code",
+			responseCode: 403,
+			responseBody: map[string]interface{}{
+				"id":   "abcd-1234",
+				"name": "test-org",
+			},
+			providePrivateKey: true,
+			expectedError:     true,
+		},
+		{
+			name:         "no private key",
+			responseCode: 200,
+			responseBody: map[string]interface{}{
+				"id":   "abcd-1234",
+				"name": "test-org",
+			},
+			providePrivateKey: false,
+			expectedError:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "GET", r.Method)
+				assert.Equal(t, "/app", r.URL.Path)
+				assert.Equal(t, "2022-11-28", r.Header.Get("X-GitHub-Api-Version"))
+				assert.Equal(t, "application/json", r.Header.Get("Accept"))
+				w.WriteHeader(tt.responseCode)
+				json.NewEncoder(w).Encode(tt.responseBody)
+			}))
+			defer server.Close()
+
+			privateKeyPath := ""
+			if tt.providePrivateKey {
+				privateKeyPath = "/tmp/test_github_private_key.pem"
+			}
+
+			expectedConfig := &model.ProviderSourceConfig{
+				BaseURL:         server.URL,
+				ApiURL:          server.URL,
+				ClientID:        "test-client-id",
+				ClientSecret:    "test-client-secret",
+				LoginButtonText: "Test Login",
+				PrivateKeyPath:  privateKeyPath,
+				AppID:           "954956",
+			}
+
+			mockPSRepo := &MockProviderSourceRepository{
+				findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+					return model.NewProviderSource(
+						name,
+						"test-api-name",
+						model.ProviderSourceTypeGithub,
+						expectedConfig,
+					), nil
+				},
+			}
+			ghClass := service.NewGithubProviderSourceClass()
+
+			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+			metadata, err := gh.GetAppMetadata(context.Background())
+
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, metadata)
+				assert.Equal(t, tt.expectedID, metadata["id"])
+				assert.Equal(t, tt.expectedName, metadata["name"])
+			}
+		})
+	}
+}
+
+// TestGithubProviderSource_GetAppInstallationURL tests the GetAppInstallationURL method
+// Python reference: test_get_app_installation_url
+func TestGithubProviderSource_GetAppInstallationURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "GET", r.Method)
+		assert.Equal(t, "/app", r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"html_url": "https://example.github.com/apps/my-special-app",
+		})
+	}))
+	defer server.Close()
+
+	expectedConfig := &model.ProviderSourceConfig{
+		BaseURL:         server.URL,
+		ApiURL:          server.URL,
+		ClientID:        "test-client-id",
+		ClientSecret:    "test-client-secret",
+		LoginButtonText: "Test Login",
+		PrivateKeyPath:  "/tmp/test_github_private_key.pem",
+		AppID:           "954956",
+	}
+
+	mockPSRepo := &MockProviderSourceRepository{
+		findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+			return model.NewProviderSource(
+				name,
+				"test-api-name",
+				model.ProviderSourceTypeGithub,
+				expectedConfig,
+			), nil
+		},
+	}
+	ghClass := service.NewGithubProviderSourceClass()
+
+	gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+	url, err := gh.GetAppInstallationURL(context.Background())
+
+	require.NoError(t, err)
+	assert.Equal(t, "https://example.github.com/apps/my-special-app/installations/new", url)
+}
+
+// TestGithubProviderSource_GetGithubAppInstallationID tests the GetGithubAppInstallationID method
+// Python reference: test_get_github_app_installation_id
+func TestGithubProviderSource_GetGithubAppInstallationID(t *testing.T) {
+	tests := []struct {
+		name              string
+		namespace         string
+		orgResponseCode   int
+		userResponseCode  int
+		responseBody      map[string]interface{}
+		providePrivateKey bool
+		expectedID        string
+		expectedError     bool
+	}{
+		{
+			name:      "organization installation",
+			namespace: "some-organisation",
+			orgResponseCode: 200,
+			userResponseCode: 404,
+			responseBody: map[string]interface{}{
+				"id": float64(12345), // Must be float64 for JSON unmarshaling to int
+			},
+			providePrivateKey: true,
+			expectedID:        "12345",
+		},
+		{
+			name:      "user installation (org fails, user succeeds)",
+			namespace: "some-organisation",
+			orgResponseCode: 404,
+			userResponseCode: 200,
+			responseBody: map[string]interface{}{
+				"id": float64(67890),
+			},
+			providePrivateKey: true,
+			expectedID:        "67890",
+		},
+		{
+			name:      "404 not found",
+			namespace: "some-organisation",
+			orgResponseCode: 404,
+			userResponseCode: 404,
+			responseBody: map[string]interface{}{},
+			providePrivateKey: true,
+			expectedError:     true,
+		},
+		{
+			name:      "500 server error",
+			namespace: "some-organisation",
+			orgResponseCode: 500,
+			userResponseCode: 500,
+			responseBody: map[string]interface{}{},
+			providePrivateKey: true,
+			expectedError:     true,
+		},
+		{
+			name:      "invalid response data (id is nil)",
+			namespace: "some-organisation",
+			orgResponseCode: 200,
+			userResponseCode: 200,
+			responseBody: map[string]interface{}{
+				"id": nil,
+			},
+			providePrivateKey: true,
+			expectedError:     true,
+		},
+		{
+			name:      "invalid response data (missing id)",
+			namespace: "some-organisation",
+			orgResponseCode: 200,
+			userResponseCode: 200,
+			responseBody: map[string]interface{}{},
+			providePrivateKey: true,
+			expectedError:     true,
+		},
+		{
+			name:      "no private key",
+			namespace: "some-organisation",
+			orgResponseCode: 200,
+			userResponseCode: 200,
+			responseBody: map[string]interface{}{
+				"id": float64(12345),
+			},
+			providePrivateKey: false,
+			expectedError:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Try organization first
+				if strings.HasPrefix(r.URL.Path, "/orgs/") {
+					w.WriteHeader(tt.orgResponseCode)
+					json.NewEncoder(w).Encode(tt.responseBody)
+					return
+				}
+				// Try user lookup
+				if strings.HasPrefix(r.URL.Path, "/users/") {
+					w.WriteHeader(tt.userResponseCode)
+					json.NewEncoder(w).Encode(tt.responseBody)
+					return
+				}
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(map[string]interface{}{})
+			}))
+			defer server.Close()
+
+			privateKeyPath := ""
+			if tt.providePrivateKey {
+				privateKeyPath = "/tmp/test_github_private_key.pem"
+			}
+
+			expectedConfig := &model.ProviderSourceConfig{
+				BaseURL:         server.URL,
+				ApiURL:          server.URL,
+				ClientID:        "test-client-id",
+				ClientSecret:    "test-client-secret",
+				LoginButtonText: "Test Login",
+				PrivateKeyPath:  privateKeyPath,
+				AppID:           "954956",
+			}
+
+			mockPSRepo := &MockProviderSourceRepository{
+				findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+					return model.NewProviderSource(
+						name,
+						"test-api-name",
+						model.ProviderSourceTypeGithub,
+						expectedConfig,
+					), nil
+				},
+			}
+			ghClass := service.NewGithubProviderSourceClass()
+
+			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+			id, err := gh.GetGithubAppInstallationID(context.Background(), tt.namespace)
+
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedID, id)
+			}
+		})
+	}
+}
+
+// TestGithubProviderSource_GetAccessTokenForProvider tests the GetAccessTokenForProvider method
+// Python reference: test__get_access_token_for_provider
+func TestGithubProviderSource_GetAccessTokenForProvider(t *testing.T) {
+	tests := []struct {
+		name                        string
+		namespace                   string
+		orgResponseCode             int
+		userResponseCode            int
+		providePrivateKey           bool
+		defaultAccessToken          string
+		expectedToken               string
+	}{
+		{
+			name:              "installation token succeeds",
+			namespace:         "test-namespace",
+			orgResponseCode:   200,
+			userResponseCode:  404,
+			providePrivateKey: true,
+			defaultAccessToken: "",
+			expectedToken:     "unittest-installation-token",
+		},
+		{
+			name:              "fallback to default access token",
+			namespace:         "test-namespace",
+			orgResponseCode:   404,
+			userResponseCode:  404,
+			providePrivateKey: false,
+			defaultAccessToken: "default-auth-access-token",
+			expectedToken:     "default-auth-access-token",
+		},
+		{
+			name:              "no installation and no default token",
+			namespace:         "test-namespace",
+			orgResponseCode:   404,
+			userResponseCode:  404,
+			providePrivateKey: false,
+			defaultAccessToken: "",
+			expectedToken:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasPrefix(r.URL.Path, "/orgs/") {
+					w.WriteHeader(tt.orgResponseCode)
+					if tt.orgResponseCode == 200 {
+						json.NewEncoder(w).Encode(map[string]interface{}{"id": float64(12345)})
+					} else {
+						json.NewEncoder(w).Encode(map[string]interface{}{})
+					}
+					return
+				}
+				if strings.HasPrefix(r.URL.Path, "/users/") {
+					w.WriteHeader(tt.userResponseCode)
+					if tt.userResponseCode == 200 {
+						json.NewEncoder(w).Encode(map[string]interface{}{"id": float64(12345)})
+					} else {
+						json.NewEncoder(w).Encode(map[string]interface{}{})
+					}
+					return
+				}
+				// Installation token endpoint
+				w.WriteHeader(201)
+				json.NewEncoder(w).Encode(map[string]interface{}{"token": "unittest-installation-token"})
+			}))
+			defer server.Close()
+
+			privateKeyPath := ""
+			if tt.providePrivateKey {
+				privateKeyPath = "/tmp/test_github_private_key.pem"
+			}
+
+			expectedConfig := &model.ProviderSourceConfig{
+				BaseURL:             server.URL,
+				ApiURL:              server.URL,
+				ClientID:            "test-client-id",
+				ClientSecret:        "test-client-secret",
+				LoginButtonText:     "Test Login",
+				PrivateKeyPath:      privateKeyPath,
+				AppID:               "954956",
+				DefaultAccessToken:  tt.defaultAccessToken,
+			}
+
+			mockPSRepo := &MockProviderSourceRepository{
+				findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+					return model.NewProviderSource(
+						name,
+						"test-api-name",
+						model.ProviderSourceTypeGithub,
+						expectedConfig,
+					), nil
+				},
+			}
+			ghClass := service.NewGithubProviderSourceClass()
+
+			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+			token, err := gh.GetAccessTokenForProvider(context.Background(), tt.namespace)
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedToken, token)
+		})
+	}
+}
+
+// TestGithubProviderSource_IsEntityOrgOrUser tests the IsEntityOrgOrUser method
+// Python reference: test__is_entity_org_or_user
+func TestGithubProviderSource_IsEntityOrgOrUser(t *testing.T) {
+	tests := []struct {
+		name         string
+		identity     string
+		responseCode int
+		responseBody map[string]interface{}
+		expectedType string
+	}{
+		{
+			name:     "user type",
+			identity: "unit-test-identity-name",
+			responseCode: 200,
+			responseBody: map[string]interface{}{
+				"type": "User",
+			},
+			expectedType: "GITHUB_USER",
+		},
+		{
+			name:     "organization type",
+			identity: "unit-test-identity-name",
+			responseCode: 200,
+			responseBody: map[string]interface{}{
+				"type": "Organization",
+			},
+			expectedType: "GITHUB_ORGANISATION",
+		},
+		{
+			name:     "invalid response code",
+			identity: "unit-test-identity-name",
+			responseCode: 404,
+			responseBody: map[string]interface{}{
+				"type": "Organization",
+			},
+			expectedType: "",
+		},
+		{
+			name:     "invalid type",
+			identity: "unit-test-identity-name",
+			responseCode: 200,
+			responseBody: map[string]interface{}{
+				"type": "SomethingElse",
+			},
+			expectedType: "",
+		},
+		{
+			name:     "type is nil",
+			identity: "unit-test-identity-name",
+			responseCode: 200,
+			responseBody: map[string]interface{}{
+				"type": nil,
+			},
+			expectedType: "",
+		},
+		{
+			name:         "missing type field",
+			identity:     "unit-test-identity-name",
+			responseCode: 200,
+			responseBody: map[string]interface{}{},
+			expectedType: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "GET", r.Method)
+				assert.Equal(t, "/users/"+tt.identity, r.URL.Path)
+				assert.Equal(t, "2022-11-28", r.Header.Get("X-GitHub-Api-Version"))
+				assert.Equal(t, "application/json", r.Header.Get("Accept"))
+				assert.Equal(t, "Bearer unittest-access-token", r.Header.Get("Authorization"))
+				w.WriteHeader(tt.responseCode)
+				json.NewEncoder(w).Encode(tt.responseBody)
+			}))
+			defer server.Close()
+
+			expectedConfig := &model.ProviderSourceConfig{
+				BaseURL:         server.URL,
+				ApiURL:          server.URL,
+				ClientID:        "test-client-id",
+				ClientSecret:    "test-client-secret",
+				LoginButtonText: "Test Login",
+				PrivateKeyPath:  "",
+				AppID:           "954956",
+			}
+
+			mockPSRepo := &MockProviderSourceRepository{
+				findByNameFunc: func(ctx context.Context, name string) (*model.ProviderSource, error) {
+					return model.NewProviderSource(
+						name,
+						"test-api-name",
+						model.ProviderSourceTypeGithub,
+						expectedConfig,
+					), nil
+				},
+			}
+			ghClass := service.NewGithubProviderSourceClass()
+
+			gh := NewGithubProviderSource("test-name", mockPSRepo, ghClass)
+
+			entityType, err := gh.IsEntityOrgOrUser(context.Background(), tt.identity, "unittest-access-token")
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedType, entityType)
 		})
 	}
 }

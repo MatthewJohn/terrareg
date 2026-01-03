@@ -1073,3 +1073,229 @@ func (g *GithubProviderSource) UpdateRepositories(ctx context.Context, db *sqldb
 
 	return nil
 }
+
+// RefreshNamespaceRepositories refreshes repositories for a namespace
+// Python reference: github.py::refresh_namespace_repositories
+func (g *GithubProviderSource) RefreshNamespaceRepositories(ctx context.Context, db *sqldb.Database, namespace string) error {
+	// Get default access token
+	accessToken, err := g.GetDefaultAccessToken(ctx)
+	if err != nil {
+		return err
+	}
+	if accessToken == "" {
+		return fmt.Errorf("provider source default access token/installation has not been configured")
+	}
+
+	// Determine if namespace is a user or organization
+	entityType, err := g.IsEntityOrgOrUser(ctx, namespace, accessToken)
+	if err != nil {
+		return err
+	}
+	if entityType == "" {
+		return fmt.Errorf("could not find namespace entity in provider")
+	}
+
+	apiURL, err := g.apiURL(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Build URL based on entity type
+	var url string
+	if entityType == "GITHUB_ORGANISATION" {
+		url = fmt.Sprintf("%s/orgs/%s/repos", apiURL, namespace)
+	} else {
+		url = fmt.Sprintf("%s/users/%s/repos", apiURL, namespace)
+	}
+
+	page := 1
+	for {
+		// Build request with query parameters
+		reqURL := fmt.Sprintf("%s?sort=created&direction=desc&per_page=100&page=%d", url, page)
+
+		req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+		req.Header.Set("Accept", "application/vnd.github+json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+
+		resp, err := g.httpClient.Do(req)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != 200 {
+			resp.Body.Close()
+			return fmt.Errorf("invalid response code from github: %d", resp.StatusCode)
+		}
+
+		var results []map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+			resp.Body.Close()
+			return fmt.Errorf("failed to decode response: %w", err)
+		}
+		resp.Body.Close()
+
+		// Process each repository
+		for _, repository := range results {
+			if err := g.AddRepository(ctx, db, repository); err != nil {
+				return err
+			}
+		}
+
+		// Check if we need to paginate
+		if len(results) < 100 {
+			break
+		}
+
+		page++
+	}
+
+	return nil
+}
+
+// ProcessRelease processes a GitHub release and returns release metadata
+// Returns nil if the release is invalid or version already exists
+// Python reference: github.py::_process_release
+func (g *GithubProviderSource) ProcessRelease(
+	ctx context.Context,
+	repo *sqldb.RepositoryDB,
+	githubReleaseMetadata map[string]interface{},
+	accessToken string,
+) (*provider_source_model.RepositoryReleaseMetadata, error) {
+	// Extract required fields from GitHub release metadata
+	releaseID, ok := githubReleaseMetadata["id"].(float64)
+	if !ok {
+		return nil, nil
+	}
+
+	releaseName, ok := githubReleaseMetadata["name"].(string)
+	if !ok {
+		return nil, nil
+	}
+
+	tagName, ok := githubReleaseMetadata["tag_name"].(string)
+	if !ok {
+		return nil, nil
+	}
+
+	archiveURL, ok := githubReleaseMetadata["tarball_url"].(string)
+	if !ok {
+		return nil, nil
+	}
+
+	commitHash, err := g.GetCommitHashByRelease(ctx, repo, tagName, accessToken)
+	if err != nil || commitHash == "" {
+		return nil, nil
+	}
+
+	// Validate tag is a valid semantic version
+	version := provider_source_model.TagToVersion(tagName)
+	if version == nil {
+		return nil, nil
+	}
+
+	// Get release artifacts metadata
+	releaseArtifacts, err := g.GetReleaseArtifactsMetadata(ctx, repo, int(releaseID), accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create RepositoryReleaseMetadata
+	return provider_source_model.NewRepositoryReleaseMetadata(
+		releaseName,
+		tagName,
+		archiveURL,
+		commitHash,
+		int(releaseID),
+		*repo,
+		releaseArtifacts,
+	), nil
+}
+
+// GetNewReleases fetches new releases for a repository that aren't already processed
+// Stops pagination if a pre-existing release is found
+// Python reference: github.py::get_new_releases
+func (g *GithubProviderSource) GetNewReleases(
+	ctx context.Context,
+	repo *sqldb.RepositoryDB,
+	accessToken string,
+) ([]*provider_source_model.RepositoryReleaseMetadata, error) {
+	apiURL, err := g.apiURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	owner := ""
+	if repo.Owner != nil {
+		owner = *repo.Owner
+	}
+	repoName := ""
+	if repo.Name != nil {
+		repoName = *repo.Name
+	}
+
+	page := 1
+	var releases []*provider_source_model.RepositoryReleaseMetadata
+
+	for {
+		// Build request URL
+		reqURL := fmt.Sprintf("%s/repos/%s/%s/releases?per_page=100&page=%d", apiURL, owner, repoName, page)
+
+		req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+		req.Header.Set("Accept", "application/vnd.github+json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+
+		resp, err := g.httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != 200 {
+			resp.Body.Close()
+			return nil, fmt.Errorf("invalid response code from github: %d", resp.StatusCode)
+		}
+
+		var results []map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+			resp.Body.Close()
+			return nil, fmt.Errorf("failed to decode response: %w", err)
+		}
+		resp.Body.Close()
+
+		// Process each release
+		for _, githubRelease := range results {
+			// Process release - returns nil if invalid or already exists
+			releaseMetadata, err := g.ProcessRelease(ctx, repo, githubRelease, accessToken)
+			if err != nil {
+				continue
+			}
+
+			// If release is nil (invalid or skipped), continue
+			if releaseMetadata == nil {
+				continue
+			}
+
+			// @TODO: Check if version already exists in database
+			// For now, we don't have the ProviderVersionRepository injected here
+			// so we can't check if the version exists
+
+			releases = append(releases, releaseMetadata)
+		}
+
+		// Check if we need to paginate
+		if len(results) < 100 {
+			break
+		}
+
+		page++
+	}
+
+	return releases, nil
+}
