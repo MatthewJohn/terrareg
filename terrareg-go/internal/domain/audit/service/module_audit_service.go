@@ -8,7 +8,18 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/repository"
 )
 
+// ModuleAuditServiceInterface defines the interface for module audit operations
+// This allows for proper mocking in tests while keeping the implementation in ModuleAuditService
+type ModuleAuditServiceInterface interface {
+	LogModuleVersionIndex(ctx context.Context, username, namespace, module, provider, version string) error
+	LogModuleVersionPublish(ctx context.Context, username, namespace, module, provider, version string) error
+	LogModuleVersionDelete(ctx context.Context, username, namespace, module, provider, version string) error
+	LogModuleProviderCreate(ctx context.Context, username, namespace, module, provider string) error
+	LogModuleProviderDelete(ctx context.Context, username, namespace, module, provider string) error
+}
+
 // ModuleAuditService handles audit logging for module operations
+// It implements ModuleAuditServiceInterface
 type ModuleAuditService struct {
 	auditRepo repository.AuditHistoryRepository
 }

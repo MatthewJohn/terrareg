@@ -1,4 +1,4 @@
-package service_test
+package service
 
 import (
 	"testing"
@@ -7,22 +7,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	gitmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/model"
-	gitservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name        string
-		request     *gitservice.URLBuilderRequest
+		request     *URLBuilderRequest
 		expectedURL string
 		expectError bool
 	}{
 		{
 			name: "Basic template substitution",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "test-org",
 				Module:    "test-module",
@@ -33,7 +32,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 		},
 		{
 			name: "Template with all placeholders",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://gitlab.com/{namespace}/{module}-{provider}.git",
 				Namespace: "mycompany",
 				Module:    "terraform",
@@ -46,7 +45,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 		},
 		{
 			name: "Template with git tag substitution",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{module}.git?ref={git_tag}",
 				Namespace: "hashicorp",
 				Module:    "terraform",
@@ -58,7 +57,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 		},
 		{
 			name: "Template with version substitution",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{module}-provider/archive/v{version}.tar.gz",
 				Namespace: "terraform-aws-modules",
 				Module:    "vpc",
@@ -70,7 +69,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 		},
 		{
 			name: "SSH template",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "git@github.com:{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
@@ -81,7 +80,7 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 		},
 		{
 			name: "Invalid template",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{invalid}.git",
 				Namespace: "test",
 				Module:    "module",
@@ -108,16 +107,16 @@ func TestGitURLBuilderService_BuildCloneURL(t *testing.T) {
 }
 
 func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name        string
-		request     *gitservice.URLBuilderRequest
+		request     *URLBuilderRequest
 		expectedURL string
 	}{
 		{
 			name: "HTTPS with username only",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
@@ -130,7 +129,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		},
 		{
 			name: "HTTPS with username and password",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
@@ -144,7 +143,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		},
 		{
 			name: "HTTPS with credentials containing special characters",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "https://github.com/{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
@@ -158,7 +157,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		},
 		{
 			name: "SSH with credentials (should not inject)",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:  "git@github.com:{namespace}/{module}.git",
 				Namespace: "org",
 				Module:    "repo",
@@ -172,7 +171,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 		},
 		{
 			name: "No credentials",
-			request: &gitservice.URLBuilderRequest{
+			request: &URLBuilderRequest{
 				Template:    "https://github.com/{namespace}/{module}.git",
 				Namespace:   "org",
 				Module:      "repo",
@@ -194,7 +193,7 @@ func TestGitURLBuilderService_BuildCloneURL_WithCredentials(t *testing.T) {
 }
 
 func TestGitURLBuilderService_BuildBrowseURL(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name           string
@@ -264,7 +263,7 @@ func TestGitURLBuilderService_BuildBrowseURL(t *testing.T) {
 }
 
 func TestGitURLBuilderService_BuildArchiveURL(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name           string
@@ -324,7 +323,7 @@ func TestGitURLBuilderService_BuildArchiveURL(t *testing.T) {
 }
 
 func TestGitURLBuilderService_ValidateTemplate(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name        string
@@ -372,7 +371,7 @@ func TestGitURLBuilderService_ValidateTemplate(t *testing.T) {
 }
 
 func TestGitURLBuilderService_ParseTemplateVariables(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name              string
@@ -428,7 +427,7 @@ func TestGitURLBuilderService_ParseTemplateVariables(t *testing.T) {
 }
 
 func TestGitURLBuilderService_IsSSHTemplate(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name     string
@@ -465,7 +464,7 @@ func TestGitURLBuilderService_IsSSHTemplate(t *testing.T) {
 }
 
 func TestGitURLBuilderService_RequiresCredentials(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	tests := []struct {
 		name     string
@@ -502,10 +501,10 @@ func TestGitURLBuilderService_RequiresCredentials(t *testing.T) {
 }
 
 func TestGitURLBuilderService_IntegrationTest(t *testing.T) {
-	gitService := gitservice.NewGitURLBuilderService()
+	gitService := NewGitURLBuilderService()
 
 	// Test building URL with all options set
-	req := &gitservice.URLBuilderRequest{
+	req := &URLBuilderRequest{
 		Template:  "https://github.com/{namespace}/{module}-{provider}.git",
 		Namespace: "terraform-aws-modules",
 		Module:    "vpc",

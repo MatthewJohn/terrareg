@@ -194,7 +194,6 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 
 		// Mark overall success
 		result.Success = true
-		result.ModuleVersion = result.ModuleVersion
 
 		return nil
 	})
@@ -326,7 +325,7 @@ func (o *TransactionProcessingOrchestrator) executeArchiveExtractionPhase(
 	}
 
 	if !extractionResult.Success {
-		errorMsg := fmt.Sprintf("Archive extraction failed: %s", extractionResult.Error)
+		errorMsg := fmt.Sprintf("Archive extraction failed: %s", *extractionResult.Error)
 		phaseResult.Error = &errorMsg
 		return phaseResult
 	}
@@ -453,7 +452,7 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 			Str("module", req.ModuleName).
 			Str("provider", req.Provider).
 			Dur("phase_duration", phaseResult.Duration).
-			Err(fmt.Errorf(detailedError)).
+			Err(fmt.Errorf("%s", detailedError)).
 			Msg("Terraform processing phase failed")
 
 		phaseResult.Error = &detailedError

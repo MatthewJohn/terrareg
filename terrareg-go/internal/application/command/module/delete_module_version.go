@@ -14,14 +14,14 @@ import (
 type DeleteModuleVersionCommand struct {
 	moduleProviderRepo moduleRepo.ModuleProviderRepository
 	moduleVersionRepo  moduleRepo.ModuleVersionRepository
-	auditService       *service.ModuleAuditService
+	auditService       service.ModuleAuditServiceInterface
 }
 
 // NewDeleteModuleVersionCommand creates a new delete module version command
 func NewDeleteModuleVersionCommand(
 	moduleProviderRepo moduleRepo.ModuleProviderRepository,
 	moduleVersionRepo moduleRepo.ModuleVersionRepository,
-	auditService *service.ModuleAuditService,
+	auditService service.ModuleAuditServiceInterface,
 ) *DeleteModuleVersionCommand {
 	return &DeleteModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,

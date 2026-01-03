@@ -16,14 +16,14 @@ import (
 type CreateModuleProviderCommand struct {
 	namespaceRepo      repository.NamespaceRepository
 	moduleProviderRepo repository.ModuleProviderRepository
-	auditService       *service.ModuleAuditService
+	auditService       service.ModuleAuditServiceInterface
 }
 
 // NewCreateModuleProviderCommand creates a new create module provider command
 func NewCreateModuleProviderCommand(
 	namespaceRepo repository.NamespaceRepository,
 	moduleProviderRepo repository.ModuleProviderRepository,
-	auditService *service.ModuleAuditService,
+	auditService service.ModuleAuditServiceInterface,
 ) *CreateModuleProviderCommand {
 	return &CreateModuleProviderCommand{
 		namespaceRepo:      namespaceRepo,

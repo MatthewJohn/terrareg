@@ -1153,7 +1153,7 @@ func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
 	// Create template data with graph_data_url for the template
 	templateData := map[string]interface{}{
 		"TEMPLATE_NAME":  "graph.html",
-		"graph_data_url": fmt.Sprintf("/v1/terrareg/modules/%s/%s/%s/graph/data", namespace, moduleName, provider, version),
+		"graph_data_url": fmt.Sprintf("/v1/terrareg/modules/%s/%s/%s/%s/graph/data", namespace, moduleName, provider, version),
 		"namespace":      namespace,
 		"module":         moduleName,
 		"provider":       provider,

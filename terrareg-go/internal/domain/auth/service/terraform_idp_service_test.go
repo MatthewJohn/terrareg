@@ -115,7 +115,7 @@ func TestNewTerraformIdpService(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	assert.NotNil(t, service)
 }
@@ -125,7 +125,7 @@ func TestCreateAuthorizationCode(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	req := AuthorizationCodeRequest{
 		ClientID:     "test-client",
@@ -153,7 +153,7 @@ func TestCreateAuthorizationCode_UnsupportedResponseType(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	req := AuthorizationCodeRequest{
 		ClientID:     "test-client",
@@ -175,7 +175,7 @@ func TestExchangeCodeForToken_Success(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	req := AccessTokenRequest{
 		GrantType:   "authorization_code",
@@ -212,7 +212,7 @@ func TestExchangeCodeForToken_UnsupportedGrantType(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	req := AccessTokenRequest{
 		GrantType:   "client_credentials", // Unsupported
@@ -233,7 +233,7 @@ func TestExchangeCodeForToken_InvalidCode(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	req := AccessTokenRequest{
 		GrantType:   "authorization_code",
@@ -258,7 +258,7 @@ func TestValidateToken_Success(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	token := "test-access-token"
 
@@ -286,7 +286,7 @@ func TestValidateToken_InvalidToken(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	token := "invalid-token"
 
@@ -306,7 +306,7 @@ func TestRevokeToken_Success(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	token := "test-access-token"
 
@@ -324,7 +324,7 @@ func TestRevokeToken_Error(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	token := "test-access-token"
 
@@ -343,7 +343,7 @@ func TestCleanupExpired(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	authCodeRepo.On("DeleteExpired", mock.Anything).Return(int64(5), nil)
 	accessTokenRepo.On("DeleteExpired", mock.Anything).Return(int64(3), nil)
@@ -363,7 +363,7 @@ func TestStoreSubjectIdentifier(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	subject := "terraform-user"
 	clientID := "test-client"
@@ -385,7 +385,7 @@ func TestGetSubjectIdentifier(t *testing.T) {
 	accessTokenRepo := &MockTerraformIdpAccessTokenRepository{}
 	subjectIdentifierRepo := &MockTerraformIdpSubjectIdentifierRepository{}
 
-	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo)
+	service := NewTerraformIdpService(authCodeRepo, accessTokenRepo, subjectIdentifierRepo, "", "http://test.issuer")
 
 	subject := "terraform-user"
 	clientID := "test-client"

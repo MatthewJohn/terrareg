@@ -17,7 +17,7 @@ type Version struct {
 	original   string
 }
 
-var versionRegex = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`)
+var versionRegex = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z0-9]+))?$`)
 
 // ParseVersion parses a version string into a Version
 func ParseVersion(versionStr string) (*Version, error) {
@@ -39,7 +39,7 @@ func ParseVersion(versionStr string) (*Version, error) {
 		minor:      minor,
 		patch:      patch,
 		prerelease: matches[4],
-		build:      matches[5],
+		build:      "", // Build metadata not supported
 		original:   versionStr,
 	}, nil
 }

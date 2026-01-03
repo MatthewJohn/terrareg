@@ -3,14 +3,17 @@ package module_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/unit/mocks"
 )
 
 // MockModuleProviderRepository is a mock for testing
@@ -88,6 +91,11 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
+	mockAuditService := new(mocks.MockModuleAuditService)
+
+	// Set up mock expectations - the audit service is called in a goroutine
+	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0").Return(nil)
+	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0").Return(nil)
 
 	// Create test data
 	namespace, err := modulemodel.NewNamespace("testns", nil, modulemodel.NamespaceTypeNone)
@@ -100,8 +108,8 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 	err = mockRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create command
-	command := module.NewPublishModuleVersionCommand(mockRepo)
+	// Create command with proper mock
+	command := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 
 	// Test data
 	req := module.PublishModuleVersionRequest{
@@ -117,6 +125,9 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 	// Execute
 	result, err := command.Execute(ctx, req)
 
+	// Wait for goroutines to complete (audit logging happens in background)
+	time.Sleep(10 * time.Millisecond)
+
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -126,12 +137,16 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 	assert.True(t, result.IsPublished())
 	assert.Equal(t, "testowner", *result.Owner())
 	assert.Equal(t, "Test version", *result.Description())
+
+	// Verify mock was called
+	mockAuditService.AssertExpectations(t)
 }
 
 func TestPublishModuleVersion_VersionAlreadyExists(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
+	mockAuditService := new(mocks.MockModuleAuditService)
 
 	// Create test data with existing version
 	namespace, err := modulemodel.NewNamespace("testns", nil, modulemodel.NamespaceTypeNone)
@@ -149,8 +164,8 @@ func TestPublishModuleVersion_VersionAlreadyExists(t *testing.T) {
 	err = mockRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create command
-	command := module.NewPublishModuleVersionCommand(mockRepo)
+	// Create command with proper mock (no expectations since version exists and errors before audit)
+	command := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 
 	// Test data - trying to publish same version
 	req := module.PublishModuleVersionRequest{
@@ -174,9 +189,10 @@ func TestPublishModuleVersion_ModuleProviderNotFound(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
+	mockAuditService := new(mocks.MockModuleAuditService)
 
-	// Create command
-	command := module.NewPublishModuleVersionCommand(mockRepo)
+	// Create command with proper mock (no expectations since provider not found)
+	command := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 
 	// Test data - non-existent module provider
 	req := module.PublishModuleVersionRequest{
@@ -200,6 +216,11 @@ func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
+	mockAuditService := new(mocks.MockModuleAuditService)
+
+	// Set up mock expectations (using valid version format per updated regex)
+	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0-betal").Return(nil)
+	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0-betal").Return(nil)
 
 	// Create test data
 	namespace, err := modulemodel.NewNamespace("testns", nil, modulemodel.NamespaceTypeNone)
@@ -212,15 +233,15 @@ func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
 	err = mockRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create command
-	command := module.NewPublishModuleVersionCommand(mockRepo)
+	// Create command with proper mock
+	command := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 
 	// Test data
 	req := module.PublishModuleVersionRequest{
 		Namespace:   "testns",
 		Module:      "testmod",
 		Provider:    "aws",
-		Version:     "1.0.0-beta.1",
+		Version:     "1.0.0-betal",
 		Beta:        true,
 		Description: stringPtr("Beta version"),
 		Owner:       stringPtr("testowner"),
@@ -229,13 +250,19 @@ func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
 	// Execute
 	result, err := command.Execute(ctx, req)
 
+	// Wait for goroutines to complete (audit logging happens in background)
+	time.Sleep(10 * time.Millisecond)
+
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
-	assert.Equal(t, "1.0.0-beta.1", result.Version().String())
+	assert.Equal(t, "1.0.0-betal", result.Version().String())
 	assert.True(t, result.IsBeta())
 	assert.True(t, result.IsPublished())
+
+	// Verify mock was called
+	mockAuditService.AssertExpectations(t)
 }
 
 // Helper function for string pointers

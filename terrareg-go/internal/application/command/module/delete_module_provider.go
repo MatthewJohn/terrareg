@@ -12,13 +12,13 @@ import (
 // DeleteModuleProviderCommand handles deleting a module provider
 type DeleteModuleProviderCommand struct {
 	moduleProviderRepo repository.ModuleProviderRepository
-	auditService       *service.ModuleAuditService
+	auditService       service.ModuleAuditServiceInterface
 }
 
 // NewDeleteModuleProviderCommand creates a new delete module provider command
 func NewDeleteModuleProviderCommand(
 	moduleProviderRepo repository.ModuleProviderRepository,
-	auditService *service.ModuleAuditService,
+	auditService service.ModuleAuditServiceInterface,
 ) *DeleteModuleProviderCommand {
 	return &DeleteModuleProviderCommand{
 		moduleProviderRepo: moduleProviderRepo,

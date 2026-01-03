@@ -289,7 +289,7 @@ func (af *AuthFactory) NotAuthenticated() auth.AuthContext {
 
 // generateRequestID generates a unique request ID
 func (af *AuthFactory) generateRequestID() string {
-	return fmt.Sprintf("req_%d", af.generateRandomID())
+	return fmt.Sprintf("req_%s", af.generateRandomID())
 }
 
 // generateRandomID generates a random ID (simplified)
