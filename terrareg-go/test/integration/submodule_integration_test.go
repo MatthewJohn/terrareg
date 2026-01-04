@@ -63,8 +63,8 @@ func TestSubmoduleRepositoryIntegration(t *testing.T) {
 
 		submodule1 := modulemodel.NewSubmodule("examples1", name, subType, nil)
 		assert.Equal(t, "examples1", submodule1.Path())
-		assert.Equal(t, "examples", submodule1.Name())
-		assert.Equal(t, "terraform", submodule1.Type())
+		assert.Equal(t, "examples", *submodule1.Name())
+		assert.Equal(t, "terraform", *submodule1.Type())
 
 		submodule2 := modulemodel.NewSubmodule("examples2", name, subType, nil)
 		assert.Equal(t, "examples2", submodule2.Path())

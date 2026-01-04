@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -25,6 +26,14 @@ import (
 
 // TestGitHubWebhookIntegration tests GitHub webhook processing following Python pattern
 func TestGitHubWebhookIntegration(t *testing.T) {
+	// Change to terrareg-go directory for template loading
+	oldWd, _ := os.Getwd()
+	err := os.Chdir("/app/terrareg-go")
+	require.NoError(t, err)
+	defer func() {
+		os.Chdir(oldWd)
+	}()
+
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
@@ -272,6 +281,14 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 
 // TestBitbucketWebhookIntegration tests Bitbucket webhook processing following Python pattern
 func TestBitbucketWebhookIntegration(t *testing.T) {
+	// Change to terrareg-go directory for template loading
+	oldWd, _ := os.Getwd()
+	err := os.Chdir("/app/terrareg-go")
+	require.NoError(t, err)
+	defer func() {
+		os.Chdir(oldWd)
+	}()
+
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
@@ -539,6 +556,14 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 
 // TestWebhookIntegrationWithModuleWithoutGitConfig tests webhook when module has no git configuration
 func TestWebhookIntegrationWithModuleWithoutGitConfig(t *testing.T) {
+	// Change to terrareg-go directory for template loading
+	oldWd, _ := os.Getwd()
+	err := os.Chdir("/app/terrareg-go")
+	require.NoError(t, err)
+	defer func() {
+		os.Chdir(oldWd)
+	}()
+
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 

@@ -241,6 +241,14 @@ func TestTerraformIDPConfigurationValidation(t *testing.T) {
 }
 
 func TestTerraformIDPConcurrency(t *testing.T) {
+	// Change to terrareg-go directory for template loading
+	oldWd, _ := os.Getwd()
+	err := os.Chdir("/app/terrareg-go")
+	require.NoError(t, err)
+	defer func() {
+		os.Chdir(oldWd)
+	}()
+
 	db := testutils.SetupTestDatabase(t)
 	defer func() {
 		require.NoError(t, db.Close())
@@ -313,6 +321,14 @@ func TestTerraformIDPConcurrency(t *testing.T) {
 }
 
 func TestTerraformIDPSecurityFeatures(t *testing.T) {
+	// Change to terrareg-go directory for template loading
+	oldWd, _ := os.Getwd()
+	err := os.Chdir("/app/terrareg-go")
+	require.NoError(t, err)
+	defer func() {
+		os.Chdir(oldWd)
+	}()
+
 	db := testutils.SetupTestDatabase(t)
 	defer func() {
 		require.NoError(t, db.Close())
