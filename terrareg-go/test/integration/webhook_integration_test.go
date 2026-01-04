@@ -17,9 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -66,7 +64,7 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 	}
 
 	// Create webhook handler
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 	// Setup router with webhook routes
 	router := chi.NewRouter()
@@ -311,7 +309,7 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 		UploadApiKeys: []string{"test-api-key"},
 	}
 
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 	// Setup router
 	router := chi.NewRouter()
@@ -566,7 +564,7 @@ func TestWebhookIntegrationWithModuleWithoutGitConfig(t *testing.T) {
 	infraConfig := &config.InfrastructureConfig{
 		UploadApiKeys: []string{"test-api-key"},
 	}
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 	router := chi.NewRouter()
 	router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", webhookHandler.HandleModuleWebhook)
@@ -636,7 +634,7 @@ func TestWebhookSignatureValidation(t *testing.T) {
 		infraConfig := &config.InfrastructureConfig{
 			UploadApiKeys: []string{"key1", "key2"},
 		}
-		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 		router := chi.NewRouter()
 		router.Post("/hooks/github", webhookHandler.HandleModuleWebhook)
@@ -665,7 +663,7 @@ func TestWebhookSignatureValidation(t *testing.T) {
 		infraConfig := &config.InfrastructureConfig{
 			UploadApiKeys: []string{"key1", "key2"},
 		}
-		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 		router := chi.NewRouter()
 		router.Post("/hooks/github", webhookHandler.HandleModuleWebhook)
@@ -694,7 +692,7 @@ func TestWebhookSignatureValidation(t *testing.T) {
 		infraConfig := &config.InfrastructureConfig{
 			UploadApiKeys: []string{"correct-key"},
 		}
-		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 		router := chi.NewRouter()
 		router.Post("/hooks/github", webhookHandler.HandleModuleWebhook)
@@ -746,7 +744,7 @@ func TestWebhookWithoutAPIKeyConfig(t *testing.T) {
 	infraConfig := &config.InfrastructureConfig{
 		UploadApiKeys: nil, // No keys configured
 	}
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 	router := chi.NewRouter()
 	router.Post("/hooks/github", webhookHandler.HandleModuleWebhook)
@@ -789,7 +787,7 @@ func TestWebhookIntegrationErrorHandling(t *testing.T) {
 	infraConfig := &config.InfrastructureConfig{
 		UploadApiKeys: []string{"test-api-key"},
 	}
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig)
+	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
 
 	router := chi.NewRouter()
 	router.Post("/hooks/github", webhookHandler.HandleModuleWebhook)

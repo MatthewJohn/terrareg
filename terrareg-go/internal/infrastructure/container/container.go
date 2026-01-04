@@ -818,7 +818,7 @@ func NewContainer(
 		c.ValidateTokenCmd,
 		c.GetUserCmd,
 	)
-	c.TerraformIDPHandler = terraformHandler.NewTerraformIDPHandler(c.TerraformIdpService)
+	c.TerraformIDPHandler = terraformHandler.NewTerraformIDPHandler(c.TerraformIdpService, infraConfig)
 	c.TerraformStaticTokenHandler = terraformHandler.NewTerraformStaticTokenHandler()
 
 	// Initialize middleware

@@ -43,12 +43,14 @@ func TestAuthenticationIntegration(t *testing.T) {
 	sessionConfig := authservice.DefaultSessionDatabaseConfig()
 	sessionService := authservice.NewSessionService(sessionRepo, sessionConfig)
 
-	// Create basic infrastructure config
+	// Create basic infrastructure config with valid SECRET_KEY
+	// (CookieService requires SECRET_KEY to be at least 32 bytes when hex-decoded)
 	infraConfig := &config.InfrastructureConfig{
-		ListenPort: 3000,
-		PublicURL:  "http://localhost:3000",
-		DomainName: "localhost",
-		Debug:      true,
+		ListenPort:    3000,
+		PublicURL:     "http://localhost:3000",
+		DomainName:    "localhost",
+		Debug:         true,
+		SecretKey:     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}
 
 	// Create auth service with minimal dependencies

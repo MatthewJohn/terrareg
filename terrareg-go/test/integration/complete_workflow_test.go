@@ -141,7 +141,7 @@ variable "example_var" {
 	resp.Body.Close()
 
 	// Then publish the version
-	publishURL := fmt.Sprintf("%s/v1/terrareg/modules/%s/%s/%s/publish", baseURL, namespaceName, moduleName, providerName, version)
+	publishURL := fmt.Sprintf("%s/v1/terrareg/modules/%s/%s/%s/%s/publish", baseURL, namespaceName, moduleName, providerName, version)
 
 	payload := map[string]interface{}{
 		"message": "Test publish",
@@ -294,8 +294,8 @@ func testAuditHistory(t *testing.T, client *http.Client, baseURL string) {
 }
 
 func testGraphData(t *testing.T, client *http.Client, baseURL, namespaceName, moduleName, providerName, version string) {
-	// Test graph data API endpoint
-	graphDataURL := fmt.Sprintf("%s/v1/terrareg/modules/%s/%s/graph/data", baseURL, namespaceName, moduleName, providerName)
+	// Test graph data API endpoint - uses module provider path
+	graphDataURL := fmt.Sprintf("%s/v1/terrareg/modules/%s/%s/%s/graph/data", baseURL, namespaceName, moduleName, providerName)
 
 	req, err := http.NewRequest("GET", graphDataURL, nil)
 	require.NoError(t, err)

@@ -60,7 +60,7 @@ func TestExampleIntegration(t *testing.T) {
 		_, err = moduleVersionRepo.Save(ctx, moduleVersion)
 		require.NoError(t, err)
 
-		assert.Equal(t, "1.0.0", moduleVersion.Version)
+		assert.Equal(t, "1.0.0", moduleVersion.Version().String())
 	})
 
 	t.Run("Test repository creation", func(t *testing.T) {
@@ -126,8 +126,9 @@ func TestSubmoduleIntegrationSimple(t *testing.T) {
 		submodule := modulemodel.NewSubmodule(path, name, subType, nil)
 
 		assert.Equal(t, "examples", submodule.Path())
-		assert.Equal(t, "examples", submodule.Name())
-		assert.Equal(t, "terraform", submodule.Type())
+		// Name() and Type() return *string, so dereference them
+		assert.Equal(t, "examples", *submodule.Name())
+		assert.Equal(t, "terraform", *submodule.Type())
 	})
 
 	_ = submoduleRepo

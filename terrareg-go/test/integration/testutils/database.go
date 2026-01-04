@@ -1,26 +1,19 @@
 package testutils
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
-	moduleDomain "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
-	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	"github.com/matthewjohn/terrareg/terrareg/terrareg-go/internal/domain/module/repository"
-	moduleService "github.com/matthewjohn/terrareg/terrareg/terrareg-go/internal/domain/module/service"
-	"github.com/matthewjohn/terrareg/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
-	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
-	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
+	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 )
 
 // TestLogger is a no-op logger for testing
@@ -394,4 +387,29 @@ func CreateGPGKey(t *testing.T, db *sqldb.Database, name string, providerID int,
 	require.NoError(t, err)
 
 	return gpgKey
+}
+
+// CreateTestContainer creates a test container with all dependencies wired together
+// This is the preferred way to set up integration tests that need handlers or services
+func CreateTestContainer(t *testing.T, db *sqldb.Database) *container.Container {
+	domainConfig := CreateTestDomainConfig(t)
+	infraConfig := CreateTestInfraConfig(t)
+
+	// Create a simple config service for testing
+	versionReader := version.NewVersionReader()
+	cfgService := configService.NewConfigurationService(configService.ConfigurationServiceOptions{}, versionReader)
+
+	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(), db)
+	require.NoError(t, err)
+
+	return cont
+}
+
+// CreateTestWebhookHandler creates a test webhook handler with proper dependencies
+// It uses the container to wire all dependencies together
+func CreateTestWebhookHandler(t *testing.T, db *sqldb.Database, uploadAPIKeys []string) *webhook.ModuleWebhookHandler {
+	cont := CreateTestContainer(t, db)
+
+	// Create a new webhook handler with the provided upload API keys
+	return webhook.NewModuleWebhookHandler(cont.WebhookService, uploadAPIKeys)
 }

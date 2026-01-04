@@ -4,30 +4,36 @@ import (
 	"net/http"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
 
 // TerraformIDPHandler handles Terraform OIDC Identity Provider endpoints
 type TerraformIDPHandler struct {
-	idpService *service.TerraformIdpService
+	idpService  *service.TerraformIdpService
+	infraConfig *config.InfrastructureConfig
 }
 
 // NewTerraformIDPHandler creates a new Terraform IDP handler
-func NewTerraformIDPHandler(idpService *service.TerraformIdpService) *TerraformIDPHandler {
+func NewTerraformIDPHandler(idpService *service.TerraformIdpService, infraConfig *config.InfrastructureConfig) *TerraformIDPHandler {
 	return &TerraformIDPHandler{
-		idpService: idpService,
+		idpService:  idpService,
+		infraConfig: infraConfig,
 	}
 }
 
 // HandleOpenIDConfiguration handles GET /.well-known/openid-configuration
 func (h *TerraformIDPHandler) HandleOpenIDConfiguration(w http.ResponseWriter, r *http.Request) {
+	// Build base URL from PublicURL config (matching Python pattern)
+	baseURL := h.infraConfig.PublicURL
+
 	// Return OpenID Connect discovery document
 	config := map[string]interface{}{
-		"issuer":                                "http://localhost:3000",
-		"authorization_endpoint":                "http://localhost:3000/terraform/v1/idp/authorize",
-		"token_endpoint":                        "http://localhost:3000/terraform/v1/idp/token",
-		"userinfo_endpoint":                     "http://localhost:3000/terraform/v1/idp/userinfo",
-		"jwks_uri":                              "http://localhost:3000/terraform/v1/idp/jwks",
+		"issuer":                                baseURL,
+		"authorization_endpoint":                baseURL + "/terraform/v1/idp/authorize",
+		"token_endpoint":                        baseURL + "/terraform/v1/idp/token",
+		"userinfo_endpoint":                     baseURL + "/terraform/v1/idp/userinfo",
+		"jwks_uri":                              baseURL + "/.well-known/jwks.json",
 		"response_types_supported":              []string{"code"},
 		"grant_types_supported":                 []string{"authorization_code"},
 		"subject_types_supported":               []string{"public"},

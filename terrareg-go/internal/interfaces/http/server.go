@@ -2,6 +2,7 @@ package http
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -527,10 +528,24 @@ func (s *Server) Router() *chi.Mux {
 
 // Placeholder handlers - these will be implemented in separate files
 func (s *Server) handleTerraformWellKnown(w http.ResponseWriter, r *http.Request) {
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	data := map[string]interface{}{
 		"modules.v1":   "/v1/modules/",
 		"providers.v1": "/v1/providers/",
-	})
+	}
+
+	// Add login.v1 if Terraform IDP is enabled (matching Python pattern)
+	// Terraform IDP is enabled when a signing key is configured
+	if s.infraConfig.TerraformOidcIdpSigningKeyPath != "" {
+		data["login.v1"] = map[string]interface{}{
+			"client":     "terraform-cli",
+			"grant_types": []string{"authz_code", "token"},
+			"authz":      "/terraform/oauth/authorization",
+			"token":      "/terraform/oauth/token",
+			"ports":      "10000-10015",
+		}
+	}
+
+	respondJSON(w, http.StatusOK, data)
 }
 
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -552,7 +567,7 @@ func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	// JSON encoding to be implemented
+	json.NewEncoder(w).Encode(data)
 }
 
 func respondError(w http.ResponseWriter, err error, status int) {

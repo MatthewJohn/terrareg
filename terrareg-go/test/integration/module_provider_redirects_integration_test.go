@@ -33,22 +33,29 @@ func TestModuleProviderRedirectsIntegrationSimple(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Create module providers for redirect", func(t *testing.T) {
-		// Create source module provider
-		sourceProvider, err := modulemodel.NewModuleProvider(namespace, "old-module", "old-provider")
+		// Create source module provider (provider names must be lowercase alphanumeric only)
+		sourceProvider, err := modulemodel.NewModuleProvider(namespace, "old-module", "aws")
 		require.NoError(t, err)
 
 		err = moduleProviderRepo.Save(ctx, sourceProvider)
 		require.NoError(t, err)
 
+		// Verify we can find the module provider after saving
+		foundSource, err := moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace.Name(), "old-module", "aws")
+		require.NoError(t, err)
+		require.NotNil(t, foundSource)
+
 		// Create target module provider
-		targetProvider, err := modulemodel.NewModuleProvider(namespace, "new-module", "new-provider")
+		targetProvider, err := modulemodel.NewModuleProvider(namespace, "new-module", "gcp")
 		require.NoError(t, err)
 
 		err = moduleProviderRepo.Save(ctx, targetProvider)
 		require.NoError(t, err)
 
-		assert.Greater(t, sourceProvider.ID, 0)
-		assert.Greater(t, targetProvider.ID, 0)
+		// Verify we can find the module provider after saving
+		foundTarget, err := moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace.Name(), "new-module", "gcp")
+		require.NoError(t, err)
+		require.NotNil(t, foundTarget)
 	})
 
 	t.Run("Test repository creation", func(t *testing.T) {

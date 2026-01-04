@@ -76,9 +76,10 @@ func TestUploadApiKeyAuth(t *testing.T) {
 	assert.True(t, uploadAuthMethod.IsEnabled())
 
 	// Test authentication with correct token
+	// Note: All API keys use X-Terrareg-ApiKey header (matching Python pattern)
 	ctx := context.Background()
 	headers := map[string]string{
-		"X-Terrareg-Upload-Key": "upload-token-1",
+		"X-Terrareg-ApiKey": "upload-token-1",
 	}
 	authCtx, err := uploadAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
@@ -89,7 +90,7 @@ func TestUploadApiKeyAuth(t *testing.T) {
 
 	// Test with another valid token
 	headers = map[string]string{
-		"X-Terrareg-Upload-Key": "upload-token-2",
+		"X-Terrareg-ApiKey": "upload-token-2",
 	}
 	authCtx, err = uploadAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
@@ -98,7 +99,7 @@ func TestUploadApiKeyAuth(t *testing.T) {
 
 	// Test authentication with incorrect token
 	headers = map[string]string{
-		"X-Terrareg-Upload-Key": "wrong-token",
+		"X-Terrareg-ApiKey": "wrong-token",
 	}
 	authCtx, err = uploadAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
@@ -127,9 +128,10 @@ func TestPublishApiKeyAuth(t *testing.T) {
 	assert.True(t, publishAuthMethod.IsEnabled())
 
 	// Test authentication with correct token
+	// Note: All API keys use X-Terrareg-ApiKey header (matching Python pattern)
 	ctx := context.Background()
 	headers := map[string]string{
-		"X-Terrareg-Publish-Key": "publish-token-1",
+		"X-Terrareg-ApiKey": "publish-token-1",
 	}
 	authCtx, err := publishAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
@@ -140,7 +142,7 @@ func TestPublishApiKeyAuth(t *testing.T) {
 
 	// Test authentication with incorrect token
 	headers = map[string]string{
-		"X-Terrareg-Publish-Key": "wrong-token",
+		"X-Terrareg-ApiKey": "wrong-token",
 	}
 	authCtx, err = publishAuthMethod.Authenticate(ctx, headers, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
@@ -180,9 +182,10 @@ func TestApiKeyAuthInHTTPContext(t *testing.T) {
 	assert.True(t, authCtx.IsAdmin())
 
 	// Test upload token authentication
+	// Note: All API keys use X-Terrareg-ApiKey header (matching Python pattern)
 	uploadAuthMethod := infraAuth.NewUploadApiKeyAuthMethod(infraConfig)
 	uploadHeaders := map[string]string{
-		"X-Terrareg-Upload-Key": "upload-test-token",
+		"X-Terrareg-ApiKey": "upload-test-token",
 	}
 	authCtx, err = uploadAuthMethod.Authenticate(ctx, uploadHeaders, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)
@@ -193,7 +196,7 @@ func TestApiKeyAuthInHTTPContext(t *testing.T) {
 	// Test publish token authentication
 	publishAuthMethod := infraAuth.NewPublishApiKeyAuthMethod(infraConfig)
 	publishHeaders := map[string]string{
-		"X-Terrareg-Publish-Key": "publish-test-token",
+		"X-Terrareg-ApiKey": "publish-test-token",
 	}
 	authCtx, err = publishAuthMethod.Authenticate(ctx, publishHeaders, map[string]string{}, map[string]string{})
 	assert.NoError(t, err)

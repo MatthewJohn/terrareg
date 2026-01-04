@@ -68,6 +68,10 @@ func (r *UserGroupRepositoryImpl) FindByName(ctx context.Context, name string) (
 	var dbUserGroup sqldb.UserGroupDB
 	err := r.db.WithContext(ctx).Where("name = ?", name).First(&dbUserGroup).Error
 	if err != nil {
+		// Return nil, nil when not found (Python pattern)
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -91,7 +95,12 @@ func (r *UserGroupRepositoryImpl) Update(ctx context.Context, userGroup *auth.Us
 
 // Delete deletes a user group by ID
 func (r *UserGroupRepositoryImpl) Delete(ctx context.Context, id int) error {
-	return r.db.WithContext(ctx).Delete(&sqldb.UserGroupDB{}, id).Error
+	result := r.db.WithContext(ctx).Delete(&sqldb.UserGroupDB{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	// Return nil even if no rows were affected (idempotent delete)
+	return nil
 }
 
 // List returns user groups with offset and limit
