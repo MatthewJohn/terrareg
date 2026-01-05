@@ -20,11 +20,15 @@ func NewListModulesQuery(moduleProviderRepo repository.ModuleProviderRepository)
 }
 
 // Execute executes the query to list all module providers
-func (q *ListModulesQuery) Execute(ctx context.Context) ([]*model.ModuleProvider, error) {
+func (q *ListModulesQuery) Execute(ctx context.Context, namespace ...string) ([]*model.ModuleProvider, error) {
 	// For simplicity, this lists all module providers.
 	// In a real scenario, this might take filters or pagination.
 	// The repository.ModuleSearchQuery could be used here.
-	result, err := q.moduleProviderRepo.Search(ctx, repository.ModuleSearchQuery{})
+	searchQuery := repository.ModuleSearchQuery{}
+	if len(namespace) > 0 && namespace[0] != "" {
+		searchQuery.Namespaces = []string{namespace[0]}
+	}
+	result, err := q.moduleProviderRepo.Search(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -244,9 +245,9 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
 
 			// Module webhooks (matching Python implementation)
-			r.Post("/modules/{namespace}/{name}/{provider}/hooks/github", s.moduleWebhookHandler.HandleModuleWebhook)
-			r.Post("/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.moduleWebhookHandler.HandleModuleWebhook)
-			r.Post("/modules/{namespace}/{name}/{provider}/hooks/gitlab", s.moduleWebhookHandler.HandleModuleWebhook)
+			r.Post("/modules/{namespace}/{name}/{provider}/hooks/github", s.moduleWebhookHandler.HandleModuleWebhook("github"))
+			r.Post("/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.moduleWebhookHandler.HandleModuleWebhook("bitbucket"))
+			r.Post("/modules/{namespace}/{name}/{provider}/hooks/gitlab", s.moduleWebhookHandler.HandleModuleWebhook("gitlab"))
 
 			// Module versions
 			r.With(s.authMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
@@ -331,6 +332,7 @@ func (s *Server) setupRoutes() {
 		r.With(s.authMiddleware.OptionalAuth).Get("/gpg-keys", s.terraformV2GPGHandler.HandleListGPGKeys)
 		r.With(s.authMiddleware.RequireAdmin).Post("/gpg-keys", s.terraformV2GPGHandler.HandleCreateGPGKey)
 		r.With(s.authMiddleware.OptionalAuth).Get("/gpg-keys/{namespace}/{key_id}", s.terraformV2GPGHandler.HandleGetGPGKey)
+		r.With(s.authMiddleware.RequireAdmin).Delete("/gpg-keys/{namespace}/{key_id}", s.terraformV2GPGHandler.HandleDeleteGPGKey)
 
 		// Categories
 		r.With(s.authMiddleware.OptionalAuth).Get("/categories", s.terraformV2CategoryHandler.HandleListCategories)
@@ -565,9 +567,18 @@ func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 
 // Helper functions
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
+	response, err := json.Marshal(data)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"Internal Server Error"}`))
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	w.Write(response)
 }
 
 func respondError(w http.ResponseWriter, err error, status int) {
@@ -945,16 +956,10 @@ func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *h
 	})
 }
 func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {
-	// GitHub webhook not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "GitHub webhook not yet implemented",
-	})
+	s.moduleWebhookHandler.HandleModuleWebhook("github").ServeHTTP(w, r)
 }
 func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) {
-	// BitBucket webhook not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "BitBucket webhook not yet implemented",
-	})
+	s.moduleWebhookHandler.HandleModuleWebhook("bitbucket").ServeHTTP(w, r)
 }
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	// Render the index template using the template renderer

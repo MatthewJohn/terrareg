@@ -134,7 +134,22 @@ func (r *ModuleProviderRepositoryImpl) FindByID(ctx context.Context, id int) (*m
 func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context.Context, namespace, module, provider string) (*model.ModuleProvider, error) {
 	var dbModel sqldb.ModuleProviderDB
 
-	err := r.GetDBFromContext(ctx).
+	// DEBUG: Log context deadline
+	if deadline, ok := ctx.Deadline(); ok {
+		fmt.Printf("[DEBUG] FindByNamespaceModuleProvider: context deadline = %v, now = %v, time remaining = %v\n",
+			deadline, time.Now(), deadline.Sub(time.Now()))
+	} else {
+		fmt.Printf("[DEBUG] FindByNamespaceModuleProvider: no context deadline\n")
+	}
+
+	// Use background context for DB query to avoid HTTP request timeout issues
+	dbCtx := context.Background()
+	if _, hasTx := sqldb.GetTxFromContext(ctx); hasTx {
+		// If in a transaction, keep the original context
+		dbCtx = ctx
+	}
+
+	err := r.GetDBFromContext(dbCtx).
 		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
 		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", namespace, module, provider).
 		Preload("Namespace").

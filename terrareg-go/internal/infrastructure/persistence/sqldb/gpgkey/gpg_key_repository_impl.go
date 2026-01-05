@@ -88,7 +88,7 @@ func (r *gpgKeyRepositoryImpl) FindByNamespace(ctx context.Context, namespaceNam
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
 		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
-		Where("namespace.name = ?", namespaceName).
+		Where("namespace.namespace = ?", namespaceName).
 		Order("gpg_key.id DESC"). // No created_at, use id for ordering
 		Find(&gpgKeyDBs).Error
 
@@ -106,7 +106,7 @@ func (r *gpgKeyRepositoryImpl) FindByNamespaceAndKeyID(ctx context.Context, name
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
 		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
-		Where("namespace.name = ? AND gpg_key.key_id = ?", namespaceName, keyID).
+		Where("namespace.namespace = ? AND gpg_key.key_id = ?", namespaceName, keyID).
 		First(&gpgKeyDB).Error
 
 	if err != nil {
@@ -130,7 +130,7 @@ func (r *gpgKeyRepositoryImpl) FindMultipleByNamespaces(ctx context.Context, nam
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
 		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
-		Where("namespace.name IN ?", namespaceNames).
+		Where("namespace.namespace IN ?", namespaceNames).
 		Order("gpg_key.id DESC").
 		Find(&gpgKeyDBs).Error
 
@@ -182,9 +182,21 @@ func (r *gpgKeyRepositoryImpl) Delete(ctx context.Context, id int) error {
 
 // DeleteByNamespaceAndKeyID deletes a GPG key by namespace and key ID
 func (r *gpgKeyRepositoryImpl) DeleteByNamespaceAndKeyID(ctx context.Context, namespaceName, keyID string) error {
+	// First get namespace ID (GORM DELETE doesn't properly handle JOINs in WHERE clause)
+	var namespace sqldb.NamespaceDB
+	err := r.db.WithContext(ctx).
+		Where("namespace = ?", namespaceName).
+		First(&namespace).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("namespace not found")
+		}
+		return fmt.Errorf("failed to find namespace: %w", err)
+	}
+
+	// Then delete using namespace_id
 	result := r.db.WithContext(ctx).
-		Joins("JOIN namespace ON gpg_key.namespace_id = namespace.id").
-		Where("namespace.name = ? AND gpg_key.key_id = ?", namespaceName, keyID).
+		Where("namespace_id = ? AND key_id = ?", namespace.ID, keyID).
 		Delete(&sqldb.GPGKeyDB{})
 
 	if result.Error != nil {

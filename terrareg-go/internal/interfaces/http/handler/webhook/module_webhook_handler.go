@@ -36,73 +36,74 @@ func NewModuleWebhookHandler(
 }
 
 // HandleModuleWebhook handles module webhook events for all Git providers
-func (h *ModuleWebhookHandler) HandleModuleWebhook(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (h *ModuleWebhookHandler) HandleModuleWebhook(gitProvider string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "module")
-	provider := chi.URLParam(r, "provider")
-	gitProvider := chi.URLParam(r, "gitProvider")
+		// Extract path parameters
+		namespace := chi.URLParam(r, "namespace")
+		moduleName := chi.URLParam(r, "name")
+		provider := chi.URLParam(r, "provider")
 
-	// Read the request body
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		terrareg.RespondError(w, http.StatusBadRequest, "Failed to read request body")
-		return
-	}
-
-	// Validate webhook signature if upload API keys are configured
-	if len(h.uploadAPIKeys) > 0 {
-		signature := r.Header.Get("X-Hub-Signature-256")
-		if signature == "" {
-			signature = r.Header.Get("X-Hub-Signature") // Fallback for Bitbucket
-		}
-
-		if signature == "" {
-			terrareg.RespondError(w, http.StatusUnauthorized, "Missing signature header")
+		// Read the request body
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			terrareg.RespondError(w, http.StatusBadRequest, "Failed to read request body")
 			return
 		}
 
-		if !h.validateSignature(body, signature) {
-			terrareg.RespondError(w, http.StatusUnauthorized, "Invalid webhook signature")
+		// Validate webhook signature if upload API keys are configured
+		if len(h.uploadAPIKeys) > 0 {
+			signature := r.Header.Get("X-Hub-Signature-256")
+			if signature == "" {
+				signature = r.Header.Get("X-Hub-Signature") // Fallback for Bitbucket
+			}
+
+			if signature == "" {
+				terrareg.RespondError(w, http.StatusUnauthorized, "Missing signature header")
+				return
+			}
+
+			if !h.validateSignature(body, signature) {
+				terrareg.RespondError(w, http.StatusUnauthorized, "Invalid webhook signature")
+				return
+			}
+		}
+
+		// Route to appropriate Git provider handler
+		var result *moduleService.WebhookResult
+		switch gitProvider {
+		case "github":
+			result, err = h.processGitHubWebhook(ctx, namespace, moduleName, provider, body)
+		case "bitbucket":
+			result, err = h.processBitbucketWebhook(ctx, namespace, moduleName, provider, body)
+		case "gitlab":
+			// GitLab support marked as "coming soon" in Python version
+			terrareg.RespondError(w, http.StatusNotImplemented, "GitLab webhook support is coming soon")
+			return
+		default:
+			terrareg.RespondError(w, http.StatusBadRequest, fmt.Sprintf("Unsupported Git provider: %s", gitProvider))
 			return
 		}
-	}
 
-	// Route to appropriate Git provider handler
-	var result *moduleService.WebhookResult
-	switch gitProvider {
-	case "github":
-		result, err = h.processGitHubWebhook(ctx, namespace, moduleName, provider, body)
-	case "bitbucket":
-		result, err = h.processBitbucketWebhook(ctx, namespace, moduleName, provider, body)
-	case "gitlab":
-		// GitLab support marked as "coming soon" in Python version
-		terrareg.RespondError(w, http.StatusNotImplemented, "GitLab webhook support is coming soon")
-		return
-	default:
-		terrareg.RespondError(w, http.StatusBadRequest, fmt.Sprintf("Unsupported Git provider: %s", gitProvider))
-		return
-	}
+		if err != nil {
+			fmt.Printf("Webhook processing error: %v\n", err)
+			terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to process webhook: %s", err.Error()))
+			return
+		}
 
-	if err != nil {
-		fmt.Printf("Webhook processing error: %v\n", err)
-		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to process webhook: %s", err.Error()))
-		return
-	}
-
-	// Return success response
-	if result.Success {
-		terrareg.RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"status":  "success",
-			"message": result.Message,
-		})
-	} else {
-		terrareg.RespondJSON(w, http.StatusBadRequest, map[string]interface{}{
-			"status":  "error",
-			"message": result.Message,
-		})
+		// Return success response
+		if result.Success {
+			terrareg.RespondJSON(w, http.StatusOK, map[string]interface{}{
+				"status":  "success",
+				"message": result.Message,
+			})
+		} else {
+			terrareg.RespondJSON(w, http.StatusBadRequest, map[string]interface{}{
+				"status":  "error",
+				"message": result.Message,
+			})
+		}
 	}
 }
 

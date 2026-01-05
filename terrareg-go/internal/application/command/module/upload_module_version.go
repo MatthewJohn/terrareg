@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
@@ -58,9 +59,26 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 	}
 
 	// Find the module version within the aggregate
+	// If it doesn't exist, create it (matching Python behavior)
 	version, err := moduleProvider.GetVersion(req.Version)
 	if err != nil {
-		return fmt.Errorf("module version not found: %w", err)
+		// Version doesn't exist, create a new one
+		newVersion, err := model.NewModuleVersion(req.Version, nil, false)
+		if err != nil {
+			return fmt.Errorf("failed to create module version: %w", err)
+		}
+		if err := moduleProvider.AddVersion(newVersion); err != nil {
+			return fmt.Errorf("failed to add version to module provider: %w", err)
+		}
+		// Save the module provider with the new version
+		if err := c.moduleProviderRepo.Save(ctx, moduleProvider); err != nil {
+			return fmt.Errorf("failed to save module provider: %w", err)
+		}
+		// Get the version again
+		version, err = moduleProvider.GetVersion(req.Version)
+		if err != nil {
+			return fmt.Errorf("failed to get newly created version: %w", err)
+		}
 	}
 
 	// Create upload directory if it doesn't exist
@@ -102,7 +120,8 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 		version.SetMetadata(nil, &parseResult.Description)
 	}
 
-	// Publish the module version
+	// Publish the module version automatically (matching Python behavior)
+	// Python: return previous_version_published or terrareg.config.Config().AUTO_PUBLISH_MODULE_VERSIONS
 	if err := version.Publish(); err != nil {
 		return fmt.Errorf("failed to publish version: %w", err)
 	}

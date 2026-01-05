@@ -1,6 +1,7 @@
 package terrareg
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -185,10 +186,10 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 // HandleNamespaceModules handles GET /v1/modules/{namespace}
 func (h *ModuleHandler) HandleNamespaceModules(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	_ = chi.URLParam(r, "namespace") // TODO: Filter by namespace when query supports it
+	namespace := chi.URLParam(r, "namespace")
 
 	// Execute query
-	modules, err := h.listModulesQuery.Execute(ctx)
+	modules, err := h.listModulesQuery.Execute(ctx, namespace)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -558,7 +559,9 @@ func (h *ModuleHandler) HandleModuleProviderDelete(w http.ResponseWriter, r *htt
 
 // HandleModuleVersionUpload handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/upload
 func (h *ModuleHandler) HandleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	// Use background context to avoid HTTP request timeout issues during long-running operations
+	// Keep request context for cancellation signals if needed
+	ctx := context.Background()
 
 	// Get path parameters
 	namespace := chi.URLParam(r, "namespace")

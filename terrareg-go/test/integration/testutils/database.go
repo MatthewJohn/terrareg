@@ -83,13 +83,14 @@ func CreateTestDomainConfig(t *testing.T) *model.DomainConfig {
 // CreateTestInfraConfig creates a test infrastructure configuration
 func CreateTestInfraConfig(t *testing.T) *config.InfrastructureConfig {
 	return &config.InfrastructureConfig{
-		ListenPort:    5000,
-		PublicURL:     "http://localhost:5000",
-		DomainName:    "localhost",
-		Debug:         true,
-		DatabaseURL:   "sqlite:///:memory:",
-		DataDirectory: "/tmp/terrareg-test",
-		SecretKey:     "test-secret-key-that-is-32-chars-long",
+		ListenPort:                5000,
+		PublicURL:                 "http://localhost:5000",
+		DomainName:                "localhost",
+		Debug:                     true,
+		DatabaseURL:               "sqlite:///:memory:",
+		DataDirectory:             "/tmp/terrareg-test",
+		SecretKey:                 "test-secret-key-that-is-32-chars-long",
+		AdminAuthenticationToken:  "test-admin-api-key",
 	}
 }
 

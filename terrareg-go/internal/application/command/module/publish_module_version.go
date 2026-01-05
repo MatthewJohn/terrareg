@@ -51,27 +51,43 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 		return nil, fmt.Errorf("failed to find module provider: %w", err)
 	}
 
-	// Check if version already exists
+	// Check if version already exists (e.g., from upload)
 	existingVersion, err := moduleProvider.GetVersion(req.Version)
+	var version *model.ModuleVersion
 	if err == nil && existingVersion != nil {
-		return nil, fmt.Errorf("version %s already exists for %s/%s/%s", req.Version, req.Namespace, req.Module, req.Provider)
-	}
+		// Version already exists (likely from upload)
+		version = existingVersion
+		// Check if already published
+		if version.IsPublished() {
+			// Already published, return success (idempotent)
+			return version, nil
+		}
+		// Set optional metadata if not already set
+		if req.Owner != nil || req.Description != nil {
+			version.SetMetadata(req.Owner, req.Description)
+		}
+		// Mark as published
+		if err := version.Publish(); err != nil {
+			return nil, fmt.Errorf("failed to mark version as published: %w", err)
+		}
+	} else {
+		// Version doesn't exist, create it
+		// Create module details (can be expanded later with README, etc.)
+		details := model.NewModuleDetails(nil) // Empty README for now
 
-	// Create module details (can be expanded later with README, etc.)
-	details := model.NewModuleDetails(nil) // Empty README for now
+		// Publish the version using the aggregate root
+		version, err = moduleProvider.PublishVersion(req.Version, details, req.Beta)
+		if err != nil {
+			return nil, fmt.Errorf("failed to publish version: %w", err)
+		}
 
-	// Publish the version using the aggregate root
-	version, err := moduleProvider.PublishVersion(req.Version, details, req.Beta)
-	if err != nil {
-		return nil, fmt.Errorf("failed to publish version: %w", err)
-	}
+		// Set optional metadata
+		version.SetMetadata(req.Owner, req.Description)
 
-	// Set optional metadata
-	version.SetMetadata(req.Owner, req.Description)
-
-	// Mark as published
-	if err := version.Publish(); err != nil {
-		return nil, fmt.Errorf("failed to mark version as published: %w", err)
+		// Mark as published
+		if err := version.Publish(); err != nil {
+			return nil, fmt.Errorf("failed to mark version as published: %w", err)
+		}
 	}
 
 	// Persist the entire aggregate

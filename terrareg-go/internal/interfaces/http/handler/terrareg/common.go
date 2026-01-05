@@ -3,6 +3,7 @@ package terrareg
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/rs/zerolog/log"
 )
@@ -19,6 +20,7 @@ func RespondJSON(w http.ResponseWriter, status int, payload interface{}) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(status)
 	w.Write(response)
 }

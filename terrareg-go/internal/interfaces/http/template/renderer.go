@@ -2,11 +2,12 @@ package template
 
 import (
 	"context"
-	"html/template"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
+	"text/template"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
@@ -19,13 +20,22 @@ type Renderer struct {
 	domainConfig *model.DomainConfig
 	infraConfig  *config.InfrastructureConfig
 	mu           sync.RWMutex
+	templateDir  string // Absolute path to templates directory
 }
 
 // NewRenderer creates a new template renderer
 func NewRenderer(domainConfig *model.DomainConfig, infraConfig *config.InfrastructureConfig) (*Renderer, error) {
+	// Find module root by looking for go.mod
+	templateDir, err := findModuleRoot()
+	if err != nil {
+		return nil, err
+	}
+	templateDir = filepath.Join(templateDir, "templates")
+
 	r := &Renderer{
 		domainConfig: domainConfig,
 		infraConfig:  infraConfig,
+		templateDir:  templateDir,
 	}
 
 	if err := r.loadTemplates(); err != nil {
@@ -33,6 +43,32 @@ func NewRenderer(domainConfig *model.DomainConfig, infraConfig *config.Infrastru
 	}
 
 	return r, nil
+}
+
+// findModuleRoot finds the module root by looking for go.mod
+func findModuleRoot() (string, error) {
+	// Start from current directory and walk up until we find go.mod
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	dir := cwd
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached root directory
+			break
+		}
+		dir = parent
+	}
+
+	// Fallback to current directory if go.mod not found
+	return cwd, nil
 }
 
 // loadTemplates loads all HTML templates and handles inheritance
@@ -43,8 +79,11 @@ func (r *Renderer) loadTemplates() error {
 	// Load base template first
 	baseTemplate := template.New("")
 
+	// Use absolute path from templateDir
+	templatePath := filepath.Join(r.templateDir, "template.html")
+
 	// Parse base template (template.html) only
-	baseTemplate, err := baseTemplate.ParseFiles("templates/template.html")
+	baseTemplate, err := baseTemplate.ParseFiles(templatePath)
 	if err != nil {
 		return err
 	}
@@ -175,14 +214,16 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 	}
 
 	// Load the requested template individually to avoid conflicts
-	templatePath := filepath.Join("templates", name)
+	absTemplatePath := filepath.Join(r.templateDir, name)
+	absBaseTemplatePath := filepath.Join(r.templateDir, "template.html")
+
 	tmpl, err := r.templates.Clone()
 	if err != nil {
 		return err
 	}
 
 	// Parse the specific template file with the base template
-	tmpl, err = tmpl.ParseFiles("templates/template.html", templatePath)
+	tmpl, err = tmpl.ParseFiles(absBaseTemplatePath, absTemplatePath)
 	if err != nil {
 		return err
 	}
