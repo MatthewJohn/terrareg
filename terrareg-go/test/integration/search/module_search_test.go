@@ -566,3 +566,182 @@ func TestModuleSearch_TrustedNamespaceFilter(t *testing.T) {
 		assert.Equal(t, 1, result.TotalCount)
 	})
 }
+
+// TestModuleSearch_MultiTermSearch tests multi-term search functionality (matching Python)
+func TestModuleSearch_MultiTermSearch(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	namespaceRepo := module.NewNamespaceRepository(db.DB)
+	domainConfig := testutils.CreateTestDomainConfig(t)
+	moduleProviderRepo := module.NewModuleProviderRepository(db.DB, namespaceRepo, domainConfig)
+	searchQuery := modulequery.NewSearchModulesQuery(moduleProviderRepo)
+
+	namespace := testutils.CreateNamespace(t, db, "multiterm-ns")
+
+	// Create modules that should match different terms
+	// "aws vpc" should match both terms
+	provider1 := testutils.CreateModuleProvider(t, db, namespace.ID, "aws-vpc-module", "aws")
+	// Create version with owner and description for multi-term search testing
+	owner1 := "terraform-aws-modules"
+	description1 := "VPC module for AWS infrastructure"
+	published := true
+	version1 := sqldb.ModuleVersionDB{
+		ModuleProviderID:      provider1.ID,
+		Version:               "1.0.0",
+		Beta:                  false,
+		Internal:              false,
+		Published:             &published,
+		PublishedAt:           nil,
+		Owner:                 &owner1,
+		Description:           &description1,
+	}
+	require.NoError(t, db.DB.Create(&version1).Error)
+
+	// Create another module that matches only "vpc"
+	provider2 := testutils.CreateModuleProvider(t, db, namespace.ID, "vpc-module", "gcp")
+	testutils.CreatePublishedModuleVersion(t, db, provider2.ID, "1.0.0")
+
+	// Create another module that matches only "aws"
+	provider3 := testutils.CreateModuleProvider(t, db, namespace.ID, "aws-module", "azure")
+	testutils.CreatePublishedModuleVersion(t, db, provider3.ID, "1.0.0")
+
+	t.Run("Multi-term search 'aws vpc' matches both terms", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "aws vpc",
+			Limit: 10,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match provider1 (has both "aws" and "vpc") with highest score
+		// and provider2 (has "vpc") and provider3 (has "aws") with lower scores
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Len(t, result.Modules, 3)
+
+		// First result should be aws-vpc-module (matches both terms)
+		assert.Contains(t, result.Modules[0].Module(), "aws-vpc")
+	})
+
+	t.Run("Multi-term search with three terms", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "aws vpc terraform",
+			Limit: 10,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match modules with any of the terms
+		assert.Equal(t, 3, result.TotalCount)
+	})
+
+	t.Run("Single term search (backward compatibility)", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "vpc",
+			Limit: 10,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.TotalCount)
+	})
+
+	t.Run("Multi-term search with no matches", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "xyz123 abc456",
+			Limit: 10,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.TotalCount)
+	})
+
+	t.Run("Multi-term search scoring by description", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "infrastructure",
+			Limit: 10,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match provider1 which has "infrastructure" in description
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Contains(t, result.Modules[0].Module(), "aws-vpc")
+	})
+
+	t.Run("Multi-term search with owner match", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "terraform-aws-modules",
+			Limit: 10,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match provider1 which has "terraform-aws-modules" as owner
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Contains(t, result.Modules[0].Module(), "aws-vpc")
+	})
+}
+
+// TestModuleSearch_LimitEnforcement tests limit enforcement matching Python behavior
+func TestModuleSearch_LimitEnforcement(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	namespaceRepo := module.NewNamespaceRepository(db.DB)
+	domainConfig := testutils.CreateTestDomainConfig(t)
+	moduleProviderRepo := module.NewModuleProviderRepository(db.DB, namespaceRepo, domainConfig)
+	searchQuery := modulequery.NewSearchModulesQuery(moduleProviderRepo)
+
+	namespace := testutils.CreateNamespace(t, db, "limit-ns")
+
+	// Create multiple providers
+	for i := 1; i <= 10; i++ {
+		providerName := fmt.Sprintf("provider-%d", i)
+		provider := testutils.CreateModuleProvider(t, db, namespace.ID, "limit-module", providerName)
+		testutils.CreatePublishedModuleVersion(t, db, provider.ID, "1.0.0")
+	}
+
+	t.Run("Limit of 50 is enforced (max allowed)", func(t *testing.T) {
+		// Request limit of 100 - should be capped at 50
+		params := modulequery.SearchParams{
+			Query: "limit-module",
+			Limit: 100,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, 10, result.TotalCount)
+		assert.Len(t, result.Modules, 10)
+	})
+
+	t.Run("Limit within valid range", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "limit-module",
+			Limit: 5,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, 10, result.TotalCount)
+		assert.Len(t, result.Modules, 5)
+	})
+
+	t.Run("Negative offset becomes 0", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query:  "limit-module",
+			Limit:  5,
+			Offset: -5,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Offset should be treated as 0, returning first 5 results
+		assert.Len(t, result.Modules, 5)
+	})
+}
