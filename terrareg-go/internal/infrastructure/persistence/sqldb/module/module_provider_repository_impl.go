@@ -388,7 +388,12 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	// Count total query
 	countSQL := "SELECT COUNT(DISTINCT module_provider.id) as total FROM module_provider JOIN namespace ON namespace.id = module_provider.namespace_id LEFT JOIN module_version ON module_version.module_provider_id = module_provider.id AND module_version.published = true AND module_version.beta = false AND module_version.internal = false"
 	if len(whereConditions) > 0 {
-		countSQL += " WHERE " + strings.Join(whereConditions, " AND ")
+		// Add condition to ensure we only count module_providers with at least one published non-beta version
+		// This prevents counting modules that only have beta/unpublished versions but match on module name
+		countSQL += " WHERE module_version.id IS NOT NULL AND " + strings.Join(whereConditions, " AND ")
+	} else {
+		// Even without search filters, only count modules with published non-beta versions
+		countSQL += " WHERE module_version.id IS NOT NULL"
 	}
 
 	// Prepare arguments for main query - scoring args first (SELECT clause), then WHERE args

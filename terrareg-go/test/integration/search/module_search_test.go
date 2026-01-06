@@ -359,7 +359,7 @@ func TestModuleSearch_OffsetAndLimit(t *testing.T) {
 	})
 }
 
-// TestModuleSearch_ExcludeModulesWithoutLatestVersion tests that modules without latest versions are excluded
+// TestModuleSearch_ExcludeModulesWithoutLatestVersion tests that modules without published versions are excluded
 func TestModuleSearch_ExcludeModulesWithoutLatestVersion(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -373,14 +373,14 @@ func TestModuleSearch_ExcludeModulesWithoutLatestVersion(t *testing.T) {
 
 	namespace := testutils.CreateNamespace(t, db, "latest-version-ns")
 
-	// Create a provider with a published version (has latest)
+	// Create a provider with a published version
 	provider1 := testutils.CreateModuleProvider(t, db, namespace.ID, "has-latest", "aws")
 	version1 := testutils.CreatePublishedModuleVersion(t, db, provider1.ID, "1.0.0")
 	published := true
 	version1.Published = &published
 	db.DB.Save(&version1)
 
-	// Create a provider without any versions (no latest)
+	// Create a provider without any published versions (no versions at all)
 	_ = testutils.CreateModuleProvider(t, db, namespace.ID, "no-latest", "aws")
 
 	params := modulequery.SearchParams{
@@ -390,9 +390,9 @@ func TestModuleSearch_ExcludeModulesWithoutLatestVersion(t *testing.T) {
 
 	result, err := searchQuery.Execute(ctx, params)
 	require.NoError(t, err)
-	// TotalCount should be 2 (both providers match the query)
-	// But only the provider with a published version should be in the results
-	assert.Equal(t, 2, result.TotalCount)
+	// TotalCount should be 1 (only the provider with a published version)
+	// Modules without any published versions should not be counted or returned
+	assert.Equal(t, 1, result.TotalCount)
 	assert.Len(t, result.Modules, 1)
 	if len(result.Modules) > 0 {
 		assert.Contains(t, result.Modules[0].Module(), "has-latest")
@@ -743,5 +743,248 @@ func TestModuleSearch_LimitEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		// Offset should be treated as 0, returning first 5 results
 		assert.Len(t, result.Modules, 5)
+	})
+}
+
+// TestModuleSearch_PythonTestData tests search functionality with comprehensive test data
+// matching Python's integration_test_data.py modulesearch namespace
+func TestModuleSearch_PythonTestData(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	namespaceRepo := module.NewNamespaceRepository(db.DB)
+	domainConfig := testutils.CreateTestDomainConfig(t)
+	moduleProviderRepo := module.NewModuleProviderRepository(db.DB, namespaceRepo, domainConfig)
+	searchQuery := modulequery.NewSearchModulesQuery(moduleProviderRepo)
+
+	// Setup Python test data
+	testutils.SetupComprehensiveModuleSearchTestData(t, db)
+
+	t.Run("Search for 'contributedmodule' returns all contributed modules", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "contributedmodule",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should find all modules with "contributedmodule" in name:
+		// - contributedmodule-oneversion (published)
+		// - contributedmodule-multiversion (2 published versions)
+		// - contributedmodule-withbetaversion (1 published non-beta, 1 beta)
+		// - contributedmodule-differentprovider (gcp provider)
+		// NOT included:
+		// - contributedmodule-onlybeta (only has beta versions - no published non-beta)
+		// - contributedmodule-unpublished (no published versions)
+		// Total: 4 module providers (excluding unpublished and beta-only)
+		assert.Equal(t, 4, result.TotalCount)
+		assert.Len(t, result.Modules, 4)
+	})
+
+	t.Run("Search for 'verifiedmodule' returns all matching modules", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "verifiedmodule",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should find all modules with "verifiedmodule" in name (verified AND unverified):
+		// - unverifiedmodule (matches "verifiedmodule" substring)
+		// - verifiedmodule-differentprovider (gcp, verified)
+		// - verifiedmodule-multiversion (verified)
+		// - verifiedmodule-oneversion (verified)
+		// - verifiedmodule-withbetaversion (verified)
+		// NOT included:
+		// - verifiedmodule-onybeta (only has beta versions - no published non-beta)
+		// - verifiedmodule-unpublished (not published)
+		// Total: 5 module providers (excluding unpublished and beta-only)
+		assert.Equal(t, 5, result.TotalCount)
+		assert.Len(t, result.Modules, 5)
+	})
+
+	t.Run("Search for 'searchbymodule' matches multiple namespaces", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "searchbymodule",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match modules from both 'searchbynamespace' and 'searchbynamesp-similar'
+		// searchbynamespace/searchbymodulename1/searchbyprovideraws (verified)
+		// searchbynamespace/searchbymodulename1/searchbyprovidergcp
+		// searchbynamespace/searchbymodulename2/published
+		// searchbynamesp-similar/searchbymodulename3/searchbyprovideraws (verified)
+		// searchbynamesp-similar/searchbymodulename4/aws
+		// Note: searchbymodulename2/notpublished is excluded (no published versions)
+		assert.Equal(t, 5, result.TotalCount)
+		assert.Len(t, result.Modules, 5)
+	})
+
+	t.Run("Search for 'searchbynamespace' returns matching modules", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "searchbynamespace",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match namespace name
+		// searchbynamespace/searchbymodulename1/searchbyprovideraws
+		// searchbynamespace/searchbymodulename1/searchbyprovidergcp
+		// searchbynamespace/searchbymodulename2/published
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Len(t, result.Modules, 3)
+	})
+
+	t.Run("Verified filter only returns verified modules", func(t *testing.T) {
+		verified := true
+		params := modulequery.SearchParams{
+			Query:    "searchbymodule",
+			Verified: &verified,
+			Limit:    50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Only verified modules:
+		// searchbynamespace/searchbymodulename1/searchbyprovideraws
+		// searchbynamesp-similar/searchbymodulename3/searchbyprovideraws
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Len(t, result.Modules, 2)
+
+		// Verify all results are verified
+		for _, mod := range result.Modules {
+			assert.True(t, mod.IsVerified(), "All results should be verified")
+		}
+	})
+
+	t.Run("Verified filter false returns non-verified modules", func(t *testing.T) {
+		verified := false
+		params := modulequery.SearchParams{
+			Query:    "searchbymodule",
+			Verified: &verified,
+			Limit:    50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Non-verified modules:
+		// searchbynamespace/searchbymodulename1/searchbyprovidergcp
+		// searchbynamespace/searchbymodulename2/published
+		// searchbynamesp-similar/searchbymodulename4/aws
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Len(t, result.Modules, 3)
+
+		// Verify all results are not verified
+		for _, mod := range result.Modules {
+			assert.False(t, mod.IsVerified(), "All results should not be verified")
+		}
+	})
+
+	t.Run("Provider filter 'aws' returns only aws providers", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query:     "searchbymodule",
+			Providers: []string{"aws"},
+			Limit:     50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Only aws providers:
+		// searchbynamesp-similar/searchbymodulename4/aws
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Len(t, result.Modules, 1)
+		assert.Equal(t, "aws", result.Modules[0].Provider())
+	})
+
+	t.Run("Provider filter with multiple values", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query:     "searchbymodule",
+			Providers: []string{"searchbyprovideraws", "searchbyprovidergcp"},
+			Limit:     50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match both providers across all namespaces:
+		// searchbynamespace/searchbymodulename1/searchbyprovideraws
+		// searchbynamespace/searchbymodulename1/searchbyprovidergcp
+		// searchbynamesp-similar/searchbymodulename3/searchbyprovideraws
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Len(t, result.Modules, 3)
+	})
+
+	t.Run("Namespace filter", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query:      "searchbymodulename1",
+			Namespaces: []string{"searchbynamespace"},
+			Limit:      50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Only searchbynamespace namespace:
+		// searchbynamespace/searchbymodulename1/searchbyprovideraws
+		// searchbynamespace/searchbymodulename1/searchbyprovidergcp
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Len(t, result.Modules, 2)
+	})
+
+	t.Run("Multi-term search with partial matches", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "contributed module",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match modules with "contributed" or "module" in the name
+		// This is a broad search that will match many modules
+		assert.Greater(t, result.TotalCount, 0)
+	})
+
+	t.Run("Search with no results", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "thisdefinitelydoesnotexistanywhere123456",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.TotalCount)
+		assert.Len(t, result.Modules, 0)
+	})
+
+	t.Run("Description search", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "DESCRIPTION-Search-PUBLISHED",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should match contributedmodule-oneversion which has this description
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Len(t, result.Modules, 1)
+		assert.Contains(t, result.Modules[0].Module(), "contributedmodule-oneversion")
+	})
+
+	t.Run("Search with beta versions excluded", func(t *testing.T) {
+		params := modulequery.SearchParams{
+			Query: "withbetaversion",
+			Limit: 50,
+		}
+
+		result, err := searchQuery.Execute(ctx, params)
+		require.NoError(t, err)
+		// Should find:
+		// - contributedmodule-withbetaversion (has 1.2.3 published, 2.0.0-beta excluded)
+		// - verifiedmodule-withbetaversion (has 1.2.3 published, 2.0.0-beta excluded)
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Len(t, result.Modules, 2)
 	})
 }
