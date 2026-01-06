@@ -11,6 +11,7 @@ import (
 type ProviderListResponse struct {
 	Meta      PaginationMeta `json:"meta"`
 	Providers []ProviderData `json:"providers"`
+	Count     *int           `json:"count,omitempty"` // Only included when include_count=true (matching Python)
 }
 
 // ProviderData represents a single provider in list responses
@@ -57,7 +58,7 @@ type ProviderVersion struct {
 
 // NewProviderListResponse creates a provider list response from domain models
 // Matches Python structure: returns version outline, not provider info
-func NewProviderListResponse(providers []*provider.Provider, namespaceNames map[int]string, versionDataMap map[int]providerRepo.VersionData, total, offset, limit int) ProviderListResponse {
+func NewProviderListResponse(providers []*provider.Provider, namespaceNames map[int]string, versionDataMap map[int]providerRepo.VersionData, total, offset, limit int, includeCount bool) ProviderListResponse {
 	providerData := make([]ProviderData, 0, len(providers))
 	for _, p := range providers {
 		namespace := ""
@@ -85,16 +86,16 @@ func NewProviderListResponse(providers []*provider.Provider, namespaceNames map[
 			Version:     versionData.Version,
 			Tag:         versionData.GitTag,
 			Description: versionData.RepositoryDescription, // Repository description, not provider description
-			Source:      versionData.RepositoryCloneURL,
+			Source:      getPublicSourceURL(versionData.RepositoryCloneURL), // Convert clone URL to public source URL
 			PublishedAt: versionData.PublishedAt,
-			Downloads:   0, // TODO: Calculate total downloads from binaries
+			Downloads:   versionData.Downloads,
 			Tier:        p.Tier(),
-			LogoURL:     nil, // TODO: Add logo URL to domain model
+			LogoURL:     versionData.RepositoryLogoURL,
 		}
 		providerData = append(providerData, data)
 	}
 
-	return ProviderListResponse{
+	response := ProviderListResponse{
 		Meta: PaginationMeta{
 			Limit:      limit,
 			Offset:     offset,
@@ -102,6 +103,13 @@ func NewProviderListResponse(providers []*provider.Provider, namespaceNames map[
 		},
 		Providers: providerData,
 	}
+
+	// Only include Count when include_count=true (matching Python behavior)
+	if includeCount {
+		response.Count = &total
+	}
+
+	return response
 }
 
 // derefString safely dereferences a string pointer
@@ -110,6 +118,21 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// getPublicSourceURL converts a git clone URL to a public source URL
+// by removing the .git suffix if present (matching Python's get_public_source_url)
+func getPublicSourceURL(cloneURL *string) *string {
+	if cloneURL == nil {
+		return nil
+	}
+	url := *cloneURL
+	// Remove .git suffix if present (matching Python behavior)
+	if len(url) > 4 && url[len(url)-4:] == ".git" {
+		trimmed := url[:len(url)-4]
+		return &trimmed
+	}
+	return cloneURL
 }
 
 // NewProviderDetailResponse creates a provider detail response from domain model

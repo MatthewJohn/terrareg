@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
+	providerdomainrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	providerprepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -548,52 +549,76 @@ func TestProvider_Search(t *testing.T) {
 	testutils.SetProviderLatestVersion(t, db, providerDB3.ID, version3.ID)
 
 	t.Run("Search by name", func(t *testing.T) {
-		providers, count, err := providerRepo.Search(ctx, "aws", 0, 10)
+		result, err := providerRepo.Search(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "aws",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Len(t, providers, 1)
-		assert.Equal(t, 1, count)
-		assert.Equal(t, "aws-provider", providers[0].Name())
+		assert.Len(t, result.Providers, 1)
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Equal(t, "aws-provider", result.Providers[0].Name())
 	})
 
 	t.Run("Search by description", func(t *testing.T) {
-		providers, count, err := providerRepo.Search(ctx, "GCP", 0, 10)
+		result, err := providerRepo.Search(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "GCP",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Len(t, providers, 1)
-		assert.Equal(t, 1, count)
-		assert.Equal(t, "gcp-provider", providers[0].Name())
+		assert.Len(t, result.Providers, 1)
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Equal(t, "gcp-provider", result.Providers[0].Name())
 	})
 
 	t.Run("Search with no matches", func(t *testing.T) {
-		providers, count, err := providerRepo.Search(ctx, "nonexistent", 0, 10)
+		result, err := providerRepo.Search(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "nonexistent",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Empty(t, providers)
-		assert.Equal(t, 0, count)
+		assert.Empty(t, result.Providers)
+		assert.Equal(t, 0, result.TotalCount)
 	})
 
 	t.Run("Search with empty query returns all providers with latest version", func(t *testing.T) {
-		providers, count, err := providerRepo.Search(ctx, "", 0, 10)
+		result, err := providerRepo.Search(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Len(t, providers, 3)
-		assert.Equal(t, 3, count)
+		assert.Len(t, result.Providers, 3)
+		assert.Equal(t, 3, result.TotalCount)
 	})
 
 	t.Run("Search is case-insensitive", func(t *testing.T) {
-		providers, count, err := providerRepo.Search(ctx, "AWS", 0, 10)
+		result, err := providerRepo.Search(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "AWS",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Len(t, providers, 1)
-		assert.Equal(t, 1, count)
-		assert.Equal(t, "aws-provider", providers[0].Name())
+		assert.Len(t, result.Providers, 1)
+		assert.Equal(t, 1, result.TotalCount)
+		assert.Equal(t, "aws-provider", result.Providers[0].Name())
 	})
 
 	t.Run("Providers without latest version are excluded", func(t *testing.T) {
 		// Create a provider without any versions
 		testutils.CreateProvider(t, db, namespace.ID, "no-version-provider", nil, sqldb.ProviderTierCommunity, nil)
 
-		providers, count, err := providerRepo.Search(ctx, "", 0, 10)
+		result, err := providerRepo.Search(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
 		// Should still only return 3 (the ones with versions)
-		assert.Len(t, providers, 3)
-		assert.Equal(t, 3, count)
+		assert.Len(t, result.Providers, 3)
+		assert.Equal(t, 3, result.TotalCount)
 	})
 }
 

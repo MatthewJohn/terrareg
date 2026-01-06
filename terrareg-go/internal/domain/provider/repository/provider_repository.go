@@ -34,6 +34,8 @@ type VersionData struct {
 	RepositoryOwner       *string
 	RepositoryDescription *string
 	RepositoryCloneURL    *string
+	RepositoryLogoURL     *string
+	Downloads             int64
 }
 
 // ProviderSearchFilters represents available filter counts for a search query

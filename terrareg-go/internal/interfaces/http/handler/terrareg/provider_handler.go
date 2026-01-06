@@ -67,7 +67,7 @@ func (h *ProviderHandler) HandleProviderList(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Build response (no namespace names or version data available for simple list)
-	response := dto.NewProviderListResponse(providers, map[int]string{}, map[int]providerRepo.VersionData{}, total, offset, limit)
+	response := dto.NewProviderListResponse(providers, map[int]string{}, map[int]providerRepo.VersionData{}, total, offset, limit, false)
 	RespondJSON(w, http.StatusOK, response)
 }
 
@@ -110,6 +110,14 @@ func (h *ProviderHandler) HandleProviderSearch(w http.ResponseWriter, r *http.Re
 		}
 	}
 
+	// Parse include_count parameter (default false, matching Python)
+	includeCount := false
+	if ic := r.URL.Query().Get("include_count"); ic != "" {
+		if val, err := strconv.ParseBool(ic); err == nil {
+			includeCount = val
+		}
+	}
+
 	// Build search query
 	searchQuery := providerRepo.ProviderSearchQuery{
 		Query:             query,
@@ -129,7 +137,7 @@ func (h *ProviderHandler) HandleProviderSearch(w http.ResponseWriter, r *http.Re
 	}
 
 	// Build response
-	response := dto.NewProviderListResponse(result.Providers, result.NamespaceNames, result.VersionData, result.TotalCount, offset, limit)
+	response := dto.NewProviderListResponse(result.Providers, result.NamespaceNames, result.VersionData, result.TotalCount, offset, limit, includeCount)
 	RespondJSON(w, http.StatusOK, response)
 }
 

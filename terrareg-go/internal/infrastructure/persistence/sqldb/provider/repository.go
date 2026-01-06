@@ -93,7 +93,9 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 			provider_version.published_at as version_published_at,
 			repository.owner as repository_owner,
 			repository.description as repository_description,
-			repository.clone_url as repository_clone_url`
+			repository.clone_url as repository_clone_url,
+			repository.logo_url as repository_logo_url,
+			COALESCE(analytics_counts.download_count, 0) as download_count`
 
 	// Add scoring if query provided
 	if len(queryTerms) > 0 {
@@ -124,7 +126,13 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 		FROM provider
 		JOIN namespace ON namespace.id = provider.namespace_id
 		LEFT JOIN provider_version ON provider_version.id = provider.latest_version_id
-		LEFT JOIN repository ON repository.id = provider.repository_id`
+		LEFT JOIN repository ON repository.id = provider.repository_id
+		LEFT JOIN (
+			SELECT parent_module_version, COUNT(*) as download_count
+			FROM analytics
+			WHERE parent_module_version IS NOT NULL
+			GROUP BY parent_module_version
+		) analytics_counts ON analytics_counts.parent_module_version = provider.latest_version_id`
 
 	// WHERE clause starts with filter for providers with latest versions
 	whereConditions := []string{
@@ -262,6 +270,8 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 		RepositoryOwner            *string  `gorm:"column:repository_owner"`
 		RepositoryDescription      *string  `gorm:"column:repository_description"`
 		RepositoryCloneURL         *string  `gorm:"column:repository_clone_url"`
+		RepositoryLogoURL          *string  `gorm:"column:repository_logo_url"`
+		DownloadCount              int64    `gorm:"column:download_count"`
 	}
 
 	var results []SearchResult
@@ -291,6 +301,8 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 				RepositoryOwner:       result.RepositoryOwner,
 				RepositoryDescription: result.RepositoryDescription,
 				RepositoryCloneURL:    result.RepositoryCloneURL,
+				RepositoryLogoURL:     result.RepositoryLogoURL,
+				Downloads:             result.DownloadCount,
 			}
 		}
 
