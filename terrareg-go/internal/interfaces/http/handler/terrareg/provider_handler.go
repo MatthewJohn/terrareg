@@ -66,8 +66,8 @@ func (h *ProviderHandler) HandleProviderList(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Build response
-	response := dto.NewProviderListResponse(providers, total, offset, limit)
+	// Build response (no namespace names or version data available for simple list)
+	response := dto.NewProviderListResponse(providers, map[int]string{}, map[int]providerRepo.VersionData{}, total, offset, limit)
 	RespondJSON(w, http.StatusOK, response)
 }
 
@@ -129,7 +129,7 @@ func (h *ProviderHandler) HandleProviderSearch(w http.ResponseWriter, r *http.Re
 	}
 
 	// Build response
-	response := dto.NewProviderListResponse(result.Providers, result.TotalCount, offset, limit)
+	response := dto.NewProviderListResponse(result.Providers, result.NamespaceNames, result.VersionData, result.TotalCount, offset, limit)
 	RespondJSON(w, http.StatusOK, response)
 }
 

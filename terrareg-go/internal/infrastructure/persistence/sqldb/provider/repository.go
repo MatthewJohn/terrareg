@@ -86,7 +86,14 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 			namespace.id as namespace_id,
 			namespace.namespace as namespace_namespace,
 			namespace.display_name as namespace_display_name,
-			namespace.namespace_type as namespace_type`
+			namespace.namespace_type as namespace_type,
+			provider_version.id as version_id,
+			provider_version.version as version_version,
+			provider_version.git_tag as version_git_tag,
+			provider_version.published_at as version_published_at,
+			repository.owner as repository_owner,
+			repository.description as repository_description,
+			repository.clone_url as repository_clone_url`
 
 	// Add scoring if query provided
 	if len(queryTerms) > 0 {
@@ -115,7 +122,9 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 	// FROM clause with joins
 	sql += `
 		FROM provider
-		JOIN namespace ON namespace.id = provider.namespace_id`
+		JOIN namespace ON namespace.id = provider.namespace_id
+		LEFT JOIN provider_version ON provider_version.id = provider.latest_version_id
+		LEFT JOIN repository ON repository.id = provider.repository_id`
 
 	// WHERE clause starts with filter for providers with latest versions
 	whereConditions := []string{
@@ -233,19 +242,26 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 
 	// Execute main query
 	type SearchResult struct {
-		ProviderID                 int     `gorm:"column:provider_id"`
-		NamespaceID                int     `gorm:"column:provider_namespace_id"`
-		Name                       string  `gorm:"column:provider_name"`
-		Description                *string `gorm:"column:provider_description"`
-		Tier                       string  `gorm:"column:provider_tier"`
-		DefaultProviderSourceAuth *bool   `gorm:"column:provider_default_provider_source_auth"`
-		ProviderCategoryID         *int    `gorm:"column:provider_provider_category_id"`
-		RepositoryID               *int    `gorm:"column:provider_repository_id"`
-		LatestVersionID            *int    `gorm:"column:provider_latest_version_id"`
-		RelevanceScore             *int    `gorm:"column:relevance_score"`
-		NamespaceName              string  `gorm:"column:namespace_namespace"`
-		NamespaceDisplayName       *string `gorm:"column:namespace_display_name"`
-		NamespaceType              string  `gorm:"column:namespace_type"`
+		ProviderID                 int      `gorm:"column:provider_id"`
+		NamespaceID                int      `gorm:"column:provider_namespace_id"`
+		Name                       string   `gorm:"column:provider_name"`
+		Description                *string  `gorm:"column:provider_description"`
+		Tier                       string   `gorm:"column:provider_tier"`
+		DefaultProviderSourceAuth *bool    `gorm:"column:provider_default_provider_source_auth"`
+		ProviderCategoryID         *int     `gorm:"column:provider_provider_category_id"`
+		RepositoryID               *int     `gorm:"column:provider_repository_id"`
+		LatestVersionID            *int     `gorm:"column:provider_latest_version_id"`
+		RelevanceScore             *int     `gorm:"column:relevance_score"`
+		NamespaceName              string   `gorm:"column:namespace_namespace"`
+		NamespaceDisplayName       *string  `gorm:"column:namespace_display_name"`
+		NamespaceType              string   `gorm:"column:namespace_type"`
+		VersionID                  *int     `gorm:"column:version_id"`
+		Version                    *string  `gorm:"column:version_version"`
+		GitTag                     *string  `gorm:"column:version_git_tag"`
+		PublishedAt                *string  `gorm:"column:version_published_at"`
+		RepositoryOwner            *string  `gorm:"column:repository_owner"`
+		RepositoryDescription      *string  `gorm:"column:repository_description"`
+		RepositoryCloneURL         *string  `gorm:"column:repository_clone_url"`
 	}
 
 	var results []SearchResult
@@ -255,7 +271,29 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 
 	// Convert to domain entities
 	providers := make([]*provider.Provider, len(results))
+	namespaceNames := make(map[int]string, len(results))
+	versionData := make(map[int]repository.VersionData, len(results))
 	for i, result := range results {
+		// Store namespace name for this provider
+		namespaceNames[result.ProviderID] = result.NamespaceName
+
+		// Store version data for this provider (if available)
+		if result.VersionID != nil {
+			versionStr := ""
+			if result.Version != nil {
+				versionStr = *result.Version
+			}
+			versionData[result.ProviderID] = repository.VersionData{
+				VersionID:             *result.VersionID,
+				Version:               versionStr,
+				GitTag:                result.GitTag,
+				PublishedAt:           result.PublishedAt,
+				RepositoryOwner:       result.RepositoryOwner,
+				RepositoryDescription: result.RepositoryDescription,
+				RepositoryCloneURL:    result.RepositoryCloneURL,
+			}
+		}
+
 		// Handle nullable DefaultProviderSourceAuth
 		defaultProviderSourceAuth := false
 		if result.DefaultProviderSourceAuth != nil {
@@ -283,8 +321,10 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 	}
 
 	return &repository.ProviderSearchResult{
-		Providers:  providers,
-		TotalCount: int(totalCount.Total),
+		Providers:      providers,
+		TotalCount:     int(totalCount.Total),
+		NamespaceNames: namespaceNames,
+		VersionData:    versionData,
 	}, nil
 }
 

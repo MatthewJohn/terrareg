@@ -19,8 +19,21 @@ type ProviderSearchQuery struct {
 
 // ProviderSearchResult represents search results
 type ProviderSearchResult struct {
-	Providers  []*provider.Provider
-	TotalCount int
+	Providers       []*provider.Provider
+	TotalCount      int
+	NamespaceNames  map[int]string     // Maps provider ID to namespace name
+	VersionData     map[int]VersionData // Maps provider ID to version data
+}
+
+// VersionData holds version information for a provider
+type VersionData struct {
+	VersionID             int
+	Version               string
+	GitTag                *string
+	PublishedAt           *string
+	RepositoryOwner       *string
+	RepositoryDescription *string
+	RepositoryCloneURL    *string
 }
 
 // ProviderSearchFilters represents available filter counts for a search query
