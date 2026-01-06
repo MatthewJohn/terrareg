@@ -128,19 +128,37 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 		moduleDTOs[i] = toModuleProviderResponse(mp) // Reuse the conversion function
 	}
 
+	// Build pagination meta matching Python ResultData.meta
+	meta := dto.PaginationMeta{
+		Limit:         params.Limit,
+		CurrentOffset: params.Offset,
+	}
+
+	// Add prev_offset if current offset > 0 (matching Python)
+	if params.Offset > 0 {
+		prevOffset := params.Offset - params.Limit
+		if prevOffset < 0 {
+			prevOffset = 0
+		}
+		meta.PrevOffset = &prevOffset
+	}
+
+	// Add next_offset if there are more results (matching Python)
+	if searchResult.TotalCount > params.Offset+params.Limit {
+		nextOffset := params.Offset + params.Limit
+		meta.NextOffset = &nextOffset
+	}
+
 	// For search, the response wraps the modules in a "modules" field and includes meta
-	// Only include TotalCount if explicitly requested (matching Python behavior)
+	// Only include count if explicitly requested (matching Python behavior)
 	response := moduledto.ModuleSearchResponse{
 		Modules: moduleDTOs,
-		Meta: dto.PaginationMeta{
-			Limit:  params.Limit,
-			Offset: params.Offset,
-		},
+		Meta:    meta,
 	}
 
 	// Only include count if requested (matching Python behavior)
 	if includeCount != nil && *includeCount {
-		response.Meta.TotalCount = searchResult.TotalCount
+		response.Count = &searchResult.TotalCount
 	}
 
 	terrareg.RespondJSON(w, http.StatusOK, response)

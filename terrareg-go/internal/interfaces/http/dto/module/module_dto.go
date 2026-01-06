@@ -67,10 +67,11 @@ type ModuleListResponse struct {
 	Meta    *dto.PaginationMeta      `json:"meta"`
 }
 
-// ModuleSearchResponse represents search results
+// ModuleSearchResponse represents search results (matching Python response format)
 type ModuleSearchResponse struct {
 	Modules []ModuleProviderResponse `json:"modules"`
 	Meta    dto.PaginationMeta       `json:"meta"`
+	Count   *int                     `json:"count,omitempty"` // Only included when include_count=true
 }
 
 // ModuleProviderCreateRequest represents a request to create a module provider

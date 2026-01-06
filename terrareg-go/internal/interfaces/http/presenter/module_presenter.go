@@ -92,12 +92,30 @@ func (p *ModulePresenter) ToSearchDTO(ctx context.Context, modules []*model.Modu
 		dtos[i] = p.ToDTO(ctx, mp)
 	}
 
+	// Build pagination meta matching Python ResultData.meta
+	meta := dto.PaginationMeta{
+		Limit:         limit,
+		CurrentOffset: offset,
+	}
+
+	// Add prev_offset if current offset > 0 (matching Python)
+	if offset > 0 {
+		prevOffset := offset - limit
+		if prevOffset < 0 {
+			prevOffset = 0
+		}
+		meta.PrevOffset = &prevOffset
+	}
+
+	// Add next_offset if there are more results (matching Python)
+	if totalCount > offset+limit {
+		nextOffset := offset + limit
+		meta.NextOffset = &nextOffset
+	}
+
 	return moduledto.ModuleSearchResponse{
 		Modules: dtos,
-		Meta: dto.PaginationMeta{
-			Limit:      limit,
-			Offset:     offset,
-			TotalCount: totalCount,
-		},
+		Meta:    meta,
+		Count:   &totalCount, // Always include count for terrareg API
 	}
 }

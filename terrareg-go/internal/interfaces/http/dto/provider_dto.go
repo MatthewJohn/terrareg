@@ -95,12 +95,29 @@ func NewProviderListResponse(providers []*provider.Provider, namespaceNames map[
 		providerData = append(providerData, data)
 	}
 
+	// Build pagination meta matching Python ResultData.meta
+	meta := PaginationMeta{
+		Limit:         limit,
+		CurrentOffset: offset,
+	}
+
+	// Add prev_offset if current offset > 0 (matching Python)
+	if offset > 0 {
+		prevOffset := offset - limit
+		if prevOffset < 0 {
+			prevOffset = 0
+		}
+		meta.PrevOffset = &prevOffset
+	}
+
+	// Add next_offset if there are more results (matching Python)
+	if total > offset+limit {
+		nextOffset := offset + limit
+		meta.NextOffset = &nextOffset
+	}
+
 	response := ProviderListResponse{
-		Meta: PaginationMeta{
-			Limit:      limit,
-			Offset:     offset,
-			TotalCount: total,
-		},
+		Meta:      meta,
 		Providers: providerData,
 	}
 
