@@ -205,9 +205,80 @@ func SetupComprehensiveModuleSearchTestData(t *testing.T, db *sqldb.Database) {
 		provider := CreateModuleProvider(t, db, largeNs.ID, fmt.Sprintf("search-module-%d", i), fmt.Sprintf("provider-%d", i))
 		createVersion(t, db, provider.ID, fmt.Sprintf("1.%d.0", i), &published, nil, "", "")
 	}
+
+	// ===== modulesearch-contributed namespace (from Python test_data.py) =====
+	// This namespace tests "contributed" search results (not verified, not in trusted namespaces)
+	modulesearchContributedNs := CreateNamespace(t, db, "modulesearch-contributed")
+
+	// mixedsearch-result (published, single version)
+	provider40 := CreateModuleProvider(t, db, modulesearchContributedNs.ID, "mixedsearch-result", "aws")
+	createVersion(t, db, provider40.ID, "1.0.0", &published, nil, "", "")
+
+	// mixedsearch-result-multiversion (published, multiple versions - IMPORTANT for duplicate bug testing)
+	provider41 := CreateModuleProvider(t, db, modulesearchContributedNs.ID, "mixedsearch-result-multiversion", "aws")
+	createVersion(t, db, provider41.ID, "1.2.3", &published, nil, "", "")
+	createVersion(t, db, provider41.ID, "2.0.0", &published, nil, "", "")
+
+	// mixedsearch-result-unpublished (unpublished)
+	provider42 := CreateModuleProvider(t, db, modulesearchContributedNs.ID, "mixedsearch-result-unpublished", "aws")
+	createVersion(t, db, provider42.ID, "1.2.3", nil, nil, "", "")
+	createVersion(t, db, provider42.ID, "2.0.0", nil, nil, "", "")
+
+	// ===== modulesearch-trusted namespace (from Python test_data.py) =====
+	// This namespace tests "trusted" search results (namespaces configured as trusted)
+	// Note: The actual "trusted" status is configured via TRUSTED_NAMESPACES in config
+	modulesearchTrustedNs := CreateNamespace(t, db, "modulesearch-trusted")
+
+	// mixedsearch-trusted-result (published, single version)
+	provider43 := CreateModuleProvider(t, db, modulesearchTrustedNs.ID, "mixedsearch-trusted-result", "aws")
+	createVersion(t, db, provider43.ID, "1.0.0", &published, nil, "", "")
+
+	// mixedsearch-trusted-second-result (published, single version)
+	provider44 := CreateModuleProvider(t, db, modulesearchTrustedNs.ID, "mixedsearch-trusted-second-result", "aws")
+	createVersion(t, db, provider44.ID, "5.2.1", &published, nil, "", "")
+
+	// mixedsearch-trusted-result-multiversion (published, multiple versions - IMPORTANT for duplicate bug testing)
+	provider45 := CreateModuleProvider(t, db, modulesearchTrustedNs.ID, "mixedsearch-trusted-result-multiversion", "aws")
+	createVersion(t, db, provider45.ID, "1.2.3", &published, nil, "", "")
+	createVersion(t, db, provider45.ID, "2.0.0", &published, nil, "", "")
+
+	// mixedsearch-trusted-result-unpublished (unpublished)
+	provider46 := CreateModuleProvider(t, db, modulesearchTrustedNs.ID, "mixedsearch-trusted-result-unpublished", "aws")
+	createVersion(t, db, provider46.ID, "1.2.3", nil, nil, "", "")
+	createVersion(t, db, provider46.ID, "2.0.0", nil, nil, "", "")
+
+	// ===== Additional testnamespace modules from Python unit tests =====
+	// These are important for testing edge cases like wrong version order, no versions, etc.
+
+	// wrongversionorder/testprovider - tests version sorting with various version formats
+	provider47 := CreateModuleProvider(t, db, testNs.ID, "wrongversionorder", "testprovider")
+	createVersion(t, db, provider47.ID, "1.5.4", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "2.1.0", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "0.1.1", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "10.23.0", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "0.1.10", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "0.0.9", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "0.1.09", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "0.1.8", &published, nil, "", "")
+	createVersion(t, db, provider47.ID, "23.2.3-beta", &published, &beta, "", "")
+	// Unpublished version
+	createVersion(t, db, provider47.ID, "5.21.2", nil, nil, "", "")
+
+	// noversions/testprovider - module with no versions
+	_ = CreateModuleProvider(t, db, testNs.ID, "noversions", "testprovider")
+	// No versions created - intentionally unused to test modules without versions
+
+	// onlyunpublished/testprovider - module with only unpublished versions
+	provider49 := CreateModuleProvider(t, db, testNs.ID, "onlyunpublished", "testprovider")
+	createVersion(t, db, provider49.ID, "0.1.8", nil, nil, "", "")
+
+	// onlybeta/testprovider - module with only beta versions
+	provider50 := CreateModuleProvider(t, db, testNs.ID, "onlybeta", "testprovider")
+	createVersion(t, db, provider50.ID, "2.5.0-beta", &published, &beta, "", "")
 }
 
 // createVersion is a helper to create a module version with common attributes
+// It automatically sets the version as the latest version on the module provider
 func createVersion(t *testing.T, db *sqldb.Database, moduleProviderID int, version string,
 	published, beta *bool, owner, description string) {
 	t.Helper()
@@ -231,6 +302,13 @@ func createVersion(t *testing.T, db *sqldb.Database, moduleProviderID int, versi
 	}
 
 	err := db.DB.Create(&moduleVersion).Error
+	require.NoError(t, err)
+
+	// Set this version as the latest version for the module provider
+	// This is required for the search query to find the module
+	err = db.DB.Model(&sqldb.ModuleProviderDB{}).
+		Where("id = ?", moduleProviderID).
+		Update("latest_version_id", moduleVersion.ID).Error
 	require.NoError(t, err)
 }
 

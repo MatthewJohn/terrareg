@@ -168,6 +168,7 @@ func CreateModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int,
 }
 
 // CreatePublishedModuleVersion creates a published test module version in the database
+// It automatically sets the version as the latest version on the module provider
 func CreatePublishedModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int, version string) sqldb.ModuleVersionDB {
 	published := true
 	moduleVersion := sqldb.ModuleVersionDB{
@@ -191,6 +192,13 @@ func CreatePublishedModuleVersion(t *testing.T, db *sqldb.Database, moduleProvid
 	}
 
 	err := db.DB.Create(&moduleVersion).Error
+	require.NoError(t, err)
+
+	// Set this version as the latest version for the module provider
+	// This is required for the search query to find the module
+	err = db.DB.Model(&sqldb.ModuleProviderDB{}).
+		Where("id = ?", moduleProviderID).
+		Update("latest_version_id", moduleVersion.ID).Error
 	require.NoError(t, err)
 
 	return moduleVersion
