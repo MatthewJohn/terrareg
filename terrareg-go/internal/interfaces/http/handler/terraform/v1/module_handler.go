@@ -86,11 +86,22 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	verified := parseBoolPtr(r.URL.Query().Get("verified"))
 	trustedNamespaces := parseBoolPtr(r.URL.Query().Get("trusted_namespaces"))
 	contributed := parseBoolPtr(r.URL.Query().Get("contributed"))
+	includeCount := parseBoolPtr(r.URL.Query().Get("include_count"))
 
 	// Parse other parameters
 	targetTerraformVersion := parseStringPtr(r.URL.Query().Get("target_terraform_version"))
 	limit := parseInt(r.URL.Query().Get("limit"), 20)
+	// Enforce max limit of 50 (matching Python behavior)
+	if limit > 50 {
+		limit = 50
+	}
+	if limit < 1 {
+		limit = 1
+	}
 	offset := parseInt(r.URL.Query().Get("offset"), 0)
+	if offset < 0 {
+		offset = 0
+	}
 
 	// Create search parameters
 	params := module.SearchParams{
@@ -118,13 +129,18 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	}
 
 	// For search, the response wraps the modules in a "modules" field and includes meta
+	// Only include TotalCount if explicitly requested (matching Python behavior)
 	response := moduledto.ModuleSearchResponse{
 		Modules: moduleDTOs,
 		Meta: dto.PaginationMeta{
-			Limit:      params.Limit,
-			Offset:     params.Offset,
-			TotalCount: searchResult.TotalCount,
+			Limit:  params.Limit,
+			Offset: params.Offset,
 		},
+	}
+
+	// Only include count if requested (matching Python behavior)
+	if includeCount != nil && *includeCount {
+		response.Meta.TotalCount = searchResult.TotalCount
 	}
 
 	terrareg.RespondJSON(w, http.StatusOK, response)

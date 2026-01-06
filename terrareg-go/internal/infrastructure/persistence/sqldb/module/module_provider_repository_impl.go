@@ -221,9 +221,16 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 			namespace.namespace_type as namespace_type`
 
 	// Add scoring if query provided
-	if query.Query != "" {
-		sql += `,
-			SUM(
+	// Split query into terms (matching Python's query.split())
+	queryTerms := strings.Fields(query.Query)
+	if len(queryTerms) > 0 {
+		// Build scoring for each term and sum them
+		sql += `, (`
+		for i, term := range queryTerms {
+			if i > 0 {
+				sql += " + "
+			}
+			sql += fmt.Sprintf(`(
 				CASE
 					WHEN LOWER(module_provider.module) = LOWER(?) THEN 20
 					WHEN LOWER(namespace.namespace) = LOWER(?) THEN 18
@@ -236,10 +243,13 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 					WHEN LOWER(namespace.namespace) LIKE LOWER(?) THEN 2
 					ELSE 0
 				END
-			) as relevance_score`
-		args = append(args,
-			query.Query, query.Query, query.Query, query.Query, query.Query, // Exact matches
-			"%"+query.Query+"%", "%"+query.Query+"%", "%"+query.Query+"%", "%"+query.Query+"%") // Partial matches
+			)`)
+			// Add exact match and partial match arguments for this term
+			args = append(args,
+				term, term, term, term, term, // Exact matches
+				"%"+term+"%", "%"+term+"%", "%"+term+"%", "%"+term+"%") // Partial matches
+		}
+		sql += `) as relevance_score`
 	}
 
 	sql += `
@@ -254,11 +264,17 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	whereConditions := []string{}
 	whereArgs := []interface{}{}
 
-	// Query filter
-	if query.Query != "" {
-		whereConditions = append(whereConditions, "(module_provider.module LIKE ? OR namespace.namespace LIKE ? OR module_version.description LIKE ? OR module_version.owner LIKE ?)")
-		queryLower := strings.ToLower(query.Query)
-		whereArgs = append(whereArgs, "%"+queryLower+"%", "%"+queryLower+"%", "%"+queryLower+"%", "%"+queryLower+"%")
+	// Query filter - handle multiple query terms
+	if len(queryTerms) > 0 {
+		// Build OR conditions for each query term (matching Python behavior)
+		termConditions := []string{}
+		for _, term := range queryTerms {
+			termConditions = append(termConditions, "(module_provider.module LIKE ? OR namespace.namespace LIKE ? OR module_version.description LIKE ? OR module_version.owner LIKE ?)")
+			termLower := strings.ToLower(term)
+			whereArgs = append(whereArgs, "%"+termLower+"%", "%"+termLower+"%", "%"+termLower+"%", "%"+termLower+"%")
+		}
+		// Combine all term conditions with OR - match if ANY term matches
+		whereConditions = append(whereConditions, "("+strings.Join(termConditions, " OR ")+")")
 	}
 
 	// Namespace filters
@@ -344,12 +360,12 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	}
 
 	// Add GROUP BY for scoring
-	if query.Query != "" {
+	if len(queryTerms) > 0 {
 		sql += " GROUP BY module_provider.id, namespace.id"
 	}
 
 	// Ordering
-	if query.Query != "" {
+	if len(queryTerms) > 0 {
 		sql += " ORDER BY relevance_score DESC, module_provider.module ASC, module_provider.provider ASC"
 	} else {
 		orderBy := "module_provider.module"
@@ -435,7 +451,7 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 		mp := fromDBModuleProvider(moduleProviderDB, namespace)
 
 		// Set relevance score if available
-		if query.Query != "" {
+		if len(queryTerms) > 0 {
 			mp.SetRelevanceScore(result.RelevanceScore)
 		}
 
