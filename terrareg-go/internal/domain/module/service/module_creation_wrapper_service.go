@@ -45,6 +45,7 @@ type PrepareModuleRequest struct {
 	Version          string
 	GitTag           *string
 	SourceGitTag     *string
+	CommitSHA        *string // Git commit SHA for git-based imports
 	ModuleProviderID *int
 }
 
@@ -189,6 +190,16 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 		// Verify the module version got a valid ID from the database
 		if savedModuleVersion.ID() == 0 {
 			return fmt.Errorf("module version was not assigned a valid ID from database")
+		}
+
+		// Set git commit SHA if provided
+		if req.CommitSHA != nil {
+			savedModuleVersion.SetGitInfo(req.CommitSHA, nil, false)
+			// Save again to persist the SHA
+			savedModuleVersion, err = s.moduleVersionRepo.Save(ctx, savedModuleVersion)
+			if err != nil {
+				return fmt.Errorf("failed to update module version with git SHA: %w", err)
+			}
 		}
 
 		// CRITICAL SUCCESS: Log that a new record was created with a new ID

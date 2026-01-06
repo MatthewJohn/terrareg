@@ -107,6 +107,12 @@ type ModuleImportResult struct {
 	Timestamp           time.Time             `json:"timestamp"`
 }
 
+// SourcePreparationResult represents the result of source preparation
+type SourcePreparationResult struct {
+	SourcePath string  // Path to the prepared source files
+	CommitSHA  *string // Git commit SHA if applicable (nil for non-git sources)
+}
+
 // ImportModuleVersionWithTransaction performs a complete module import with transaction safety
 func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 	ctx context.Context,
@@ -129,11 +135,11 @@ func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 		}
 
 		// Phase 2: Source preparation (git clone, archive extraction, etc.)
-		sourcePath, err := s.prepareSource(ctx, req)
+		sourcePrepResult, err := s.prepareSource(ctx, req)
 		if err != nil {
 			return fmt.Errorf("source preparation failed: %w", err)
 		}
-		defer s.cleanupSource(sourcePath)
+		defer s.cleanupSource(sourcePrepResult.SourcePath)
 
 		// Phase 3: Execute complete processing pipeline
 		processingReq := ProcessingRequest{
@@ -142,7 +148,8 @@ func (s *ModuleImporterService) ImportModuleVersionWithTransaction(
 			Provider:    req.Input.Provider,
 			Version:     req.Input.GetVersionString(),
 			GitTag:      req.Input.GitTag,
-			ModulePath:  sourcePath,
+			CommitSHA:   sourcePrepResult.CommitSHA,
+			ModulePath:  sourcePrepResult.SourcePath,
 			ArchivePath: req.ArchivePath,
 			SourceType:  SourceType(req.SourceType),
 			Options:     req.ProcessingOptions,
@@ -322,10 +329,10 @@ func (s *ModuleImporterService) validateImportRequest(
 func (s *ModuleImporterService) prepareSource(
 	ctx context.Context,
 	req DomainImportRequest,
-) (string, error) {
+) (*SourcePreparationResult, error) {
 	if req.SourcePath != "" {
 		// Source already prepared
-		return req.SourcePath, nil
+		return &SourcePreparationResult{SourcePath: req.SourcePath}, nil
 	}
 
 	if req.ArchivePath != "" {
@@ -338,33 +345,33 @@ func (s *ModuleImporterService) prepareSource(
 		return s.prepareGitSource(ctx, req)
 	}
 
-	return "", fmt.Errorf("no source preparation method available")
+	return nil, fmt.Errorf("no source preparation method available")
 }
 
 // extractArchive extracts archive files for processing
 func (s *ModuleImporterService) extractArchive(
 	ctx context.Context,
 	req DomainImportRequest,
-) (string, error) {
+) (*SourcePreparationResult, error) {
 	// Create temporary directory for extraction
 	tempDir, err := s.storageService.MkdirTemp("", "terrareg-archive-")
 	if err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
+		return nil, fmt.Errorf("failed to create temp directory: %w", err)
 	}
 
 	// This would integrate with the ArchiveExtractionService
 	// For now, return the temp directory path
-	return tempDir, nil
+	return &SourcePreparationResult{SourcePath: tempDir}, nil
 }
 
 // prepareGitSource prepares git source for processing
 func (s *ModuleImporterService) prepareGitSource(
 	ctx context.Context,
 	req DomainImportRequest,
-) (string, error) {
+) (*SourcePreparationResult, error) {
 	// Validate domain input (should already be validated)
 	if err := req.Input.Validate(); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Find the module provider
@@ -372,13 +379,13 @@ func (s *ModuleImporterService) prepareGitSource(
 		ctx, req.Input.Namespace, req.Input.Module, req.Input.Provider,
 	)
 	if err != nil {
-		return "", fmt.Errorf("module provider not found: %w", err)
+		return nil, fmt.Errorf("module provider not found: %w", err)
 	}
 
 	// Validate git configuration
 	// A module is git-based if it has either a git provider OR a custom clone URL template
 	if moduleProvider.RepoCloneURLTemplate() == nil {
-		return "", fmt.Errorf("module provider is not a git based module - no clone URL configured")
+		return nil, fmt.Errorf("module provider is not a git based module - no clone URL configured")
 	}
 
 	// Clone and checkout - using domain git operations
@@ -387,7 +394,7 @@ func (s *ModuleImporterService) prepareGitSource(
 
 	tmpDir, err := s.storageService.MkdirTemp("", "terrareg-git-")
 	if err != nil {
-		return "", fmt.Errorf("failed to create temp dir: %w", err)
+		return nil, fmt.Errorf("failed to create temp dir: %w", err)
 	}
 	s.logger.Debug().Str("temp_dir", tmpDir).Msg("Created temp directory")
 
@@ -410,7 +417,7 @@ func (s *ModuleImporterService) prepareGitSource(
 	if err := s.gitClient.CloneWithOptions(ctx, cloneURL, tmpDir, cloneOptions); err != nil {
 		s.logger.Debug().Err(err).Str("clone_url", cloneURL).Msg("Git clone failed")
 		s.storageService.RemoveAll(tmpDir)
-		return "", fmt.Errorf("failed to clone git repository: %w", err)
+		return nil, fmt.Errorf("failed to clone git repository: %w", err)
 	}
 	s.logger.Debug().Str("temp_dir", tmpDir).Msg("Successfully cloned repository")
 
@@ -421,8 +428,12 @@ func (s *ModuleImporterService) prepareGitSource(
 
 		// Apply git tag format if configured
 		if gitTagFormat := moduleProvider.GitTagFormat(); gitTagFormat != nil {
-			// Replace {version} placeholder in git tag format
-			replacer := strings.NewReplacer("{version}", gitTag)
+			// Replace {version}, {module}, and {provider} placeholders in git tag format
+			replacer := strings.NewReplacer(
+				"{version}", gitTag,
+				"{module}", req.Input.Module,
+				"{provider}", req.Input.Provider,
+			)
 			gitTag = replacer.Replace(*gitTagFormat)
 			s.logger.Debug().
 				Str("git_tag_format", *gitTagFormat).
@@ -444,9 +455,21 @@ func (s *ModuleImporterService) prepareGitSource(
 				Str("directory", tmpDir).
 				Msg("Git checkout failed")
 			s.storageService.RemoveAll(tmpDir)
-			return "", fmt.Errorf("failed to checkout git tag '%s': %w", gitTag, err)
+			return nil, fmt.Errorf("failed to checkout git tag '%s': %w", gitTag, err)
 		}
 		s.logger.Debug().Str("git_tag", gitTag).Msg("Successfully checked out git tag")
+	}
+
+	// Extract git commit SHA
+	var commitSHA *string
+	if s.domainConfig.ModuleVersionUseGitCommit {
+		sha, err := s.gitClient.GetCommitSHA(ctx, tmpDir)
+		if err != nil {
+			s.logger.Debug().Err(err).Msg("Failed to get commit SHA, continuing without it")
+		} else {
+			commitSHA = &sha
+			s.logger.Debug().Str("commit_sha", sha).Msg("Extracted git commit SHA")
+		}
 	}
 
 	// Determine source directory
@@ -455,7 +478,10 @@ func (s *ModuleImporterService) prepareGitSource(
 		srcDir = filepath.Join(tmpDir, *gitPath)
 	}
 
-	return srcDir, nil
+	return &SourcePreparationResult{
+		SourcePath: srcDir,
+		CommitSHA:  commitSHA,
+	}, nil
 }
 
 // buildCloneURL builds the clone URL from template

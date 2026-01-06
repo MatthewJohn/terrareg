@@ -26,4 +26,6 @@ type GitClient interface {
 	CloneWithOptions(ctx context.Context, repoURL, destinationPath string, options CloneOptions) error
 	// Checkout switches to a specific tag or branch in a repository.
 	Checkout(ctx context.Context, repositoryPath, tag string) error
+	// GetCommitSHA returns the current git commit SHA for the repository at the given path.
+	GetCommitSHA(ctx context.Context, repositoryPath string) (string, error)
 }

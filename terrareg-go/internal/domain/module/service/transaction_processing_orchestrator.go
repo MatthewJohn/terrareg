@@ -79,8 +79,9 @@ type ProcessingRequest struct {
 	Provider    string
 	Version     string
 	GitTag      *string
-	ModulePath  string // Path to extracted module files
-	ArchivePath string // Path to module archive (if applicable)
+	CommitSHA   *string // Git commit SHA for git-based imports
+	ModulePath  string  // Path to extracted module files
+	ArchivePath string  // Path to module archive (if applicable)
 	SourceType  SourceType
 	Options     ProcessingOptions
 }
@@ -170,6 +171,7 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 			Version:          req.Version,
 			GitTag:           req.GitTag,
 			SourceGitTag:     req.GitTag,
+			CommitSHA:        req.CommitSHA,
 			ModuleProviderID: &moduleProviderID,
 		}
 

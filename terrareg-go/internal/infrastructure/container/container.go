@@ -619,7 +619,7 @@ func NewContainer(
 	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo, moduleAuditService)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo, moduleAuditService)
-	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.ModuleStorageService, infraConfig) // Uses InfrastructureConfig for file operations
+	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.ModuleStorageService, infraConfig, domainConfig) // Uses InfrastructureConfig for file operations, DomainConfig for auto-publish logic
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)

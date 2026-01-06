@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
@@ -20,7 +21,8 @@ type UploadModuleVersionCommand struct {
 	moduleProviderRepo repository.ModuleProviderRepository
 	moduleParser       service.ModuleParser
 	storageService     service.StorageService
-	config             *infraConfig.InfrastructureConfig
+	infraConfig        *infraConfig.InfrastructureConfig
+	domainConfig       *configmodel.DomainConfig
 }
 
 // NewUploadModuleVersionCommand creates a new command
@@ -28,13 +30,15 @@ func NewUploadModuleVersionCommand(
 	moduleProviderRepo repository.ModuleProviderRepository,
 	moduleParser service.ModuleParser,
 	storageService service.StorageService,
-	config *infraConfig.InfrastructureConfig,
+	infraConfig *infraConfig.InfrastructureConfig,
+	domainConfig *configmodel.DomainConfig,
 ) *UploadModuleVersionCommand {
 	return &UploadModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,
 		moduleParser:       moduleParser,
 		storageService:     storageService,
-		config:             config,
+		infraConfig:        infraConfig,
+		domainConfig:       domainConfig,
 	}
 }
 
@@ -82,7 +86,7 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 	}
 
 	// Create upload directory if it doesn't exist
-	uploadDir := filepath.Join(c.config.UploadDirectory, fmt.Sprintf("%d", version.ID()))
+	uploadDir := filepath.Join(c.infraConfig.UploadDirectory, fmt.Sprintf("%d", version.ID()))
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		return fmt.Errorf("failed to create upload directory: %w", err)
 	}
@@ -102,7 +106,7 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 	f.Close()
 
 	// Extract the ZIP file
-	extractDir := filepath.Join(c.config.DataDirectory, "modules", req.Namespace, req.Module, req.Provider, req.Version)
+	extractDir := filepath.Join(c.infraConfig.DataDirectory, "modules", req.Namespace, req.Module, req.Provider, req.Version)
 	if err := extractZip(tempFile, extractDir); err != nil {
 		return fmt.Errorf("failed to extract module: %w", err)
 	}
@@ -120,10 +124,23 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 		version.SetMetadata(nil, &parseResult.Description)
 	}
 
-	// Publish the module version automatically (matching Python behavior)
-	// Python: return previous_version_published or terrareg.config.Config().AUTO_PUBLISH_MODULE_VERSIONS
-	if err := version.Publish(); err != nil {
-		return fmt.Errorf("failed to publish version: %w", err)
+	// Auto-publish the module version based on Python logic:
+	// - If previous version was published (in AUTO_PUBLISH reindex mode), publish the new version
+	// - OR if AUTO_PUBLISH_MODULE_VERSIONS is configured, publish the new version
+	// Note: For upload, we check if version was already published (from a previous upload)
+	shouldPublish := false
+	if version.IsPublished() {
+		// Already published (idempotent)
+		shouldPublish = false
+	} else {
+		// Check AUTO_PUBLISH_MODULE_VERSIONS config
+		shouldPublish = c.domainConfig.AutoPublishModuleVersions
+	}
+
+	if shouldPublish {
+		if err := version.Publish(); err != nil {
+			return fmt.Errorf("failed to publish version: %w", err)
+		}
 	}
 
 	// Save the aggregate (persistence of version is handled by the aggregate)

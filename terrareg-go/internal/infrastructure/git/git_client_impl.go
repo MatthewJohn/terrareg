@@ -124,3 +124,13 @@ func (g *GitClientImpl) listTags(ctx context.Context, repositoryPath string) str
 
 	return strings.Join(tags, ", ")
 }
+
+// GetCommitSHA returns the current git commit SHA for the repository at the given path.
+func (g *GitClientImpl) GetCommitSHA(ctx context.Context, repositoryPath string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "-C", repositoryPath, "rev-parse", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get commit SHA: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}

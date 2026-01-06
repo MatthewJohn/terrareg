@@ -154,6 +154,7 @@ func (s *MetadataProcessingService) findMetadataFile(basePath string) string {
 }
 
 // readMetadataFile reads and parses a metadata file
+// It deletes the metadata file after reading to prevent it from being included in archives
 func (s *MetadataProcessingService) readMetadataFile(metadataPath string) (*TerraregMetadata, error) {
 	data, err := os.ReadFile(metadataPath)
 	if err != nil {
@@ -163,6 +164,14 @@ func (s *MetadataProcessingService) readMetadataFile(metadataPath string) (*Terr
 	var metadata TerraregMetadata
 	if err := json.Unmarshal(data, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to parse metadata JSON: %w", err)
+	}
+
+	// Delete the metadata file after reading to prevent it from being included in archives
+	// This matches Python behavior: os.unlink(path) after reading terrareg.json
+	if err := os.Remove(metadataPath); err != nil {
+		// Log the error but don't fail - the metadata was successfully read
+		// This is a cleanup operation, not critical to functionality
+		fmt.Printf("Warning: failed to delete metadata file %s: %v\n", metadataPath, err)
 	}
 
 	return &metadata, nil
