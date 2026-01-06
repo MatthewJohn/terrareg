@@ -295,8 +295,9 @@ type Container struct {
 	GitProvidersHandler *terrareg.GitProvidersHandler
 
 	// Search Filters
-	SearchFiltersQuery   *moduleQuery.SearchFiltersQuery
-	SearchFiltersHandler *terrareg.SearchFiltersHandler
+	SearchFiltersQuery          *moduleQuery.SearchFiltersQuery
+	ProviderSearchFiltersQuery  *providerQuery.SearchFiltersQuery
+	SearchFiltersHandler        *terrareg.SearchFiltersHandler
 
 	// HTTP Server
 	Server *http.Server
@@ -834,7 +835,8 @@ func NewContainer(
 
 	// Initialize search filters
 	c.SearchFiltersQuery = moduleQuery.NewSearchFiltersQuery(c.ModuleProviderRepo, domainConfig) // Uses DomainConfig for filtering logic
-	c.SearchFiltersHandler = terrareg.NewSearchFiltersHandler(c.SearchFiltersQuery)
+	c.ProviderSearchFiltersQuery = providerQuery.NewSearchFiltersQuery(c.ProviderRepo, c.NamespaceRepo, domainConfig)
+	c.SearchFiltersHandler = terrareg.NewSearchFiltersHandler(c.SearchFiltersQuery, c.ProviderSearchFiltersQuery)
 
 	// Initialize HTTP server
 	c.Server = http.NewServer(

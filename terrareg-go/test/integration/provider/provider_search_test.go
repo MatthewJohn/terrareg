@@ -10,9 +10,10 @@ import (
 
 	providerquery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	providerdomainrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
-	providerrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
+	sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
 
@@ -24,7 +25,7 @@ func TestProviderSearch_BasicSearch(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup repository
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	// Create test namespaces
@@ -56,33 +57,49 @@ func TestProviderSearch_BasicSearch(t *testing.T) {
 	testutils.SetProviderLatestVersion(t, db, provider3.ID, version3.ID)
 
 	t.Run("Search by partial name", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "testprovider", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "testprovider",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 2, count)
-		assert.Len(t, providers, 2)
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Len(t, result.Providers, 2)
 	})
 
 	t.Run("Search by exact name", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "testprovider-aws", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "testprovider-aws",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
-		if len(providers) > 0 {
-			assert.Equal(t, "testprovider-aws", providers[0].Name())
+		assert.Equal(t, 1, result.TotalCount)
+		if len(result.Providers) > 0 {
+			assert.Equal(t, "testprovider-aws", result.Providers[0].Name())
 		}
 	})
 
 	t.Run("Search with no matches", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "nonexistent", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "nonexistent",
+			Offset: 0,
+			Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 0, count)
-		assert.Empty(t, providers)
+		assert.Equal(t, 0, result.TotalCount)
+		assert.Empty(t, result.Providers)
 	})
 
 	t.Run("Search with empty query returns all", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "",
+		Offset: 0,
+		Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 3, count)
-		assert.Len(t, providers, 3)
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Len(t, result.Providers, 3)
 	})
 }
 
@@ -93,7 +110,7 @@ func TestProviderSearch_SearchInDescription(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "search-desc-ns")
@@ -109,11 +126,15 @@ func TestProviderSearch_SearchInDescription(t *testing.T) {
 	testutils.SetProviderLatestVersion(t, db, provider.ID, version.ID)
 
 	t.Run("Search by description term", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "DESCRIPTION-Search", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "DESCRIPTION-Search",
+		Offset: 0,
+		Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
-		if len(providers) > 0 {
-			assert.Equal(t, "searchdescprovider", providers[0].Name())
+		assert.Equal(t, 1, result.TotalCount)
+		if len(result.Providers) > 0 {
+			assert.Equal(t, "searchdescprovider", result.Providers[0].Name())
 		}
 	})
 }
@@ -125,7 +146,7 @@ func TestProviderSearch_CaseInsensitiveSearch(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "case-ns")
@@ -153,11 +174,15 @@ func TestProviderSearch_CaseInsensitiveSearch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			providers, count, err := searchQuery.Execute(ctx, tc.query, 0, 10)
+			result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+				Query:  tc.query,
+				Offset: 0,
+				Limit:  10,
+			})
 			require.NoError(t, err)
-			assert.Equal(t, tc.expected, count)
+			assert.Equal(t, tc.expected, result.TotalCount)
 			if tc.expected > 0 {
-				assert.Len(t, providers, tc.expected)
+				assert.Len(t, result.Providers, tc.expected)
 			}
 		})
 	}
@@ -170,7 +195,7 @@ func TestProviderSearch_OffsetAndLimit(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "pagination-ns")
@@ -187,24 +212,36 @@ func TestProviderSearch_OffsetAndLimit(t *testing.T) {
 	}
 
 	t.Run("Limit with offset", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "pagination-provider", 0, 2)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "pagination-provider",
+		Offset: 0,
+		Limit:  2,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 5, count)
-		assert.Len(t, providers, 2)
+		assert.Equal(t, 5, result.TotalCount)
+		assert.Len(t, result.Providers, 2)
 	})
 
 	t.Run("Offset beyond results", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "pagination-provider", 10, 2)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "pagination-provider",
+		Offset: 10,
+		Limit:  2,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 5, count)
-		assert.Empty(t, providers)
+		assert.Equal(t, 5, result.TotalCount)
+		assert.Empty(t, result.Providers)
 	})
 
 	t.Run("Offset in middle of results", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "pagination-provider", 2, 2)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "pagination-provider",
+		Offset: 2,
+		Limit:  2,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 5, count)
-		assert.Len(t, providers, 2)
+		assert.Equal(t, 5, result.TotalCount)
+		assert.Len(t, result.Providers, 2)
 	})
 }
 
@@ -215,7 +252,7 @@ func TestProviderSearch_ExcludeProvidersWithoutLatestVersion(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "latest-version-ns")
@@ -234,12 +271,16 @@ func TestProviderSearch_ExcludeProvidersWithoutLatestVersion(t *testing.T) {
 	_ = testutils.CreateProvider(t, db, namespace.ID, "no-latest", &description2, sqldb.ProviderTierCommunity, nil)
 
 	t.Run("Search includes provider with latest", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "",
+		Offset: 0,
+		Limit:  10,
+		})
 		require.NoError(t, err)
 		// Only the provider with a version should be included
-		assert.Equal(t, 1, count)
-		if len(providers) > 0 {
-			assert.Contains(t, providers[0].Name(), "has-latest")
+		assert.Equal(t, 1, result.TotalCount)
+		if len(result.Providers) > 0 {
+			assert.Contains(t, result.Providers[0].Name(), "has-latest")
 		}
 	})
 }
@@ -251,7 +292,7 @@ func TestProviderSearch_MultipleProvidersSameNamespace(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "multi-ns")
@@ -272,10 +313,14 @@ func TestProviderSearch_MultipleProvidersSameNamespace(t *testing.T) {
 	testutils.SetProviderLatestVersion(t, db, provider2.ID, version2.ID)
 
 	t.Run("Search by partial name matches multiple", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "multi-provider", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "multi-provider",
+		Offset: 0,
+		Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 2, count)
-		assert.Len(t, providers, 2)
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Len(t, result.Providers, 2)
 	})
 }
 
@@ -286,7 +331,7 @@ func TestProviderSearch_BetaVersionProviders(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "beta-ns")
@@ -300,11 +345,15 @@ func TestProviderSearch_BetaVersionProviders(t *testing.T) {
 	testutils.SetProviderLatestVersion(t, db, provider.ID, betaVersion.ID)
 
 	t.Run("Search includes provider with beta version", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "beta-provider", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "beta-provider",
+		Offset: 0,
+		Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
-		if len(providers) > 0 {
-			assert.Equal(t, "beta-provider", providers[0].Name())
+		assert.Equal(t, 1, result.TotalCount)
+		if len(result.Providers) > 0 {
+			assert.Equal(t, "beta-provider", result.Providers[0].Name())
 		}
 	})
 }
@@ -316,7 +365,7 @@ func TestProviderSearch_WithProviderCategory(t *testing.T) {
 
 	ctx := context.Background()
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
 
 	namespace := testutils.CreateNamespace(t, db, "category-ns")
@@ -334,11 +383,15 @@ func TestProviderSearch_WithProviderCategory(t *testing.T) {
 	testutils.SetProviderLatestVersion(t, db, provider.ID, version.ID)
 
 	t.Run("Search finds provider with category", func(t *testing.T) {
-		providers, count, err := searchQuery.Execute(ctx, "cloud-provider", 0, 10)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "cloud-provider",
+		Offset: 0,
+		Limit:  10,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
-		if len(providers) > 0 {
-			assert.Equal(t, "cloud-provider", providers[0].Name())
+		assert.Equal(t, 1, result.TotalCount)
+		if len(result.Providers) > 0 {
+			assert.Equal(t, "cloud-provider", result.Providers[0].Name())
 		}
 	})
 }
@@ -362,7 +415,7 @@ func TestProviderSearchFilters_NoResults(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -393,7 +446,7 @@ func TestProviderSearchFilters_ContributedProviderOneVersion(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -435,7 +488,7 @@ func TestProviderSearchFilters_ContributedProviderMultiVersion(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -479,7 +532,7 @@ func TestProviderSearchFilters_ContributedMultipleCategories(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -526,7 +579,7 @@ func TestProviderSearchFilters_NoProviderVersion(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -562,7 +615,7 @@ func TestProviderSearchFilters_TrustedProviderOneVersion(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -604,7 +657,7 @@ func TestProviderSearchFilters_TrustedProviderMultiVersion(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -647,7 +700,7 @@ func TestProviderSearchFilters_TrustedMultipleProviders(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -694,7 +747,7 @@ func TestProviderSearchFilters_TrustedNoVersionProvider(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 
@@ -729,7 +782,7 @@ func TestProviderSearchFilters_MixedResults(t *testing.T) {
 		SecretKeySet:             true,
 	}
 
-	providerRepo := providerrepo.NewProviderRepository(db.DB)
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
 	namespaceRepo := module.NewNamespaceRepository(db.DB)
 	searchFiltersQuery := providerquery.NewSearchFiltersQuery(providerRepo, namespaceRepo, domainConfig)
 

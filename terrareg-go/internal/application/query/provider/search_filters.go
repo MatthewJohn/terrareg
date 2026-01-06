@@ -35,10 +35,10 @@ func NewSearchFiltersQuery(providerRepo providerRepo.ProviderRepository, namespa
 
 // Execute gets search filter counts for the given query string
 func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*SearchFilterCounts, error) {
-	// Get all results (no offset/limit for counts)
-	allProviders, _, err := q.providerRepo.Search(ctx, queryString, 0, 0)
+	// Get search filters from repository, passing trusted namespaces from domain config
+	filters, err := q.providerRepo.GetSearchFilters(ctx, queryString, q.domainConfig.TrustedNamespaces)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute base search: %w", err)
+		return nil, fmt.Errorf("failed to get search filters: %w", err)
 	}
 
 	counts := &SearchFilterCounts{
@@ -46,57 +46,16 @@ func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*
 		ProviderCategories: make(map[string]int),
 	}
 
-	// Build a map of namespace IDs to namespace names
-	namespaceNames := make(map[int]string)
-	for _, p := range allProviders {
-		nsID := p.NamespaceID()
-		if _, exists := namespaceNames[nsID]; !exists {
-			// Look up namespace by ID
-			ns, err := q.namespaceRepo.FindByID(ctx, nsID)
-			if err == nil && ns != nil {
-				namespaceNames[nsID] = ns.Name()
-			}
-		}
+	// Copy all counts from filters
+	counts.TrustedNamespaces = filters.TrustedNamespaces
+	counts.Contributed = filters.Contributed
+
+	// Copy namespace and category counts from filters
+	for ns, count := range filters.Namespaces {
+		counts.Namespaces[ns] = count
 	}
-
-	// Get trusted namespaces count
-	trustedCount := 0
-	if len(q.domainConfig.TrustedNamespaces) > 0 {
-		for _, p := range allProviders {
-			if nsName, ok := namespaceNames[p.NamespaceID()]; ok {
-				if q.isTrustedNamespace(nsName) {
-					trustedCount++
-				}
-			}
-		}
-	}
-	counts.TrustedNamespaces = trustedCount
-
-	// Get contributed count (not in trusted namespaces)
-	// When there are no trusted namespaces configured, all providers are contributed
-	contributedCount := 0
-	for _, p := range allProviders {
-		if nsName, ok := namespaceNames[p.NamespaceID()]; ok {
-			if !q.isTrustedNamespace(nsName) {
-				contributedCount++
-			}
-		}
-	}
-	counts.Contributed = contributedCount
-
-	// Count namespaces and provider categories
-	for _, p := range allProviders {
-		if nsName, ok := namespaceNames[p.NamespaceID()]; ok {
-			counts.Namespaces[nsName]++
-		}
-
-		// Count provider categories (if provider has a category)
-		if p.CategoryID() != nil {
-			// Use category name from provider category association
-			// For now, use a placeholder since category details would need to be loaded
-			categoryName := fmt.Sprintf("category-%d", *p.CategoryID())
-			counts.ProviderCategories[categoryName]++
-		}
+	for cat, count := range filters.ProviderCategories {
+		counts.ProviderCategories[cat] = count
 	}
 
 	return counts, nil

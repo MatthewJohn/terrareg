@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 )
 
@@ -19,7 +18,7 @@ func NewSearchProvidersQuery(providerRepo providerRepo.ProviderRepository) *Sear
 	}
 }
 
-// Execute searches for providers matching the query
-func (q *SearchProvidersQuery) Execute(ctx context.Context, query string, offset, limit int) ([]*provider.Provider, int, error) {
-	return q.providerRepo.Search(ctx, query, offset, limit)
+// Execute searches for providers matching the query with filters
+func (q *SearchProvidersQuery) Execute(ctx context.Context, params providerRepo.ProviderSearchQuery) (*providerRepo.ProviderSearchResult, error) {
+	return q.providerRepo.Search(ctx, params)
 }

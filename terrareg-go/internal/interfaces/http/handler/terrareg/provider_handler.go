@@ -10,6 +10,7 @@ import (
 
 	providerCommand "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
+	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
 
@@ -82,17 +83,53 @@ func (h *ProviderHandler) HandleProviderSearch(w http.ResponseWriter, r *http.Re
 	}
 
 	// Parse pagination parameters
-	offset, limit := parsePaginationParams(r)
+	offset, limit := parseProviderPaginationParams(r)
+
+	// Parse filter parameters
+	var namespaces []string
+	if ns := r.URL.Query()["namespace"]; len(ns) > 0 {
+		namespaces = ns
+	}
+
+	var categories []string
+	if cat := r.URL.Query()["category"]; len(cat) > 0 {
+		categories = cat
+	}
+
+	var trustedNamespaces *bool
+	if tn := r.URL.Query().Get("trusted_namespaces"); tn != "" {
+		if val, err := strconv.ParseBool(tn); err == nil {
+			trustedNamespaces = &val
+		}
+	}
+
+	var contributed *bool
+	if cb := r.URL.Query().Get("contributed"); cb != "" {
+		if val, err := strconv.ParseBool(cb); err == nil {
+			contributed = &val
+		}
+	}
+
+	// Build search query
+	searchQuery := providerRepo.ProviderSearchQuery{
+		Query:             query,
+		Namespaces:        namespaces,
+		Categories:        categories,
+		TrustedNamespaces: trustedNamespaces,
+		Contributed:       contributed,
+		Limit:             limit,
+		Offset:            offset,
+	}
 
 	// Execute query
-	providers, total, err := h.searchProvidersQuery.Execute(ctx, query, offset, limit)
+	result, err := h.searchProvidersQuery.Execute(ctx, searchQuery)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Build response
-	response := dto.NewProviderListResponse(providers, total, offset, limit)
+	response := dto.NewProviderListResponse(result.Providers, result.TotalCount, offset, limit)
 	RespondJSON(w, http.StatusOK, response)
 }
 
@@ -353,6 +390,30 @@ func parsePaginationParams(r *http.Request) (int, int) {
 
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		if val, err := strconv.Atoi(limitStr); err == nil && val > 0 && val <= 100 {
+			limit = val
+		}
+	}
+
+	return offset, limit
+}
+
+// parseProviderPaginationParams extracts offset and limit from query parameters with max limit of 50
+func parseProviderPaginationParams(r *http.Request) (int, int) {
+	offset := 0
+	limit := 20 // Default limit
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if val, err := strconv.Atoi(offsetStr); err == nil && val >= 0 {
+			offset = val
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if val, err := strconv.Atoi(limitStr); err == nil && val > 0 {
+			// Enforce max limit of 50 for provider search (matching Python implementation)
+			if val > 50 {
+				val = 50
+			}
 			limit = val
 		}
 	}

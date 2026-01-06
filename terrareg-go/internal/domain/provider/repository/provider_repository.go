@@ -6,13 +6,41 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 )
 
+// ProviderSearchQuery represents search criteria for providers
+type ProviderSearchQuery struct {
+	Query             string
+	Namespaces        []string
+	Categories        []string
+	TrustedNamespaces *bool // Filter for trusted namespaces only
+	Contributed       *bool // Filter for contributed providers only
+	Limit             int
+	Offset            int
+}
+
+// ProviderSearchResult represents search results
+type ProviderSearchResult struct {
+	Providers  []*provider.Provider
+	TotalCount int
+}
+
+// ProviderSearchFilters represents available filter counts for a search query
+type ProviderSearchFilters struct {
+	TrustedNamespaces  int
+	Contributed        int
+	ProviderCategories map[string]int
+	Namespaces         map[string]int
+}
+
 // ProviderRepository defines the interface for provider persistence
 type ProviderRepository interface {
 	// FindAll retrieves all providers
 	FindAll(ctx context.Context, offset, limit int) ([]*provider.Provider, int, error)
 
-	// Search searches for providers by query
-	Search(ctx context.Context, query string, offset, limit int) ([]*provider.Provider, int, error)
+	// Search searches for providers by query with filters
+	Search(ctx context.Context, query ProviderSearchQuery) (*ProviderSearchResult, error)
+
+	// GetSearchFilters gets available filters and counts for a search query
+	GetSearchFilters(ctx context.Context, query string, trustedNamespaces []string) (*ProviderSearchFilters, error)
 
 	// FindByNamespaceAndName retrieves a provider by namespace and name
 	FindByNamespaceAndName(ctx context.Context, namespace, providerName string) (*provider.Provider, error)

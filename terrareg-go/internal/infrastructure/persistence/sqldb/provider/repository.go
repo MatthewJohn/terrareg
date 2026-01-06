@@ -62,50 +62,311 @@ func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]
 	return providers, int(count), nil
 }
 
-// Search searches for providers by query
-func (r *ProviderRepository) Search(ctx context.Context, query string, offset, limit int) ([]*provider.Provider, int, error) {
-	var models []sqldb.ProviderDB
-	var count int64
+// Search searches for providers by query with filters
+func (r *ProviderRepository) Search(ctx context.Context, params repository.ProviderSearchQuery) (*repository.ProviderSearchResult, error) {
+	// Use custom SQL for scoring (matching Python's provider search implementation)
+	var sql string
+	var args []interface{}
 
-	// Build search query
-	// Filter to only include providers with a latest version (matching Python behavior)
-	db := r.db.WithContext(ctx).Model(&sqldb.ProviderDB{}).Where("latest_version_id IS NOT NULL AND latest_version_id > 0")
-	if query != "" {
-		searchPattern := "%" + strings.ToLower(query) + "%"
-		db = db.Where("LOWER(name) LIKE ? OR LOWER(description) LIKE ?", searchPattern, searchPattern)
+	// Split query into terms (matching Python's query.split())
+	queryTerms := strings.Fields(params.Query)
+
+	// Base query with joins
+	sql = `
+		SELECT
+			provider.id as provider_id,
+			provider.namespace_id as provider_namespace_id,
+			provider.name as provider_name,
+			provider.description as provider_description,
+			provider.tier as provider_tier,
+			provider.default_provider_source_auth as provider_default_provider_source_auth,
+			provider.provider_category_id as provider_provider_category_id,
+			provider.repository_id as provider_repository_id,
+			provider.latest_version_id as provider_latest_version_id,
+			namespace.id as namespace_id,
+			namespace.namespace as namespace_namespace,
+			namespace.display_name as namespace_display_name,
+			namespace.namespace_type as namespace_type`
+
+	// Add scoring if query provided
+	if len(queryTerms) > 0 {
+		// Build scoring for each term and sum them
+		sql += `, (`
+		for i, term := range queryTerms {
+			if i > 0 {
+				sql += " + "
+			}
+			sql += `(
+				CASE
+					WHEN LOWER(provider.name) = LOWER(?) THEN 20
+					WHEN LOWER(namespace.namespace) = LOWER(?) THEN 18
+					WHEN LOWER(provider.description) = LOWER(?) THEN 13
+					WHEN LOWER(provider.name) LIKE LOWER(?) THEN 5
+					WHEN LOWER(provider.description) LIKE LOWER(?) THEN 4
+					WHEN LOWER(namespace.namespace) LIKE LOWER(?) THEN 2
+					ELSE 0
+				END
+			)`
+			args = append(args, term, term, term, "%"+term+"%", "%"+term+"%", "%"+term+"%")
+		}
+		sql += `) as relevance_score`
 	}
 
-	// Get total count
-	if err := db.Count(&count).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count search results: %w", err)
+	// FROM clause with joins
+	sql += `
+		FROM provider
+		JOIN namespace ON namespace.id = provider.namespace_id`
+
+	// WHERE clause starts with filter for providers with latest versions
+	whereConditions := []string{
+		"provider.latest_version_id IS NOT NULL",
+		"provider.latest_version_id > 0",
+	}
+	whereArgs := []interface{}{}
+
+	// Query filter - handle multiple query terms (matching Python behavior)
+	if len(queryTerms) > 0 {
+		// Build OR conditions for each query term
+		termConditions := []string{}
+		for _, term := range queryTerms {
+			termConditions = append(termConditions, "(provider.name LIKE ? OR namespace.namespace LIKE ? OR provider.description LIKE ?)")
+			termLower := strings.ToLower(term)
+			whereArgs = append(whereArgs, "%"+termLower+"%", "%"+termLower+"%", "%"+termLower+"%")
+		}
+		// Combine all term conditions with OR - match if ANY term matches
+		whereConditions = append(whereConditions, "("+strings.Join(termConditions, " OR ")+")")
 	}
 
-	// Get providers with pagination
-	queryBuilder := db.Preload("Namespace").
-		Preload("ProviderCategory").
-		Preload("Repository").
-		Preload("LatestVersion").
-		Offset(offset)
-
-	// Only apply limit if it's greater than 0 (0 means no limit, matching module repository behavior)
-	if limit > 0 {
-		queryBuilder = queryBuilder.Limit(limit)
+	// Namespace filters
+	if len(params.Namespaces) > 0 {
+		placeholders := make([]string, len(params.Namespaces))
+		for i := range params.Namespaces {
+			placeholders[i] = "?"
+		}
+		whereConditions = append(whereConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
+		for _, ns := range params.Namespaces {
+			whereArgs = append(whereArgs, ns)
+		}
 	}
 
-	if err := queryBuilder.
-		Order("id DESC").
-		Find(&models).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to search providers: %w", err)
+	// Category filters
+	if len(params.Categories) > 0 {
+		sql += ` LEFT JOIN provider_category ON provider_category.id = provider.provider_category_id`
+		placeholders := make([]string, len(params.Categories))
+		for i := range params.Categories {
+			placeholders[i] = "?"
+		}
+		whereConditions = append(whereConditions, "provider_category.slug IN ("+strings.Join(placeholders, ",")+")")
+		for _, cat := range params.Categories {
+			whereArgs = append(whereArgs, cat)
+		}
+	} else {
+		// Still join for category if not filtering
+		sql += ` LEFT JOIN provider_category ON provider_category.id = provider.provider_category_id`
+	}
+
+	// Trusted/Contributed namespace filter
+	if (params.TrustedNamespaces != nil && *params.TrustedNamespaces) || (params.Contributed != nil && *params.Contributed) {
+		// Get trusted namespaces from config - for now, use empty list as placeholder
+		// This should be injected from domain config
+		trustedNamespaces := []string{} // TODO: Get from domain config
+
+		if params.TrustedNamespaces != nil && *params.TrustedNamespaces && len(trustedNamespaces) > 0 {
+			placeholders := make([]string, len(trustedNamespaces))
+			for i := range trustedNamespaces {
+				placeholders[i] = "?"
+			}
+			whereConditions = append(whereConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
+			for _, ns := range trustedNamespaces {
+				whereArgs = append(whereArgs, ns)
+			}
+		}
+		if params.Contributed != nil && *params.Contributed && len(trustedNamespaces) > 0 {
+			placeholders := make([]string, len(trustedNamespaces))
+			for i := range trustedNamespaces {
+				placeholders[i] = "?"
+			}
+			whereConditions = append(whereConditions, "namespace.namespace NOT IN ("+strings.Join(placeholders, ",")+")")
+			for _, ns := range trustedNamespaces {
+				whereArgs = append(whereArgs, ns)
+			}
+		}
+	}
+
+	// Combine WHERE conditions
+	sql += " WHERE " + strings.Join(whereConditions, " AND ")
+
+	// GROUP BY and ORDER BY
+	sql += ` GROUP BY provider.id, namespace.id`
+	if len(queryTerms) > 0 {
+		sql += ` ORDER BY relevance_score DESC, provider.name DESC`
+	} else {
+		sql += ` ORDER BY provider.name DESC`
+	}
+
+	// Count total query
+	countSQL := "SELECT COUNT(DISTINCT provider.id) as total FROM provider JOIN namespace ON namespace.id = provider.namespace_id LEFT JOIN provider_category ON provider_category.id = provider.provider_category_id WHERE " + strings.Join(whereConditions, " AND ")
+
+	// Prepare arguments for main query - scoring args first (SELECT clause), then WHERE args
+	finalArgs := append([]interface{}{}, args...)
+	finalArgs = append(finalArgs, whereArgs...)
+
+	// Apply pagination to main query only
+	if params.Limit > 0 {
+		sql += " LIMIT ?"
+		finalArgs = append(finalArgs, params.Limit)
+	}
+	if params.Offset > 0 {
+		sql += " OFFSET ?"
+		finalArgs = append(finalArgs, params.Offset)
+	}
+
+	// Execute count query
+	var totalCount struct {
+		Total int64 `json:"total"`
+	}
+	// Count query only uses WHERE args, not the scoring args (since COUNT query doesn't have scoring SELECT clause)
+	countArgs := append([]interface{}{}, whereArgs...)
+	if err := r.db.WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
+		return nil, fmt.Errorf("failed to count search results: %w", err)
+	}
+
+	// Execute main query
+	type SearchResult struct {
+		ProviderID                 int     `gorm:"column:provider_id"`
+		NamespaceID                int     `gorm:"column:provider_namespace_id"`
+		Name                       string  `gorm:"column:provider_name"`
+		Description                *string `gorm:"column:provider_description"`
+		Tier                       string  `gorm:"column:provider_tier"`
+		DefaultProviderSourceAuth *bool   `gorm:"column:provider_default_provider_source_auth"`
+		ProviderCategoryID         *int    `gorm:"column:provider_provider_category_id"`
+		RepositoryID               *int    `gorm:"column:provider_repository_id"`
+		LatestVersionID            *int    `gorm:"column:provider_latest_version_id"`
+		RelevanceScore             *int    `gorm:"column:relevance_score"`
+		NamespaceName              string  `gorm:"column:namespace_namespace"`
+		NamespaceDisplayName       *string `gorm:"column:namespace_display_name"`
+		NamespaceType              string  `gorm:"column:namespace_type"`
+	}
+
+	var results []SearchResult
+	if err := r.db.WithContext(ctx).Raw(sql, finalArgs...).Scan(&results).Error; err != nil {
+		return nil, fmt.Errorf("failed to search providers: %w", err)
 	}
 
 	// Convert to domain entities
-	providers := make([]*provider.Provider, len(models))
-	for i, model := range models {
-		prov := toDomainProvider(&model)
+	providers := make([]*provider.Provider, len(results))
+	for i, result := range results {
+		// Handle nullable DefaultProviderSourceAuth
+		defaultProviderSourceAuth := false
+		if result.DefaultProviderSourceAuth != nil {
+			defaultProviderSourceAuth = *result.DefaultProviderSourceAuth
+		}
+
+		// Create provider (using Reconstruct to match existing pattern)
+		prov := provider.ReconstructProvider(
+			result.ProviderID,
+			result.NamespaceID,
+			result.Name,
+			result.Description,
+			result.Tier,
+			result.ProviderCategoryID,
+			result.RepositoryID,
+			result.LatestVersionID,
+			defaultProviderSourceAuth,
+		)
 		providers[i] = prov
+
+		// Set relevance score if available
+		if len(queryTerms) > 0 && result.RelevanceScore != nil {
+			// TODO: Add SetRelevanceScore method to domain model if needed
+		}
 	}
 
-	return providers, int(count), nil
+	return &repository.ProviderSearchResult{
+		Providers:  providers,
+		TotalCount: int(totalCount.Total),
+	}, nil
+}
+
+// GetSearchFilters gets available filters and counts for a search query
+func (r *ProviderRepository) GetSearchFilters(ctx context.Context, query string, trustedNamespacesList []string) (*repository.ProviderSearchFilters, error) {
+	// Build base search query (without scoring) for filtering
+	queryTerms := strings.Fields(query)
+
+	var sql string
+	var args []interface{}
+
+	sql = `
+		SELECT
+			provider.id as provider_id,
+			namespace.id as namespace_id,
+			namespace.namespace as namespace_namespace,
+			provider_category.slug as provider_category_slug
+		FROM provider
+		JOIN namespace ON namespace.id = provider.namespace_id
+		LEFT JOIN provider_category ON provider_category.id = provider.provider_category_id
+		WHERE provider.latest_version_id IS NOT NULL AND provider.latest_version_id > 0`
+
+	if len(queryTerms) > 0 {
+		// Build OR conditions for each query term
+		termConditions := []string{}
+		for _, term := range queryTerms {
+			termConditions = append(termConditions, "(provider.name LIKE ? OR namespace.namespace LIKE ? OR provider.description LIKE ?)")
+			termLower := strings.ToLower(term)
+			args = append(args, "%"+termLower+"%", "%"+termLower+"%", "%"+termLower+"%")
+		}
+		// Combine all term conditions with OR
+		sql += " AND (" + strings.Join(termConditions, " OR ") + ")"
+	}
+
+	// Execute query to get all matching providers
+	type FilterResult struct {
+		ProviderID           int     `gorm:"column:provider_id"`
+		NamespaceID          int     `gorm:"column:namespace_id"`
+		NamespaceName        string  `gorm:"column:namespace_namespace"`
+		ProviderCategorySlug *string `gorm:"column:provider_category_slug"`
+	}
+
+	var filterResults []FilterResult
+	if err := r.db.WithContext(ctx).Raw(sql, args...).Scan(&filterResults).Error; err != nil {
+		return nil, fmt.Errorf("failed to get search filters: %w", err)
+	}
+
+	// Convert trusted namespaces list to map for O(1) lookup
+	trustedNamespaces := make(map[string]bool)
+	for _, ns := range trustedNamespacesList {
+		trustedNamespaces[ns] = true
+	}
+
+	// Count filters
+	trustedCount := 0
+	contributedCount := 0
+	categoryCounts := make(map[string]int)
+	namespaceCounts := make(map[string]int)
+
+	for _, result := range filterResults {
+		// Count trusted vs contributed
+		if trustedNamespaces[result.NamespaceName] {
+			trustedCount++
+		} else {
+			contributedCount++
+		}
+
+		// Count categories
+		if result.ProviderCategorySlug != nil {
+			categoryCounts[*result.ProviderCategorySlug]++
+		}
+
+		// Count namespaces
+		namespaceCounts[result.NamespaceName]++
+	}
+
+	return &repository.ProviderSearchFilters{
+		TrustedNamespaces:  trustedCount,
+		Contributed:        contributedCount,
+		ProviderCategories: categoryCounts,
+		Namespaces:         namespaceCounts,
+	}, nil
 }
 
 // FindByNamespaceAndName retrieves a provider by namespace and name

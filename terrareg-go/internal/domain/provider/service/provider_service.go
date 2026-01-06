@@ -161,11 +161,16 @@ func (s *ProviderService) ListProviders(ctx context.Context, offset, limit int) 
 
 // SearchProviders searches for providers
 func (s *ProviderService) SearchProviders(ctx context.Context, query string, offset, limit int) ([]*provider.Provider, int, error) {
-	providers, total, err := s.providerRepo.Search(ctx, query, offset, limit)
+	searchQuery := repository.ProviderSearchQuery{
+		Query:  query,
+		Limit:  limit,
+		Offset: offset,
+	}
+	result, err := s.providerRepo.Search(ctx, searchQuery)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to search providers: %w", err)
 	}
-	return providers, total, nil
+	return result.Providers, result.TotalCount, nil
 }
 
 // PublishVersionRequest represents a request to publish a provider version

@@ -807,10 +807,7 @@ func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request) {
-	// Provider search filters not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Provider search filters not yet implemented",
-	})
+	s.searchFiltersHandler.HandleProviderSearchFilters(w, r)
 }
 func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request) {
 	s.auditHandler.HandleAuditHistoryGet(w, r)
