@@ -77,23 +77,29 @@ func (h *ProviderHandler) HandleProviderSearch(w http.ResponseWriter, r *http.Re
 
 	// Parse query parameter
 	query := r.URL.Query().Get("q")
-	if query == "" {
-		RespondJSON(w, http.StatusBadRequest, dto.NewError("query parameter 'q' is required"))
-		return
-	}
 
 	// Parse pagination parameters
 	offset, limit := parseProviderPaginationParams(r)
 
-	// Parse filter parameters
+	// Parse filter parameters - only include non-empty values
 	var namespaces []string
 	if ns := r.URL.Query()["namespace"]; len(ns) > 0 {
-		namespaces = ns
+		// Only include non-empty namespace values (matching Python behavior)
+		for _, n := range ns {
+			if n != "" {
+				namespaces = append(namespaces, n)
+			}
+		}
 	}
 
 	var categories []string
 	if cat := r.URL.Query()["category"]; len(cat) > 0 {
-		categories = cat
+		// Only include non-empty category values
+		for _, c := range cat {
+			if c != "" {
+				categories = append(categories, c)
+			}
+		}
 	}
 
 	var trustedNamespaces *bool

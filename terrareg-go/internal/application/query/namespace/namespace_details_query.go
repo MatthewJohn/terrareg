@@ -2,10 +2,11 @@ package namespace
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	namespaceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // NamespaceDetailsQuery handles getting namespace details
@@ -35,7 +36,10 @@ func (q *NamespaceDetailsQuery) Execute(ctx context.Context, namespaceName strin
 	// Get namespace
 	namespace, err := q.namespaceRepo.FindByName(ctx, namespaceName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get namespace: %w", err)
+		if errors.Is(err, shared.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
 	}
 
 	if namespace == nil {

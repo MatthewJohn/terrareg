@@ -143,14 +143,27 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 
 	// Parse query parameters
 	query := r.URL.Query().Get("q")
-	namespace := r.URL.Query().Get("namespace")
-	provider := r.URL.Query().Get("provider")
 
-	// Note: namespace is handled directly in Namespaces array below
+	// Parse namespaces (support multiple values, like Python)
+	var namespaces []string
+	if ns := r.URL.Query()["namespace"]; len(ns) > 0 {
+		// Only include non-empty namespace values (matching Python behavior)
+		for _, n := range ns {
+			if n != "" {
+				namespaces = append(namespaces, n)
+			}
+		}
+	}
 
-	var providerPtr *string
-	if provider != "" {
-		providerPtr = &provider
+	// Parse providers (support multiple values, like Python)
+	var providers []string
+	if p := r.URL.Query()["provider"]; len(p) > 0 {
+		// Only include non-empty provider values
+		for _, prov := range p {
+			if prov != "" {
+				providers = append(providers, prov)
+			}
+		}
 	}
 
 	// Parse pagination
@@ -161,13 +174,47 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
+	// Parse verified filter
+	var verified *bool
+	if v := r.URL.Query().Get("verified"); v != "" {
+		if val, err := strconv.ParseBool(v); err == nil {
+			verified = &val
+		}
+	}
+
+	// Parse trusted_namespaces filter
+	var trustedNamespaces *bool
+	if tn := r.URL.Query().Get("trusted_namespaces"); tn != "" {
+		if val, err := strconv.ParseBool(tn); err == nil {
+			trustedNamespaces = &val
+		}
+	}
+
+	// Parse contributed filter
+	var contributed *bool
+	if cb := r.URL.Query().Get("contributed"); cb != "" {
+		if val, err := strconv.ParseBool(cb); err == nil {
+			contributed = &val
+		}
+	}
+
+	// Parse target_terraform_version
+	var targetTerraformVersion *string
+	if ttv := r.URL.Query().Get("target_terraform_version"); ttv != "" {
+		targetTerraformVersion = &ttv
+	}
+
 	// Execute search
 	params := moduleQuery.SearchParams{
-		Query:      query,
-		Namespaces: []string{namespace},
-		Provider:   providerPtr,
-		Limit:      limit,
-		Offset:     offset,
+		Query:                  query,
+		Namespaces:             namespaces,
+		Providers:              providers,
+		Verified:               verified,
+		TrustedNamespaces:      trustedNamespaces,
+		Contributed:            contributed,
+		TargetTerraformVersion: targetTerraformVersion,
+		Limit:                  limit,
+		Offset:                 offset,
 	}
 
 	result, err := h.searchModulesQuery.Execute(ctx, params)

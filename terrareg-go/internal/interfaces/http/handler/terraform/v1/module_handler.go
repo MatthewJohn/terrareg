@@ -58,29 +58,29 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 
 	// Parse query parameters
 	query := r.URL.Query().Get("q")
-	if query == "" {
-		terrareg.RespondError(w, http.StatusBadRequest, "Query parameter 'q' is required")
-		return
-	}
 
 	// Parse multiple namespaces and providers
 	queryParams := r.URL.Query()
 	namespaces := queryParams["namespace"]
 	providers := queryParams["provider"]
 
-	// Handle single namespace parameter for backward compatibility
-	if len(namespaces) == 0 {
-		if ns := queryParams.Get("namespace"); ns != "" {
-			namespaces = []string{ns}
+	// Only include non-empty namespace values (matching Python behavior)
+	filteredNamespaces := make([]string, 0)
+	for _, ns := range namespaces {
+		if ns != "" {
+			filteredNamespaces = append(filteredNamespaces, ns)
 		}
 	}
+	namespaces = filteredNamespaces
 
-	// Handle single provider parameter for backward compatibility
-	if len(providers) == 0 {
-		if p := queryParams.Get("provider"); p != "" {
-			providers = []string{p}
+	// Only include non-empty provider values
+	filteredProviders := make([]string, 0)
+	for _, p := range providers {
+		if p != "" {
+			filteredProviders = append(filteredProviders, p)
 		}
 	}
+	providers = filteredProviders
 
 	// Parse boolean parameters
 	verified := parseBoolPtr(r.URL.Query().Get("verified"))
