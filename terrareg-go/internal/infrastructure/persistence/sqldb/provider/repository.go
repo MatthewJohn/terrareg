@@ -12,6 +12,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -441,8 +442,8 @@ func (r *ProviderRepository) FindByNamespaceAndName(ctx context.Context, namespa
 	}
 
 	if err := db.First(&model).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find provider: %w", err)
 	}
@@ -461,8 +462,8 @@ func (r *ProviderRepository) FindByID(ctx context.Context, providerID int) (*pro
 		Preload("Repository").
 		Preload("LatestVersion").
 		First(&model, providerID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find provider: %w", err)
 	}
@@ -501,8 +502,8 @@ func (r *ProviderRepository) FindVersionByProviderAndVersion(ctx context.Context
 		Preload("GPGKey").
 		Where("provider_id = ? AND version = ?", providerID, version).
 		First(&model).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find provider version: %w", err)
 	}
@@ -518,8 +519,8 @@ func (r *ProviderRepository) FindVersionByID(ctx context.Context, versionID int)
 	if err := r.db.WithContext(ctx).
 		Preload("GPGKey").
 		First(&model, versionID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find provider version: %w", err)
 	}
@@ -555,8 +556,8 @@ func (r *ProviderRepository) FindBinaryByPlatform(ctx context.Context, versionID
 	if err := r.db.WithContext(ctx).
 		Where("provider_version_id = ? AND operating_system = ? AND architecture = ?", versionID, os, arch).
 		First(&model).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find provider binary: %w", err)
 	}
@@ -572,8 +573,8 @@ func (r *ProviderRepository) FindGPGKeysByProvider(ctx context.Context, provider
 	// First get the provider to find its namespace
 	var providerModel sqldb.ProviderDB
 	if err := r.db.WithContext(ctx).First(&providerModel, providerID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find provider: %w", err)
 	}
@@ -603,8 +604,8 @@ func (r *ProviderRepository) FindGPGKeyByKeyID(ctx context.Context, keyID string
 	if err := r.db.WithContext(ctx).
 		Where("key_id = ?", keyID).
 		First(&model).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, shared.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to find GPG key: %w", err)
 	}
@@ -758,7 +759,7 @@ func (r *ProviderRepository) FindDocumentationByID(ctx context.Context, id int) 
 		Where("id = ?", id).
 		First(&dbDoc).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, shared.ErrNotFound
 		}
 		return nil, err
 	}
@@ -794,7 +795,7 @@ func (r *ProviderRepository) FindDocumentationByTypeSlugAndLanguage(ctx context.
 			versionID, docType, slug, language).
 		First(&dbDoc).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, shared.ErrNotFound
 		}
 		return nil, err
 	}
