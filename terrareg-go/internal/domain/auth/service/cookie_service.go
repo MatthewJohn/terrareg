@@ -13,6 +13,7 @@ import (
 	"time"
 
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 )
 
 // CookieService handles HTTP cookie operations - pure cookie management
@@ -46,8 +47,11 @@ func prepareSecretKey(keyStr string) ([]byte, error) {
 
 // NewCookieService creates a new cookie service
 func NewCookieService(config *infraConfig.InfrastructureConfig) *CookieService {
-	// Default to secure cookies - in production this should be configurable
-	isSecure := true
+	// Determine if cookies should be secure based on the public URL scheme
+	// Use URLService to check the protocol
+	urlService := urlservice.NewURLService(config)
+	publicURLDetails := urlService.GetPublicURLDetails(nil)
+	isSecure := publicURLDetails.Protocol == "https"
 
 	// Prepare secret key with explicit validation
 	secretKey, err := prepareSecretKey(config.SecretKey)

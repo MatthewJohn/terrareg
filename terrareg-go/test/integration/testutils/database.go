@@ -89,7 +89,8 @@ func CreateTestInfraConfig(t *testing.T) *config.InfrastructureConfig {
 		Debug:                     true,
 		DatabaseURL:               "sqlite:///:memory:",
 		DataDirectory:             "/tmp/terrareg-test",
-		SecretKey:                 "test-secret-key-that-is-32-chars-long",
+		SecretKey:                 "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		SessionCookieName:         "terrareg_session",
 		AdminAuthenticationToken:  "test-admin-api-key",
 	}
 }
