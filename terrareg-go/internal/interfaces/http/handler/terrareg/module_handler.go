@@ -119,6 +119,32 @@ func NewModuleHandler(
 	}
 }
 
+// NewModuleReadHandlerForTesting creates a ModuleHandler for testing read operations.
+// Only the dependencies needed for read operations are required.
+// All command and write-operation dependencies are left nil.
+//
+// This is intended for testing purposes where the full 29-parameter constructor
+// would be impractical. Read operations (HandleModuleList, HandleNamespaceModules,
+// HandleModuleDetails, HandleModuleProviderDetails, HandleModuleSearch) only use
+// the queries and presenter specified here.
+func NewModuleReadHandlerForTesting(
+	listModulesQuery *moduleQuery.ListModulesQuery,
+	searchModulesQuery *moduleQuery.SearchModulesQuery,
+	getModuleProviderQuery *moduleQuery.GetModuleProviderQuery,
+	listModuleProvidersQuery *moduleQuery.ListModuleProvidersQuery,
+	analyticsRepo analyticsCmd.AnalyticsRepository,
+) *ModuleHandler {
+	return &ModuleHandler{
+		listModulesQuery:         listModulesQuery,
+		searchModulesQuery:       searchModulesQuery,
+		getModuleProviderQuery:   getModuleProviderQuery,
+		listModuleProvidersQuery: listModuleProvidersQuery,
+		presenter:                presenter.NewModulePresenter(analyticsRepo),
+		analyticsRepo:           analyticsRepo,
+		// All other fields remain nil - not used by read operations
+	}
+}
+
 // HandleModuleList handles GET /v1/modules
 func (h *ModuleHandler) HandleModuleList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
