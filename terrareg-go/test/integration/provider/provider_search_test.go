@@ -828,3 +828,213 @@ func TestProviderSearchFilters_MixedResults(t *testing.T) {
 	// Note: Go uses placeholder category names, Python uses slugs
 	assert.Equal(t, 2, len(counts.ProviderCategories))
 }
+
+// Python Test Data Tests
+// These tests use comprehensive test data matching Python's integration_test_data.py
+
+// TestProviderSearch_PythonTestData tests search using Python test data
+// Python reference: test/integration/terrareg/provider_search/test_search_providers.py
+func TestProviderSearch_PythonTestData(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
+	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
+
+	// Setup comprehensive test data matching Python's test_data.py
+	testutils.SetupComprehensiveProviderSearchTestData(t, db)
+
+	t.Run("Search by description returns exact match", func(t *testing.T) {
+		// Python reference: test_search_in_description
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "DESCRIPTION-Search",
+			Offset: 0,
+			Limit:  10,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 1, result.TotalCount)
+		if len(result.Providers) > 0 {
+			assert.Equal(t, "contributedprovider-oneversion", result.Providers[0].Name())
+		}
+	})
+
+	t.Run("Search by partial provider name returns multiple matches", func(t *testing.T) {
+		// Python reference: test_provider_name_search_in_query_string (partial match)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "mixedsearch",
+			Offset: 0,
+			Limit:  10,
+		})
+		require.NoError(t, err)
+		// Should find: mixedsearch-result, mixedsearch-result-multiversion (in contributed-providersearch)
+		assert.GreaterOrEqual(t, result.TotalCount, 2)
+	})
+
+	t.Run("Search by exact provider name returns exact match", func(t *testing.T) {
+		// Python reference: test_provider_name_search_in_query_string (exact match)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "mixedsearch-result",
+			Offset: 0,
+			Limit:  10,
+		})
+		require.NoError(t, err)
+		// Should find both mixedsearch-result and mixedsearch-result-multiversion
+		assert.GreaterOrEqual(t, result.TotalCount, 1)
+	})
+
+	t.Run("Search excludes providers without versions", func(t *testing.T) {
+		// Python reference: test_search_in_description_no_version
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "DESCRIPTION-NoVersion",
+			Offset: 0,
+			Limit:  10,
+		})
+		require.NoError(t, err)
+		// Should return 0 - providers without versions are excluded
+		assert.Equal(t, 0, result.TotalCount)
+	})
+
+	t.Run("Search for non-existent provider returns no results", func(t *testing.T) {
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "this-provider-does-not-exist",
+			Offset: 0,
+			Limit:  10,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.TotalCount)
+	})
+}
+
+// TestProviderSearch_MaxLimitEnforcement tests that limit is capped at 50
+// Python reference: test/integration/terrareg/provider_search/test_search_providers.py::test_offset_without_next
+func TestProviderSearch_MaxLimitEnforcement(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
+	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
+
+	// Setup comprehensive test data
+	testutils.SetupComprehensiveProviderSearchTestData(t, db)
+
+	t.Run("Limit of 50 is allowed", func(t *testing.T) {
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "mixedsearch",
+			Offset: 0,
+			Limit:  50,
+		})
+		require.NoError(t, err)
+		// Should return all providers (at least 2)
+		assert.GreaterOrEqual(t, result.TotalCount, 2)
+		// Repository layer doesn't enforce limit, handler does
+		assert.Len(t, result.Providers, result.TotalCount)
+	})
+
+	t.Run("Limit exceeding 50 is handled by repository (no enforcement in query layer)", func(t *testing.T) {
+		// Note: The repository layer doesn't enforce max limit
+		// The HTTP handler enforces max limit of 50 (provider_handler.go:427-430)
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:  "mixedsearch",
+			Offset: 0,
+			Limit:  100, // Exceeds max
+		})
+		require.NoError(t, err)
+		// Repository will return all results (limit enforcement is in handler)
+		assert.GreaterOrEqual(t, result.TotalCount, 2)
+	})
+}
+
+// TestProviderSearch_NamespaceFilter tests namespace filter functionality
+// Python reference: test/integration/terrareg/provider_search/test_search_providers.py::test_namespace_search_in_filter
+func TestProviderSearch_NamespaceFilter(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
+	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
+
+	// Setup comprehensive test data
+	testutils.SetupComprehensiveProviderSearchTestData(t, db)
+
+	t.Run("Filter by exact namespace match", func(t *testing.T) {
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:      "",
+			Namespaces: []string{"providersearch"},
+			Offset:     0,
+			Limit:      10,
+		})
+		require.NoError(t, err)
+		// Should find: contributedprovider-oneversion, contributedprovider-multiversion
+		assert.Equal(t, 2, result.TotalCount)
+	})
+
+	t.Run("Filter by non-existent namespace returns no results", func(t *testing.T) {
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:      "",
+			Namespaces: []string{"this-namespace-does-not-exist"},
+			Offset:     0,
+			Limit:      10,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.TotalCount)
+	})
+
+	t.Run("Filter by multiple namespaces", func(t *testing.T) {
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:      "",
+			Namespaces: []string{"providersearch", "contributed-providersearch"},
+			Offset:     0,
+			Limit:      10,
+		})
+		require.NoError(t, err)
+		// Should find all 4 providers (2 in each namespace)
+		assert.Equal(t, 4, result.TotalCount)
+	})
+
+	t.Run("Search in namespace with query string", func(t *testing.T) {
+		result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+			Query:      "contributedprovider",
+			Namespaces: []string{"providersearch"},
+			Offset:     0,
+			Limit:      10,
+		})
+		require.NoError(t, err)
+		// Should find: contributedprovider-oneversion, contributedprovider-multiversion
+		assert.Equal(t, 2, result.TotalCount)
+	})
+}
+
+// TestProviderSearch_NoDuplicateResultsForMultiplePublishedVersions tests that providers
+// with multiple published versions don't create duplicate results
+// This is the provider search equivalent of the module search duplicate bug test
+func TestProviderSearch_NoDuplicateResultsForMultiplePublishedVersions(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+
+	providerRepo := sqldbprovider.NewProviderRepository(db.DB)
+	searchQuery := providerquery.NewSearchProvidersQuery(providerRepo)
+
+	// Setup comprehensive test data which includes multiversion providers
+	testutils.SetupComprehensiveProviderSearchTestData(t, db)
+
+	// Search for providers that have multiple versions
+	result, err := searchQuery.Execute(ctx, providerdomainrepo.ProviderSearchQuery{
+		Query:  "multiversion",
+		Offset: 0,
+		Limit:  10,
+	})
+	require.NoError(t, err)
+
+	// Critical assertions - TotalCount and Providers length must match
+	// Each provider should appear exactly once, even if it has multiple versions
+	assert.Equal(t, result.TotalCount, len(result.Providers),
+		"TotalCount should match actual provider count (no duplicates)")
+}

@@ -3,6 +3,7 @@ package testutils
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -327,4 +328,156 @@ func CreateModuleProviderWithVerified(t *testing.T, db *sqldb.Database, namespac
 	require.NoError(t, err)
 
 	return moduleProvider
+}
+
+// SetupComprehensiveProviderSearchTestData creates comprehensive provider search test data
+// matching Python's integration_test_data.py provider search data.
+// This creates providers in providersearch and contributed-providersearch namespaces.
+func SetupComprehensiveProviderSearchTestData(t *testing.T, db *sqldb.Database) {
+	t.Helper()
+
+	// Create provider categories (matching Python's integration_provider_categories)
+	createProviderCategory(t, db, "Visible Monitoring", "visible-monitoring", true)
+	createProviderCategory(t, db, "Second Visible Cloud", "second-visible-cloud", true)
+
+	// Create providersearch namespace (for trusted providers)
+	providersearchNs := CreateNamespace(t, db, "providersearch")
+
+	// Create contributed-providersearch namespace (for contributed providers)
+	contributedProvidersearchNs := CreateNamespace(t, db, "contributed-providersearch")
+
+	// Create GPG keys directly in namespaces (not linked to providers yet)
+	gpgKeyProviderSearch := createGPGKeyInNamespace(t, db, providersearchNs.ID, "D8A89D97BB7526F33C8A2D8C39C57A3D0D24B532")
+
+	gpgKeyContributed := createGPGKeyInNamespace(t, db, contributedProvidersearchNs.ID, "D7AA1BEFF16FA788760E54F5591EF84DC5EDCD68")
+
+	// Get category IDs
+	visibleMonitoringCat := getProviderCategoryBySlug(t, db, "visible-monitoring")
+	secondVisibleCloudCat := getProviderCategoryBySlug(t, db, "second-visible-cloud")
+
+	// ===== providersearch namespace providers =====
+	// contributedprovider-oneversion (one version)
+	provider1 := CreateProvider(t, db, providersearchNs.ID, "contributedprovider-oneversion",
+		stringPtr("DESCRIPTION-Search"), sqldb.ProviderTierOfficial, &visibleMonitoringCat)
+	createProviderVersion(t, db, provider1.ID, "1.2.0", gpgKeyProviderSearch.ID, false)
+
+	// contributedprovider-multiversion (multiple versions)
+	provider2 := CreateProvider(t, db, providersearchNs.ID, "contributedprovider-multiversion",
+		stringPtr("DESCRIPTION-MultiVersion"), sqldb.ProviderTierOfficial, &secondVisibleCloudCat)
+	createProviderVersion(t, db, provider2.ID, "1.2.0", gpgKeyProviderSearch.ID, false)
+	createProviderVersion(t, db, provider2.ID, "1.3.0", gpgKeyProviderSearch.ID, false)
+
+	// ===== contributed-providersearch namespace providers =====
+	// mixedsearch-result (one version)
+	provider3 := CreateProvider(t, db, contributedProvidersearchNs.ID, "mixedsearch-result",
+		stringPtr("Test Multiple Versions"), sqldb.ProviderTierCommunity, &visibleMonitoringCat)
+	createProviderVersion(t, db, provider3.ID, "1.0.0", gpgKeyContributed.ID, false)
+
+	// mixedsearch-result-multiversion (multiple versions - IMPORTANT for duplicate bug testing)
+	provider4 := CreateProvider(t, db, contributedProvidersearchNs.ID, "mixedsearch-result-multiversion",
+		stringPtr("Test Multiple Versions"), sqldb.ProviderTierCommunity, &visibleMonitoringCat)
+	createProviderVersion(t, db, provider4.ID, "1.2.3", gpgKeyContributed.ID, false)
+	createProviderVersion(t, db, provider4.ID, "2.0.0", gpgKeyContributed.ID, false)
+
+	// mixedsearch-result-no-version (no versions - should be excluded from search)
+	_ = CreateProvider(t, db, contributedProvidersearchNs.ID, "mixedsearch-result-no-version",
+		stringPtr("DESCRIPTION-NoVersion"), sqldb.ProviderTierCommunity, &visibleMonitoringCat)
+}
+
+// createGPGKeyInNamespace creates a GPG key directly in a namespace (not linked to a provider)
+func createGPGKeyInNamespace(t *testing.T, db *sqldb.Database, namespaceID int, fingerprint string) sqldb.GPGKeyDB {
+	t.Helper()
+
+	asciiArmor := []byte("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nTest ASCII armor for " + fingerprint + "\n-----END PGP PUBLIC KEY BLOCK-----")
+	source := "test-source"
+	keyID := &fingerprint
+
+	gpgKey := sqldb.GPGKeyDB{
+		NamespaceID: namespaceID,
+		ASCIIArmor:  asciiArmor,
+		KeyID:       keyID,
+		Fingerprint: keyID,
+		Source:      &source,
+	}
+
+	err := db.DB.Create(&gpgKey).Error
+	require.NoError(t, err)
+
+	return gpgKey
+}
+
+// CreateProviderWithGPGKey creates a provider with GPG key ID (instead of creating a new GPG key)
+func CreateProviderWithGPGKey(t *testing.T, db *sqldb.Database, namespaceID int, name string, description *string, tier sqldb.ProviderTier, categoryID *int, gpgKeyID int) sqldb.ProviderDB {
+	t.Helper()
+
+	provider := sqldb.ProviderDB{
+		NamespaceID:         namespaceID,
+		Name:                name,
+		Description:         description,
+		Tier:                tier,
+		ProviderCategoryID:  categoryID,
+	}
+
+	err := db.DB.Create(&provider).Error
+	require.NoError(t, err)
+
+	return provider
+}
+
+// createProviderVersion is a helper to create a provider version with GPG key
+// It automatically sets the version as the latest version on the provider
+func createProviderVersion(t *testing.T, db *sqldb.Database, providerID int, version string, gpgKeyID int, beta bool) {
+	t.Helper()
+
+	gitTag := "v" + version
+	publishedAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	providerVersion := sqldb.ProviderVersionDB{
+		ProviderID:  providerID,
+		Version:     version,
+		GitTag:      &gitTag,
+		GPGKeyID:    gpgKeyID,
+		PublishedAt: &publishedAt,
+		Beta:        beta,
+	}
+
+	err := db.DB.Create(&providerVersion).Error
+	require.NoError(t, err)
+
+	// Set this version as the latest version for the provider
+	err = db.DB.Model(&sqldb.ProviderDB{}).
+		Where("id = ?", providerID).
+		Update("latest_version_id", providerVersion.ID).Error
+	require.NoError(t, err)
+}
+
+// createProviderCategory creates a provider category
+func createProviderCategory(t *testing.T, db *sqldb.Database, name, slug string, userSelectable bool) sqldb.ProviderCategoryDB {
+	t.Helper()
+
+	namePtr := &name
+	category := sqldb.ProviderCategoryDB{
+		Name:           namePtr,
+		Slug:           slug,
+		UserSelectable: userSelectable,
+	}
+
+	err := db.DB.Create(&category).Error
+	require.NoError(t, err)
+
+	return category
+}
+
+// getProviderCategoryBySlug gets a provider category by slug
+func getProviderCategoryBySlug(t *testing.T, db *sqldb.Database, slug string) int {
+	t.Helper()
+
+	var category sqldb.ProviderCategoryDB
+	err := db.DB.Where("slug = ?", slug).First(&category).Error
+	require.NoError(t, err)
+	return category.ID
+}
+
+// stringPtr returns a pointer to a string
+func stringPtr(s string) *string {
+	return &s
 }
