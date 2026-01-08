@@ -93,6 +93,7 @@ func CreateTestInfraConfig(t *testing.T) *config.InfrastructureConfig {
 		SessionCookieName:         "terrareg_session",
 		AdminAuthenticationToken:  "test-admin-api-key",
 		UploadApiKeys:             []string{"test-upload-key"},
+		AdminSessionExpiryMins:    60, // 1 hour for admin sessions
 	}
 }
 

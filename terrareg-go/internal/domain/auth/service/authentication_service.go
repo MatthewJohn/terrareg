@@ -378,6 +378,13 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 		return fmt.Errorf("failed to get session: %w", err)
 	}
 
+	if session == nil {
+		log.Error().
+			Str("session_id", sessionID).
+			Msg("CreateAdminSession: session not found in database")
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
 	log.Info().
 		Str("session_id", sessionID).
 		Time("expiry", session.Expiry).
