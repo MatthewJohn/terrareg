@@ -460,7 +460,7 @@ func testGitHubWebhook(t *testing.T, client *http.Client, baseURL, namespace, mo
 	require.NoError(t, err)
 
 	// Create HMAC signature (matching Python's validation)
-	sig := hmac.New(sha256.New, []byte("test-secret"))
+	sig := hmac.New(sha256.New, []byte("test-upload-key"))
 	sig.Write(payloadBytes)
 	signature := "sha256=" + hex.EncodeToString(sig.Sum(nil))
 
@@ -576,9 +576,9 @@ func testBitBucketWebhook(t *testing.T, client *http.Client, baseURL, namespace,
 	require.NoError(t, err)
 
 	// Create HMAC signature
-	sig := hmac.New(sha256.New, []byte("test-secret"))
+	sig := hmac.New(sha256.New, []byte("test-upload-key"))
 	sig.Write(payloadBytes)
-	signature := hex.EncodeToString(sig.Sum(nil))
+	signature := "sha256=" + hex.EncodeToString(sig.Sum(nil))
 
 	// Send webhook to correct path matching Python: /v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket
 	webhookURL := fmt.Sprintf("%s/v1/terrareg/modules/%s/%s/%s/hooks/bitbucket", baseURL, namespace, module, provider)

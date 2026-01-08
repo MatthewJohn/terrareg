@@ -53,7 +53,8 @@ func (h *ModuleWebhookHandler) HandleModuleWebhook(gitProvider string) http.Hand
 		}
 
 		// Validate webhook signature if upload API keys are configured
-		if len(h.uploadAPIKeys) > 0 {
+		// GitLab uses X-Gitlab-Token instead of HMAC signatures, so skip validation for GitLab
+		if len(h.uploadAPIKeys) > 0 && gitProvider != "gitlab" {
 			signature := r.Header.Get("X-Hub-Signature-256")
 			if signature == "" {
 				signature = r.Header.Get("X-Hub-Signature") // Fallback for Bitbucket

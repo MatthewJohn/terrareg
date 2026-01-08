@@ -48,8 +48,8 @@ func (h *TerraformV2ProviderHandler) HandleProviderDetails(w http.ResponseWriter
 
 	// Execute query
 	provider, err := h.getProviderQuery.Execute(ctx, namespace, providerName)
-	if err != nil {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found: %s", namespace, providerName, err.Error()))
+	if err != nil || provider == nil {
+		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found", namespace, providerName))
 		return
 	}
 
@@ -68,8 +68,8 @@ func (h *TerraformV2ProviderHandler) HandleProviderVersions(w http.ResponseWrite
 
 	// Get provider first
 	provider, err := h.getProviderQuery.Execute(ctx, namespace, providerName)
-	if err != nil {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found: %s", namespace, providerName, err.Error()))
+	if err != nil || provider == nil {
+		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found", namespace, providerName))
 		return
 	}
 
@@ -96,15 +96,15 @@ func (h *TerraformV2ProviderHandler) HandleProviderVersion(w http.ResponseWriter
 
 	// Get provider first
 	provider, err := h.getProviderQuery.Execute(ctx, namespace, providerName)
-	if err != nil {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found: %s", namespace, providerName, err.Error()))
+	if err != nil || provider == nil {
+		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider %s/%s not found", namespace, providerName))
 		return
 	}
 
 	// Get specific version
 	providerVersion, err := h.getProviderVersionQuery.Execute(ctx, provider.ID(), version)
-	if err != nil {
-		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider version %s/%s/%s not found: %s", namespace, providerName, version, err.Error()))
+	if err != nil || providerVersion == nil {
+		terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Provider version %s/%s/%s not found", namespace, providerName, version))
 		return
 	}
 

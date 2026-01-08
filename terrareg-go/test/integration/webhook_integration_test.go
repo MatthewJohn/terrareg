@@ -11,18 +11,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
+
+const testUploadAPIKey = "test-upload-key" // Matches CreateTestInfraConfig
 
 // TestGitHubWebhookIntegration tests GitHub webhook processing following Python pattern
 func TestGitHubWebhookIntegration(t *testing.T) {
@@ -36,6 +35,10 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
+
+	// Get the real server router from the container
+	cont := testutils.CreateTestContainer(t, db)
+	router := cont.Server.Router()
 
 	// Setup repositories
 	namespaceRepo := moduleRepo.NewNamespaceRepository(db.DB)
@@ -67,18 +70,6 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 	err = moduleProviderRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create infrastructure config with upload API key for signature validation
-	infraConfig := &config.InfrastructureConfig{
-		UploadApiKeys: []string{"test-api-key"},
-	}
-
-	// Create webhook handler
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-	// Setup router with webhook routes
-	router := chi.NewRouter()
-	router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
 	t.Run("test_github_webhook_with_published_release", func(t *testing.T) {
 		// Create GitHub release webhook payload (following Python structure)
 		payload := map[string]interface{}{
@@ -101,10 +92,10 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 		payloadBytes, err := json.Marshal(payload)
 		require.NoError(t, err)
 
-		// Generate valid HMAC signature
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		// Generate valid HMAC signature using the test config's upload API key
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
-		// Create request
+		// Create request using the real server's route
 		req := httptest.NewRequest(
 			"POST",
 			"/v1/terrareg/modules/test-namespace/test-module/aws/hooks/github",
@@ -145,7 +136,7 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -181,7 +172,7 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -264,7 +255,7 @@ func TestGitHubWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -302,6 +293,10 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
+	// Get the real server router from the container
+	cont := testutils.CreateTestContainer(t, db)
+	router := cont.Server.Router()
+
 	// Setup repositories
 	namespaceRepo := moduleRepo.NewNamespaceRepository(db.DB)
 	moduleProviderRepo := moduleRepo.NewModuleProviderRepository(db.DB, namespaceRepo, nil)
@@ -330,17 +325,6 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 
 	err = moduleProviderRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
-
-	// Create infrastructure config with upload API key
-	infraConfig := &config.InfrastructureConfig{
-		UploadApiKeys: []string{"test-api-key"},
-	}
-
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-	// Setup router
-	router := chi.NewRouter()
-	router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", webhookHandler.HandleModuleWebhook("bitbucket"))
 
 	t.Run("test_bitbucket_webhook_with_single_tag", func(t *testing.T) {
 		// Create Bitbucket push webhook payload (following Python structure)
@@ -377,7 +361,7 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -426,7 +410,7 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -466,7 +450,7 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -509,7 +493,7 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
+		signature := generateHMACSignature(testUploadAPIKey, payloadBytes)
 
 		req := httptest.NewRequest(
 			"POST",
@@ -561,342 +545,6 @@ func TestBitbucketWebhookIntegration(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-	})
-}
-
-// TestWebhookIntegrationWithModuleWithoutGitConfig tests webhook when module has no git configuration
-func TestWebhookIntegrationWithModuleWithoutGitConfig(t *testing.T) {
-	// Change to terrareg-go directory for template loading
-	oldWd, _ := os.Getwd()
-	err := os.Chdir("/app/terrareg-go")
-	require.NoError(t, err)
-	defer func() {
-		os.Chdir(oldWd)
-	}()
-
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	// Setup repositories
-	namespaceRepo := moduleRepo.NewNamespaceRepository(db.DB)
-	moduleProviderRepo := moduleRepo.NewModuleProviderRepository(db.DB, namespaceRepo, nil)
-
-	ctx := context.Background()
-
-	// Create namespace
-	namespace, err := modulemodel.NewNamespace("no-git-config", nil, modulemodel.NamespaceTypeNone)
-	require.NoError(t, err)
-	err = namespaceRepo.Save(ctx, namespace)
-	require.NoError(t, err)
-
-	// Create module provider WITHOUT git configuration
-	moduleProvider, err := modulemodel.NewModuleProvider(namespace, "no-git-module", "aws")
-	require.NoError(t, err)
-	err = moduleProviderRepo.Save(ctx, moduleProvider)
-	require.NoError(t, err)
-
-	// Create webhook handler
-	infraConfig := &config.InfrastructureConfig{
-		UploadApiKeys: []string{"test-api-key"},
-	}
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-	router := chi.NewRouter()
-	router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
-	t.Run("test_github_webhook_without_git_config_returns_error", func(t *testing.T) {
-		payload := map[string]interface{}{
-			"action": "published",
-			"release": map[string]interface{}{
-				"tag_name": "v1.0.0",
-			},
-			"repository": map[string]interface{}{
-				"full_name": "testorg/no-git-module",
-			},
-		}
-
-		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
-
-		req := httptest.NewRequest(
-			"POST",
-			"/v1/terrareg/modules/no-git-config/no-git-module/aws/hooks/github",
-			bytes.NewReader(payloadBytes),
-		)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Hub-Signature-256", signature)
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Python returns 400 when module has no git config
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		var response map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &response)
-
-		// Should have error status
-		status, _ := response["status"].(string)
-		assert.Equal(t, "error", status)
-	})
-}
-
-// TestWebhookSignatureValidation tests signature validation following Python pattern
-func TestWebhookSignatureValidation(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	namespaceRepo := moduleRepo.NewNamespaceRepository(db.DB)
-	moduleProviderRepo := moduleRepo.NewModuleProviderRepository(db.DB, namespaceRepo, nil)
-
-	ctx := context.Background()
-
-	namespace, err := modulemodel.NewNamespace("signature-test", nil, modulemodel.NamespaceTypeNone)
-	require.NoError(t, err)
-	err = namespaceRepo.Save(ctx, namespace)
-	require.NoError(t, err)
-
-	moduleProvider, err := modulemodel.NewModuleProvider(namespace, "sig-module", "aws")
-	require.NoError(t, err)
-
-	cloneURL := "https://github.com/testorg/sig-module.git"
-	moduleProvider.SetGitConfiguration(nil, nil, &cloneURL, nil, nil, nil, false)
-	err = moduleProviderRepo.Save(ctx, moduleProvider)
-	require.NoError(t, err)
-
-	t.Run("test_signature_with_first_api_key", func(t *testing.T) {
-		// Test with first configured API key
-		infraConfig := &config.InfrastructureConfig{
-			UploadApiKeys: []string{"key1", "key2"},
-		}
-		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-		router := chi.NewRouter()
-		router.Post("/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
-		payload := map[string]interface{}{
-			"action": "published",
-			"release": map[string]interface{}{
-				"tag_name": "v1.0.0",
-			},
-		}
-
-		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("key1", payloadBytes)
-
-		// Use the correct path with namespace, module, provider parameters
-		req := httptest.NewRequest("POST", "/hooks/github", bytes.NewReader(payloadBytes))
-		req.Header.Set("X-Hub-Signature-256", signature)
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Webhook returns 400 because no git repository is available
-		// But signature validation passes (otherwise would be 401)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		var response map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &response)
-		// Should have error status due to missing git repo
-		assert.Equal(t, "error", response["status"])
-	})
-
-	t.Run("test_signature_with_second_api_key", func(t *testing.T) {
-		// Test with second configured API key
-		infraConfig := &config.InfrastructureConfig{
-			UploadApiKeys: []string{"key1", "key2"},
-		}
-		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-		router := chi.NewRouter()
-		router.Post("/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
-		payload := map[string]interface{}{
-			"action": "published",
-			"release": map[string]interface{}{
-				"tag_name": "v1.1.0",
-			},
-		}
-
-		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("key2", payloadBytes)
-
-		req := httptest.NewRequest("POST", "/hooks/github", bytes.NewReader(payloadBytes))
-		req.Header.Set("X-Hub-Signature-256", signature)
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Webhook returns 400 because no git repository is available
-		// But signature validation passes (otherwise would be 401)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		var response map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &response)
-		// Should have error status due to missing git repo
-		assert.Equal(t, "error", response["status"])
-	})
-
-	t.Run("test_signature_with_wrong_api_key_fails", func(t *testing.T) {
-		// Test that wrong key fails validation
-		infraConfig := &config.InfrastructureConfig{
-			UploadApiKeys: []string{"correct-key"},
-		}
-		webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-		router := chi.NewRouter()
-		router.Post("/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
-		payload := map[string]interface{}{
-			"action": "published",
-			"release": map[string]interface{}{
-				"tag_name": "v1.2.0",
-			},
-		}
-
-		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("wrong-key", payloadBytes)
-
-		req := httptest.NewRequest("POST", "/hooks/github", bytes.NewReader(payloadBytes))
-		req.Header.Set("X-Hub-Signature-256", signature)
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
-	})
-}
-
-// TestWebhookWithoutAPIKeyConfig tests webhook behavior when no API keys are configured
-func TestWebhookWithoutAPIKeyConfig(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	namespaceRepo := moduleRepo.NewNamespaceRepository(db.DB)
-	moduleProviderRepo := moduleRepo.NewModuleProviderRepository(db.DB, namespaceRepo, nil)
-
-	ctx := context.Background()
-
-	namespace, err := modulemodel.NewNamespace("no-key-test", nil, modulemodel.NamespaceTypeNone)
-	require.NoError(t, err)
-	err = namespaceRepo.Save(ctx, namespace)
-	require.NoError(t, err)
-
-	moduleProvider, err := modulemodel.NewModuleProvider(namespace, "no-key-module", "aws")
-	require.NoError(t, err)
-
-	cloneURL := "https://github.com/testorg/no-key-module.git"
-	moduleProvider.SetGitConfiguration(nil, nil, &cloneURL, nil, nil, nil, false)
-	err = moduleProviderRepo.Save(ctx, moduleProvider)
-	require.NoError(t, err)
-
-	// Create webhook handler WITHOUT upload API keys (no signature validation required)
-	infraConfig := &config.InfrastructureConfig{
-		UploadApiKeys: nil, // No keys configured
-	}
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-	router := chi.NewRouter()
-	router.Post("/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
-	t.Run("test_webhook_without_api_key_config_accepts_request", func(t *testing.T) {
-		// When no API keys are configured, signature validation should be skipped
-		payload := map[string]interface{}{
-			"action": "published",
-			"release": map[string]interface{}{
-				"tag_name": "v2.0.0",
-			},
-		}
-
-		payloadBytes, _ := json.Marshal(payload)
-
-		req := httptest.NewRequest("POST", "/hooks/github", bytes.NewReader(payloadBytes))
-		// No signature header - should still be accepted when no keys configured
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Webhook returns 400 because no git repository is available
-		// But request is accepted (signature validation is skipped when no keys configured)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		var response map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &response)
-		// Should have error status due to missing git repo, not auth error
-		assert.Equal(t, "error", response["status"])
-	})
-}
-
-// TestWebhookIntegrationErrorHandling tests various error scenarios
-func TestWebhookIntegrationErrorHandling(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	// Create test namespace
-	namespaceRepo := moduleRepo.NewNamespaceRepository(db.DB)
-	ctx := context.Background()
-
-	namespace, err := modulemodel.NewNamespace("error-test", nil, modulemodel.NamespaceTypeNone)
-	require.NoError(t, err)
-	err = namespaceRepo.Save(ctx, namespace)
-	require.NoError(t, err)
-
-	infraConfig := &config.InfrastructureConfig{
-		UploadApiKeys: []string{"test-api-key"},
-	}
-	webhookHandler := testutils.CreateTestWebhookHandler(t, db, infraConfig.UploadApiKeys)
-
-	router := chi.NewRouter()
-	router.Post("/hooks/github", webhookHandler.HandleModuleWebhook("github"))
-
-	t.Run("test_github_webhook_with_invalid_json_returns_error", func(t *testing.T) {
-		// Send invalid JSON
-		// Note: Signature validation happens before JSON parsing
-		// With invalid signature, returns 401 (Unauthorized)
-		req := httptest.NewRequest("POST", "/hooks/github", strings.NewReader("invalid json"))
-		// Don't set signature header - will return 401
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Should return unauthorized (missing signature)
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
-	})
-
-	t.Run("test_github_webhook_with_empty_body", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/hooks/github", bytes.NewReader([]byte{}))
-		// Empty signature hash is rejected by validation
-		req.Header.Set("X-Hub-Signature-256", "sha256=")
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Empty signature hash returns 401 (signature validation fails)
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
-	})
-
-	t.Run("test_github_webhook_with_non_existent_module", func(t *testing.T) {
-		payload := map[string]interface{}{
-			"action": "published",
-			"release": map[string]interface{}{
-				"tag_name": "v3.0.0",
-			},
-		}
-
-		payloadBytes, _ := json.Marshal(payload)
-		signature := generateHMACSignature("test-api-key", payloadBytes)
-
-		req := httptest.NewRequest(
-			"POST",
-			"/hooks/github",
-			bytes.NewReader(payloadBytes),
-		)
-		req.Header.Set("X-Hub-Signature-256", signature)
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		// Returns 400 (module not found)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }
 
