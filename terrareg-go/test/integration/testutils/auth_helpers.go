@@ -15,6 +15,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // CreateTestSession creates a test session in the database and returns the session ID
@@ -134,10 +135,36 @@ func CreateAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, met
 	cookieService := service.NewCookieService(cfg)
 
 	// Create encrypted cookie value
-	cookieValue := CreateTestSessionCookie(t, cookieService, sessionID, username, isAdmin)
+	expiry := time.Now().Add(1 * time.Hour)
+	sessionData := &service.SessionData{
+		SessionID:  sessionID,
+		UserID:     username,
+		Username:   username,
+		AuthMethod: "session_password",
+		IsAdmin:    isAdmin,
+		SiteAdmin:  isAdmin,
+		UserGroups: []string{},
+		Expiry:     &expiry,
+	}
+
+	// Create authentication context with session data
+	authCtx := &service.AuthenticationContext{
+		SessionData:     sessionData,
+		IsAuthenticated: true,
+		AuthMethod:      "session_password",
+		IsAdmin:         isAdmin,
+	}
+
+	// Encrypt session data for cookie
+	cookieValue, err := cookieService.EncryptSession(sessionData)
+	require.NoError(t, err)
 
 	// Create request with cookie
 	req := CreateAuthenticatedRequestWithCookie(t, method, url, cookieValue)
+
+	// Add authentication context to request context
+	// This allows handlers to use middleware.GetSessionData()
+	req = req.WithContext(middleware.WithAuthenticationContext(req.Context(), authCtx))
 
 	return req, cookieValue
 }

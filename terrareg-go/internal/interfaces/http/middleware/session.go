@@ -57,6 +57,11 @@ func withAuthenticationContext(ctx context.Context, authCtx *service.Authenticat
 	return context.WithValue(ctx, authenticationContextKey, authCtx)
 }
 
+// WithAuthenticationContext adds authentication context to the context (exported for testing)
+func WithAuthenticationContext(ctx context.Context, authCtx *service.AuthenticationContext) context.Context {
+	return withAuthenticationContext(ctx, authCtx)
+}
+
 // GetAuthenticationContext retrieves authentication context from the context
 func GetAuthenticationContext(ctx context.Context) *service.AuthenticationContext {
 	if authCtx, ok := ctx.Value(authenticationContextKey).(*service.AuthenticationContext); ok {
