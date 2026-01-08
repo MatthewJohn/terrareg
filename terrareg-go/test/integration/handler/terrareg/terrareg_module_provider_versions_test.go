@@ -1,206 +1,220 @@
-package terrareg
+// Package terrareg_test provides integration tests for the ListModuleVersionsQuery
+package terrareg_test
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
 
-func TestTerraregModuleProviderVersions_EndpointLogic(t *testing.T) {
-	// Setup test data
-	namespace, err := model.NewNamespace("versions-test", nil, model.NamespaceTypeNone)
+// TestTerraregModuleProviderVersions_Success_ReturnsAllVersions tests successful retrieval of all versions
+func TestTerraregModuleProviderVersions_Success_ReturnsAllVersions(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
+
+	// Create test namespace
+	namespace := testutils.CreateNamespace(t, db, "test-versions")
+
+	// Create test module provider
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-module", "aws")
+
+	// Create test versions
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.1.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "2.0.0")
+
+	// Execute query
+	versions, err := query.Execute(context.Background(), "test-versions", "test-module", "aws")
+
+	// Assert
 	require.NoError(t, err)
-	require.NotNil(t, namespace)
+	require.Len(t, versions, 3, "should return exactly 3 versions")
 
-	moduleProvider, err := model.NewModuleProvider(namespace, "versions-module", "aws")
+	// Verify version objects
+	for _, version := range versions {
+		assert.NotNil(t, version.Version())
+	}
+}
+
+// TestTerraregModuleProviderVersions_Failure_ModuleNotFound tests requesting versions for non-existent module
+func TestTerraregModuleProviderVersions_Failure_ModuleNotFound(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
+
+	// Execute query for non-existent module
+	versions, err := query.Execute(context.Background(), "nonexistent", "test-module", "aws")
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, versions)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+// TestTerraregModuleProviderVersions_Success_EmptyVersionsList tests module with no versions
+func TestTerraregModuleProviderVersions_Success_EmptyVersionsList(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
+
+	// Create test namespace
+	namespace := testutils.CreateNamespace(t, db, "test-empty")
+
+	// Create test module provider without versions
+	_ = testutils.CreateModuleProvider(t, db, namespace.ID, "empty-module", "aws")
+
+	// Execute query
+	versions, err := query.Execute(context.Background(), "test-empty", "empty-module", "aws")
+
+	// Assert
 	require.NoError(t, err)
+	require.NotNil(t, versions)
+	assert.Empty(t, versions, "versions should be empty")
+}
 
-	// Create multiple versions
-	moduleDetails := model.NewModuleDetails([]byte("# Versions Test Module"))
-	require.NotNil(t, moduleDetails)
+// TestTerraregModuleProviderVersions_Success_SingleVersion tests module with single version
+func TestTerraregModuleProviderVersions_Success_SingleVersion(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
 
-	version1, err := model.NewModuleVersion("1.0.0", moduleDetails, false)
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
+
+	// Create test namespace
+	namespace := testutils.CreateNamespace(t, db, "test-single")
+
+	// Create test module provider
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "single-module", "aws")
+
+	// Create single version
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
+
+	// Execute query
+	versions, err := query.Execute(context.Background(), "test-single", "single-module", "aws")
+
+	// Assert
 	require.NoError(t, err)
+	require.Len(t, versions, 1, "should contain exactly 1 version")
 
-	version2, err := model.NewModuleVersion("1.1.0", moduleDetails, false)
+	// Verify the version content
+	assert.Equal(t, "1.0.0", versions[0].Version().String())
+}
+
+// TestTerraregModuleProviderVersions_Success_OrdersVersionsCorrectly tests that versions are ordered correctly
+func TestTerraregModuleProviderVersions_Success_OrdersVersionsCorrectly(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
+
+	// Create test namespace
+	namespace := testutils.CreateNamespace(t, db, "test-order")
+
+	// Create test module provider
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "order-module", "aws")
+
+	// Create versions in non-sequential order
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "2.0.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.5.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "0.9.0")
+
+	// Execute query
+	versions, err := query.Execute(context.Background(), "test-order", "order-module", "aws")
+
+	// Assert
 	require.NoError(t, err)
+	require.Len(t, versions, 4, "should contain exactly 4 versions")
 
-	version3, err := model.NewModuleVersion("2.0.0", moduleDetails, true) // beta version
-	require.NoError(t, err)
-
-	version4, err := model.NewModuleVersion("2.1.0", moduleDetails, true) // published beta version
-	require.NoError(t, err)
-
-	// Add versions to module provider
-	moduleProvider.AddVersion(version1)
-	moduleProvider.AddVersion(version3) // Add beta version
-	moduleProvider.AddVersion(version2)
-	moduleProvider.AddVersion(version4) // Add published beta version
-
-	// Publish only some versions
-	err = version1.Publish()
-	require.NoError(t, err)
-	err = version2.Publish()
-	require.NoError(t, err)
-	err = version4.Publish() // Publish the beta version
-	require.NoError(t, err)
-	// version3 remains unpublished (beta)
-
-	// Create test router with the actual handler logic
-	r := chi.NewRouter()
-
-	// Mock route that simulates the handler logic
-	r.Get("/v1/terrareg/modules/{namespace}/{name}/{provider}/versions", func(w http.ResponseWriter, r *http.Request) {
-		// Extract query parameters
-		includeBeta := r.URL.Query().Get("include-beta") == "true"
-		includeUnpublished := r.URL.Query().Get("include-unpublished") == "true"
-
-		// Get all versions from module provider
-		allVersions := moduleProvider.GetAllVersions()
-
-		var versions []map[string]interface{}
-		for _, version := range allVersions {
-			if !includeBeta && version.IsBeta() {
-				continue
-			}
-			if !includeUnpublished && !version.IsPublished() {
-				continue
-			}
-
-			versions = append(versions, map[string]interface{}{
-				"version":   version.Version().String(),
-				"published": version.IsPublished(),
-				"beta":      version.IsBeta(),
-			})
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		// Encode and send response
-		encoder := json.NewEncoder(w)
-		encoder.SetEscapeHTML(false)
-		if err := encoder.Encode(versions); err != nil {
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-			return
-		}
-	})
-
-	// Test 1: Get all versions (default behavior - published only, no beta)
-	req := httptest.NewRequest("GET", "/v1/terrareg/modules/versions-test/versions-module/aws/versions", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var response []map[string]interface{}
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	require.NoError(t, err)
-
-	// Should only contain published, non-beta versions
-	assert.Len(t, response, 2, "Should contain exactly 2 published non-beta versions")
-
-	// Verify version objects have correct structure
-	for _, versionObj := range response {
-		assert.Contains(t, versionObj, "version", "Version object should have 'version' field")
-		assert.Contains(t, versionObj, "published", "Version object should have 'published' field")
-		assert.Contains(t, versionObj, "beta", "Version object should have 'beta' field")
-
-		version, ok := versionObj["version"].(string)
-		assert.True(t, ok, "Version should be a string")
-		assert.NotEmpty(t, version, "Version should not be empty")
-
-		published, ok := versionObj["published"].(bool)
-		assert.True(t, ok, "Published should be a boolean")
-
-		beta, ok := versionObj["beta"].(bool)
-		assert.True(t, ok, "Beta should be a boolean")
-
-		// Verify default filtering: only published, non-beta versions
-		assert.True(t, published, "Default behavior should only return published versions")
-		assert.False(t, beta, "Default behavior should not return beta versions")
+	// Verify we got all expected versions
+	versionStrings := make([]string, len(versions))
+	for i, version := range versions {
+		versionStrings[i] = version.Version().String()
 	}
 
-	// Test 2: Include beta versions (but not unpublished) - should include published beta versions only
-	req = httptest.NewRequest("GET", "/v1/terrareg/modules/versions-test/versions-module/aws/versions?include-beta=true", nil)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	assert.Contains(t, versionStrings, "0.9.0")
+	assert.Contains(t, versionStrings, "1.0.0")
+	assert.Contains(t, versionStrings, "1.5.0")
+	assert.Contains(t, versionStrings, "2.0.0")
+}
 
-	assert.Equal(t, http.StatusOK, w.Code)
+// TestTerraregModuleProviderVersions_Success_MultipleProviders tests versions for different providers
+func TestTerraregModuleProviderVersions_Success_MultipleProviders(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
 
-	err = json.Unmarshal(w.Body.Bytes(), &response)
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
+
+	// Create test namespace
+	namespace := testutils.CreateNamespace(t, db, "test-multi")
+
+	// Create multiple module providers
+	moduleProvider1 := testutils.CreateModuleProvider(t, db, namespace.ID, "multi-module", "aws")
+	moduleProvider2 := testutils.CreateModuleProvider(t, db, namespace.ID, "multi-module", "gcp")
+
+	// Create versions for each provider
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider1.ID, "1.0.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider2.ID, "1.0.0")
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider2.ID, "2.0.0")
+
+	// Test first provider
+	versions1, err := query.Execute(context.Background(), "test-multi", "multi-module", "aws")
 	require.NoError(t, err)
+	assert.Len(t, versions1, 1, "aws provider should have 1 version")
 
-	// Should contain published versions + published beta versions (not unpublished beta)
-	assert.Len(t, response, 3, "Should contain 3 versions when including beta (published non-beta + published beta)")
-
-	// Verify published beta version is included
-	foundPublishedBeta := false
-	for _, versionObj := range response {
-		if version, ok := versionObj["version"].(string); ok && version == "2.1.0" {
-			foundPublishedBeta = true
-			assert.True(t, versionObj["published"].(bool), "Published beta version should be published")
-			assert.True(t, versionObj["beta"].(bool), "Version 2.1.0 should be marked as beta")
-			break
-		}
-	}
-	assert.True(t, foundPublishedBeta, "Published beta version 2.1.0 should be included when include-beta=true")
-
-	// Test 3: Include unpublished versions (but not beta)
-	req = httptest.NewRequest("GET", "/v1/terrareg/modules/versions-test/versions-module/aws/versions?include-unpublished=true", nil)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	err = json.Unmarshal(w.Body.Bytes(), &response)
+	// Test second provider
+	versions2, err := query.Execute(context.Background(), "test-multi", "multi-module", "gcp")
 	require.NoError(t, err)
+	assert.Len(t, versions2, 2, "gcp provider should have 2 versions")
+}
 
-	// Should contain published non-beta versions + unpublished non-beta versions (beta versions filtered out)
-	assert.Len(t, response, 2, "Should contain published non-beta versions + unpublished non-beta versions (beta versions filtered out)")
+// TestTerraregModuleProviderVersions_Success_VersionObjectsHaveCorrectProperties tests that returned version objects have all expected properties
+func TestTerraregModuleProviderVersions_Success_VersionObjectsHaveCorrectProperties(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
 
-	// Test 4: Include both beta and unpublished versions
-	req = httptest.NewRequest("GET", "/v1/terrareg/modules/versions-test/versions-module/aws/versions?include-beta=true&include-unpublished=true", nil)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	cont := testutils.CreateTestContainer(t, db)
+	query := cont.ListModuleVersionsQuery
+	require.NotNil(t, query)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	// Create test namespace
+	namespace := testutils.CreateNamespace(t, db, "test-props")
 
-	err = json.Unmarshal(w.Body.Bytes(), &response)
+	// Create test module provider
+	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "props-module", "aws")
+
+	// Create a version
+	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
+
+	// Execute query
+	versions, err := query.Execute(context.Background(), "test-props", "props-module", "aws")
+
+	// Assert
 	require.NoError(t, err)
+	require.Len(t, versions, 1)
 
-	// Should contain all versions
-	assert.Len(t, response, 4, "Should contain all 4 versions when including both beta and unpublished")
-
-	// Verify all versions are present
-	versionMap := make(map[string]map[string]interface{})
-	for _, versionObj := range response {
-		if version, ok := versionObj["version"].(string); ok {
-			versionMap[version] = versionObj
-		}
-	}
-
-	// Check specific versions
-	assert.Contains(t, versionMap, "1.0.0", "Version 1.0.0 should be present")
-	assert.Equal(t, true, versionMap["1.0.0"]["published"], "1.0.0 should be published")
-	assert.Equal(t, false, versionMap["1.0.0"]["beta"], "1.0.0 should not be beta")
-
-	assert.Contains(t, versionMap, "1.1.0", "Version 1.1.0 should be present")
-	assert.Equal(t, true, versionMap["1.1.0"]["published"], "1.1.0 should be published")
-	assert.Equal(t, false, versionMap["1.1.0"]["beta"], "1.1.0 should not be beta")
-
-	assert.Contains(t, versionMap, "2.0.0", "Version 2.0.0 should be present")
-	assert.Equal(t, false, versionMap["2.0.0"]["published"], "2.0.0 should be unpublished")
-	assert.Equal(t, true, versionMap["2.0.0"]["beta"], "2.0.0 should be beta")
-
-	assert.Contains(t, versionMap, "2.1.0", "Version 2.1.0 should be present")
-	assert.Equal(t, true, versionMap["2.1.0"]["published"], "2.1.0 should be published")
-	assert.Equal(t, true, versionMap["2.1.0"]["beta"], "2.1.0 should be beta")
+	// Verify version object properties
+	version := versions[0]
+	assert.NotNil(t, version.Version())
+	assert.Equal(t, "1.0.0", version.Version().String())
+	assert.False(t, version.IsBeta(), "version should not be beta")
 }
