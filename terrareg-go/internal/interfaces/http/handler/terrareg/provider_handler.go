@@ -59,15 +59,15 @@ func (h *ProviderHandler) HandleProviderList(w http.ResponseWriter, r *http.Requ
 	// Parse pagination parameters
 	offset, limit := parsePaginationParams(r)
 
-	// Execute query
-	providers, total, err := h.listProvidersQuery.Execute(ctx, offset, limit)
+	// Execute query to get providers with namespace names and version data
+	providers, namespaceNames, versionData, total, err := h.listProvidersQuery.Execute(ctx, offset, limit)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Build response (no namespace names or version data available for simple list)
-	response := dto.NewProviderListResponse(providers, map[int]string{}, map[int]providerRepo.VersionData{}, total, offset, limit, false)
+	// Build response with namespace names and version data
+	response := dto.NewProviderListResponse(providers, namespaceNames, versionData, total, offset, limit, false)
 	RespondJSON(w, http.StatusOK, response)
 }
 

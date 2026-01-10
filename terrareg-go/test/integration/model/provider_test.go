@@ -483,35 +483,51 @@ func TestProvider_FindAll(t *testing.T) {
 	namespace := testutils.CreateNamespace(t, db, "test-findall")
 
 	t.Run("Empty database returns empty list", func(t *testing.T) {
-		providers, count, err := providerRepo.FindAll(ctx, 0, 10)
+		providers, namespaceNames, versionData, count, err := providerRepo.FindAll(ctx, 0, 10)
 		require.NoError(t, err)
 		assert.Empty(t, providers)
+		assert.Empty(t, namespaceNames)
+		assert.Empty(t, versionData)
 		assert.Equal(t, 0, count)
 	})
 
 	t.Run("Multiple providers returned correctly", func(t *testing.T) {
-		// Create multiple providers
-		testutils.CreateProvider(t, db, namespace.ID, "provider1", nil, sqldb.ProviderTierCommunity, nil)
-		testutils.CreateProvider(t, db, namespace.ID, "provider2", nil, sqldb.ProviderTierCommunity, nil)
-		testutils.CreateProvider(t, db, namespace.ID, "provider3", nil, sqldb.ProviderTierCommunity, nil)
+		// Create multiple providers with versions (required for FindAll to return them)
+		now := time.Now()
+		gpgKey := testutils.CreateGPGKeyWithNamespace(t, db, "test-key", namespace.ID, "ABC123")
+		provider1 := testutils.CreateProvider(t, db, namespace.ID, "provider1", nil, sqldb.ProviderTierCommunity, nil)
+		provider2 := testutils.CreateProvider(t, db, namespace.ID, "provider2", nil, sqldb.ProviderTierCommunity, nil)
+		provider3 := testutils.CreateProvider(t, db, namespace.ID, "provider3", nil, sqldb.ProviderTierCommunity, nil)
+		version1 := testutils.CreateProviderVersion(t, db, provider1.ID, "1.0.0", gpgKey.ID, false, &now)
+		version2 := testutils.CreateProviderVersion(t, db, provider2.ID, "1.0.0", gpgKey.ID, false, &now)
+		version3 := testutils.CreateProviderVersion(t, db, provider3.ID, "1.0.0", gpgKey.ID, false, &now)
+		testutils.SetProviderLatestVersion(t, db, provider1.ID, version1.ID)
+		testutils.SetProviderLatestVersion(t, db, provider2.ID, version2.ID)
+		testutils.SetProviderLatestVersion(t, db, provider3.ID, version3.ID)
 
-		providers, count, err := providerRepo.FindAll(ctx, 0, 10)
+		providers, namespaceNames, versionData, count, err := providerRepo.FindAll(ctx, 0, 10)
 		require.NoError(t, err)
 		assert.Len(t, providers, 3)
+		assert.Len(t, namespaceNames, 3)
+		assert.Len(t, versionData, 3)
 		assert.Equal(t, 3, count)
 	})
 
 	t.Run("Pagination works correctly", func(t *testing.T) {
 		// Test offset and limit
-		providers, count, err := providerRepo.FindAll(ctx, 0, 2)
+		providers, namespaceNames, versionData, count, err := providerRepo.FindAll(ctx, 0, 2)
 		require.NoError(t, err)
 		assert.Len(t, providers, 2)
+		assert.Len(t, namespaceNames, 2)
+		assert.Len(t, versionData, 2)
 		assert.Equal(t, 3, count) // Total count is still 3
 
 		// Test offset
-		providers, count, err = providerRepo.FindAll(ctx, 2, 2)
+		providers, namespaceNames, versionData, count, err = providerRepo.FindAll(ctx, 2, 2)
 		require.NoError(t, err)
 		assert.Len(t, providers, 1) // Only 1 remaining
+		assert.Len(t, namespaceNames, 1)
+		assert.Len(t, versionData, 1)
 		assert.Equal(t, 3, count)
 	})
 }

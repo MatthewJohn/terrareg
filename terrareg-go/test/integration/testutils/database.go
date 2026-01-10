@@ -142,6 +142,29 @@ func CreateModuleProvider(t *testing.T, db *sqldb.Database, namespaceID int, mod
 	return moduleProvider
 }
 
+// CreateModuleProviderWithGit creates a test module provider with git configuration
+func CreateModuleProviderWithGit(t *testing.T, db *sqldb.Database, namespaceID int, moduleName, providerName string, gitCloneURL *string) sqldb.ModuleProviderDB {
+	moduleProvider := sqldb.ModuleProviderDB{
+		NamespaceID:           namespaceID,
+		Module:                moduleName,
+		Provider:              providerName,
+		Verified:              nil, // false
+		GitProviderID:         nil,
+		RepoBaseURLTemplate:   nil,
+		RepoCloneURLTemplate:  gitCloneURL,
+		RepoBrowseURLTemplate: nil,
+		GitTagFormat:          nil,
+		GitPath:               nil,
+		ArchiveGitPath:        false,
+		LatestVersionID:       nil,
+	}
+
+	err := db.DB.Create(&moduleProvider).Error
+	require.NoError(t, err)
+
+	return moduleProvider
+}
+
 // CreateModuleVersion creates a test module version in the database
 func CreateModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int, version string) sqldb.ModuleVersionDB {
 	moduleVersion := sqldb.ModuleVersionDB{
@@ -174,13 +197,14 @@ func CreateModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int,
 // It automatically sets the version as the latest version on the module provider
 func CreatePublishedModuleVersion(t *testing.T, db *sqldb.Database, moduleProviderID int, version string) sqldb.ModuleVersionDB {
 	published := true
+	now := time.Now()
 	moduleVersion := sqldb.ModuleVersionDB{
 		ModuleProviderID:      moduleProviderID,
 		Version:               version,
 		Beta:                  false,
 		Internal:              false,
 		Published:             &published,
-		PublishedAt:           nil,
+		PublishedAt:           &now,
 		GitSHA:                nil,
 		GitPath:               nil,
 		ArchiveGitPath:        false,

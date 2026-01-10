@@ -29,38 +29,161 @@ func NewProviderRepository(db *gorm.DB) repository.ProviderRepository {
 	}
 }
 
-// FindAll retrieves all providers with pagination
-func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]*provider.Provider, int, error) {
-	var models []sqldb.ProviderDB
-	var count int64
+// FindAll retrieves all providers with pagination, including namespace names and version data
+func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]*provider.Provider, map[int]string, map[int]repository.VersionData, int, error) {
+	// Use custom SQL query similar to Search() to collect namespace names and version data
+	sql := `
+		SELECT
+			provider.id as provider_id,
+			provider.namespace_id as provider_namespace_id,
+			provider.name as provider_name,
+			provider.description as provider_description,
+			provider.tier as provider_tier,
+			provider.default_provider_source_auth as provider_default_provider_source_auth,
+			provider.provider_category_id as provider_provider_category_id,
+			provider.repository_id as provider_repository_id,
+			provider.latest_version_id as provider_latest_version_id,
+			namespace.id as namespace_id,
+			namespace.namespace as namespace_namespace,
+			namespace.display_name as namespace_display_name,
+			namespace.namespace_type as namespace_type,
+			provider_version.id as version_id,
+			provider_version.version as version_version,
+			provider_version.git_tag as version_git_tag,
+			provider_version.published_at as version_published_at,
+			repository.owner as repository_owner,
+			repository.description as repository_description,
+			repository.clone_url as repository_clone_url,
+			repository.logo_url as repository_logo_url,
+			COALESCE(analytics_counts.download_count, 0) as download_count
+		FROM provider
+		JOIN namespace ON namespace.id = provider.namespace_id
+		LEFT JOIN provider_version ON provider_version.id = provider.latest_version_id
+		LEFT JOIN repository ON repository.id = provider.repository_id
+		LEFT JOIN (
+			SELECT parent_module_version, COUNT(*) as download_count
+			FROM analytics
+			WHERE parent_module_version IS NOT NULL
+			GROUP BY parent_module_version
+		) analytics_counts ON analytics_counts.parent_module_version = provider.latest_version_id
+		WHERE provider.latest_version_id IS NOT NULL
+		  AND provider.latest_version_id > 0
+		GROUP BY provider.id, namespace.id
+		ORDER BY provider.id DESC`
 
-	// Get total count
-	if err := r.db.WithContext(ctx).Model(&sqldb.ProviderDB{}).Count(&count).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count providers: %w", err)
+	// Apply pagination
+	if limit > 0 {
+		sql += " LIMIT ?"
+		if offset > 0 {
+			sql += " OFFSET ?"
+		}
 	}
 
-	// Get providers with pagination
-	// Note: provider table has no created_at, so order by id
-	if err := r.db.WithContext(ctx).
-		Preload("Namespace").
-		Preload("ProviderCategory").
-		Preload("Repository").
-		Preload("LatestVersion").
-		Offset(offset).
-		Limit(limit).
-		Order("id DESC").
-		Find(&models).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to find providers: %w", err)
+	// Count total query
+	countSQL := `
+		SELECT COUNT(DISTINCT provider.id) as total
+		FROM provider
+		JOIN namespace ON namespace.id = provider.namespace_id
+		WHERE provider.latest_version_id IS NOT NULL
+		  AND provider.latest_version_id > 0`
+
+	// Execute count query
+	var totalCount struct {
+		Total int64 `json:"total"`
+	}
+	if err := r.db.WithContext(ctx).Raw(countSQL).Scan(&totalCount).Error; err != nil {
+		return nil, nil, nil, 0, fmt.Errorf("failed to count providers: %w", err)
 	}
 
-	// Convert to domain entities
-	providers := make([]*provider.Provider, len(models))
-	for i, model := range models {
-		prov := toDomainProvider(&model)
+	// Prepare arguments for main query
+	args := []interface{}{}
+	if limit > 0 {
+		args = append(args, limit)
+		if offset > 0 {
+			args = append(args, offset)
+		}
+	}
+
+	// Execute main query
+	type FindAllResult struct {
+		ProviderID                 int      `gorm:"column:provider_id"`
+		NamespaceID                int      `gorm:"column:provider_namespace_id"`
+		Name                       string   `gorm:"column:provider_name"`
+		Description                *string  `gorm:"column:provider_description"`
+		Tier                       string   `gorm:"column:provider_tier"`
+		DefaultProviderSourceAuth *bool    `gorm:"column:provider_default_provider_source_auth"`
+		ProviderCategoryID         *int     `gorm:"column:provider_provider_category_id"`
+		RepositoryID               *int     `gorm:"column:provider_repository_id"`
+		LatestVersionID            *int     `gorm:"column:provider_latest_version_id"`
+		NamespaceName              string   `gorm:"column:namespace_namespace"`
+		NamespaceDisplayName       *string  `gorm:"column:namespace_display_name"`
+		NamespaceType              string   `gorm:"column:namespace_type"`
+		VersionID                  *int     `gorm:"column:version_id"`
+		Version                    *string  `gorm:"column:version_version"`
+		GitTag                     *string  `gorm:"column:version_git_tag"`
+		PublishedAt                *string  `gorm:"column:version_published_at"`
+		RepositoryOwner            *string  `gorm:"column:repository_owner"`
+		RepositoryDescription      *string  `gorm:"column:repository_description"`
+		RepositoryCloneURL         *string  `gorm:"column:repository_clone_url"`
+		RepositoryLogoURL          *string  `gorm:"column:repository_logo_url"`
+		DownloadCount              int64    `gorm:"column:download_count"`
+	}
+
+	var results []FindAllResult
+	if err := r.db.WithContext(ctx).Raw(sql, args...).Scan(&results).Error; err != nil {
+		return nil, nil, nil, 0, fmt.Errorf("failed to find providers: %w", err)
+	}
+
+	// Convert to domain entities and collect namespace names and version data
+	providers := make([]*provider.Provider, len(results))
+	namespaceNames := make(map[int]string, len(results))
+	versionData := make(map[int]repository.VersionData, len(results))
+
+	for i, result := range results {
+		// Store namespace name for this provider
+		namespaceNames[result.ProviderID] = result.NamespaceName
+
+		// Store version data for this provider (if available)
+		if result.VersionID != nil {
+			versionStr := ""
+			if result.Version != nil {
+				versionStr = *result.Version
+			}
+			versionData[result.ProviderID] = repository.VersionData{
+				VersionID:             *result.VersionID,
+				Version:               versionStr,
+				GitTag:                result.GitTag,
+				PublishedAt:           result.PublishedAt,
+				RepositoryOwner:       result.RepositoryOwner,
+				RepositoryDescription: result.RepositoryDescription,
+				RepositoryCloneURL:    result.RepositoryCloneURL,
+				RepositoryLogoURL:     result.RepositoryLogoURL,
+				Downloads:             result.DownloadCount,
+			}
+		}
+
+		// Handle nullable DefaultProviderSourceAuth
+		defaultProviderSourceAuth := false
+		if result.DefaultProviderSourceAuth != nil {
+			defaultProviderSourceAuth = *result.DefaultProviderSourceAuth
+		}
+
+		// Create provider (using Reconstruct to match existing pattern)
+		prov := provider.ReconstructProvider(
+			result.ProviderID,
+			result.NamespaceID,
+			result.Name,
+			result.Description,
+			result.Tier,
+			result.ProviderCategoryID,
+			result.RepositoryID,
+			result.LatestVersionID,
+			defaultProviderSourceAuth,
+		)
 		providers[i] = prov
 	}
 
-	return providers, int(count), nil
+	return providers, namespaceNames, versionData, int(totalCount.Total), nil
 }
 
 // Search searches for providers by query with filters

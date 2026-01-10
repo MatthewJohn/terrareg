@@ -150,13 +150,13 @@ func (s *ProviderService) GetProviderByName(ctx context.Context, namespace, name
 	return provider, nil
 }
 
-// ListProviders retrieves a paginated list of providers
-func (s *ProviderService) ListProviders(ctx context.Context, offset, limit int) ([]*provider.Provider, int, error) {
-	providers, total, err := s.providerRepo.FindAll(ctx, offset, limit)
+// ListProviders retrieves a paginated list of providers with namespace names and version data
+func (s *ProviderService) ListProviders(ctx context.Context, offset, limit int) ([]*provider.Provider, map[int]string, map[int]repository.VersionData, int, error) {
+	providers, namespaceNames, versionData, total, err := s.providerRepo.FindAll(ctx, offset, limit)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to list providers: %w", err)
+		return nil, nil, nil, 0, fmt.Errorf("failed to list providers: %w", err)
 	}
-	return providers, total, nil
+	return providers, namespaceNames, versionData, total, nil
 }
 
 // SearchProviders searches for providers

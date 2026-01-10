@@ -48,8 +48,8 @@ type ProviderSearchFilters struct {
 
 // ProviderRepository defines the interface for provider persistence
 type ProviderRepository interface {
-	// FindAll retrieves all providers
-	FindAll(ctx context.Context, offset, limit int) ([]*provider.Provider, int, error)
+	// FindAll retrieves all providers with namespace names and version data
+	FindAll(ctx context.Context, offset, limit int) ([]*provider.Provider, map[int]string, map[int]VersionData, int, error)
 
 	// Search searches for providers by query with filters
 	Search(ctx context.Context, query ProviderSearchQuery) (*ProviderSearchResult, error)

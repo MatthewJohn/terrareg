@@ -19,7 +19,7 @@ func NewListProvidersQuery(providerRepo providerRepo.ProviderRepository) *ListPr
 	}
 }
 
-// Execute retrieves all providers with pagination
-func (q *ListProvidersQuery) Execute(ctx context.Context, offset, limit int) ([]*provider.Provider, int, error) {
+// Execute retrieves all providers with pagination, including namespace names and version data
+func (q *ListProvidersQuery) Execute(ctx context.Context, offset, limit int) ([]*provider.Provider, map[int]string, map[int]providerRepo.VersionData, int, error) {
 	return q.providerRepo.FindAll(ctx, offset, limit)
 }
