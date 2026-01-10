@@ -496,7 +496,7 @@ type ProviderCategoryDB struct {
 	ID             int     `gorm:"primaryKey;autoIncrement"`
 	Name           *string `gorm:"type:varchar(128)"`
 	Slug           string  `gorm:"type:varchar(128);uniqueIndex"`
-	UserSelectable bool    `gorm:"default:true"`
+	UserSelectable bool    // Note: default should be handled by database schema, not GORM tag
 }
 
 func (ProviderCategoryDB) TableName() string {

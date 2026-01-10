@@ -97,6 +97,7 @@ type Container struct {
 	ExampleFileRepo                   moduleRepo.ExampleFileRepository
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
+	ProviderCategoryRepo              providerRepo.ProviderCategoryRepository
 	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
 	SessionRepo                       authRepo.SessionRepository
 	UserGroupRepo                     authRepo.UserGroupRepository
@@ -329,6 +330,7 @@ func NewContainer(
 	c.SubmoduleRepo = modulePersistence.NewSubmoduleRepository(db.DB)
 	c.ExampleFileRepo = modulePersistence.NewExampleFileRepository(db.DB)
 	c.ProviderRepo = sqldbprovider.NewProviderRepository(db.DB)
+	c.ProviderCategoryRepo = sqldbprovider.NewProviderCategoryRepository(db)
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
@@ -805,7 +807,7 @@ func NewContainer(
 
 	// Initialize v2 handlers
 	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery, c.GetProviderDownloadQuery)
-	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(nil)) // TODO: Add proper category repo
+	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(c.ProviderCategoryRepo))
 	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler(
 		c.ManageGPGKeyCmd2,
 		c.GetNamespaceGPGKeysQuery2,

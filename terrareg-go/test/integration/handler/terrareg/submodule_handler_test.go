@@ -213,10 +213,3 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML_MissingParameters(t *testing
 		})
 	}
 }
-
-// TestSubmoduleHandler_NotImplemented is a placeholder noting that full integration tests
-// require the submodule query implementation to be completed
-// TODO: Implement full integration tests once submodule queries are fully implemented
-func TestSubmoduleHandler_NotImplemented(t *testing.T) {
-	t.Skip("Submodule queries not yet fully implemented - queries return nil repository errors")
-}

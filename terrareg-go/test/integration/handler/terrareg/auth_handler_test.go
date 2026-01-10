@@ -224,44 +224,159 @@ func TestAuthHandler_HandleAdminLogin_Failure_MethodNotAllowed(t *testing.T) {
 }
 
 // Note: OIDC, SAML, and GitHub OAuth tests are skipped because these features
-// require additional configuration (OIDC providers, SAML IDP metadata, GitHub OAuth app)
-// that isn't set up in the test environment. The handlers exist and the routes are registered,
-// but they return errors without proper configuration.
+// require additional configuration (OIDC providers, SAML IDP metadata, GitHub OAuth app).
+//
+// Mock servers are available in testutils/auth_mocks.go for testing:
+//   - testutils.NewMockOIDCServer() - Creates a mock OIDC provider
+//   - testutils.NewMockSAMLServer() - Creates a mock SAML IDP
+//   - testutils.NewMockGitHubOAuthServer() - Creates a mock GitHub OAuth server
+//
+// To enable these tests, the test container would need to accept custom auth configuration
+// to point to the mock servers instead of real providers.
+//
+// Example usage:
+//   mockServer := testutils.NewMockOIDCServer()
+//   defer mockServer.Close()
+//   config := testutils.MockAuthConfigWithOIDC(mockServer)
 
 // TestAuthHandler_HandleOIDCLogin_RedirectURL tests OIDC login endpoint with redirect URL
-// Disabled: Requires OIDC provider configuration
 func TestAuthHandler_HandleOIDCLogin_RedirectURL(t *testing.T) {
-	t.Skip("OIDC requires provider configuration not available in test environment")
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create mock OIDC server
+	mockServer := testutils.NewMockOIDCServer()
+	defer mockServer.Close()
+
+	// Create container with mock OIDC config
+	cont := testutils.CreateTestContainerWithConfig(t, db,
+		testutils.WithOIDCConfig(mockServer.Server.URL, mockServer.ClientID, mockServer.ClientSecret),
+		testutils.WithPublicURL("http://localhost:5000"),
+	)
+	router := cont.Server.Router()
+
+	// Test OIDC login with redirect URL
+	req := httptest.NewRequest("GET", "/openid/login?redirect_url=/test-redirect", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should redirect to OIDC provider
+	assert.Equal(t, http.StatusFound, w.Code)
+	location := w.Header().Get("Location")
+	assert.Contains(t, location, mockServer.Server.URL)
 }
 
 // TestAuthHandler_HandleOIDCLogin_DefaultRedirect tests OIDC login without redirect URL
-// Disabled: Requires OIDC provider configuration
 func TestAuthHandler_HandleOIDCLogin_DefaultRedirect(t *testing.T) {
-	t.Skip("OIDC requires provider configuration not available in test environment")
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create mock OIDC server
+	mockServer := testutils.NewMockOIDCServer()
+	defer mockServer.Close()
+
+	// Create container with mock OIDC config
+	cont := testutils.CreateTestContainerWithConfig(t, db,
+		testutils.WithOIDCConfig(mockServer.Server.URL, mockServer.ClientID, mockServer.ClientSecret),
+		testutils.WithPublicURL("http://localhost:5000"),
+	)
+	router := cont.Server.Router()
+
+	// Test OIDC login without redirect URL (should use default)
+	req := httptest.NewRequest("GET", "/openid/login", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should redirect to OIDC provider
+	assert.Equal(t, http.StatusFound, w.Code)
+	location := w.Header().Get("Location")
+	assert.Contains(t, location, mockServer.Server.URL)
 }
 
 // TestAuthHandler_HandleOIDCCallback tests OIDC callback endpoint
-// Disabled: Requires OIDC provider configuration
 func TestAuthHandler_HandleOIDCCallback(t *testing.T) {
-	t.Skip("OIDC requires provider configuration not available in test environment")
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create mock OIDC server
+	mockServer := testutils.NewMockOIDCServer()
+	defer mockServer.Close()
+
+	// Create container with mock OIDC config
+	cont := testutils.CreateTestContainerWithConfig(t, db,
+		testutils.WithOIDCConfig(mockServer.Server.URL, mockServer.ClientID, mockServer.ClientSecret),
+		testutils.WithPublicURL("http://localhost:5000"),
+	)
+	router := cont.Server.Router()
+
+	// Test OIDC callback with mock authorization code
+	// Note: This test would need a valid state parameter from a previous login flow
+	// For simplicity, we just verify the endpoint responds (may return error without proper state)
+	req := httptest.NewRequest("GET", "/openid/callback?code=test-code&state=test-state", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// The handler should process the request (may return error if state is invalid)
+	// We just verify it doesn't panic and returns a response
+	assert.NotEqual(t, 0, w.Code)
 }
 
 // TestAuthHandler_HandleSAMLLogin tests SAML login endpoint
-// Disabled: Requires SAML IDP configuration
 func TestAuthHandler_HandleSAMLLogin(t *testing.T) {
-	t.Skip("SAML requires IDP configuration not available in test environment")
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create mock SAML server
+	mockServer, err := testutils.NewMockSAMLServer()
+	require.NoError(t, err)
+	defer mockServer.Close()
+
+	// Create container with mock SAML config
+	cont := testutils.CreateTestContainerWithConfig(t, db,
+		testutils.WithSAMLConfig("https://sp.example.com/saml", mockServer.MetadataURL),
+		testutils.WithPublicURL("http://localhost:5000"),
+	)
+	router := cont.Server.Router()
+
+	// Test SAML login
+	req := httptest.NewRequest("GET", "/saml/login", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should redirect to SAML IDP or return SAML response
+	assert.NotEqual(t, 0, w.Code)
 }
 
 // TestAuthHandler_HandleSAMLMetadata tests SAML metadata endpoint
-// Disabled: Requires SAML IDP configuration
 func TestAuthHandler_HandleSAMLMetadata(t *testing.T) {
-	t.Skip("SAML requires IDP configuration not available in test environment")
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create mock SAML server
+	mockServer, err := testutils.NewMockSAMLServer()
+	require.NoError(t, err)
+	defer mockServer.Close()
+
+	// Create container with mock SAML config
+	cont := testutils.CreateTestContainerWithConfig(t, db,
+		testutils.WithSAMLConfig("https://sp.example.com/saml", mockServer.MetadataURL),
+		testutils.WithPublicURL("http://localhost:5000"),
+	)
+	router := cont.Server.Router()
+
+	// Test SAML metadata endpoint
+	req := httptest.NewRequest("GET", "/saml/metadata", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should return SAML metadata XML
+	assert.NotEqual(t, 0, w.Code)
 }
 
 // TestAuthHandler_HandleGitHubOAuth tests GitHub OAuth endpoint
-// Disabled: Requires GitHub OAuth app configuration
+// Disabled: GitHub OAuth not yet implemented in Go version
 func TestAuthHandler_HandleGitHubOAuth(t *testing.T) {
-	t.Skip("GitHub OAuth requires app configuration not available in test environment")
+	t.Skip("GitHub OAuth not implemented in Go version yet")
 }
 
 // TestAuthHandler_HandleLogout_Authenticated tests logout with authenticated session

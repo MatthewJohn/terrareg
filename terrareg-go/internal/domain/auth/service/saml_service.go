@@ -496,6 +496,14 @@ func (s *SAMLService) validateSessionConstraints(response *saml.Response) error 
 	return nil
 }
 
+// IsConfigured checks if SAML is properly configured
+func (s *SAMLService) IsConfigured() bool {
+	return s != nil &&
+		s.config != nil &&
+		s.config.SAML2EntityID != "" &&
+		s.config.SAML2IDPMetadataURL != ""
+}
+
 // SAMLAuthRequest represents a SAML authentication request
 type SAMLAuthRequest struct {
 	ID          string    `json:"id"`

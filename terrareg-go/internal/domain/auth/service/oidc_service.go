@@ -450,3 +450,12 @@ func (s *OIDCService) VerifyIDToken(ctx context.Context, idToken string) (*auth.
 
 	return userInfo, nil
 }
+
+// IsConfigured checks if OIDC is properly configured
+func (s *OIDCService) IsConfigured() bool {
+	return s != nil &&
+		s.config != nil &&
+		s.config.OpenIDConnectIssuer != "" &&
+		s.config.OpenIDConnectClientID != "" &&
+		s.config.OpenIDConnectClientSecret != ""
+}

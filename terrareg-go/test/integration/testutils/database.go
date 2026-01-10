@@ -441,6 +441,55 @@ func CreateTestContainer(t *testing.T, db *sqldb.Database) *container.Container 
 	return cont
 }
 
+// InfraConfigOption is a function that modifies the infrastructure configuration
+type InfraConfigOption func(*config.InfrastructureConfig)
+
+// CreateTestContainerWithConfig creates a test container with custom infrastructure configuration
+// This allows tests to override specific config values (e.g., for mock auth servers)
+func CreateTestContainerWithConfig(t *testing.T, db *sqldb.Database, opts ...InfraConfigOption) *container.Container {
+	domainConfig := CreateTestDomainConfig(t)
+	infraConfig := CreateTestInfraConfig(t)
+
+	// Apply custom configuration options
+	for _, opt := range opts {
+		opt(infraConfig)
+	}
+
+	// Create a simple config service for testing
+	versionReader := version.NewVersionReader()
+	cfgService := configService.NewConfigurationService(configService.ConfigurationServiceOptions{}, versionReader)
+
+	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(), db)
+	require.NoError(t, err)
+
+	return cont
+}
+
+// WithOIDCConfig sets OIDC configuration for testing
+func WithOIDCConfig(issuer, clientID, clientSecret string) InfraConfigOption {
+	return func(cfg *config.InfrastructureConfig) {
+		cfg.OpenIDConnectIssuer = issuer
+		cfg.OpenIDConnectClientID = clientID
+		cfg.OpenIDConnectClientSecret = clientSecret
+		cfg.OpenIDConnectScopes = []string{"openid", "profile", "email"}
+	}
+}
+
+// WithSAMLConfig sets SAML configuration for testing
+func WithSAMLConfig(entityID, metadataURL string) InfraConfigOption {
+	return func(cfg *config.InfrastructureConfig) {
+		cfg.SAML2EntityID = entityID
+		cfg.SAML2IDPMetadataURL = metadataURL
+	}
+}
+
+// WithPublicURL sets the public URL for testing
+func WithPublicURL(publicURL string) InfraConfigOption {
+	return func(cfg *config.InfrastructureConfig) {
+		cfg.PublicURL = publicURL
+	}
+}
+
 // CreateTestWebhookHandler creates a test webhook handler with proper dependencies
 // It uses the container to wire all dependencies together
 func CreateTestWebhookHandler(t *testing.T, db *sqldb.Database, uploadAPIKeys []string) *webhook.ModuleWebhookHandler {
