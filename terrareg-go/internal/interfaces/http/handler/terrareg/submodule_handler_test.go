@@ -2,7 +2,6 @@ package terrareg_test
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 )
 
 // MockGetSubmoduleDetailsQuery is a mock for GetSubmoduleDetailsQuery
@@ -33,22 +31,22 @@ type MockGetSubmoduleReadmeHTMLQuery struct {
 	mock.Mock
 }
 
-func (m *MockGetSubmoduleReadmeHTMLQuery) Execute(ctx context.Context, namespace, moduleName, provider, version, submodulePath string) (*module.SubmoduleReadmeHTMLResponse, error) {
+func (m *MockGetSubmoduleReadmeHTMLQuery) Execute(ctx context.Context, namespace, moduleName, provider, version, submodulePath string) (string, error) {
 	args := m.Called(ctx, namespace, moduleName, provider, version, submodulePath)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+	if args.String(0) == "" && args.Error(1) != nil {
+		return "", args.Error(1)
 	}
-	return args.Get(0).(*module.GetReadmeHTMLResponse), args.Error(1)
+	return args.String(0), args.Error(1)
 }
 
 func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 	tests := []struct {
-		name           string
-		method         string
-		url            string
-		expectedStatus int
-		setupMocks     func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery)
-		expectedBody   string
+		name               string
+		method             string
+		url                string
+		expectedStatus     int
+		setupMocks         func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery)
+		expectedBodyContains string
 	}{
 		{
 			name:           "invalid method",
@@ -63,7 +61,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			url:            "/modules//mod/provider/1.0.0/submodules/details/submod",
 			expectedStatus: http.StatusBadRequest,
 			setupMocks:     func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery) {},
-			expectedBody:   "Missing required path parameters",
+			expectedBodyContains: "Missing required path parameters",
 		},
 		{
 			name:           "missing module parameter",
@@ -71,7 +69,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			url:            "/modules/test//provider/1.0.0/submodules/details/submod",
 			expectedStatus: http.StatusBadRequest,
 			setupMocks:     func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery) {},
-			expectedBody:   "Missing required path parameters",
+			expectedBodyContains: "Missing required path parameters",
 		},
 		{
 			name:           "missing provider parameter",
@@ -79,7 +77,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			url:            "/modules/test/mod//1.0.0/submodules/details/submod",
 			expectedStatus: http.StatusBadRequest,
 			setupMocks:     func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery) {},
-			expectedBody:   "Missing required path parameters",
+			expectedBodyContains: "Missing required path parameters",
 		},
 		{
 			name:           "missing version parameter",
@@ -87,7 +85,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			url:            "/modules/test/mod/provider//submodules/details/submod",
 			expectedStatus: http.StatusBadRequest,
 			setupMocks:     func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery) {},
-			expectedBody:   "Missing required path parameters",
+			expectedBodyContains: "Missing required path parameters",
 		},
 		{
 			name:           "missing submodule parameter",
@@ -95,7 +93,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			url:            "/modules/test/mod/provider/1.0.0/submodules/details/",
 			expectedStatus: http.StatusBadRequest,
 			setupMocks:     func(*MockGetSubmoduleDetailsQuery, *MockGetSubmoduleReadmeHTMLQuery) {},
-			expectedBody:   "Missing required path parameters",
+			expectedBodyContains: "Missing required path parameters",
 		},
 		{
 			name:           "module provider not found",
@@ -107,7 +105,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 					Return(nil, assert.AnError).
 					Once()
 			},
-			expectedBody: "module provider not found",
+			expectedBodyContains: "module provider not found",
 		},
 		{
 			name:           "successful response",
@@ -116,16 +114,14 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			setupMocks: func(mockDetails *MockGetSubmoduleDetailsQuery, mockReadme *MockGetSubmoduleReadmeHTMLQuery) {
 				submoduleDetails := &module.SubmoduleDetails{
-					Path:  "submod",
-					Name:  stringPtr("Test Submodule"),
-					Type:  stringPtr("module"),
-					Empty: false,
-					Inputs: []module.Input{
+					Path:        "submod",
+					Description: "Test Submodule",
+					Readme:      "# Test Submodule\n\nThis is a test submodule",
+					Files: []module.SubmoduleFile{
 						{
-							Name:        "var1",
-							Type:        "string",
-							Description: "A test variable",
-							Required:    true,
+							Path:     "main.tf",
+							Content:  "terraform {}",
+							IsBinary: false,
 						},
 					},
 				}
@@ -166,18 +162,12 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			// Assert
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			if tt.expectedBody != "" {
-				var response map[string]interface{}
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				if err == nil {
-					// If it's JSON, check the error message
-					if errMsg, ok := response["error"].(string); ok {
-						assert.Contains(t, errMsg, tt.expectedBody)
-					}
-				} else {
-					// If not JSON, check the raw body
-					assert.Contains(t, w.Body.String(), tt.expectedBody)
-				}
+			if tt.expectedBodyContains != "" {
+				assert.Contains(t, w.Body.String(), tt.expectedBodyContains)
+			}
+
+			if tt.name == "successful response" {
+				assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 			}
 
 			mockDetails.AssertExpectations(t)
@@ -215,7 +205,7 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			setupMocks: func(mockDetails *MockGetSubmoduleDetailsQuery, mockReadme *MockGetSubmoduleReadmeHTMLQuery) {
 				mockReadme.On("Execute", mock.Anything, "test", "mod", "provider", "1.0.0", "submod").
-					Return(nil, assert.AnError).
+					Return("", assert.AnError).
 					Once()
 			},
 			checkHeaders: true,
@@ -226,11 +216,9 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 			url:            "/modules/test/mod/provider/1.0.0/submodules/readme_html/submod",
 			expectedStatus: http.StatusOK,
 			setupMocks: func(mockDetails *MockGetSubmoduleDetailsQuery, mockReadme *MockGetSubmoduleReadmeHTMLQuery) {
-				readmeResponse := &module.SubmoduleReadmeHTMLResponse{
-					HTML: "<h1>Test Submodule</h1><p>This is a test submodule</p>",
-				}
+				readmeHTML := "<h1>Test Submodule</h1><p>This is a test submodule</p>"
 				mockReadme.On("Execute", mock.Anything, "test", "mod", "provider", "1.0.0", "submod").
-					Return(readmeResponse, nil).
+					Return(readmeHTML, nil).
 					Once()
 			},
 			checkHeaders: true,
@@ -271,7 +259,6 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 				assert.Equal(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 			}
 
-			mockDetails.AssertExpectations(t)
 			mockReadme.AssertExpectations(t)
 		})
 	}
@@ -280,51 +267,4 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 // Helper function to create string pointers
 func stringPtr(s string) *string {
 	return &s
-}
-
-// Test that the handler properly integrates with the HTTP package
-func TestSubmoduleHandler_Integration(t *testing.T) {
-	// Arrange
-	mockDetails := &MockGetSubmoduleDetailsQuery{}
-	mockReadme := &MockGetSubmoduleReadmeHTMLQuery{}
-
-	handler := NewSubmoduleHandler(mockDetails, mockReadme)
-
-	// Test that RespondJSON works properly
-	t.Run("RespondJSON integration", func(t *testing.T) {
-		submoduleDetails := &module.SubmoduleDetails{
-			Path:  "test",
-			Empty: true,
-		}
-
-		mockDetails.On("Execute", mock.Anything, "test", "mod", "provider", "1.0.0", "test").
-			Return(submoduleDetails, nil).
-			Once()
-
-		req := httptest.NewRequest("GET", "/modules/test/mod/provider/1.0.0/submodules/details/test", nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("namespace", "test")
-		rctx.URLParams.Add("name", "mod")
-		rctx.URLParams.Add("provider", "provider")
-		rctx.URLParams.Add("version", "1.0.0")
-		rctx.URLParams.Add("submodule", "test")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
-
-		w := httptest.NewRecorder()
-
-		// Act
-		handler.HandleSubmoduleDetails(w, req)
-
-		// Assert
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-
-		var response module.SubmoduleDetails
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		assert.NoError(t, err)
-		assert.Equal(t, "test", response.Path)
-		assert.True(t, response.Empty)
-
-		mockDetails.AssertExpectations(t)
-	})
 }

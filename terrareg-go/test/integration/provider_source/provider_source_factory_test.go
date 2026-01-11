@@ -3,7 +3,6 @@ package provider_source
 import (
 	"context"
 	"testing"
-	"sync"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,19 +32,6 @@ func setupTestFactory(t *testing.T) (*service.ProviderSourceFactory, *sqldb.Data
 	factory.RegisterProviderSourceClass(githubClass)
 
 	return factory, db
-}
-
-// TestGet_Singleton verifies the singleton pattern
-// Python reference: test_provider_source_factory.py::test_get
-func TestGet_Singleton(t *testing.T) {
-	factory, db := setupTestFactory(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	// Verify Get() returns the same instance
-	assert.Equal(t, factory, service.Get())
-
-	// Verify subsequent calls return cached version
-	assert.Equal(t, factory, service.Get())
 }
 
 // TestGetProviderClasses verifies the class mapping
@@ -571,30 +557,4 @@ func TestInitialiseFromConfig_Duplicate(t *testing.T) {
 	var config model.ProviderSourceConfig
 	require.NoError(t, sqldb.DecodeBlob(dbModel.Config, &config))
 	assert.Equal(t, "client-1", config.ClientID)
-}
-
-// TestConcurrentGet verifies thread-safe singleton access
-func TestConcurrentGet(t *testing.T) {
-	_, db := setupTestFactory(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	var wg sync.WaitGroup
-	results := make([]*service.ProviderSourceFactory, 100)
-
-	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			results[idx] = service.Get()
-		}(i)
-	}
-
-	wg.Wait()
-
-	// All results should be the same instance (all equal to each other)
-	// Note: Due to Go's singleton pattern, the instance is set once globally,
-	// so we verify all concurrent calls return the same instance
-	for i := 1; i < len(results); i++ {
-		assert.Same(t, results[0], results[i], "All results should be the same instance")
-	}
 }

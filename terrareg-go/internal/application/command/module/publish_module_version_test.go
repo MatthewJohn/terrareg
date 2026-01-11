@@ -13,7 +13,7 @@ import (
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
-	"github.com/matthewjohn/terrareg/terrareg-go/test/unit/mocks"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
 // MockModuleProviderRepository is a mock for testing

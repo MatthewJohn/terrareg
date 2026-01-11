@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
@@ -508,4 +509,286 @@ func TestGitHubAuthMethod_Authenticate_NotAdmin(t *testing.T) {
 	if authContext.IsBuiltInAdmin() {
 		t.Error("GitHub auth should not be built-in admin")
 	}
+}
+
+// MockProviderSourceRepositoryWithError is a configurable mock for error scenarios
+type MockProviderSourceRepositoryWithError struct {
+	returnError error
+	returnNil   bool
+	returnType  provider_source_model.ProviderSourceType
+}
+
+func (m *MockProviderSourceRepositoryWithError) FindByName(ctx context.Context, name string) (*provider_source_model.ProviderSource, error) {
+	if m.returnError != nil {
+		return nil, m.returnError
+	}
+	if m.returnNil {
+		return nil, nil
+	}
+
+	// Default to GitHub type unless specified
+	psType := m.returnType
+	if psType == "" {
+		psType = provider_source_model.ProviderSourceTypeGithub
+	}
+
+	config := &provider_source_model.ProviderSourceConfig{
+		BaseURL:      "https://github.com",
+		ClientID:     "test-client-id",
+		ClientSecret: "test-client-secret",
+	}
+	ps := provider_source_model.NewProviderSource("Test Provider", name, psType, config)
+	return ps, nil
+}
+
+func (m *MockProviderSourceRepositoryWithError) FindByApiName(ctx context.Context, apiName string) (*provider_source_model.ProviderSource, error) {
+	return m.FindByName(ctx, apiName)
+}
+
+func (m *MockProviderSourceRepositoryWithError) FindAll(ctx context.Context) ([]*provider_source_model.ProviderSource, error) {
+	return nil, nil
+}
+
+func (m *MockProviderSourceRepositoryWithError) Upsert(ctx context.Context, source *provider_source_model.ProviderSource) error {
+	return nil
+}
+
+func (m *MockProviderSourceRepositoryWithError) Delete(ctx context.Context, name string) error {
+	return nil
+}
+
+func (m *MockProviderSourceRepositoryWithError) Exists(ctx context.Context, name string) (bool, error) {
+	return false, nil
+}
+
+func (m *MockProviderSourceRepositoryWithError) ExistsByApiName(ctx context.Context, apiName string) (bool, error) {
+	return false, nil
+}
+
+// TestGitHubAuthMethod_Authenticate_ProviderSourceNotFound tests when provider source doesn't exist
+func TestGitHubAuthMethod_Authenticate_ProviderSourceNotFound(t *testing.T) {
+	tests := []struct {
+		name          string
+		returnNil     bool
+		returnError   error
+		expectError   bool
+		errorContains string
+	}{
+		{
+			name:        "provider source returns nil",
+			returnNil:   true,
+			returnError: nil,
+			expectError: true,
+			errorContains: "provider source not found",
+		},
+		{
+			name:        "provider source returns error",
+			returnNil:   false,
+			returnError: errors.New("test error"),
+			expectError: true,
+			errorContains: "provider source not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sessionData := map[string]interface{}{
+				"provider_source": "nonexistent-github",
+				"github_username":  "test-user",
+			}
+
+			repo := &MockProviderSourceRepositoryWithError{
+				returnNil:   tt.returnNil,
+				returnError: tt.returnError,
+			}
+			factory := provider_source_service.NewProviderSourceFactory(repo)
+			method := NewGitHubAuthMethod(factory)
+			ctx := context.Background()
+
+			authContext, err := method.Authenticate(ctx, sessionData)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Authenticate() expected error but got nil")
+				}
+				if err != nil && tt.errorContains != "" && !contains(err.Error(), tt.errorContains) {
+					t.Errorf("Authenticate() error = %v, want error containing %s", err, tt.errorContains)
+				}
+			}
+
+			if authContext != nil {
+				t.Error("Authenticate() should return nil authContext on error")
+			}
+		})
+	}
+}
+
+// TestGitHubAuthMethod_Authenticate_ProviderSourceTypeMismatch tests when provider source is not GitHub type
+func TestGitHubAuthMethod_Authenticate_ProviderSourceTypeMismatch(t *testing.T) {
+	tests := []struct {
+		name          string
+		providerType  provider_source_model.ProviderSourceType
+		errorContains string
+	}{
+		{
+			name:          "Bitbucket provider type",
+			providerType:  provider_source_model.ProviderSourceTypeBitbucket,
+			errorContains: "provider source is not a GitHub provider",
+		},
+		{
+			name:          "GitLab provider type",
+			providerType:  provider_source_model.ProviderSourceTypeGitlab,
+			errorContains: "provider source is not a GitHub provider",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sessionData := map[string]interface{}{
+				"provider_source": "wrong-type-provider",
+				"github_username":  "test-user",
+			}
+
+			repo := &MockProviderSourceRepositoryWithError{
+				returnType: tt.providerType,
+			}
+			factory := provider_source_service.NewProviderSourceFactory(repo)
+			method := NewGitHubAuthMethod(factory)
+			ctx := context.Background()
+
+			authContext, err := method.Authenticate(ctx, sessionData)
+
+			if err == nil {
+				t.Error("Authenticate() expected error but got nil")
+			}
+			if err != nil && !contains(err.Error(), tt.errorContains) {
+				t.Errorf("Authenticate() error = %v, want error containing %s", err, tt.errorContains)
+			}
+
+			if authContext != nil {
+				t.Error("Authenticate() should return nil authContext on error")
+			}
+		})
+	}
+}
+
+// TestGitHubAuthContext_CaseInsensitiveNamespaceMatching tests case-insensitive namespace matching
+func TestGitHubAuthContext_CaseInsensitiveNamespaceMatching(t *testing.T) {
+	tests := []struct {
+		name          string
+		namespace     string
+		organizations map[string]sqldb.NamespaceType
+		shouldHaveAccess bool
+	}{
+		{
+			name:      "exact case match - user",
+			namespace: "test-user",
+			organizations: map[string]sqldb.NamespaceType{
+				"test-user": sqldb.NamespaceTypeGithubUser,
+			},
+			shouldHaveAccess: true,
+		},
+		{
+			name:      "lowercase namespace match - user",
+			namespace: "test-user",
+			organizations: map[string]sqldb.NamespaceType{
+				"Test-User": sqldb.NamespaceTypeGithubUser,
+			},
+			shouldHaveAccess: true,
+		},
+		{
+			name:      "uppercase namespace match - user",
+			namespace: "TEST-USER",
+			organizations: map[string]sqldb.NamespaceType{
+				"test-user": sqldb.NamespaceTypeGithubUser,
+			},
+			shouldHaveAccess: true,
+		},
+		{
+			name:      "mixed case org match",
+			namespace: "My-Org",
+			organizations: map[string]sqldb.NamespaceType{
+				"my-org": sqldb.NamespaceTypeGithubOrg,
+			},
+			shouldHaveAccess: true,
+		},
+		{
+			name:      "case mismatch no access",
+			namespace: "other-org",
+			organizations: map[string]sqldb.NamespaceType{
+				"test-user": sqldb.NamespaceTypeGithubUser,
+			},
+			shouldHaveAccess: false,
+		},
+		{
+			name:      "multiple orgs with different cases",
+			namespace: "My-Company",
+			organizations: map[string]sqldb.NamespaceType{
+				"test-user": sqldb.NamespaceTypeGithubUser,
+				"my-company": sqldb.NamespaceTypeGithubOrg,
+				"Another-Org": sqldb.NamespaceTypeGithubOrg,
+			},
+			shouldHaveAccess: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			authCtx := auth.NewGitHubAuthContext(
+				context.Background(),
+				"test-github",
+				"test-user",
+				tt.organizations,
+			)
+
+			hasAccess := authCtx.CheckNamespaceAccess("MODIFY", tt.namespace)
+			if hasAccess != tt.shouldHaveAccess {
+				t.Errorf("CheckNamespaceAccess(MODIFY, %s) = %v, want %v", tt.namespace, hasAccess, tt.shouldHaveAccess)
+			}
+		})
+	}
+}
+
+// TestGitHubAuthMethod_Authenticate_NilFactory tests authentication with nil factory
+func TestGitHubAuthMethod_Authenticate_NilFactory(t *testing.T) {
+	sessionData := map[string]interface{}{
+		"provider_source": "test-github",
+		"github_username":  "test-user",
+		"organisations": map[string]string{
+			"test-user": string(sqldb.NamespaceTypeGithubUser),
+		},
+	}
+
+	// Create method with nil factory
+	method := &GitHubAuthMethod{}
+	ctx := context.Background()
+
+	authContext, err := method.Authenticate(ctx, sessionData)
+
+	// With nil factory, it should skip provider source validation and succeed
+	if err != nil {
+		t.Errorf("Authenticate() error = %v, want nil", err)
+	}
+
+	if authContext == nil {
+		t.Error("Authenticate() returned nil authContext")
+	}
+
+	if authContext != nil && !authContext.IsAuthenticated() {
+		t.Error("AuthContext should be authenticated")
+	}
+}
+
+// Helper function for string contains check
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }

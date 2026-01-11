@@ -1,14 +1,13 @@
-package unit
+package service
 
 import (
 	"testing"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/service"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSearchScoringService(t *testing.T) {
-	service := service.NewSearchScoringService()
+	service := NewSearchScoringService()
 
 	tests := []struct {
 		name     string
