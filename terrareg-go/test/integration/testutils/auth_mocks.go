@@ -15,10 +15,14 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/crewjam/saml"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	providerSourceModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
+	providerSourceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider_source"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"golang.org/x/oauth2"
 )
 
@@ -460,15 +464,18 @@ type MockGitHubOAuthServer struct {
 	AuthorizeURL  string
 	TokenURL      string
 	UserURL       string
+	OrgsURL       string // Organizations endpoint URL
 	ClientID      string
 	ClientSecret  string
 
 	// Test data that will be returned
 	TestUserInfo *GitHubUserInfo
+	TestOrgs      []string // Test organizations to return
 
 	// Optional: custom handlers
 	CustomTokenHandler    http.HandlerFunc
 	CustomUserHandler     http.HandlerFunc
+	CustomOrgsHandler     http.HandlerFunc
 }
 
 // GitHubUserInfo represents GitHub user information
@@ -494,6 +501,7 @@ func NewMockGitHubOAuthServer() *MockGitHubOAuthServer {
 			AvatarURL: "https://example.com/avatar.png",
 			Groups:    []string{"test-group", "admins"},
 		},
+		TestOrgs: []string{"test-org-1", "test-org-2"},
 	}
 
 	mux := http.NewServeMux()
@@ -504,11 +512,15 @@ func NewMockGitHubOAuthServer() *MockGitHubOAuthServer {
 	server.AuthorizeURL = fmt.Sprintf("%s/login/oauth/authorize", baseURL)
 	server.TokenURL = fmt.Sprintf("%s/login/oauth/access_token", baseURL)
 	server.UserURL = fmt.Sprintf("%s/user", baseURL)
+	server.OrgsURL = fmt.Sprintf("%s/user/memberships/orgs", baseURL)
 
 	// Register handlers
 	mux.HandleFunc("/login/oauth/authorize", server.handleAuthorize)
 	mux.HandleFunc("/login/oauth/access_token", server.handleToken)
 	mux.HandleFunc("/user", server.handleUser)
+	mux.HandleFunc("/api/v3/user", server.handleUser)
+	mux.HandleFunc("/user/memberships/orgs", server.handleOrgs)
+	mux.HandleFunc("/api/v3/user/memberships/orgs", server.handleOrgs)
 
 	return server
 }
@@ -556,19 +568,40 @@ func (s *MockGitHubOAuthServer) handleToken(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Return mock token response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"access_token": "mock-github-access-token",
-		"token_type":   "bearer",
-		"scope":        "read:user,user:email",
-	})
+	// Return mock token response in form-encoded format (matching GitHub's actual API)
+	// Python reference: github.py::get_user_access_token uses parse_qs(res.text)
+	w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+	w.Write([]byte("access_token=mock-github-access-token&token_type=bearer&scope=read:user,user:email"))
 }
 
 // handleUser handles GitHub user info request
 func (s *MockGitHubOAuthServer) handleUser(w http.ResponseWriter, r *http.Request) {
 	if s.CustomUserHandler != nil {
 		s.CustomUserHandler(w, r)
+		return
+	}
+
+	// Verify authorization using Bearer prefix (matching Python)
+	// Python reference: github.py::get_username uses Authorization: Bearer {access_token}
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Bad credentials",
+		})
+		return
+	}
+
+	// Return mock user info
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(s.TestUserInfo)
+}
+
+// handleOrgs handles GitHub organizations membership request
+func (s *MockGitHubOAuthServer) handleOrgs(w http.ResponseWriter, r *http.Request) {
+	if s.CustomOrgsHandler != nil {
+		s.CustomOrgsHandler(w, r)
 		return
 	}
 
@@ -583,9 +616,36 @@ func (s *MockGitHubOAuthServer) handleUser(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Return mock user info
+	// Build mock organization memberships
+	type OrgMembership struct {
+		Login     string `json:"login"`
+		ID        int64  `json:"id"`
+		NodeID    string `json:"node_id"`
+		URL       string `json:"url"`
+		Role      string `json:"role"`
+		State     string `json:"state"`
+	}
+
+	type Response struct {
+		*http.Response
+	}
+
+	orgs := make([]OrgMembership, len(s.TestOrgs))
+	for i, orgName := range s.TestOrgs {
+		orgs[i] = OrgMembership{
+			Login:     orgName,
+			ID:        int64(1000 + i),
+			NodeID:    fmt.Sprintf("org_%d", i),
+			URL:       fmt.Sprintf("https://api.github.com/orgs/%s", orgName),
+			Role:      "admin",
+			State:     "active",
+		}
+	}
+
+	// Return mock organizations
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(s.TestUserInfo)
+	w.Header().Set("X-GitHub-Media-Type", "github.v3; param=orgs-admin-preview")
+	json.NewEncoder(w).Encode(orgs)
 }
 
 // Close closes the mock server
@@ -633,6 +693,8 @@ func MockAuthConfigWithSAML(samlServer *MockSAMLServer) map[string]interface{} {
 }
 
 // MockAuthConfigWithGitHub returns a mock auth configuration for GitHub OAuth testing
+// Note: This configures the old-style GitHub OAuth. For provider source testing,
+// use CreateTestGitHubProviderSource to create a provider source in the database.
 func MockAuthConfigWithGitHub(githubServer *MockGitHubOAuthServer) map[string]interface{} {
 	return map[string]interface{}{
 		"GITHUB_OAUTH_CLIENT_ID":     githubServer.ClientID,
@@ -663,5 +725,59 @@ func CreateTestOAuth2Config(mockServer *MockOIDCServer) *oauth2.Config {
 			AuthURL:  fmt.Sprintf("%s/oauth/auth", mockServer.Server.URL),
 			TokenURL: mockServer.TokenURL,
 		},
+	}
+}
+
+// CreateTestGitHubProviderSource creates a test GitHub provider source in the database
+// This is used for integration testing of the provider source OAuth flow
+func CreateTestGitHubProviderSource(t testing.TB, db *sqldb.Database, mockServer *MockGitHubOAuthServer) {
+	ctx := context.Background()
+
+	// Create provider source config
+	config := &providerSourceModel.ProviderSourceConfig{
+		BaseURL:      mockServer.Server.URL,
+		ApiURL:       mockServer.Server.URL,
+		ClientID:     mockServer.ClientID,
+		ClientSecret: mockServer.ClientSecret,
+	}
+
+	// Create provider source
+	providerSource := providerSourceModel.NewProviderSource(
+		"Test GitHub",
+		"test-github",
+		providerSourceModel.ProviderSourceTypeGithub,
+		config,
+	)
+
+	// Save to database
+	repo := providerSourceRepo.NewProviderSourceRepository(db.DB)
+	err := repo.Upsert(ctx, providerSource)
+	if err != nil {
+		t.Fatalf("Failed to create test GitHub provider source: %v", err)
+	}
+}
+
+// CreateTestGitHubProviderSourceWithName creates a test GitHub provider source with a custom name
+func CreateTestGitHubProviderSourceWithName(t testing.TB, db *sqldb.Database, apiName string, mockServer *MockGitHubOAuthServer) {
+	ctx := context.Background()
+
+	config := &providerSourceModel.ProviderSourceConfig{
+		BaseURL:      mockServer.Server.URL,
+		ApiURL:       mockServer.Server.URL,
+		ClientID:     mockServer.ClientID,
+		ClientSecret: mockServer.ClientSecret,
+	}
+
+	providerSource := providerSourceModel.NewProviderSource(
+		"Test GitHub "+apiName,
+		apiName,
+		providerSourceModel.ProviderSourceTypeGithub,
+		config,
+	)
+
+	repo := providerSourceRepo.NewProviderSourceRepository(db.DB)
+	err := repo.Upsert(ctx, providerSource)
+	if err != nil {
+		t.Fatalf("Failed to create test GitHub provider source: %v", err)
 	}
 }

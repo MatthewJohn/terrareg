@@ -61,22 +61,25 @@ func (a *AdminSessionAuthContext) GetProviderType() AuthMethodType {
 
 // GetUsername returns the username from the admin session
 func (a *AdminSessionAuthContext) GetUsername() string {
+	// @TODO Should always be admin
 	return a.username
 }
 
 // IsAuthenticated returns true if the admin session is valid
 func (a *AdminSessionAuthContext) IsAuthenticated() bool {
+	// @TODO is always true - if an admin auth context is returned in Authenticate method, then it is authenticated.
 	return a.sessionID != "" && a.username != ""
 }
 
 // IsAdmin returns true if the user is an admin
 func (a *AdminSessionAuthContext) IsAdmin() bool {
+	// @TODO is always admin
 	return a.isAdmin
 }
 
 // IsBuiltInAdmin returns false for session-based users
 func (a *AdminSessionAuthContext) IsBuiltInAdmin() bool {
-	return false
+	return true
 }
 
 // RequiresCSRF returns true for session-based authentication
@@ -85,6 +88,7 @@ func (a *AdminSessionAuthContext) RequiresCSRF() bool {
 }
 
 // IsEnabled returns true if the admin session is valid
+// @TODO Can these be removed? IsEnabled should be for the AuthMethod
 func (a *AdminSessionAuthContext) IsEnabled() bool {
 	return a.IsAuthenticated()
 }
@@ -96,6 +100,7 @@ func (a *AdminSessionAuthContext) CheckAuthState() bool {
 
 // CanPublishModuleVersion checks if the admin user can publish to a namespace
 func (a *AdminSessionAuthContext) CanPublishModuleVersion(namespace string) bool {
+	// @TODO This function should always just return true for admin
 	if a.IsAdmin() {
 		return true
 	}
@@ -117,6 +122,7 @@ func (a *AdminSessionAuthContext) CanPublishModuleVersion(namespace string) bool
 
 // CanUploadModuleVersion checks if the admin user can upload to a namespace
 func (a *AdminSessionAuthContext) CanUploadModuleVersion(namespace string) bool {
+	// @TODO This function should always just return true for admin
 	if a.IsAdmin() {
 		return true
 	}
@@ -138,6 +144,7 @@ func (a *AdminSessionAuthContext) CanUploadModuleVersion(namespace string) bool 
 
 // CheckNamespaceAccess checks if the admin user has access to a namespace
 func (a *AdminSessionAuthContext) CheckNamespaceAccess(permissionType, namespace string) bool {
+	// @TODO This function should always just return true for admin
 	if a.IsAdmin() {
 		return true
 	}
@@ -160,6 +167,8 @@ func (a *AdminSessionAuthContext) CheckNamespaceAccess(permissionType, namespace
 
 // GetAllNamespacePermissions returns all namespace permissions for the admin user
 func (a *AdminSessionAuthContext) GetAllNamespacePermissions() map[string]string {
+	// @TODO Return empty map as there should be no depdency on this, because all permissions
+	// return true for admin
 	result := make(map[string]string)
 
 	// Add direct namespace permissions
@@ -181,6 +190,7 @@ func (a *AdminSessionAuthContext) GetAllNamespacePermissions() map[string]string
 
 // GetUserGroupNames returns the names of all user groups
 func (a *AdminSessionAuthContext) GetUserGroupNames() []string {
+	// @TODO return empty, as not needed
 	names := make([]string, len(a.userGroups))
 	for i, group := range a.userGroups {
 		names[i] = group.Name
@@ -190,11 +200,13 @@ func (a *AdminSessionAuthContext) GetUserGroupNames() []string {
 
 // CanAccessReadAPI returns true if the admin user can access the read API
 func (a *AdminSessionAuthContext) CanAccessReadAPI() bool {
+	// Retrurn true
 	return a.IsAuthenticated()
 }
 
 // CanAccessTerraformAPI returns true if the admin user can access Terraform API
 func (a *AdminSessionAuthContext) CanAccessTerraformAPI() bool {
+	// Retrurn true
 	return a.IsAuthenticated()
 }
 
@@ -217,6 +229,7 @@ func (a *AdminSessionAuthContext) GetProviderData() map[string]interface{} {
 
 // hasPermissionHierarchy checks if the stored permission meets or exceeds the required permission
 func (a *AdminSessionAuthContext) hasPermissionHierarchy(stored, required string) bool {
+	// Retrurn Is this needed?
 	switch required {
 	case "READ":
 		return stored == "READ" || stored == "MODIFY" || stored == "FULL" || stored == "UPLOAD" || stored == "PUBLISH"

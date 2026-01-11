@@ -39,6 +39,7 @@ func (a *AdminSessionAuthMethod) IsEnabled() bool {
 // Authenticate authenticates a request and returns an AdminSessionAuthContext
 func (a *AdminSessionAuthMethod) Authenticate(ctx context.Context, headers, formData, queryParams map[string]string) (auth.AuthMethod, error) {
 	// Look for session cookie
+	// For production, use a library for parsing this
 	sessionID, exists := queryParams["session_id"]
 	if !exists {
 		// Check headers for session ID
@@ -124,6 +125,7 @@ func (a *AdminSessionAuthMethod) parseProviderSourceAuth(providerSourceAuth []by
 }
 
 // getUserPermissions gets the user's permissions across all namespaces
+// @TODO Can these be removed? The auth Method shouldn't need these, since everything uses AuthContext
 func (a *AdminSessionAuthMethod) getUserPermissions(ctx context.Context, userID string) (map[string]string, error) {
 	permissions := make(map[string]string)
 
@@ -135,7 +137,7 @@ func (a *AdminSessionAuthMethod) getUserPermissions(ctx context.Context, userID 
 
 // AuthMethod interface implementation for the base AdminSessionAuthMethod
 // These return default values since the actual auth state is in the AdminSessionAuthContext
-
+// @TODO Can these be removed? The auth Method shouldn't need these, since everything uses AuthContext
 func (a *AdminSessionAuthMethod) IsBuiltInAdmin() bool                     { return false }
 func (a *AdminSessionAuthMethod) IsAdmin() bool                            { return false }
 func (a *AdminSessionAuthMethod) IsAuthenticated() bool                    { return false }

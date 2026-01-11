@@ -91,9 +91,14 @@ func (as *AuthenticationService) CreateAuthenticatedSession(
 		if permissions, ok := providerData["permissions"].(map[string]string); ok {
 			sessionData.Permissions = permissions
 		}
-	case "OIDC", "SAML", "OAUTH":
+	case "OIDC", "SAML", "OAUTH", "GITHUB":
 		// Extract username from provider data
-		if username, ok := providerData["username"].(string); ok {
+		// For GitHub, we use "github_username", for others we use "username"
+		username, hasUsername := providerData["username"].(string)
+		if !hasUsername {
+			username, hasUsername = providerData["github_username"].(string)
+		}
+		if hasUsername {
 			sessionData.Username = username
 		}
 		if isAdmin, ok := providerData["is_admin"].(bool); ok {

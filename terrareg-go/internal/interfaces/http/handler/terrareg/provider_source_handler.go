@@ -1,6 +1,7 @@
 package terrareg
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -13,17 +14,30 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
+// ProviderSourceFactoryInterface defines the interface for provider source factory
+// This allows for mocking in tests
+type ProviderSourceFactoryInterface interface {
+	GetProviderSourceByApiName(ctx context.Context, apiName string) (provider_source_service.ProviderSourceInstance, error)
+}
+
+// AuthenticationServiceInterface defines the interface for authentication service
+// This allows for mocking in tests
+type AuthenticationServiceInterface interface {
+	CreateAuthenticatedSession(ctx context.Context, w http.ResponseWriter, authMethod string, providerData map[string]interface{}, ttl *time.Duration) error
+	ValidateRequest(ctx context.Context, r *http.Request) (*authservice.AuthenticationContext, error)
+}
+
 // ProviderSourceHandler handles provider source OAuth flow
 // Python reference: server/api/github/github_login_callback.py
 type ProviderSourceHandler struct {
-	providerSourceFactory *provider_source_service.ProviderSourceFactory
-	authService           *authservice.AuthenticationService
+	providerSourceFactory ProviderSourceFactoryInterface
+	authService           AuthenticationServiceInterface
 }
 
 // NewProviderSourceHandler creates a new provider source handler
 func NewProviderSourceHandler(
-	providerSourceFactory *provider_source_service.ProviderSourceFactory,
-	authService *authservice.AuthenticationService,
+	providerSourceFactory ProviderSourceFactoryInterface,
+	authService AuthenticationServiceInterface,
 ) *ProviderSourceHandler {
 	return &ProviderSourceHandler{
 		providerSourceFactory: providerSourceFactory,
@@ -46,7 +60,7 @@ func (h *ProviderSourceHandler) HandleLogin(w http.ResponseWriter, r *http.Reque
 
 	// Get provider source from factory
 	providerSource, err := h.providerSourceFactory.GetProviderSourceByApiName(ctx, providerSourceName)
-	if err != nil {
+	if err != nil || providerSource == nil {
 		log.Error().Err(err).Str("provider_source", providerSourceName).Msg("Failed to get provider source")
 		h.writeError(w, http.StatusNotFound, "Provider source not found")
 		return
@@ -86,7 +100,7 @@ func (h *ProviderSourceHandler) HandleCallback(w http.ResponseWriter, r *http.Re
 
 	// Get provider source from factory
 	providerSource, err := h.providerSourceFactory.GetProviderSourceByApiName(ctx, providerSourceName)
-	if err != nil {
+	if err != nil || providerSource == nil {
 		log.Error().Err(err).Str("provider_source", providerSourceName).Msg("Failed to get provider source")
 		h.writeError(w, http.StatusNotFound, "Provider source not found")
 		return
@@ -162,7 +176,7 @@ func (h *ProviderSourceHandler) HandleAuthStatus(w http.ResponseWriter, r *http.
 
 	// Get provider source from factory
 	providerSource, err := h.providerSourceFactory.GetProviderSourceByApiName(ctx, providerSourceName)
-	if err != nil {
+	if err != nil || providerSource == nil {
 		log.Error().Err(err).Str("provider_source", providerSourceName).Msg("Failed to get provider source")
 		h.writeError(w, http.StatusNotFound, "Provider source not found")
 		return

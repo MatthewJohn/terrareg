@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -385,21 +387,16 @@ func (w *githubProviderSourceWrapper) GetUserAccessToken(ctx context.Context, co
 	// Python reference: github.py::get_user_access_token
 	tokenURL := fmt.Sprintf("%s/login/oauth/access_token", baseURL)
 
+	// Build form data
+	formData := fmt.Sprintf("client_id=%s&client_secret=%s&code=%s", clientID, clientSecret, code)
+
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(formData))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-
-	// Set query parameters
-	q := req.URL.Query()
-	q.Add("client_id", clientID)
-	q.Add("client_secret", clientSecret)
-	q.Add("code", code)
-	req.URL.RawQuery = q.Encode()
-
-	// Set headers
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/vnd.github+json")
 
 	// Make request
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -413,20 +410,23 @@ func (w *githubProviderSourceWrapper) GetUserAccessToken(ctx context.Context, co
 		return "", fmt.Errorf("unexpected status code exchanging code: %d", resp.StatusCode)
 	}
 
-	// Parse response
-	var result struct {
-		AccessToken string `json:"access_token"`
-		Error       string `json:"error"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("failed to decode access token response: %w", err)
+	// Parse response as form-encoded (query string format) - matching Python
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
 	}
 
-	if result.Error != "" {
-		return "", fmt.Errorf("error exchanging code: %s", result.Error)
+	// Parse query string format: "access_token=xxx&..."
+	values, err := url.ParseQuery(string(body))
+	if err != nil {
+		return "", err
 	}
 
-	return result.AccessToken, nil
+	if accessTokens := values["access_token"]; len(accessTokens) == 1 {
+		return accessTokens[0], nil
+	}
+
+	return "", nil
 }
 
 // GetUsername gets the username from the access token
@@ -435,18 +435,23 @@ func (w *githubProviderSourceWrapper) GetUsername(ctx context.Context, accessTok
 	// Get the config from the source
 	config := w.source.Config()
 
-	baseURL := config.BaseURL
-	apiURL := fmt.Sprintf("%s/api/v3/user", baseURL)
+	apiURL := config.ApiURL
+	if apiURL == "" {
+		// Fallback to BaseURL if ApiURL is not set
+		apiURL = config.BaseURL
+	}
+	userURL := fmt.Sprintf("%s/user", apiURL)
 
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", userURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Set authorization header
-	req.Header.Set("Authorization", fmt.Sprintf("token %s", accessToken))
-	req.Header.Set("Accept", "application/json")
+	// Set authorization header using Bearer prefix (matching Python)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("Accept", "application/vnd.github+json")
 
 	// Make request
 	client := &http.Client{Timeout: 30 * time.Second}
