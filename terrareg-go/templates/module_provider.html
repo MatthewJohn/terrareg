@@ -1,0 +1,690 @@
+{{ define "title" }}Module Provider{{ end }}
+
+{{ define "header" }}
+<script src="/static/js/terrareg/module_provider_page.js"></script>
+<link rel="stylesheet" href="/static/css/module_provider_page.css" />
+
+<link href="/static/css/prism/prism-hcl-1.29.0.css" rel="stylesheet" />
+<script src="/static/js/prism/prism-hcl-1.29.0.js"></script>
+
+<script>
+    window.Prism = window.Prism || {};
+    $(document).ready(function () {
+        renderPage();
+    });
+</script>
+{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul id="breadcrumb-ul">
+    </ul>
+</nav>
+
+
+<div id="module-provider-header-content">
+
+    <!-- Warning when no versions of module are available -->
+    <div id="no-version-available" class="columns is-centered default-hidden">
+        There are no versions of this module
+    </div>
+
+    <!-- Main details header body -->
+    <div id="module-details-body" class="columns is-centered default-hidden">
+
+        <!-- Provider Logo -->
+        <a id="provider-logo-link" class="default-hidden" href="">
+            <img id="provider-logo-img" class="default-hidden" height="150" width="150" alt="" src="" />
+        </a>
+
+        <!-- Module details -->
+        <div class="column is-one-third">
+
+            <section id="details-version" class="default-hidden">
+                Version
+                <div class="select is-small">
+                    <select id="version-select" autocomplete="off" onchange="onVersionSelectChange(event);">
+                    </select>
+                </div>
+            </section>
+            <p id="version-text" class="subtitle default-hidden"></p>
+            <div id="module-labels">
+                <span id="security-issues" class="tags has-addons result-card-label result-card-label-security-issues default-hidden">
+                    <span id="result-card-label-security-issues-icon" class="tag result-card-label-security-issue-tag is-light">
+                        <span class="panel-icon">
+                            <i class="fa fa-bug" aria-hidden="true"></i>
+                        </span>
+                        Security Issues
+                    </span>
+                    <span id="result-card-label-security-issues-critical-count" alt="Critical severity security issues" class="tag result-card-label-security-issue-tag result-card-label-security-issue-result-tag is-light is-danger default-hidden"></span>
+                    <span id="result-card-label-security-issues-high-count" alt="High severity security issues" class="tag result-card-label-security-issue-tag result-card-label-security-issue-result-tag is-light is-warning default-hidden"></span>
+                    <span id="result-card-label-security-issues-low-count" alt="Medium/Low severity security issues" class="tag result-card-label-security-issue-tag result-card-label-security-issue-result-tag is-light is-info default-hidden"></span>
+                </span>
+
+                <span id="yearly-cost-label" class="tag is-warning is-light result-card-label result-card-label-cost default-hidden">
+                    <p id="label-text"></p>
+                </span>
+            </div>
+
+            <!-- Basic details about module -->
+            <p id="current-submodule" class="subtitle default-hidden"></p>
+            <p id="module-title" class="title">
+            </p>
+            <p id="module-provider" class="subtitle">
+            </p>
+
+            <p id="unpublished-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This version of the module is not published.<br />
+                It cannot be used in Terraform until it is published.
+                <span id="unpublished-publish-info" class="default-hidden">
+                    <br />
+                    See the 'settings' tab to publish the module.
+                </span>
+            </p>
+            <p id="beta-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This is a beta module version.<br />
+                To use this version in Terraform, it must be specifically pinned.<br />
+                For an example, see the 'Usage' section.
+            </p>
+            <p id="non-latest-version-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This is an outdated version of the module.<br />
+                If you wish to view the latest version of the module,<br />
+                use the version drop-down above.
+            </p>
+
+            <p id="module-description" class="subtitle">
+            </p>
+
+            <p id="published-at"></p>
+            <p id="module-owner"></p>
+            <p id="source-url"></p>
+
+            <div id="yearly-cost" class="default-hidden">
+                Estimated yearly cost: 
+                <span class="tag is-warning result-card-label result-card-label-security-issues">
+                    <b>$<span id="yearly-cost-text"></span></b>
+                </span>
+            </div>
+
+            <div id="custom-links">
+            </div>
+
+            <br />
+            <a id="submodule-back-to-parent" class="buton default-hidden" href="">Back to root module</a>
+
+
+            <section id="submodule-select-container" class="default-hidden">
+                <p>Submodules: </p>
+                <div class="select is-small">
+                    <select id="submodule-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
+                        <option value="none">Select submodule</option>
+                    </select>
+                </div>
+            </section>
+
+            <br />
+            <section id="example-select-container" class="default-hidden">
+                <p>Examples: </p> 
+                <div class="select is-small">
+                    <select id="example-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
+                        <option value="none">Select example</option>
+                    </select>
+                </div>
+            </section>
+
+            <p id="outdated-extraction-warning" class="default-hidden">
+                <br />
+                This module version was extracted using a previous version of Terrareg meaning that some data maybe not be available.
+                <br />
+                Consider re-indexing this module version to enable all features.
+            </p>
+
+            <br />
+            <br />
+
+        </div>
+
+        <div class="column is-one-third">
+
+            <div id="module-download-stats-container" class="box default-hidden">
+                <table class="table module-provider-tab-content-table">
+                    <thead>
+                        <tr>
+                            <th>Module Downloads</th>
+                            <th>
+                                <span class="tag is-warning is-light">All Versions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Downloads this week</td>
+                            <td id="downloads-week"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this month</td>
+                            <td id="downloads-month"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this year</td>
+                            <td id="downloads-year"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads over all time</td>
+                            <td id="downloads-total"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="usage-example-container" class="box default-hidden">
+                <h5 class="title is-5">Usage</h5>
+                <div class="content">
+                    <p class="default-hidden" id="supported-terraform-compatible">
+                        Terraform <span id="supported-terraform-compatible-target-version"></span> compatibility:
+                        <span id="supported-terraform-compatible-tag" class="tag is-medium is-light">
+                        </span>
+                    </p>
+
+                    <p class="default-hidden" id="supported-terraform-versions">
+                        Supported Terraform versions: <code id="supported-terraform-versions-data"></code>
+                    </p>
+
+                    To use this module:
+                    <ol>
+                        <li>Add the following example to your Terraform,</li>
+                        <li id="usage-example-analytics-token-instruction">Ensure the "<span id="usage-example-analytics-token"></span>" placeholder must be replaced with your '<span id="usage-example-analytics-token-phrase"></span>',</li>
+                        <li>Add the required inputs - use the <span id="example-link-usage-builder" class="module-tab-link default-hidden">'<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and </span>'Inputs' tab for a full list.</li>
+                    </ol>
+                </div>
+
+                <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tabs">
+    <ul>
+        <li id="module-tab-link-readme" class="module-tab-link default-hidden"><a onclick="selectModuleTab('readme')">Readme</a></li>
+        <li id="module-tab-link-example-files" class="module-tab-link default-hidden"><a onclick="selectModuleTab('example-files')">Files</a></li>
+        <li id="module-tab-link-inputs" class="module-tab-link default-hidden"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
+        <li id="module-tab-link-outputs" class="module-tab-link default-hidden"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
+        <li id="module-tab-link-providers" class="module-tab-link default-hidden"><a onclick="selectModuleTab('providers')">Provider Requirements</a></li>
+        <li id="module-tab-link-resources" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('resources')">Resources</a>
+        </li>
+        <li id="module-tab-link-modules" class="module-tab-link default-hidden"><a onclick="selectModuleTab('modules')">Modules</a></li>
+
+
+        <li id="module-tab-link-security-issues" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('security-issues')">
+                Security Issues
+                <span class="tag is-warning is-light terrareg-exclusive default-hidden">Terrareg Exclusive</span>
+            </a>
+        </li>
+        <li id="module-tab-link-analytics" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('analytics')">
+                Analytics
+                <span class="tag is-warning is-light terrareg-exclusive default-hidden">Terrareg Exclusive</span>
+            </a>
+        </li>
+        <li id="module-tab-link-usage-builder" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('usage-builder')">
+                Usage Builder
+                <span class="tag is-warning is-light terrareg-exclusive default-hidden">Terrareg Exclusive</span>
+            </a>
+        </li>
+        <li id="module-tab-link-integrations" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('integrations')">
+                Integrations
+            </a>
+        </li>
+        <li id="module-tab-link-settings" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('settings')">
+                Settings
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div class="columns">
+    <!-- <div class=""> -->
+        <!-- Tab content -->
+
+        <!-- README tab -->
+        <div id="module-tab-readme" class="column is-three-fifths is-offset-one-fifth module-tabs content default-hidden">
+        </div>
+
+        <!-- Example files tab -->
+        <div id="module-tab-example-files" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <div class="columns">
+                <div class="column is-one-fifths">
+                    <nav id="example-file-list-nav" class="panel">
+                        <p class="panel-heading">
+                        Files
+                        </p>
+                    </nav>
+                </div>
+
+                <div class="column is-four-fifths">
+                    <pre><code id="example-file-content" class="language-hcl" data-lang="hcl"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inputs tab -->
+        <div id="module-tab-inputs" class="module-tabs default-hidden column is-four-fifths">
+            <div class="columns">
+                <div id="module-tab-inputs-left" class="column is-one-third">
+                </div>
+                <div id="module-tab-inputs-content" class="column is-two-thirds">
+                </div>
+            </div>
+        </div>
+
+        <!-- Outputs tab -->
+        <div id="module-tab-outputs" class="module-tabs default-hidden column is-four-fifths">
+            <div class="columns">
+                <div id="module-tab-outputs-left" class="column is-one-third">
+                </div>
+                <div id="module-tab-outputs-content" class="column is-two-thirds">
+                </div>
+            </div>
+        </div>
+
+        <!-- Providers tab -->
+        <div id="module-tab-providers" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <table class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Namespace</th>
+                        <th>Source</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Resources tab -->
+        <div id="module-tab-resources" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+
+            <button class="button is-info is-small" id="resourceDependencyGraphLink">View resource dependency graph</button>
+
+            <table class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Source</th>
+                        <th>Mode</th>
+                        <th>Version</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modules tab -->
+        <div id="module-tab-modules" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+
+            <table class="table module-modules-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Source</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Security Issues tab -->
+        <div id="module-tab-security-issues" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <div class="table-container">
+                <table id="security-issues-table" class="table display compact nowrap responsive" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Severity</th>
+                            <th>File</th>
+                            <th>Description</th>
+                            <th>ID</th>
+                            <th>Provider</th>
+                            <th>Service</th>
+                            <th>Resource</th>
+                            <th>Starting Line</th>
+                            <th>Ending Line</th>
+                            <th>Impact</th>
+                            <th>Resolution</th>
+                            <th>Resources</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tfsecResultsTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analytics tab -->
+        <div id="module-tab-analytics" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <table id="analytics-table" class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Module Version</th>
+                        <th>Terraform Version</th>
+                        <th>Environment</th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsVersionByTokenTable">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Usage Builder tab -->
+        <div id="module-tab-usage-builder" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <div class="notification has-text-centered">Provide values to the following inputs to generate Terraform required to use the module.</div><br />
+            <form name="frm-example" id="frm-example">
+                <table id="usage-builder-table" class="table is-flex-wrap-wrap module-provider-tab-content-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Required?</th>
+                            <th>Description</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usageBuilderTable">
+                    </tbody>
+                </table>
+            </form>
+            <br/><br/>
+            <pre id="usageBuilderOutput"></pre>
+        </div>
+
+        <!-- Integrations tab -->
+        <div id="module-tab-integrations" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <p class="subtitle">
+                Integrations
+            </p>
+
+            <table id="integrations-table" class="table">
+            </table>
+
+            <div id="index-version-in-progress" class="notification is-info default-hidden">
+            </div>
+            <div id="index-version-success" class="notification is-success default-hidden">
+            </div>
+            <div id="index-version-error" class="notification is-danger default-hidden">
+            </div>
+            <p class="subtitle">Manually index version</p>
+            <div class="field is-vertical">
+                <label class="label">Version</label>
+                <div class="control">
+                    <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                </div>
+                <label id="integrations-index-module-version-publish" class="checkbox default-hidden">
+                    <input id="indexModuleVersionPublish" type="checkbox" value="true">
+                    Publish
+                </label>
+                <div class="control">
+                    <br />
+                    <button id="integration-index-version-button" class="button is-info is-small">
+                    Index Version
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module settings tab -->
+        <div id="module-tab-settings" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
+            <div id="settings-module-version-card" class="card default-hidden">
+                <div class="card-content" style="background: #edf7ff">
+                    <h2 class="subtitle is-h2">Module Version</h2>
+
+                    <div id="settings-publish-button-container" class="default-hidden">
+                        The module version is currently unpublished.<br />
+                        <button class="button is-warning is-small" id="settings-publish-button">Publish</button>
+                        <br />
+                    </div>
+
+                    <div id="settings-module-version-status-error" class="notification is-danger default-hidden">
+                    </div>
+                </div>
+            </div>
+            <div id="settings-module-version-card" class="card">
+                <div class="card-content" style="background: #edfff8">
+                    <h2 class="subtitle is-h2">Module Provider</h2>
+
+                    <div class="field is-vertical">
+                        <div id="settings-status-success" class="notification is-success default-hidden">
+                            Settings Updated
+                        </div>
+                        <div id="settings-status-error" class="notification is-danger default-hidden">
+                        </div>
+
+                        <form id="settings-form">
+                            <input type="hidden" id="settings-csrf-token" value="{{ .csrf_token }}" />
+                            <div class="field">
+                                <label class="label">Verified</label>
+                                <div class="control">
+                                    <input class="checkbox" type="checkbox" value="true" id="settings-verified" />
+                                </div>
+                                <span id="settings-verified-auto-verified-message" class="default-hidden">
+                                    All modules within this namespace are automatically approved on creation.
+                                </span>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Git Repository Provider</label>
+                                <div class="control select">
+                                    <select id="settings-git-provider">
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="field settings-custom-git-provider-container default-hidden">
+                                <label class="label">Custom Repository base URL</label>
+                                <div class="control">
+                                    <input class="input" type="text" id="settings-base-url-template">
+                                </div>
+                                This URL must be valid for browsing the base of the repository.<br />
+                                It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                                E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                                NOTE: Setting this field will override the repository provider configuration.
+                            </div>
+                            <div class="field settings-custom-git-provider-container default-hidden">
+                                <label class="label">Custom Repository Clone URL</label>
+                                <div class="control">
+                                    <input class="input" type="text" id="settings-clone-url-template">
+                                </div>
+                                This URL must be valid for cloning the repository.<br />
+                                It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                                E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                                NOTE: Setting this field will override the repository provider configuration.
+                            </div>
+                            <div class="field settings-custom-git-provider-container default-hidden">
+                                <label class="label">Custom Repository source browse URL</label>
+                                <div class="control">
+                                    <input class="input" type="text" id="settings-browse-url-template">
+                                </div>
+                                This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
+                                It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                                It must include the following template values: <code>{tag}</code> and <code>{path}</code><br />
+                                E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                                NOTE: Setting this field will override the repository provider configuration.
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Git tag format</label>
+                                <div class="control">
+                                    <input placeholder="v{version}" class="input" type="text" id="settings-git-tag-format">
+                                </div>
+                                This value will be converted to the expected git tag for a module version.<br />
+                                The <code>{version}</code> placeholder will be used to generated the git tag when translating the module version to a git tag.<br />
+                                For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'<br />
+                                <br />
+                                If the git tagging format in use does not contain a full semantic version, use placeholders <code>{major}</code>, <code>{minor}</code> and <code>{patch}</code><br />
+                                to indicate which values are present in the tag - any missing values will be assumed to be '0'.<br />
+                                For example a git tag format of <code>v{major}.{minor}</code> would interpret a tag <code>v1.2</code> as a module version <code>1.2.0</code>,<br />
+                                where as a git tag format <code>v{major}.{patch}</code> would generate a version <code>v1.0.2</code>.<br />
+                                <br />
+                                Note that if the <code>{version}</code> placeholder is not used, the module version import API must be provided with the <code>git_tag</code> argument and indexing with <code>version</code> argument is disabled.
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Module path</label>
+                                <div class="control">
+                                    <input placeholder="/" class="input" type="text" id="settings-git-path">
+                                </div>
+                                Set the path within the repository/archive that the module exists.<br />
+                                Defaults to the root of the repository/archive.<br />
+                            </div>
+
+                            <div id="settings-section-archive-git-path" class="field">
+                                <label class="label">Only include module path in archive</label>
+                                <div class="control">
+                                    <input type="checkbox" value="true" id="settings-archive-git-path" />
+                                </div>
+                                This determines whether the generated archives only contain the contents of the <code>Module path</code>.<br />
+                                This is only used for providing modules from archives rather than using Git repository redirects.<br />
+                                This can be used if the source directory contains other content that you do no wish to distribute to users.<br />
+                                Ensure that there are no depdencies on Terraform outside of the "Module path", as this will not be available to users.<br />
+                            </div>
+
+                            <div class="field">
+                                <div class="control">
+                                    <button id="module-provider-settings-update" class="button is-link">Update</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-content" style="background: #FFF9ED">
+                    <h2 class="subtitle is-h2">Rename/Move</h2>
+                    <div id="settings-move-error" class="notification is-danger default-hidden">
+                    </div>
+
+                    <form id="settings-move-form">
+                        <input type="hidden" id="settings-move-csrf-token" value="{{ .csrf_token }}" />
+                        <div class="field">
+                            <label class="label">Namespace</label>
+                            <div class="control select">
+                                <select id="settings-move-namespace">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Module Name</label>
+                            <div class="control">
+                                <input required id="settings-move-module" class="input" type="text" placeholder="my-module">
+                            </div>
+                        </div>
+        
+                        <div class="field">
+                            <label class="label">Provider</label>
+                            <div class="control">
+                                <input required id="settings-move-provider" class="input" type="text" placeholder="e.g. aws, null...">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Confirm</label>
+                            <div class="control">
+                                <input class="checkbox" type="checkbox" value="true" id="settings-move-confirm" />
+                            </div>
+                            <span>
+                                Confirm that the module will be renamed/moved.<br />
+                                The module will initially still be accessible using the old URL,
+                                but any Terraform code using the module (and any saved links)
+                                should be updated as soon as possible.<br />
+                                The temporary redirect using the old URL will cease to work if a new module is created with a matching details (namespace, name and provider).
+                            </span>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button id="settings-move-submit" class="button is-link">Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <br />
+
+            <div id="settingsRedirectCard" class="card default-hidden">
+                <div class="card-content" style="background-color: #FFFFFF">
+
+                    <h2 class="subtitle is-h2">Redirects</h2>
+
+                    <table id="redirects-table" class="table module-provider-tab-content-table">
+                        <thead>
+                            <tr>
+                                <th>Namespace</th>
+                                <th>Module Name</th>
+                                <th>Module Provider</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="settingsRedirectTable">
+                        </tbody>
+                    </table>
+
+                    <div id="settings-redirect-error" class="notification is-danger default-hidden">
+                    </div>
+                </div>
+            </div>
+            <br />
+
+            <div class="card">
+                <div class="card-content" style="background-color: #FFEDED">
+
+                    <h2 class="subtitle is-h2">Delete</h2>
+
+                    <div id="module-version-delete-container" class="field is-vertical default-hidden">
+                        <div class="control">
+                            <button id="module-version-delete-button" class="button is-link is-danger"></button>
+                        </div>
+                        <br />
+                        <div id="confirm-delete-module-version-div" class="default-hidden">
+                            Type the version number of the current version to be deleted (e.g. 1.0.0) and click delete again:<br />
+                            <input autocomplete="off" id="confirm-delete-module-version" type="text" />
+                        </div>
+                    </div>
+
+                    <div class="field is-vertical">
+                        <script>
+                        </script>
+                        <div class="control">
+                            <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+                        </div>
+                        <br />
+                        <div id="confirm-delete-module-provider-div" class="default-hidden">
+                            Type the 'id' of the module provider (e.g. namespace/module/provider) and click delete again:<br />
+                            <input autocomplete="off" id="confirm-delete-module-provider" type="text" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- </div> -->
+</div>
+
+
+{{ end }}
+
+{{ template "template.html" . }}

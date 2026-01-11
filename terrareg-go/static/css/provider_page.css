@@ -1,0 +1,39 @@
+#provider-logo-link {
+    margin-top: 30px;
+    max-height: 150px;
+}
+#provider-header-content {
+    background-color: #f9f9f9;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+#provider-labels {
+    padding-top: 5px;
+    padding-bottom: 20px;
+}
+.custom-link {
+    margin-top: 10px;
+}
+
+.docs-link-dropdown {
+    position: relative !important;
+}
+
+.provider-docs {
+    margin-top: 30px;
+}
+
+/* Style ul and ol in documentation */
+#provider-doc-content > ul {
+    list-style: disc;
+    margin-bottom: 20px;
+    padding-left: 40px;
+}
+#provider-doc-content > ul > li {
+    padding-top: 5px;
+}
+
+#provider-doc-content > h2 {
+    margin-top: 3rem;
+}
