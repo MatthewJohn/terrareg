@@ -48,6 +48,8 @@ import (
 	storageModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
 	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
+	providerSourceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
+	providerSourceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
@@ -65,6 +67,7 @@ import (
 	graphPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/graph"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	sqldbprovider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
+	sqldbProviderSource "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider_source"
 	providerLogoRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/provider_logo"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
@@ -99,6 +102,7 @@ type Container struct {
 	ProviderRepo                      providerRepo.ProviderRepository
 	ProviderCategoryRepo              providerRepo.ProviderCategoryRepository
 	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
+	ProviderSourceRepo                providerSourceRepo.ProviderSourceRepository
 	SessionRepo                       authRepo.SessionRepository
 	UserGroupRepo                     authRepo.UserGroupRepository
 	TerraformIdpAuthorizationCodeRepo authRepo.TerraformIdpAuthorizationCodeRepository
@@ -118,6 +122,9 @@ type Container struct {
 
 	// Git Providers
 	GitProviderFactory *gitService.GitProviderFactory
+
+	// Provider Sources
+	ProviderSourceFactory *providerSourceService.ProviderSourceFactory
 
 	// Infrastructure Services
 	GitClient              gitService.GitClient
@@ -269,6 +276,7 @@ type Container struct {
 	AuditHandler               *terrareg.AuditHandler
 	GraphHandler               *terrareg.GraphHandler
 	ModuleWebhookHandler       *webhook.ModuleWebhookHandler
+	ProviderSourceHandler      *terrareg.ProviderSourceHandler
 	TerraformV1ModuleHandler   *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 	TerraformV2ProviderHandler *v2.TerraformV2ProviderHandler
 	TerraformV2CategoryHandler *v2.TerraformV2CategoryHandler
@@ -332,6 +340,7 @@ func NewContainer(
 	c.ProviderRepo = sqldbprovider.NewProviderRepository(db.DB)
 	c.ProviderCategoryRepo = sqldbprovider.NewProviderCategoryRepository(db)
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
+	c.ProviderSourceRepo = sqldbProviderSource.NewProviderSourceRepository(db.DB)
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
 	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
@@ -351,6 +360,9 @@ func NewContainer(
 			logger.Warn().Err(err).Msg("Failed to initialize git providers from config")
 		}
 	}
+
+	// Initialize provider source factory
+	c.ProviderSourceFactory = providerSourceService.NewProviderSourceFactory(c.ProviderSourceRepo)
 
 	c.URLService = urlservice.NewURLService(infraConfig)
 
@@ -609,7 +621,7 @@ func NewContainer(
 	c.SAMLService, _ = authservice.NewSAMLService(infraConfig)
 
 	// Initialize AuthFactory after all services are created
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig, c.TerraformIdpService, c.OIDCService, &c.Logger)
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig, c.TerraformIdpService, c.OIDCService, c.ProviderSourceFactory, &c.Logger)
 
 	// Initialize StateStorageService
 	c.StateStorageService = authservice.NewStateStorageService(c.SessionService)
@@ -790,6 +802,7 @@ func NewContainer(
 		c.StateStorageService,
 		infraConfig,
 	)
+	c.ProviderSourceHandler = terrareg.NewProviderSourceHandler(c.ProviderSourceFactory, c.AuthenticationService)
 	c.AuditHandler = terrareg.NewAuditHandler(c.GetAuditHistoryQuery)
 	c.GraphHandler = terrareg.NewGraphHandler(c.GetModuleDependencyGraphQuery, c.GraphService)
 
@@ -870,6 +883,7 @@ func NewContainer(
 		c.SearchFiltersHandler,
 		c.ModuleWebhookHandler, // Add webhook handler
 		c.GraphHandler,
+		c.ProviderSourceHandler,
 	)
 
 	return c, nil

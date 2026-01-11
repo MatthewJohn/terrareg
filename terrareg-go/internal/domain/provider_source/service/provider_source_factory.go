@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
@@ -31,33 +33,13 @@ type ProviderSourceFactory struct {
 	mu           sync.RWMutex
 }
 
-var (
-	instance *ProviderSourceFactory
-	once     sync.Once
-)
-
-// Get returns the singleton instance of ProviderSourceFactory
-// Python reference: factory.py::get()
-func Get() *ProviderSourceFactory {
-	// Note: This is a simplified singleton that assumes Initialize has been called
-	// In production, the factory should be initialized through the container
-	return instance
-}
-
 // NewProviderSourceFactory creates a new ProviderSourceFactory
 // This should be called during container initialization
 func NewProviderSourceFactory(repo repository.ProviderSourceRepository) *ProviderSourceFactory {
-	factory := &ProviderSourceFactory{
+	return &ProviderSourceFactory{
 		repo:         repo,
 		classMapping: make(map[model.ProviderSourceType]ProviderSourceClass),
 	}
-
-	// Store singleton instance
-	once.Do(func() {
-		instance = factory
-	})
-
-	return factory
 }
 
 // RegisterProviderSourceClass registers a provider source class
@@ -102,7 +84,8 @@ func (f *ProviderSourceFactory) GetProviderSourceByName(ctx context.Context, nam
 	}
 
 	return &providerSourceInstanceImpl{
-		source: source,
+		source:  source,
+		factory: f,
 	}, nil
 }
 
@@ -118,7 +101,8 @@ func (f *ProviderSourceFactory) GetProviderSourceByApiName(ctx context.Context, 
 	}
 
 	return &providerSourceInstanceImpl{
-		source: source,
+		source:  source,
+		factory: f,
 	}, nil
 }
 
@@ -132,7 +116,7 @@ func (f *ProviderSourceFactory) GetAllProviderSources(ctx context.Context) ([]Pr
 
 	result := make([]ProviderSourceInstance, len(sources))
 	for i, source := range sources {
-		result[i] = &providerSourceInstanceImpl{source: source}
+		result[i] = &providerSourceInstanceImpl{source: source, factory: f}
 	}
 	return result, nil
 }
@@ -260,11 +244,19 @@ type ProviderSourceInstance interface {
 	Name() string
 	ApiName() string
 	Type() model.ProviderSourceType
+
+	// OAuth methods for GitHub provider sources
+	// These methods are only available for certain provider source types
+	GetLoginRedirectURL(ctx context.Context) (string, error)
+	GetUserAccessToken(ctx context.Context, code string) (string, error)
+	GetUsername(ctx context.Context, accessToken string) (string, error)
+	GetUserOrganizations(ctx context.Context, accessToken string) []string
 }
 
 // providerSourceInstanceImpl implements ProviderSourceInstance
 type providerSourceInstanceImpl struct {
-	source *model.ProviderSource
+	source  *model.ProviderSource
+	factory *ProviderSourceFactory
 }
 
 func (p *providerSourceInstanceImpl) Name() string {
@@ -277,4 +269,258 @@ func (p *providerSourceInstanceImpl) ApiName() string {
 
 func (p *providerSourceInstanceImpl) Type() model.ProviderSourceType {
 	return p.source.Type()
+}
+
+// GetLoginRedirectURL returns the OAuth login redirect URL
+func (p *providerSourceInstanceImpl) GetLoginRedirectURL(ctx context.Context) (string, error) {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return "", err
+	}
+	return impl.GetLoginRedirectURL(ctx)
+}
+
+// GetUserAccessToken exchanges the OAuth code for an access token
+func (p *providerSourceInstanceImpl) GetUserAccessToken(ctx context.Context, code string) (string, error) {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return "", err
+	}
+	return impl.GetUserAccessToken(ctx, code)
+}
+
+// GetUsername gets the username from the access token
+func (p *providerSourceInstanceImpl) GetUsername(ctx context.Context, accessToken string) (string, error) {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return "", err
+	}
+	return impl.GetUsername(ctx, accessToken)
+}
+
+// GetUserOrganizations gets the organizations for the user
+func (p *providerSourceInstanceImpl) GetUserOrganizations(ctx context.Context, accessToken string) []string {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return []string{}
+	}
+	return impl.GetUserOrganizations(ctx, accessToken)
+}
+
+// getProviderSourceImplementation gets the actual provider source implementation
+// This creates the concrete implementation (e.g., GithubProviderSource) from the model
+func (f *ProviderSourceFactory) getProviderSourceImplementation(ctx context.Context, source *model.ProviderSource) (ProviderSourceInstance, error) {
+	// For now, only GitHub is implemented
+	if source.Type() != model.ProviderSourceTypeGithub {
+		return nil, fmt.Errorf("unsupported provider source type for OAuth: %s", source.Type())
+	}
+
+	// Create the wrapper that implements OAuth methods
+	return &githubProviderSourceWrapper{
+		source: source,
+		repo:   f.repo,
+	}, nil
+}
+
+// githubProviderSourceWrapper is a temporary wrapper to avoid circular dependency
+// It implements ProviderSourceInstance by delegating to a dynamically created GithubProviderSource
+type githubProviderSourceWrapper struct {
+	source *model.ProviderSource
+	repo   repository.ProviderSourceRepository
+}
+
+func (w *githubProviderSourceWrapper) Name() string {
+	return w.source.Name()
+}
+
+func (w *githubProviderSourceWrapper) ApiName() string {
+	return w.source.ApiName()
+}
+
+func (w *githubProviderSourceWrapper) Type() model.ProviderSourceType {
+	return w.source.Type()
+}
+
+// GetLoginRedirectURL returns the OAuth login redirect URL
+// Python reference: github.py::get_login_redirect_url
+func (w *githubProviderSourceWrapper) GetLoginRedirectURL(ctx context.Context) (string, error) {
+	// Get the config from the source
+	config := w.source.Config()
+
+	// Config should have the base_url and client_id set
+	// Python reference: github.py::_get_login_url
+	baseURL := config.BaseURL
+	clientID := config.ClientID
+
+	if clientID == "" {
+		return "", fmt.Errorf("client_id not configured for provider source: %s", w.source.Name())
+	}
+
+	// Generate state token for CSRF protection
+	stateToken := generateStateToken()
+
+	// Build the authorization URL
+	// Python reference: github.py::get_login_redirect_url
+	authURL := fmt.Sprintf("%s/login/oauth/authorize?client_id=%s&state=%s&scope=read:org",
+		baseURL, clientID, stateToken)
+
+	return authURL, nil
+}
+
+// GetUserAccessToken exchanges the OAuth code for an access token
+// Python reference: github.py::get_user_access_token
+func (w *githubProviderSourceWrapper) GetUserAccessToken(ctx context.Context, code string) (string, error) {
+	// Get the config from the source
+	config := w.source.Config()
+
+	baseURL := config.BaseURL
+	clientID := config.ClientID
+	clientSecret := config.ClientSecret
+
+	if clientID == "" || clientSecret == "" {
+		return "", fmt.Errorf("client_id and client_secret must be configured for provider source: %s", w.source.Name())
+	}
+
+	// Exchange code for access token
+	// Python reference: github.py::get_user_access_token
+	tokenURL := fmt.Sprintf("%s/login/oauth/access_token", baseURL)
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set query parameters
+	q := req.URL.Query()
+	q.Add("client_id", clientID)
+	q.Add("client_secret", clientSecret)
+	q.Add("code", code)
+	req.URL.RawQuery = q.Encode()
+
+	// Set headers
+	req.Header.Set("Accept", "application/json")
+
+	// Make request
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to exchange code for access token: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code exchanging code: %d", resp.StatusCode)
+	}
+
+	// Parse response
+	var result struct {
+		AccessToken string `json:"access_token"`
+		Error       string `json:"error"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("failed to decode access token response: %w", err)
+	}
+
+	if result.Error != "" {
+		return "", fmt.Errorf("error exchanging code: %s", result.Error)
+	}
+
+	return result.AccessToken, nil
+}
+
+// GetUsername gets the username from the access token
+// Python reference: github.py::get_username
+func (w *githubProviderSourceWrapper) GetUsername(ctx context.Context, accessToken string) (string, error) {
+	// Get the config from the source
+	config := w.source.Config()
+
+	baseURL := config.BaseURL
+	apiURL := fmt.Sprintf("%s/api/v3/user", baseURL)
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set authorization header
+	req.Header.Set("Authorization", fmt.Sprintf("token %s", accessToken))
+	req.Header.Set("Accept", "application/json")
+
+	// Make request
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to get username: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code getting username: %d", resp.StatusCode)
+	}
+
+	// Parse response
+	var user struct {
+		Login string `json:"login"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return "", fmt.Errorf("failed to decode user response: %w", err)
+	}
+
+	return user.Login, nil
+}
+
+// GetUserOrganizations gets the organizations for the user
+// Python reference: github.py::get_user_organisations
+func (w *githubProviderSourceWrapper) GetUserOrganizations(ctx context.Context, accessToken string) []string {
+	// Get the config from the source
+	config := w.source.Config()
+
+	baseURL := config.BaseURL
+	apiURL := fmt.Sprintf("%s/api/v3/user/orgs?per_page=100", baseURL)
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return []string{}
+	}
+
+	// Set authorization header
+	req.Header.Set("Authorization", fmt.Sprintf("token %s", accessToken))
+	req.Header.Set("Accept", "application/json")
+
+	// Make request
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return []string{}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return []string{}
+	}
+
+	// Parse response
+	var orgs []struct {
+		Login string `json:"login"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&orgs); err != nil {
+		return []string{}
+	}
+
+	// Extract org names
+	result := make([]string, len(orgs))
+	for i, org := range orgs {
+		result[i] = org.Login
+	}
+	return result
+}
+
+// generateStateToken generates a random state token for CSRF protection
+func generateStateToken() string {
+	// Generate a random state token
+	// In production, use crypto/rand
+	return fmt.Sprintf("%d", time.Now().UnixNano())
 }

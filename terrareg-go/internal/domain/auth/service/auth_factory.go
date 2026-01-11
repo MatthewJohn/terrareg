@@ -11,18 +11,20 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	infraAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	provider_source_service "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/rs/zerolog"
 )
 
 // AuthFactory handles authentication with immutable AuthMethod implementations
 // It uses AuthMethod factories to create AuthContext instances with authentication state
 type AuthFactory struct {
-	authMethods   []auth.AuthMethod
-	mutex         sync.RWMutex
-	sessionRepo   repository.SessionRepository
-	userGroupRepo repository.UserGroupRepository
-	config        *infraConfig.InfrastructureConfig
-	logger        *zerolog.Logger
+	authMethods            []auth.AuthMethod
+	mutex                  sync.RWMutex
+	sessionRepo            repository.SessionRepository
+	userGroupRepo          repository.UserGroupRepository
+	config                 *infraConfig.InfrastructureConfig
+	logger                 *zerolog.Logger
+	providerSourceFactory  *provider_source_service.ProviderSourceFactory
 }
 
 // NewAuthFactory creates a new immutable authentication factory
@@ -32,14 +34,16 @@ func NewAuthFactory(
 	config *infraConfig.InfrastructureConfig,
 	terraformIdpService *TerraformIdpService,
 	oidcService *OIDCService,
+	providerSourceFactory *provider_source_service.ProviderSourceFactory,
 	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
-		authMethods:   make([]auth.AuthMethod, 0),
-		sessionRepo:   sessionRepo,
-		userGroupRepo: userGroupRepo,
-		config:        config,
-		logger:        logger,
+		authMethods:           make([]auth.AuthMethod, 0),
+		sessionRepo:           sessionRepo,
+		userGroupRepo:         userGroupRepo,
+		config:                config,
+		logger:                logger,
+		providerSourceFactory: providerSourceFactory,
 	}
 
 	// Initialize immutable auth methods in priority order
@@ -99,7 +103,11 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 		// TODO: Fix OpenID Connect auth method interface compatibility
 	}
 
-	// 7. GitHub auth method (TODO: implement)
+	// 7. GitHub auth method (using provider source pattern)
+	if af.providerSourceFactory != nil {
+		githubAuthMethod := infraAuth.NewGitHubAuthMethod(af.providerSourceFactory)
+		af.RegisterAuthMethod(githubAuthMethod)
+	}
 
 	// 8. Terraform OIDC auth method
 	if terraformIdpService != nil {

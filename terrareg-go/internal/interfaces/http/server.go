@@ -56,6 +56,7 @@ type Server struct {
 	moduleWebhookHandler        *webhook.ModuleWebhookHandler
 	graphHandler                *terrareg.GraphHandler
 	rateLimiter                 *http_middleware.RateLimiterMiddleware
+	providerSourceHandler       *terrareg.ProviderSourceHandler
 }
 
 // NewServer creates a new HTTP server
@@ -88,6 +89,7 @@ func NewServer(
 	searchFiltersHandler *terrareg.SearchFiltersHandler,
 	moduleWebhookHandler *webhook.ModuleWebhookHandler,
 	graphHandler *terrareg.GraphHandler,
+	providerSourceHandler *terrareg.ProviderSourceHandler,
 ) *Server {
 	s := &Server{
 		router:                      chi.NewRouter(),
@@ -119,6 +121,7 @@ func NewServer(
 		searchFiltersHandler:        searchFiltersHandler,
 		moduleWebhookHandler:        moduleWebhookHandler,
 		graphHandler:                graphHandler,
+		providerSourceHandler:       providerSourceHandler,
 	}
 
 	s.setupMiddleware()
@@ -903,30 +906,13 @@ func (s *Server) handleGitHubOAuth(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleGitHubOAuth(w, r)
 }
 func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request) {
-	providerSource := chi.URLParam(r, "provider_source")
-
-	// Handle GitHub OAuth
-	if providerSource == "github" {
-		s.authHandler.HandleGitHubOAuth(w, r)
-		return
-	}
-
-	// Other provider sources not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Provider source login not yet implemented",
-	})
+	s.providerSourceHandler.HandleLogin(w, r)
 }
 func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request) {
-	// Provider source callback not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Provider source callback not yet implemented",
-	})
+	s.providerSourceHandler.HandleCallback(w, r)
 }
 func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request) {
-	// Provider source auth status not yet implemented
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Provider source auth status not yet implemented",
-	})
+	s.providerSourceHandler.HandleAuthStatus(w, r)
 }
 func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request) {
 	// Provider source organizations not yet implemented
