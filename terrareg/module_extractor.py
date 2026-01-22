@@ -3,7 +3,7 @@
 from contextlib import contextmanager
 import os
 import threading
-from typing import Optional, Type
+from typing import Optional, Type, Dict, Any, Tuple
 import tempfile
 import uuid
 import zipfile
@@ -15,12 +15,16 @@ import re
 import glob
 import pathlib
 import urllib.parse
+import time
 
 from werkzeug.utils import secure_filename
 import magic
 from bs4 import BeautifulSoup
 import markdown
 import pathspec
+
+import requests
+import jwt
 
 import terrareg.models
 from terrareg.database import Database
@@ -828,12 +832,309 @@ class ApiUploadModuleExtractor(ModuleExtractor):
 class GitModuleExtractor(ModuleExtractor):
     """Extraction of module via git."""
 
+    # Cache installation tokens (short-lived) keyed by (api_base_url, app_id, installation_id).
+    _github_app_token_cache_lock = threading.Lock()
+    _github_app_token_cache: Dict[Tuple[str, str, str], Tuple[str, float]] = {}
+
     def __init__(self, *args, **kwargs):
         """Store member variables."""
         super(GitModuleExtractor, self).__init__(*args, **kwargs)
         # # Sanitise URL and tag name
         # self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
         # self._tag_name = urllib.parse.quote(tag_name, safe='/')
+
+    # ---- GitHub App cloning support -----------------------------------------
+
+    def _parse_git_url_to_https(self, git_url: str) -> Optional[str]:
+        """
+        Normalize common git URL formats into an https clone URL:
+          - https://host/org/repo(.git)
+          - git@host:org/repo(.git)
+          - ssh://git@host/org/repo(.git)
+
+        Returns None if parsing fails.
+        """
+        if not git_url:
+            return None
+
+        # scp-like syntax: git@host:org/repo.git
+        m = re.match(r"^[^@]+@([^:]+):(.+)$", git_url)
+        if m:
+            host = m.group(1)
+            path = m.group(2).lstrip("/")
+            if not path.endswith(".git"):
+                path += ".git"
+            return f"https://{host}/{path}"
+
+        # ssh://...
+        if git_url.startswith("ssh://"):
+            try:
+                parsed = urllib.parse.urlparse(git_url)
+                host = parsed.hostname
+                path = (parsed.path or "").lstrip("/")
+                if not host or not path:
+                    return None
+                if not path.endswith(".git"):
+                    path += ".git"
+                return f"https://{host}/{path}"
+            except Exception:
+                return None
+
+        # https?://...
+        try:
+            parsed = urllib.parse.urlparse(git_url)
+            if parsed.scheme.lower() in ["http", "https"] and parsed.hostname:
+                path = (parsed.path or "").lstrip("/")
+                if not path.endswith(".git"):
+                    path += ".git"
+                return f"https://{parsed.hostname}{(':'+str(parsed.port)) if parsed.port else ''}/{path}"
+        except Exception:
+            return None
+
+        return None
+
+    def _load_github_apps_config(self) -> Optional[list]:
+        """
+        Load Config().GITHUB_APPS_JSON.
+        Supports either:
+          - JSON list: [ {host:..., app_id:..., private_key_pem:..., ...}, ... ]
+          - JSON object: { "apps": [ ... ] }
+        """
+        raw = (Config().GITHUB_APPS_JSON or "").strip()
+        if not raw:
+            return None
+
+        try:
+            parsed = json.loads(raw)
+        except Exception:
+            return None
+
+        if isinstance(parsed, list):
+            return parsed
+        if isinstance(parsed, dict) and isinstance(parsed.get("apps"), list):
+            return parsed.get("apps")
+
+        return None
+
+    def _get_github_app_cfg_for_host(self, host: str) -> Optional[Dict[str, Any]]:
+        apps = self._load_github_apps_config()
+        if not apps:
+            return None
+
+        host = (host or "").lower()
+        for app in apps:
+            if not isinstance(app, dict):
+                continue
+            if str(app.get("host", "")).lower() == host:
+                return app
+        return None
+
+    def _make_github_app_jwt(self, app_id: str, private_key_pem: str) -> Optional[str]:
+        """
+        Create a short-lived GitHub App JWT. GitHub requires RS256 signed JWTs.
+        """
+        try:
+            now = int(time.time())
+            payload = {
+                "iat": now - 60,
+                "exp": now + (9 * 60),  # <= 10 minutes
+                "iss": str(app_id),
+            }
+            pem = private_key_pem.replace("\\n", "\n")
+            token = jwt.encode(payload, pem, algorithm="RS256")
+            if isinstance(token, bytes):
+                token = token.decode("utf-8")
+            return token
+        except Exception:
+            return None
+
+    def _parse_owner_repo_from_https(self, https_url: str) -> Optional[Tuple[str, str]]:
+        try:
+            parsed = urllib.parse.urlparse(https_url)
+            path = (parsed.path or "").lstrip("/")
+            if path.endswith(".git"):
+                path = path[:-4]
+            parts = [p for p in path.split("/") if p]
+            if len(parts) < 2:
+                return None
+            return parts[0], parts[1]
+        except Exception:
+            return None
+
+    def _default_github_api_base(self, host: str) -> str:
+        host = (host or "").lower()
+        if host == "github.com":
+            return "https://api.github.com"
+        return f"https://{host}/api/v3"
+
+    def _discover_installation_id(
+        self,
+        api_base_url: str,
+        app_jwt: str,
+        owner: str,
+        repo: str
+    ) -> Optional[str]:
+        """
+        Discover installation id for the app installed on the given repo.
+        """
+        url = f"{api_base_url.rstrip('/')}/repos/{owner}/{repo}/installation"
+        headers = {
+            "Authorization": f"Bearer {app_jwt}",
+            "Accept": "application/vnd.github+json",
+        }
+        try:
+            resp = requests.get(url, headers=headers, timeout=30)
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            inst_id = data.get("id")
+            return str(inst_id) if inst_id is not None else None
+        except Exception:
+            return None
+
+    def _get_installation_token(
+        self,
+        api_base_url: str,
+        app_id: str,
+        installation_id: str,
+        private_key_pem: str
+    ) -> Optional[str]:
+        """
+        Mint (and cache) an installation token.
+        """
+        cache_key = (api_base_url, str(app_id), str(installation_id))
+        now = time.time()
+
+        with self._github_app_token_cache_lock:
+            cached = self._github_app_token_cache.get(cache_key)
+            if cached:
+                token, expiry = cached
+                if now < (expiry - 60):
+                    return token
+
+        app_jwt = self._make_github_app_jwt(app_id=app_id, private_key_pem=private_key_pem)
+        if not app_jwt:
+            return None
+
+        url = f"{api_base_url.rstrip('/')}/app/installations/{installation_id}/access_tokens"
+        headers = {
+            "Authorization": f"Bearer {app_jwt}",
+            "Accept": "application/vnd.github+json",
+        }
+
+        try:
+            resp = requests.post(url, headers=headers, json={}, timeout=30)
+            if resp.status_code not in (200, 201):
+                return None
+
+            data = resp.json()
+            token = data.get("token")
+            expires_at = data.get("expires_at")  # ISO8601
+            if not token:
+                return None
+
+            expiry_epoch = now + (50 * 60)
+            if isinstance(expires_at, str):
+                try:
+                    dt = datetime.datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                    expiry_epoch = dt.timestamp()
+                except Exception:
+                    pass
+
+            with self._github_app_token_cache_lock:
+                self._github_app_token_cache[cache_key] = (token, float(expiry_epoch))
+
+            return token
+        except Exception:
+            return None
+
+    def _get_github_app_clone_token_for_url(self, git_url: str) -> Optional[Tuple[str, str]]:
+        """
+        If configured for this host, return (https_clone_url, installation_token).
+        Returns None if not applicable or if token minting fails.
+        """
+        https_url = self._parse_git_url_to_https(git_url)
+        if not https_url:
+            return None
+
+        parsed = urllib.parse.urlparse(https_url)
+        host = (parsed.hostname or "").lower()
+        if not host:
+            return None
+
+        app_cfg = self._get_github_app_cfg_for_host(host)
+        if not app_cfg:
+            return None
+
+        # Support both "private_key_pem" and "client_secret" as the PEM content.
+        private_key_pem = str(app_cfg.get("private_key_pem") or app_cfg.get("client_secret") or "").strip()
+        app_id = str(app_cfg.get("app_id") or "").strip()
+        if not app_id or not private_key_pem:
+            return None
+
+        api_base_url = str(app_cfg.get("api_base_url") or "").strip() or self._default_github_api_base(host)
+
+        owner_repo = self._parse_owner_repo_from_https(https_url)
+        if not owner_repo:
+            return None
+        owner, repo = owner_repo
+
+        # Support both "installation_id" and "client_id" (compat).
+        installation_id = str(app_cfg.get("installation_id") or app_cfg.get("client_id") or "").strip()
+
+        # If not provided, discover from repo.
+        if not installation_id:
+            app_jwt = self._make_github_app_jwt(app_id=app_id, private_key_pem=private_key_pem)
+            if not app_jwt:
+                return None
+            installation_id = self._discover_installation_id(api_base_url, app_jwt, owner, repo)
+            if not installation_id:
+                return None
+
+        token = self._get_installation_token(api_base_url, app_id, installation_id, private_key_pem)
+        if not token:
+            return None
+
+        return https_url, token
+
+    def _git_clone_with_askpass(self, https_git_url: str, token: str):
+        """
+        Clone using HTTPS with GIT_ASKPASS so the token is not embedded in the URL.
+        """
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        env["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=accept-new"
+
+        with tempfile.TemporaryDirectory(prefix="terrareg-askpass-") as td:
+            askpass_path = os.path.join(td, "git-askpass.sh")
+            with open(askpass_path, "w", encoding="utf-8") as fh:
+                fh.write("#!/bin/sh\n")
+                fh.write("case \"$1\" in\n")
+                fh.write("  *Username*) echo \"x-access-token\" ;;\n")
+                fh.write("  *Password*) echo \"$GITHUB_INSTALLATION_TOKEN\" ;;\n")
+                fh.write("  *) echo \"\" ;;\n")
+                fh.write("esac\n")
+            os.chmod(askpass_path, 0o700)
+
+            env["GIT_ASKPASS"] = askpass_path
+            env["GITHUB_INSTALLATION_TOKEN"] = token
+
+            subprocess.check_output(
+                [
+                    "git",
+                    "clone",
+                    "--single-branch",
+                    "--branch",
+                    self._module_version.source_git_tag,
+                    https_git_url,
+                    self.extract_directory
+                ],
+                stderr=subprocess.STDOUT,
+                env=env,
+                timeout=Config().GIT_CLONE_TIMEOUT
+            )
+
+    # -------------------------------------------------------------------------
 
     def _clone_repository(self):
         """Extract uploaded archive into extract directory."""
@@ -843,6 +1144,23 @@ class GitModuleExtractor(ModuleExtractor):
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
         git_url = self._module_version._module_provider.get_git_clone_url()
+
+        # --- GitHub App cloning (github.com and GitHub Enterprise) -------------
+        github_app_result = self._get_github_app_clone_token_for_url(git_url)
+        if github_app_result:
+            https_url, inst_token = github_app_result
+            try:
+                self._git_clone_with_askpass(https_url, inst_token)
+                return
+            except subprocess.CalledProcessError as exc:
+                error = 'Unknown error occurred during git clone'
+                for line in exc.output.decode('utf-8').split('\n'):
+                    if line.startswith('fatal:'):
+                        error = 'Error occurred during git clone: {}'.format(line)
+                if Config().DEBUG:
+                    error += f'\n{str(exc)}\n{exc.output.decode("utf-8")}'
+                raise GitCloneError(error)
+        # ---------------------------------------------------------------------
 
         # Add credentials to URL, if using http(s) and configured in
         # config

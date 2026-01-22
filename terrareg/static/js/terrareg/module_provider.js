@@ -1,68 +1,125 @@
+function timeDifferenceCalendarCompound(previous, options = {}) {
+  const {
+    maxParts = 2,          // "1 year and 2 months ago"
+    useAnd = true,        // use "and" before last unit
+    includeZeros = false, // include 0-valued middle units (rarely useful)
+  } = options;
 
-function timeDifference(previous) {
-    var min = 60 * 1000;
-    var hour = min * 60;
-    var day = hour * 24;
-    var month = day * 30;
-    var year = day * 365;
+  const prev =
+    previous instanceof Date ? previous :
+    typeof previous === "number" ? new Date(previous) :
+    new Date(previous);
 
-    var current = new Date();
-    var elapsed = current - previous;
+  if (Number.isNaN(prev.getTime())) {
+    throw new TypeError("Invalid date passed to timeDifferenceCalendarCompound()");
+  }
 
-    if (elapsed > year)
-    {
-        let cnt = Math.round(elapsed / year);
-        if (cnt == 1)
-        {
-            return 'approximately ' + cnt + ' year ago';
-        }
-        return 'approximately ' + cnt + ' years ago';
+  const now = new Date();
+
+  // Handle future timestamps
+  let from = prev;
+  let to = now;
+  let future = false;
+
+  if (prev > now) {
+    future = true;
+    from = now;
+    to = prev;
+  }
+
+  // Constants
+  const MIN  = 60 * 1000;
+  const HOUR = 60 * MIN;
+  const DAY  = 24 * HOUR;
+
+  function plural(n, word) {
+    return n === 1 ? word : word + "s";
+  }
+
+  function daysInMonth(year, month0) {
+    return new Date(year, month0 + 1, 0).getDate();
+  }
+
+  function join(parts) {
+    if (parts.length === 1) return parts[0];
+    if (!useAnd) return parts.join(", ");
+    return parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
+  }
+
+  const diffMs = to - from;
+
+  // Under one minute → no seconds
+  if (diffMs < MIN) {
+    return future ? "in a moment" : "just now";
+  }
+
+  // ---- Calendar-aware Y/M/D with borrowing ----
+  let years  = to.getFullYear() - from.getFullYear();
+  let months = to.getMonth() - from.getMonth();
+  let days   = to.getDate() - from.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const borrowYear  = to.getMonth() === 0 ? to.getFullYear() - 1 : to.getFullYear();
+    const borrowMonth = (to.getMonth() + 11) % 12;
+    days += daysInMonth(borrowYear, borrowMonth);
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  // ---- Remainder time after Y/M/D anchor ----
+  const anchor = new Date(from);
+  anchor.setFullYear(anchor.getFullYear() + years);
+  anchor.setMonth(anchor.getMonth() + months);
+
+  // Clamp date if month overflowed (Jan 31 → Feb 28/29)
+  const maxDay = daysInMonth(anchor.getFullYear(), anchor.getMonth());
+  if (anchor.getDate() > maxDay) {
+    anchor.setDate(maxDay);
+  }
+
+  anchor.setDate(anchor.getDate() + days);
+
+  let remMs = to - anchor;
+  if (remMs < 0) remMs = 0;
+
+  const hours = Math.floor(remMs / HOUR);
+  remMs -= hours * HOUR;
+
+  const minutes = Math.floor(remMs / MIN);
+
+  const values = {
+    year: years,
+    month: months,
+    day: days,
+    hour: hours,
+    minute: minutes,
+  };
+
+  const units = ["year", "month", "day", "hour", "minute"];
+
+  const parts = [];
+  for (const u of units) {
+    const v = values[u];
+
+    if (v !== 0 || includeZeros) {
+      if (parts.length > 0 || v !== 0) {
+        parts.push(`${v} ${plural(v, u)}`);
+      }
     }
-    else if (elapsed > month)
-    {
-        let cnt = Math.round(elapsed / month);
-        if (cnt == 1)
-        {
-            return 'approximately ' + cnt + ' month ago';
-        }
-        return 'approximately ' + cnt + ' months ago';
-    }
-    else if (elapsed > day)
-    {
-        let cnt = Math.round(elapsed / day);
-        if (cnt == 1)
-        {
-            return 'approximately ' + cnt + ' day ago'
-        }
-        return 'approximately ' + cnt + ' days ago';
-    }
-    else if (elapsed > hour)
-    {
-        let cnt = Math.round(elapsed / hour);
-        if (cnt == 1)
-        {
-            return cnt + ' hour ago';
-        }
-        return cnt + ' hours ago';
-    }
-    else if (elapsed > min)
-    {
-        let cnt = Math.round(elapsed / min);
-        if (cnt == 1)
-        {
-            return cnt + ' minute ago';
-        }
-        return cnt + ' minutes ago';
-    }
-    else
-    {
-        let cnt = Math.round(elapsed / 1000);
-        if (cnt == 1)
-        {
-            return cnt + ' second ago';
-        }
-        return cnt + ' seconds ago';
-    }
+
+    if (parts.length === maxParts) break;
+  }
+
+  if (parts.length === 0) {
+    return future ? "in a moment" : "just now";
+  }
+
+  const phrase = join(parts);
+  return future ? `in ${phrase}` : `${phrase} ago`;
 }
 
 async function addProviderLogoTos(provider) {
@@ -121,7 +178,7 @@ async function createSearchResultCard(parent_id, type, module) {
 
     let provider_logos = await getProviderLogos();
 
-    let display_published = timeDifference(new Date(module.published_at));
+    let display_published = timeDifferenceCalendarCompound(new Date(module.published_at));
     let provider_logo_html = '';
 
     let namespaceDisplayName = module.namespace;

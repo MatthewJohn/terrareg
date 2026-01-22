@@ -20,7 +20,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
             return {'message': 'Module hosting is disbaled'}, 500
 
         # If authentication is required, check pre-signed URL
-        if not config.ALLOW_UNAUTHENTICATED_ACCESS:
+        if not config.ALLOW_UNAUTHENTICATED_ACCESS or config.REQUIRE_PRESIGNED_URL_AUTHENTICATION:
             presign = flask.request.args.get("presign", presign)
 
             path = flask.request.path

@@ -50,49 +50,49 @@ def safe_iglob(base_dir, pattern, recursive, is_file=False, is_dir=False):
         ))
     return results
 
-def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=False, allow_same_directory=False):
+def check_subdirectory_within_base_dir(
+    base_dir,
+    sub_dir,
+    is_dir=False,
+    is_file=False,
+    allow_same_directory=False,
+):
     """
-    Ensure directory is within base directory.
-    Sub directory should be full paths - it should not be relative to the base_dir.
-
-    Perform optional checks if sub_dir is a path or file.
-
-    Return the real path of the sub directory.
+    Security boundary check:
+    - Resolves symlinks via realpath() and ensures the resolved sub path is within the resolved base path.
+    - Optionally asserts the resolved path is a directory or file.
+    - Returns the resolved absolute path (real path).
     """
-
     if is_dir and is_file:
-        raise Exception('Cannot expect object to be file and directory.')
+        raise Exception("Cannot expect object to be file and directory.")
 
-    # Convert to real paths
-    ## Since the base directory might not be a real path,
-    ## convert it first
-    real_base_path = os.path.realpath(base_dir)
-    try:
-        ## Convert sub-path to real path to compare
-        real_sub_dir = os.path.realpath(sub_dir)
-    except OSError:
-        raise PathDoesNotExistError('File/directory does not exist')
+    # Resolve both paths (dereference symlinks) and normalize.
+    real_base = os.path.realpath(base_dir)
+    real_sub = os.path.realpath(sub_dir)
 
-    ## Ensure sub-path starts with base path.
-    ## Append trailing slash to ensure, to avoid
-    ## allowing /opt/test-this with a base directory of /opt/test
-    ## If allowing the sub directory to match the base directory,
-    ## optionally allow if real_sub_dir equals the base
-    real_base_path_trailing_slash = '{0}/'.format(real_base_path) if real_base_path != '/' else real_base_path
-    if (((not allow_same_directory or real_sub_dir != real_base_path) and
-         not real_sub_dir.startswith(real_base_path_trailing_slash)) or
-        (not allow_same_directory and real_sub_dir == real_base_path)):
-        raise PathIsNotWithinBaseDirectoryError('Sub path is not within base directory')
+    # Ensure the target exists (note: broken symlinks will fail here).
+    # Commented out to allow for checking paths that may not yet exist (e.g. shared).
+    # if not os.path.exists(real_sub):
+    #     raise PathDoesNotExistError("File/directory does not exist")
 
-    if is_dir:
-        if not os.path.isdir(real_sub_dir):
-            raise PathDoesNotExistError('Directory does not exist')
-    if is_file:
-        if not os.path.isfile(real_sub_dir):
-            raise PathDoesNotExistError('File does not exist')
+    # Enforce containment using commonpath (safe vs prefix tricks).
+    base_norm = os.path.normpath(real_base)
+    sub_norm = os.path.normpath(real_sub)
 
-    # Return absolute path of joined paths
-    return os.path.abspath(real_sub_dir)
+    same = (sub_norm == base_norm)
+    if same and not allow_same_directory:
+        raise PathIsNotWithinBaseDirectoryError("Sub path is not within base directory")
+
+    if os.path.commonpath([base_norm, sub_norm]) != base_norm:
+        raise PathIsNotWithinBaseDirectoryError("Sub path is not within base directory")
+
+    # Type checks on the resolved path.
+    if is_dir and not os.path.isdir(sub_norm):
+        raise PathDoesNotExistError("Directory does not exist")
+    if is_file and not os.path.isfile(sub_norm):
+        raise PathDoesNotExistError("File does not exist")
+
+    return sub_norm
 
 
 def sanitise_html_content(text, allow_markdown_html=False):
