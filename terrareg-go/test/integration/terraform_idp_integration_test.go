@@ -89,7 +89,7 @@ func TestTerraformIDPIntegration(t *testing.T) {
 	infraConfig.TerraformOidcIdpSessionExpiry = 3600
 
 	// Create container with test configuration
-	container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(), db)
+	container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(t), db)
 	require.NoError(t, err)
 
 	// Setup test server
@@ -213,7 +213,7 @@ func TestTerraformIDPConfigurationValidation(t *testing.T) {
 		// Container creation will panic due to missing key
 		// This is expected behavior - the service panics when it can't load the signing key
 		assert.Panics(t, func() {
-			container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(), db)
+			container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(t), db)
 			if err == nil {
 				_ = container
 			}
@@ -232,7 +232,7 @@ func TestTerraformIDPConfigurationValidation(t *testing.T) {
 
 		// Container creation will panic due to invalid key
 		assert.Panics(t, func() {
-			container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(), db)
+			container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(t), db)
 			if err == nil {
 				_ = container
 			}
@@ -270,7 +270,7 @@ func TestTerraformIDPConcurrency(t *testing.T) {
 	infraConfig.PublicURL = publicURL
 	infraConfig.TerraformOidcIdpSigningKeyPath = keyFilePath
 
-	container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(), db)
+	container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(t), db)
 	require.NoError(t, err)
 
 	server := container.Server
@@ -353,7 +353,7 @@ func TestTerraformIDPSecurityFeatures(t *testing.T) {
 	infraConfig.PublicURL = publicURL
 	infraConfig.TerraformOidcIdpSigningKeyPath = keyFilePath
 
-	container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(), db)
+	container, err := container.NewContainer(domainConfig, infraConfig, nil, testutils.GetTestLogger(t), db)
 	require.NoError(t, err)
 
 	server := container.Server

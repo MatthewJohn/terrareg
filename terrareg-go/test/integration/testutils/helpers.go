@@ -62,7 +62,7 @@ func SetupIntegrationTest(t *testing.T) (*sqldb.Database, *container.Container, 
 	domainConfig := CreateTestDomainConfig(t)
 	infraConfig := CreateTestInfraConfig(t)
 
-	container, err := container.NewContainer(domainConfig, infraConfig, nil, GetTestLogger(), db)
+	container, err := container.NewContainer(domainConfig, infraConfig, nil, GetTestLogger(t), db)
 	require.NoError(t, err, "Failed to create container")
 
 	cleanup := func() {

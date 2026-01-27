@@ -17,8 +17,25 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
 )
 
-// TestLogger is a no-op logger for testing
+// testWriter is an io.Writer that writes to testing.T.Log()
+type testWriter struct {
+	t *testing.T
+}
+
+// Write implements io.Writer by writing to t.Log()
+func (tw *testWriter) Write(p []byte) (n int, err error) {
+	tw.t.Log(string(p))
+	return len(p), nil
+}
+
+// TestLogger is a no-op logger for testing (used when no *testing.T is available)
 var TestLogger = zerolog.Nop()
+
+// GetTestLogger returns a logger that outputs to testing.T.Log()
+// This integrates with Go's testing framework and shows logs with `go test -v`
+func GetTestLogger(t *testing.T) zerolog.Logger {
+	return zerolog.New(&testWriter{t: t}).With().Timestamp().Logger()
+}
 
 // SetupTestDatabase creates an in-memory SQLite database for testing
 func SetupTestDatabase(t *testing.T) *sqldb.Database {
@@ -61,11 +78,6 @@ func SetupTestDatabase(t *testing.T) *sqldb.Database {
 	require.NoError(t, err)
 
 	return db
-}
-
-// GetTestLogger returns a test logger
-func GetTestLogger() zerolog.Logger {
-	return TestLogger
 }
 
 // CreateTestDomainConfig creates a test domain configuration
@@ -591,7 +603,7 @@ func CreateTestContainer(t *testing.T, db *sqldb.Database) *container.Container 
 	versionReader := version.NewVersionReader()
 	cfgService := configService.NewConfigurationService(configService.ConfigurationServiceOptions{}, versionReader)
 
-	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(), db)
+	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(t), db)
 	require.NoError(t, err)
 
 	return cont
@@ -615,7 +627,7 @@ func CreateTestContainerWithConfig(t *testing.T, db *sqldb.Database, opts ...Inf
 	versionReader := version.NewVersionReader()
 	cfgService := configService.NewConfigurationService(configService.ConfigurationServiceOptions{}, versionReader)
 
-	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(), db)
+	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(t), db)
 	require.NoError(t, err)
 
 	return cont
