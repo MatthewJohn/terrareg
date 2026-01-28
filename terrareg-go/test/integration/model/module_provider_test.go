@@ -9,6 +9,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/fixtures"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -65,7 +66,7 @@ func TestModuleProvider_InvalidNames(t *testing.T) {
 	for _, name := range invalidNames {
 		t.Run(name, func(t *testing.T) {
 			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone)
-			_, err := model.NewModuleProvider(namespace, "testmodule", name)
+			_, err := model.NewModuleProvider(namespace, types.ModuleName("testmodule"), types.ModuleProviderName(name))
 			assert.Error(t, err, "Expected error for invalid provider name: %s", name)
 		})
 	}
@@ -88,10 +89,11 @@ func TestModuleProvider_ValidNames(t *testing.T) {
 	for _, name := range validNames {
 		t.Run(name, func(t *testing.T) {
 			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone)
-			moduleProvider, err := model.NewModuleProvider(namespace, "testmodule", name)
+			providerName := types.ModuleProviderName(name)
+			moduleProvider, err := model.NewModuleProvider(namespace, types.ModuleName("testmodule"), providerName)
 			assert.NoError(t, err, "Expected no error for valid provider name: %s", name)
 			assert.NotNil(t, moduleProvider)
-			assert.Equal(t, name, moduleProvider.Provider())
+			assert.Equal(t, providerName, moduleProvider.Provider())
 		})
 	}
 }

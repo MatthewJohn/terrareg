@@ -81,7 +81,7 @@ func (c *CreateModuleProviderCommand) Execute(ctx context.Context, req CreateMod
 
 		c.auditService.LogModuleProviderCreate(
 			context.Background(),
-			username,
+			types.NamespaceName(username),
 			req.Namespace,
 			req.Module,
 			req.Provider,

@@ -77,7 +77,7 @@ func (c *DeleteModuleVersionCommand) Execute(ctx context.Context, req DeleteModu
 
 		c.auditService.LogModuleVersionDelete(
 			context.Background(),
-			username,
+			types.NamespaceName(username),
 			req.Namespace,
 			req.Module,
 			req.Provider,

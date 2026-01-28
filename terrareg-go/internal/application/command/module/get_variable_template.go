@@ -9,6 +9,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetVariableTemplateQuery handles retrieving variable templates for module versions
@@ -68,16 +69,16 @@ func (q *GetVariableTemplateQuery) Execute(ctx context.Context, req *GetVariable
 	// Get module provider
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(
 		ctx,
-		req.Namespace,
-		req.Module,
-		req.Provider,
+		types.NamespaceName(req.Namespace),
+		types.ModuleName(req.Module),
+		types.ModuleProviderName(req.Provider),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get module provider: %w", err)
 	}
 
 	// Get module version
-	moduleVersion, err := moduleProvider.GetVersion(req.Version)
+	moduleVersion, err := moduleProvider.GetVersion(types.ModuleVersion(req.Version))
 	if err != nil || moduleVersion == nil {
 		return nil, fmt.Errorf("module version not found: %w", err)
 	}
@@ -107,7 +108,7 @@ func (q *GetVariableTemplateQuery) getVariableTemplateFromVersion(ctx context.Co
 		moduleVersion.ModuleProvider().Namespace().Name(),
 		moduleVersion.ModuleProvider().Module(),
 		moduleVersion.ModuleProvider().Provider(),
-		moduleVersion.Version().String(),
+		types.ModuleVersion(moduleVersion.Version().String()),
 	)
 	if err != nil {
 		return nil, err

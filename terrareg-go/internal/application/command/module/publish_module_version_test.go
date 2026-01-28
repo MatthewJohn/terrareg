@@ -13,6 +13,7 @@ import (
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
@@ -27,8 +28,8 @@ func NewMockModuleProviderRepository() *MockModuleProviderRepository {
 	}
 }
 
-func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace, module, provider string) (*modulemodel.ModuleProvider, error) {
-	key := namespace + "/" + module + "/" + provider
+func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*modulemodel.ModuleProvider, error) {
+	key := string(namespace) + "/" + string(module) + "/" + string(provider)
 	if mp, exists := m.moduleProviders[key]; exists {
 		return mp, nil
 	}
@@ -36,13 +37,13 @@ func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context
 }
 
 func (m *MockModuleProviderRepository) Save(ctx context.Context, moduleProvider *modulemodel.ModuleProvider) error {
-	key := moduleProvider.Namespace().Name() + "/" + moduleProvider.Module() + "/" + moduleProvider.Provider()
+	key := string(moduleProvider.Namespace().Name()) + "/" + string(moduleProvider.Module()) + "/" + string(moduleProvider.Provider())
 	m.moduleProviders[key] = moduleProvider
 	return nil
 }
 
 func (m *MockModuleProviderRepository) Create(ctx context.Context, moduleProvider *modulemodel.ModuleProvider) error {
-	key := moduleProvider.Namespace().Name() + "/" + moduleProvider.Module() + "/" + moduleProvider.Provider()
+	key := string(moduleProvider.Namespace().Name()) + "/" + string(moduleProvider.Module()) + "/" + string(moduleProvider.Provider())
 	m.moduleProviders[key] = moduleProvider
 	return nil
 }
@@ -64,7 +65,7 @@ func (m *MockModuleProviderRepository) FindByID(ctx context.Context, id int) (*m
 	return nil, shared.ErrNotFound
 }
 
-func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace string) ([]*modulemodel.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*modulemodel.ModuleProvider, error) {
 	var providers []*modulemodel.ModuleProvider
 	for _, mp := range m.moduleProviders {
 		if mp.Namespace().Name() == namespace {
@@ -81,8 +82,8 @@ func (m *MockModuleProviderRepository) Search(ctx context.Context, query reposit
 	}, nil
 }
 
-func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
-	key := namespace + "/" + module + "/" + provider
+func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (bool, error) {
+	key := string(namespace) + "/" + string(module) + "/" + string(provider)
 	_, exists := m.moduleProviders[key]
 	return exists, nil
 }
@@ -94,14 +95,14 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 	mockAuditService := new(mocks.MockModuleAuditService)
 
 	// Set up mock expectations - the audit service is called in a goroutine
-	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0").Return(nil)
-	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0").Return(nil)
+	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0")).Return(nil)
+	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0")).Return(nil)
 
 	// Create test data
-	namespace, err := modulemodel.NewNamespace("testns", nil, modulemodel.NamespaceTypeNone)
+	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
 	require.NoError(t, err)
 
-	moduleProvider, err := modulemodel.NewModuleProvider(namespace, "testmod", "aws")
+	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
 	require.NoError(t, err)
 
 	// Save to mock repository
@@ -150,10 +151,10 @@ func TestPublishModuleVersion_IdempotentRepublish(t *testing.T) {
 	mockAuditService := new(mocks.MockModuleAuditService)
 
 	// Create test data with existing version
-	namespace, err := modulemodel.NewNamespace("testns", nil, modulemodel.NamespaceTypeNone)
+	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
 	require.NoError(t, err)
 
-	moduleProvider, err := modulemodel.NewModuleProvider(namespace, "testmod", "aws")
+	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
 	require.NoError(t, err)
 
 	// Add existing version and mark as published
@@ -225,14 +226,14 @@ func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
 	mockAuditService := new(mocks.MockModuleAuditService)
 
 	// Set up mock expectations (using valid version format per updated regex)
-	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0-betal").Return(nil)
-	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, "testns", "testmod", "aws", "1.0.0-betal").Return(nil)
+	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0-betal")).Return(nil)
+	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0-betal")).Return(nil)
 
 	// Create test data
-	namespace, err := modulemodel.NewNamespace("testns", nil, modulemodel.NamespaceTypeNone)
+	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
 	require.NoError(t, err)
 
-	moduleProvider, err := modulemodel.NewModuleProvider(namespace, "testmod", "aws")
+	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
 	require.NoError(t, err)
 
 	// Save to mock repository

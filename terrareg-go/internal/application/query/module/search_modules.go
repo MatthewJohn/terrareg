@@ -6,6 +6,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // SearchModulesQuery handles searching for module providers
@@ -28,13 +29,13 @@ func NewSearchModulesQuery(moduleProviderRepo repository.ModuleProviderRepositor
 // SearchParams represents search parameters
 type SearchParams struct {
 	Query                  string
-	Namespaces             []string // Change from *string to []string for multiple values
-	Provider               *string  // Keep for backward compatibility
-	Providers              []string // New: Multiple provider support
+	Namespaces             []types.NamespaceName
+	Provider               *string // Keep for backward compatibility
+	Providers              []types.ModuleProviderName
 	Verified               *bool
-	TrustedNamespaces      *bool   // New: Filter for trusted namespaces only
-	Contributed            *bool   // New: Filter for contributed modules only
-	TargetTerraformVersion *string // New: Check compatibility with specific Terraform version
+	TrustedNamespaces      *bool
+	Contributed            *bool
+	TargetTerraformVersion *string
 	Limit                  int
 	Offset                 int
 }
@@ -55,7 +56,7 @@ func (q *SearchModulesQuery) Execute(ctx context.Context, params SearchParams) (
 	// Handle backward compatibility - if single Provider is specified, add to Providers array
 	providers := params.Providers
 	if params.Provider != nil {
-		providers = append(providers, *params.Provider)
+		providers = append(providers, types.ModuleProviderName(*params.Provider))
 	}
 
 	searchQuery := repository.ModuleSearchQuery{

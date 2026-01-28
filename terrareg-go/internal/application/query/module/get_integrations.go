@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetIntegrationsQuery retrieves integrations for a module provider
@@ -29,7 +30,7 @@ type Integration struct {
 }
 
 // Execute retrieves integrations for a module provider
-func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace, name, provider string) ([]Integration, error) {
+func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.NamespaceName, name types.ModuleName, provider types.ModuleProviderName) ([]Integration, error) {
 	// Find the module provider to get its ID
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, name, provider)
 	if err != nil {

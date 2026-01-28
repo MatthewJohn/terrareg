@@ -9,6 +9,7 @@ import (
 	apperrors "github.com/matthewjohn/terrareg/terrareg-go/internal/application/errors"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 )
 
@@ -61,7 +62,7 @@ type CostAnalysis struct {
 
 // Execute retrieves example details
 // Python reference: /app/terrareg/models.py Example.get_terrareg_api_details()
-func (q *GetExampleDetailsQuery) Execute(ctx context.Context, namespace, moduleName, provider, version, path, requestDomain string) (*ExampleDetails, error) {
+func (q *GetExampleDetailsQuery) Execute(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion, path, requestDomain string) (*ExampleDetails, error) {
 	// Get module provider first
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, moduleName, provider)
 	if err != nil {
@@ -234,18 +235,18 @@ func (q *GetExampleDetailsQuery) getUsageExample(moduleVersion *model.ModuleVers
 	moduleProvider := moduleVersion.ModuleProvider()
 	moduleName := moduleProvider.Module()
 	if moduleName == "" {
-		moduleName = example.Path()
+		moduleName = types.ModuleName(example.Path())
 	}
 
 	// Build terraform source URL using URL service
-	providerID := moduleProvider.FrontendID()
+	providerID := string(moduleProvider.FrontendID())
 	version := moduleVersion.Version().String()
 	sourceURL := q.urlService.BuildTerraformSourceURL(providerID, version, example.Path(), requestDomain)
 
 	// Build terraform block with source and optional version
 	// Python: For HTTPS, version is added as a separate attribute
 	// For HTTP, version is embedded in the URL (so the sourceURL contains it)
-	result := fmt.Sprintf("module \"%s\" {\n  source = \"%s\"", moduleName, sourceURL)
+	result := fmt.Sprintf("module \"%s\" {\n  source = \"%s\"", string(moduleName), sourceURL)
 
 	// Check if version is already in the source URL (HTTP mode)
 	// HTTP URL format: http://domain/modules/provider/{version}

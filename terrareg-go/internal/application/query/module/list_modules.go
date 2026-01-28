@@ -5,6 +5,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ListModulesQuery handles listing all module providers
@@ -23,7 +24,7 @@ func NewListModulesQuery(moduleProviderRepo repository.ModuleProviderRepository)
 type ListModulesInput struct {
 	Offset       int
 	Limit        int
-	Providers    []string
+	Providers    []types.ModuleProviderName
 	Verified     *bool
 	IncludeCount bool
 }

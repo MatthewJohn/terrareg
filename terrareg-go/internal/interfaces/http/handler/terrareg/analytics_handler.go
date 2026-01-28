@@ -10,6 +10,7 @@ import (
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // AnalyticsHandler handles analytics-related requests
@@ -125,10 +126,10 @@ func (h *AnalyticsHandler) HandleMostDownloadedThisWeek(w http.ResponseWriter, r
 func (h *AnalyticsHandler) HandleModuleDownloadsSummary(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Execute query
 	stats, err := h.getDownloadSummaryQuery.Execute(ctx, namespace, name, provider)
@@ -142,7 +143,7 @@ func (h *AnalyticsHandler) HandleModuleDownloadsSummary(w http.ResponseWriter, r
 	// {'data': {'attributes': {'month': 58, 'total': 226, 'week': 10, 'year': 127},
 	//              'id': 'testnamespace/testmodulename/testprovider',
 	//              'type': 'module-downloads-summary'}}
-	id := fmt.Sprintf("%s/%s/%s", namespace, name, provider)
+	id := fmt.Sprintf("%s/%s/%s", string(namespace), string(name), string(provider))
 	response := dto.DownloadSummaryResponse{
 		Data: dto.DownloadData{
 			Type: "module-downloads-summary",
@@ -163,10 +164,10 @@ func (h *AnalyticsHandler) HandleModuleDownloadsSummary(w http.ResponseWriter, r
 func (h *AnalyticsHandler) HandleTokenVersions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	if namespace == "" || name == "" || provider == "" {
 		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
@@ -206,12 +207,12 @@ func (h *AnalyticsHandler) RecordModuleDownload(ctx context.Context, namespace, 
 		tfVersionPtr = &terraformVersion
 	}
 
-	// Execute command to record the download
+	// Execute command to record the download (convert strings to typed values)
 	req := analyticsCmd.RecordModuleDownloadRequest{
-		Namespace:        namespace,
-		Module:           module,
-		Provider:         provider,
-		Version:          version,
+		Namespace:        types.NamespaceName(namespace),
+		Module:           types.ModuleName(module),
+		Provider:         types.ModuleProviderName(provider),
+		Version:          types.ModuleVersion(version),
 		TerraformVersion: tfVersionPtr,
 	}
 

@@ -10,6 +10,7 @@ import (
 
 	modulequery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -128,7 +129,7 @@ func TestModuleSearch_NamespaceFilter(t *testing.T) {
 	t.Run("Filter by single namespace", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:      "testmodule",
-			Namespaces: []string{"filter-ns1"},
+			Namespaces: []types.NamespaceName{"filter-ns1"},
 			Limit:      10,
 		}
 
@@ -140,7 +141,7 @@ func TestModuleSearch_NamespaceFilter(t *testing.T) {
 	t.Run("Filter by multiple namespaces", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:      "testmodule",
-			Namespaces: []string{"filter-ns1", "filter-ns2"},
+			Namespaces: []types.NamespaceName{"filter-ns1", "filter-ns2"},
 			Limit:      10,
 		}
 
@@ -152,7 +153,7 @@ func TestModuleSearch_NamespaceFilter(t *testing.T) {
 	t.Run("Filter by non-existent namespace", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:      "testmodule",
-			Namespaces: []string{"nonexistent"},
+			Namespaces: []types.NamespaceName{"nonexistent"},
 			Limit:      10,
 		}
 
@@ -191,7 +192,7 @@ func TestModuleSearch_ProviderFilter(t *testing.T) {
 	t.Run("Filter by single provider", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:     "testmodule",
-			Providers: []string{"aws"},
+			Providers: []types.ModuleProviderName{"aws"},
 			Limit:     10,
 		}
 
@@ -203,7 +204,7 @@ func TestModuleSearch_ProviderFilter(t *testing.T) {
 	t.Run("Filter by multiple providers", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:     "testmodule",
-			Providers: []string{"aws", "gcp"},
+			Providers: []types.ModuleProviderName{"aws", "gcp"},
 			Limit:     10,
 		}
 
@@ -495,8 +496,8 @@ func TestModuleSearch_CombinedFilters(t *testing.T) {
 		verified := true
 		params := modulequery.SearchParams{
 			Query:      "combined-module",
-			Namespaces: []string{"combined-ns1"},
-			Providers:  []string{"aws"},
+			Namespaces: []types.NamespaceName{"combined-ns1"},
+			Providers:  []types.ModuleProviderName{"aws"},
 			Verified:   &verified,
 			Limit:      10,
 		}
@@ -509,8 +510,8 @@ func TestModuleSearch_CombinedFilters(t *testing.T) {
 	t.Run("Namespace + Multiple Providers", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:      "combined-module",
-			Namespaces: []string{"combined-ns1"},
-			Providers:  []string{"aws", "gcp"},
+			Namespaces: []types.NamespaceName{"combined-ns1"},
+			Providers:  []types.ModuleProviderName{"aws", "gcp"},
 			Limit:      10,
 		}
 
@@ -923,7 +924,7 @@ func TestModuleSearch_PythonTestData(t *testing.T) {
 	t.Run("Provider filter 'aws' returns only aws providers", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:     "searchbymodule",
-			Providers: []string{"aws"},
+			Providers: []types.ModuleProviderName{"aws"},
 			Limit:     50,
 		}
 
@@ -933,13 +934,13 @@ func TestModuleSearch_PythonTestData(t *testing.T) {
 		// searchbynamesp-similar/searchbymodulename4/aws
 		assert.Equal(t, 1, result.TotalCount)
 		assert.Len(t, result.Modules, 1)
-		assert.Equal(t, "aws", result.Modules[0].Provider())
+		assert.Equal(t, types.ModuleProviderName("aws"), result.Modules[0].Provider())
 	})
 
 	t.Run("Provider filter with multiple values", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:     "searchbymodule",
-			Providers: []string{"searchbyprovideraws", "searchbyprovidergcp"},
+			Providers: []types.ModuleProviderName{"searchbyprovideraws", "searchbyprovidergcp"},
 			Limit:     50,
 		}
 
@@ -956,7 +957,7 @@ func TestModuleSearch_PythonTestData(t *testing.T) {
 	t.Run("Namespace filter", func(t *testing.T) {
 		params := modulequery.SearchParams{
 			Query:      "searchbymodulename1",
-			Namespaces: []string{"searchbynamespace"},
+			Namespaces: []types.NamespaceName{"searchbynamespace"},
 			Limit:      50,
 		}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetModuleVersionQuery handles retrieving a specific module version
@@ -28,7 +29,7 @@ func NewGetModuleVersionQuery(moduleProviderRepo repository.ModuleProviderReposi
 }
 
 // Execute executes the query
-func (q *GetModuleVersionQuery) Execute(ctx context.Context, namespace, module, provider, version string) (*model.ModuleVersion, error) {
+func (q *GetModuleVersionQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion) (*model.ModuleVersion, error) {
 	// First get the module provider
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, module, provider)
 	if err != nil {

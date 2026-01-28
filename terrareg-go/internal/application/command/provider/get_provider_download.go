@@ -10,6 +10,7 @@ import (
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetProviderDownloadQuery handles getting provider download information
@@ -182,6 +183,11 @@ func (q *GetProviderDownloadQuery) recordDownloadAnalytics(ctx context.Context, 
 	if q.analyticsRepo != nil {
 		now := time.Now()
 
+		// Convert to typed values
+		namespaceName := types.NamespaceName(req.Namespace)
+		providerName := types.ModuleProviderName(req.Provider)
+		version := types.ModuleVersion(req.Version)
+
 		// Create provider download analytics event
 		providerDownloadEvent := analytics.ProviderDownloadEvent{
 			ProviderVersionID: providerVersion.ID(),
@@ -190,9 +196,9 @@ func (q *GetProviderDownloadQuery) recordDownloadAnalytics(ctx context.Context, 
 			AnalyticsToken:    nil, // TODO: Extract from request if available
 			AuthToken:         nil, // TODO: Extract from request if available
 			Environment:       nil, // TODO: Extract from request if available
-			NamespaceName:     &req.Namespace,
-			ProviderName:      &req.Provider,
-			Version:           &req.Version,
+			NamespaceName:     &namespaceName,
+			ProviderName:      &providerName,
+			Version:           &version,
 			OS:                &req.OS,
 			Architecture:      &req.Arch,
 			UserAgent:         &req.UserAgent,

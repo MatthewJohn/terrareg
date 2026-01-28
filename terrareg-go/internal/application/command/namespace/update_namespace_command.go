@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // UpdateNamespaceCommand handles updating namespace details
@@ -33,7 +34,7 @@ func NewUpdateNamespaceCommand(namespaceRepo repository.NamespaceRepository) *Up
 }
 
 // Execute executes the update namespace command
-func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName string, req UpdateNamespaceRequest) (*UpdateNamespaceResponse, error) {
+func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName types.NamespaceName, req UpdateNamespaceRequest) (*UpdateNamespaceResponse, error) {
 	// Get existing namespace
 	namespace, err := c.namespaceRepo.FindByName(ctx, namespaceName)
 	if err != nil {
@@ -64,7 +65,7 @@ func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName stri
 
 	// Return response
 	response := &UpdateNamespaceResponse{
-		Name:        namespace.Name(),
+		Name:        string(namespace.Name()),
 		DisplayName: namespace.DisplayName(),
 		// TODO: Generate view URL when URL service is available
 		// ViewURL: namespace.GetViewURL(),

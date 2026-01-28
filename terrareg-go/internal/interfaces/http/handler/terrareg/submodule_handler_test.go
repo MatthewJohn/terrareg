@@ -13,6 +13,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	terrareg "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
@@ -23,7 +24,7 @@ type MockModuleProviderRepository struct {
 	mock.Mock
 }
 
-func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace, moduleName, provider string) (*modulemodel.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName) (*modulemodel.ModuleProvider, error) {
 	args := m.Called(ctx, namespace, moduleName, provider)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -42,13 +43,13 @@ func (m *MockModuleProviderRepository) Delete(ctx context.Context, id int) error
 func (m *MockModuleProviderRepository) FindByID(ctx context.Context, id int) (*modulemodel.ModuleProvider, error) {
 	return nil, nil
 }
-func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace string) ([]*modulemodel.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*modulemodel.ModuleProvider, error) {
 	return nil, nil
 }
 func (m *MockModuleProviderRepository) Search(ctx context.Context, query repository.ModuleSearchQuery) (*repository.ModuleSearchResult, error) {
 	return nil, nil
 }
-func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace, moduleName, provider string) (bool, error) {
+func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName) (bool, error) {
 	return false, nil
 }
 
@@ -57,7 +58,7 @@ type MockModuleVersionRepository struct {
 	mock.Mock
 }
 
-func (m *MockModuleVersionRepository) FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version string) (*modulemodel.ModuleVersion, error) {
+func (m *MockModuleVersionRepository) FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version types.ModuleVersion) (*modulemodel.ModuleVersion, error) {
 	args := m.Called(ctx, moduleProviderID, version)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -76,7 +77,7 @@ func (m *MockModuleVersionRepository) FindByID(ctx context.Context, id int) (*mo
 	return nil, nil
 }
 func (m *MockModuleVersionRepository) Delete(ctx context.Context, id int) error { return nil }
-func (m *MockModuleVersionRepository) Exists(ctx context.Context, moduleProviderID int, version string) (bool, error) {
+func (m *MockModuleVersionRepository) Exists(ctx context.Context, moduleProviderID int, version types.ModuleVersion) (bool, error) {
 	return false, nil
 }
 func (m *MockModuleVersionRepository) UpdateModuleDetailsID(ctx context.Context, moduleVersionID int, moduleDetailsID int) error {
@@ -99,7 +100,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 			setupMocks: func(mockProviderRepo *MockModuleProviderRepository, mockVersionRepo *MockModuleVersionRepository) {
 				// Return (nil, nil) - query will convert to ErrModuleProviderNotFound
-				mockProviderRepo.On("FindByNamespaceModuleProvider", mock.Anything, "test", "mod", "provider").
+				mockProviderRepo.On("FindByNamespaceModuleProvider", mock.Anything, types.NamespaceName("test"), types.ModuleName("mod"), types.ModuleProviderName("provider")).
 					Return(nil, nil).
 					Once()
 			},
@@ -113,7 +114,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			setupMocks: func(mockProviderRepo *MockModuleProviderRepository, mockVersionRepo *MockModuleVersionRepository) {
 				// Create a minimal module provider mock
 				moduleProvider := &modulemodel.ModuleProvider{}
-				mockProviderRepo.On("FindByNamespaceModuleProvider", mock.Anything, "test", "mod", "provider").
+				mockProviderRepo.On("FindByNamespaceModuleProvider", mock.Anything, types.NamespaceName("test"), types.ModuleName("mod"), types.ModuleProviderName("provider")).
 					Return(moduleProvider, nil).
 					Once()
 

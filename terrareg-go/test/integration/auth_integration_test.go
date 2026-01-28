@@ -12,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
@@ -205,7 +206,7 @@ func TestAuthenticationIntegration(t *testing.T) {
 	t.Run("Create namespace", func(t *testing.T) {
 		// Test namespace repository - use Save method
 		ctx := context.Background()
-		namespaceName := "test-auth-namespace"
+		namespaceName := types.NamespaceName("test-auth-namespace")
 
 		namespace, err := modulemodel.NewNamespace(namespaceName, nil, modulemodel.NamespaceTypeNone)
 		require.NoError(t, err)

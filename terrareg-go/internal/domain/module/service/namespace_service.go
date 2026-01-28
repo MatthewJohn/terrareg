@@ -24,7 +24,7 @@ func (s *NamespaceService) IsTrusted(namespace *model.Namespace) bool {
 	}
 
 	for _, ns := range s.config.TrustedNamespaces {
-		if ns == namespace.Name() {
+		if ns == string(namespace.Name()) {
 			return true
 		}
 	}
@@ -39,7 +39,7 @@ func (s *NamespaceService) IsAutoVerified(namespace *model.Namespace) bool {
 	}
 
 	for _, ns := range s.config.VerifiedModuleNamespaces {
-		if ns == namespace.Name() {
+		if ns == string(namespace.Name()) {
 			return true
 		}
 	}

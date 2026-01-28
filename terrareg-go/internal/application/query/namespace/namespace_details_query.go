@@ -7,6 +7,7 @@ import (
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	namespaceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // NamespaceDetailsQuery handles getting namespace details
@@ -33,8 +34,11 @@ type NamespaceDetails struct {
 
 // Execute executes the query
 func (q *NamespaceDetailsQuery) Execute(ctx context.Context, namespaceName string) (*NamespaceDetails, error) {
+	// Convert to typed value
+	namespaceNameTyped := types.NamespaceName(namespaceName)
+
 	// Get namespace
-	namespace, err := q.namespaceRepo.FindByName(ctx, namespaceName)
+	namespace, err := q.namespaceRepo.FindByName(ctx, namespaceNameTyped)
 	if err != nil {
 		if errors.Is(err, shared.ErrNotFound) {
 			return nil, nil
@@ -48,7 +52,7 @@ func (q *NamespaceDetailsQuery) Execute(ctx context.Context, namespaceName strin
 
 	displayName := namespace.DisplayName()
 	details := &NamespaceDetails{
-		Name:           namespace.Name(),
+		Name:           string(namespace.Name()),
 		DisplayName:    displayName,
 		IsAutoVerified: q.namespaceService.IsAutoVerified(namespace),
 		Trusted:        q.namespaceService.IsTrusted(namespace),

@@ -91,10 +91,10 @@ func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*
 	// Count providers and namespaces
 	for _, module := range result.Modules {
 		provider := module.Provider()
-		counts.Providers[provider]++
+		counts.Providers[string(provider)]++
 
 		namespace := module.Namespace().Name()
-		counts.Namespaces[namespace]++
+		counts.Namespaces[string(namespace)]++
 	}
 
 	return counts, nil

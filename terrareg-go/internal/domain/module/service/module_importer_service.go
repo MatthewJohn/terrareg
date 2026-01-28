@@ -17,6 +17,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
@@ -296,7 +297,7 @@ func (s *ModuleImporterService) ImportBatchModules(
 // ReindexModuleWithTransaction re-indexes an existing module with transaction safety
 func (s *ModuleImporterService) ReindexModuleWithTransaction(
 	ctx context.Context,
-	namespace, moduleName, provider, version string,
+	namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName, version string,
 	options ProcessingOptions,
 ) (*ModuleImportResult, error) {
 	parsedVersion, err := shared.ParseVersion(version)
@@ -318,7 +319,7 @@ func (s *ModuleImporterService) ReindexModuleWithTransaction(
 // ImportFromArchive imports a module from an archive file with transaction safety
 func (s *ModuleImporterService) ImportFromArchive(
 	ctx context.Context,
-	namespace, moduleName, provider, version string,
+	namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName, version string,
 	archivePath string,
 	options ProcessingOptions,
 ) (*ModuleImportResult, error) {
@@ -468,8 +469,8 @@ func (s *ModuleImporterService) prepareGitSource(
 			// Replace {version}, {module}, and {provider} placeholders in git tag format
 			replacer := strings.NewReplacer(
 				"{version}", gitTag,
-				"{module}", req.Input.Module,
-				"{provider}", req.Input.Provider,
+				"{module}", string(req.Input.Module),
+				"{provider}", string(req.Input.Provider),
 			)
 			gitTag = replacer.Replace(*gitTagFormat)
 			s.logger.Debug().
@@ -532,9 +533,9 @@ func (s *ModuleImporterService) buildCloneURL(req DomainImportRequest, modulePro
 
 	replacer := strings.NewReplacer(
 		"{protocol}", "https",
-		"{namespace}", req.Input.Namespace,
-		"{name}", req.Input.Module,
-		"{provider}", req.Input.Provider,
+		"{namespace}", string(req.Input.Namespace),
+		"{name}", string(req.Input.Module),
+		"{provider}", string(req.Input.Provider),
 	)
 	return replacer.Replace(cloneURLTemplate)
 }

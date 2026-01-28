@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -65,10 +66,10 @@ func (r *NamespaceRepositoryImpl) FindByID(ctx context.Context, id int) (*model.
 }
 
 // FindByName retrieves a namespace by name
-func (r *NamespaceRepositoryImpl) FindByName(ctx context.Context, name string) (*model.Namespace, error) {
+func (r *NamespaceRepositoryImpl) FindByName(ctx context.Context, name types.NamespaceName) (*model.Namespace, error) {
 	var dbModel sqldb.NamespaceDB
 
-	err := r.db.WithContext(ctx).Where("namespace = ?", name).First(&dbModel).Error
+	err := r.db.WithContext(ctx).Where("namespace = ?", string(name)).First(&dbModel).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, shared.ErrNotFound
@@ -125,9 +126,9 @@ func (r *NamespaceRepositoryImpl) Delete(ctx context.Context, id int) error {
 }
 
 // Exists checks if a namespace exists
-func (r *NamespaceRepositoryImpl) Exists(ctx context.Context, name string) (bool, error) {
+func (r *NamespaceRepositoryImpl) Exists(ctx context.Context, name types.NamespaceName) (bool, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&sqldb.NamespaceDB{}).Where("namespace = ?", name).Count(&count).Error
+	err := r.db.WithContext(ctx).Model(&sqldb.NamespaceDB{}).Where("namespace = ?", string(name)).Count(&count).Error
 	if err != nil {
 		return false, fmt.Errorf("failed to check namespace existence: %w", err)
 	}

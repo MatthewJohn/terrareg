@@ -11,6 +11,7 @@ import (
 	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
 
@@ -74,9 +75,9 @@ func NewTransactionProcessingOrchestrator(
 
 // ProcessingRequest represents a complete module processing request
 type ProcessingRequest struct {
-	Namespace   string
-	ModuleName  string
-	Provider    string
+	Namespace   types.NamespaceName
+	ModuleName  types.ModuleName
+	Provider    types.ModuleProviderName
 	Version     string
 	GitTag      *string
 	CommitSHA   *string // Git commit SHA for git-based imports
@@ -141,9 +142,9 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 
 	// Log the start of processing
 	o.logger.Info().
-		Str("namespace", req.Namespace).
-		Str("module", req.ModuleName).
-		Str("provider", req.Provider).
+		Str("namespace", string(req.Namespace)).
+		Str("module", string(req.ModuleName)).
+		Str("provider", string(req.Provider)).
 		Str("version", req.Version).
 		Str("source_type", string(req.SourceType)).
 		Str("module_path", req.ModulePath).
@@ -165,13 +166,13 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 
 		// Use module creation wrapper for atomic module creation and publishing
 		prepareReq := PrepareModuleRequest{
-			Namespace:        req.Namespace,
-			ModuleName:       req.ModuleName,
-			Provider:         req.Provider,
+			Namespace:        string(req.Namespace),
+			ModuleName:       string(req.ModuleName),
+			Provider:         string(req.Provider),
 			Version:          req.Version,
-			GitTag:           req.GitTag,
-			SourceGitTag:     req.GitTag,
-			CommitSHA:        req.CommitSHA,
+			GitTag:           (*string)(req.GitTag),
+			SourceGitTag:     (*string)(req.GitTag),
+			CommitSHA:        (*string)(req.CommitSHA),
 			ModuleProviderID: &moduleProviderID,
 		}
 
@@ -207,9 +208,9 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 		errorMsg := err.Error()
 		result.Error = &errorMsg
 		o.logger.Error().
-			Str("namespace", req.Namespace).
-			Str("module", req.ModuleName).
-			Str("provider", req.Provider).
+			Str("namespace", string(req.Namespace)).
+			Str("module", string(req.ModuleName)).
+			Str("provider", string(req.Provider)).
 			Str("version", req.Version).
 			Dur("duration", result.OverallDuration).
 			Err(err).
@@ -219,9 +220,9 @@ func (o *TransactionProcessingOrchestrator) ProcessModuleWithTransaction(
 
 	result.Success = true
 	o.logger.Info().
-		Str("namespace", req.Namespace).
-		Str("module", req.ModuleName).
-		Str("provider", req.Provider).
+		Str("namespace", string(req.Namespace)).
+		Str("module", string(req.ModuleName)).
+		Str("provider", string(req.Provider)).
 		Str("version", req.Version).
 		Dur("duration", result.OverallDuration).
 		Msg("Module processing completed successfully")
@@ -356,9 +357,9 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 		errorMsg := "module path is empty for terraform processing"
 		o.logger.Error().
 			Int("module_version_id", moduleVersion.ID()).
-			Str("namespace", req.Namespace).
-			Str("module", req.ModuleName).
-			Str("provider", req.Provider).
+			Str("namespace", string(req.Namespace)).
+			Str("module", string(req.ModuleName)).
+			Str("provider", string(req.Provider)).
 			Str("version", req.Version).
 			Msg("Module path is empty for terraform processing")
 		phaseResult.Error = &errorMsg
@@ -369,9 +370,9 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 	// Add terraform context logging
 	o.logger.Debug().
 		Int("module_version_id", moduleVersion.ID()).
-		Str("namespace", req.Namespace).
-		Str("module", req.ModuleName).
-		Str("provider", req.Provider).
+		Str("namespace", string(req.Namespace)).
+		Str("module", string(req.ModuleName)).
+		Str("provider", string(req.Provider)).
 		Str("version", req.Version).
 		Str("module_path", req.ModulePath).
 		Msg("Executing terraform operations on module")
@@ -450,9 +451,9 @@ func (o *TransactionProcessingOrchestrator) executeTerraformProcessingPhase(
 		o.logger.Error().
 			Int("module_version_id", moduleVersion.ID()).
 			Str("failed_step", terraformResult.FailedStep).
-			Str("namespace", req.Namespace).
-			Str("module", req.ModuleName).
-			Str("provider", req.Provider).
+			Str("namespace", string(req.Namespace)).
+			Str("module", string(req.ModuleName)).
+			Str("provider", string(req.Provider)).
 			Dur("phase_duration", phaseResult.Duration).
 			Err(fmt.Errorf("%s", detailedError)).
 			Msg("Terraform processing phase failed")
@@ -653,7 +654,7 @@ func (o *TransactionProcessingOrchestrator) executeSecurityScanningPhase(
 		Namespace:       req.Namespace,
 		Module:          req.ModuleName,
 		Provider:        req.Provider,
-		Version:         req.Version,
+		Version:         types.ModuleVersion(req.Version),
 		TransactionCtx:  ctx,
 	}
 

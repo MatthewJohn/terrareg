@@ -17,6 +17,7 @@ import (
 	userGroupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/user_group"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
@@ -568,7 +569,7 @@ func (h *AuthHandler) HandleUserGroupNamespacePermissionsCreate(w http.ResponseW
 	}
 
 	// Execute create namespace permission command
-	response, err := h.createNsPermCmd.Execute(ctx, userGroupName, namespaceName, req)
+	response, err := h.createNsPermCmd.Execute(ctx, userGroupName, types.NamespaceName(namespaceName), req)
 	if err != nil {
 		// Handle specific errors with appropriate HTTP status codes
 		log.Error().Err(err).Str("user_group", userGroupName).Str("namespace", namespaceName).Msg("Failed to create namespace permission")
@@ -624,7 +625,7 @@ func (h *AuthHandler) HandleUserGroupNamespacePermissionsDelete(w http.ResponseW
 	}
 
 	// Execute delete namespace permission command
-	err := h.deleteNsPermCmd.Execute(ctx, userGroupName, namespaceName)
+	err := h.deleteNsPermCmd.Execute(ctx, userGroupName, types.NamespaceName(namespaceName))
 	if err != nil {
 		// Handle specific errors with appropriate HTTP status codes
 		switch {

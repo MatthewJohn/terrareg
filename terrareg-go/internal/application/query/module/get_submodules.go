@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetSubmodulesQuery retrieves submodules for a module version
@@ -28,7 +29,7 @@ type SubmoduleInfo struct {
 }
 
 // Execute retrieves submodules for a module version
-func (q *GetSubmodulesQuery) Execute(ctx context.Context, namespace, module, provider, version string) ([]SubmoduleInfo, error) {
+func (q *GetSubmodulesQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion) ([]SubmoduleInfo, error) {
 	// Find the module provider
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(
 		ctx, namespace, module, provider,
@@ -55,7 +56,7 @@ func (q *GetSubmodulesQuery) Execute(ctx context.Context, namespace, module, pro
 	result := make([]SubmoduleInfo, len(submoduleSpecs))
 	for i, submoduleSpec := range submoduleSpecs {
 		// Generate href URL similar to Python terrareg
-		href := fmt.Sprintf("/modules/%s/%s/%s/%s/submodule/%s", namespace, module, provider, version, submoduleSpec.Path)
+		href := fmt.Sprintf("/modules/%s/%s/%s/%s/submodule/%s", string(namespace), string(module), string(provider), string(version), submoduleSpec.Path)
 		result[i] = SubmoduleInfo{
 			Path: submoduleSpec.Path,
 			Href: href,

@@ -6,6 +6,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -38,7 +39,7 @@ func (m *MockNamespaceRepository) FindByID(ctx context.Context, id int) (*model.
 }
 
 // FindByName mocks finding a namespace by name
-func (m *MockNamespaceRepository) FindByName(ctx context.Context, name string) (*model.Namespace, error) {
+func (m *MockNamespaceRepository) FindByName(ctx context.Context, name types.NamespaceName) (*model.Namespace, error) {
 	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -62,7 +63,7 @@ func (m *MockNamespaceRepository) Delete(ctx context.Context, id int) error {
 }
 
 // Exists mocks checking if a namespace exists
-func (m *MockNamespaceRepository) Exists(ctx context.Context, name string) (bool, error) {
+func (m *MockNamespaceRepository) Exists(ctx context.Context, name types.NamespaceName) (bool, error) {
 	args := m.Called(ctx, name)
 	return args.Bool(0), args.Error(1)
 }

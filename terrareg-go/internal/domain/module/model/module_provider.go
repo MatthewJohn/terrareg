@@ -292,8 +292,8 @@ func (mp *ModuleProvider) ID() int {
 	return mp.id
 }
 
-func (mp *ModuleProvider) FrontendID() types.ModulePeroviderFrontendId {
-	return types.ModulePeroviderFrontendId(fmt.Sprintf("%s/%s/%s", mp.Namespace().Name(), mp.Module(), mp.Provider()))
+func (mp *ModuleProvider) FrontendID() types.ModuleProviderFrontendId {
+	return types.ModuleProviderFrontendId(fmt.Sprintf("%s/%s/%s", mp.Namespace().Name(), mp.Module(), mp.Provider()))
 }
 
 func (mp *ModuleProvider) Namespace() *Namespace {

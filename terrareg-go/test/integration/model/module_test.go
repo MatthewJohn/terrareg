@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,7 @@ func TestModule_InvalidNames(t *testing.T) {
 		name := name // capture range variable
 		t.Run(name, func(t *testing.T) {
 			t.Parallel() // Domain validation tests can run in parallel
-			err := model.ValidateModuleName(name)
+			err := model.ValidateModuleName(types.ModuleName(name))
 			assert.Error(t, err, "Expected error for invalid module name: %s", name)
 		})
 	}
@@ -60,7 +61,7 @@ func TestModule_ValidNames(t *testing.T) {
 
 	for _, name := range validNames {
 		t.Run(name, func(t *testing.T) {
-			err := model.ValidateModuleName(name)
+			err := model.ValidateModuleName(types.ModuleName(name))
 			assert.NoError(t, err, "Expected no error for valid module name: %s", name)
 		})
 	}

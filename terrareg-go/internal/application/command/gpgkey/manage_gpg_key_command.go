@@ -74,7 +74,7 @@ func (c *ManageGPGKeyCommand) CreateGPGKey(ctx context.Context, req CreateGPGKey
 		ID:   gpgKey.KeyID(), // Use key_id as the ID for API responses
 	}
 
-	response.Attributes.Namespace = gpgKey.Namespace().Name()
+	response.Attributes.Namespace = string(gpgKey.Namespace().Name())
 	response.Attributes.ASCIILArmor = gpgKey.ASCIIArmor()
 	response.Attributes.CreatedAt = gpgKey.CreatedAt().Format("2006-01-02T15:04:05Z")
 	response.Attributes.KeyID = gpgKey.KeyID()

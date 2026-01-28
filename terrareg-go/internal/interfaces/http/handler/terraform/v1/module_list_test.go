@@ -14,6 +14,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // MockModuleProviderRepository is a mock for ModuleProviderRepository
@@ -34,7 +35,7 @@ func (m *MockModuleProviderRepository) FindByID(ctx context.Context, id int) (*m
 	return args.Get(0).(*model.ModuleProvider), args.Error(1)
 }
 
-func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace, moduleName, provider string) (*model.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName) (*model.ModuleProvider, error) {
 	args := m.Called(ctx, namespace, moduleName, provider)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -42,7 +43,7 @@ func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context
 	return args.Get(0).(*model.ModuleProvider), args.Error(1)
 }
 
-func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace string) ([]*model.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*model.ModuleProvider, error) {
 	args := m.Called(ctx, namespace)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -63,13 +64,13 @@ func (m *MockModuleProviderRepository) Delete(ctx context.Context, id int) error
 	return args.Error(0)
 }
 
-func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
+func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (bool, error) {
 	args := m.Called(ctx, namespace, module, provider)
 	return args.Bool(0), args.Error(1)
 }
 
 func createMockNamespace(name string) *model.Namespace {
-	namespace, err := model.NewNamespace(name, nil, "NONE")
+	namespace, err := model.NewNamespace(types.NamespaceName(name), nil, "NONE")
 	if err != nil {
 		panic(err) // In tests, panic is acceptable for mock creation failures
 	}
@@ -78,7 +79,7 @@ func createMockNamespace(name string) *model.Namespace {
 
 func createMockModuleProvider(namespace, moduleName, provider string, verified bool) *model.ModuleProvider {
 	ns := createMockNamespace(namespace)
-	mp, err := model.NewModuleProvider(ns, moduleName, provider)
+	mp, err := model.NewModuleProvider(ns, types.ModuleName(moduleName), types.ModuleProviderName(provider))
 	if err != nil {
 		panic(err) // In tests, panic is acceptable for mock creation failures
 	}

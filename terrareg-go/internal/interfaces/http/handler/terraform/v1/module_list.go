@@ -7,6 +7,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
 )
@@ -32,11 +33,11 @@ func (h *ModuleListHandler) HandleListModules(w http.ResponseWriter, r *http.Req
 	queryParams := r.URL.Query()
 
 	// Parse providers (support multiple values, like Python)
-	var providers []string
+	var providers []types.ModuleProviderName
 	if p := queryParams["provider"]; len(p) > 0 {
 		for _, prov := range p {
 			if prov != "" {
-				providers = append(providers, prov)
+				providers = append(providers, types.ModuleProviderName(prov))
 			}
 		}
 	}
@@ -123,7 +124,7 @@ func convertModuleProviderToListResponse(mp *model.ModuleProvider) moduledto.Mod
 	}
 	// Fallback to namespace name if no owner is set on the version
 	if owner == nil || *owner == "" {
-		nsName := mp.Namespace().Name()
+		nsName := string(mp.Namespace().Name())
 		if nsName != "" {
 			owner = &nsName
 		}
@@ -137,9 +138,9 @@ func convertModuleProviderToListResponse(mp *model.ModuleProvider) moduledto.Mod
 	return moduledto.ModuleProviderResponse{
 		ProviderBase: moduledto.ProviderBase{
 			ID:        fmt.Sprintf("%d", mp.ID()),
-			Namespace: mp.Namespace().Name(),
-			Name:      mp.Module(),
-			Provider:  mp.Provider(),
+			Namespace: string(mp.Namespace().Name()),
+			Name:      string(mp.Module()),
+			Provider:  string(mp.Provider()),
 			Verified:  mp.IsVerified(),
 			Trusted:   false, // TODO: Get from namespace service
 		},

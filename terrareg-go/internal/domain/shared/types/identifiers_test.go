@@ -6,7 +6,7 @@ func TestTypeSafety(t *testing.T) {
 	// Demonstrate that the types work as expected
 	ns := NamespaceName("test-namespace")
 	mn := ModuleName("test-module")
-	pn := ProviderName("aws")
+	pn := ModuleProviderName("aws")
 
 	if string(ns) != "test-namespace" {
 		t.Errorf("expected 'test-namespace', got '%s'", ns)
@@ -25,7 +25,7 @@ func TestTypeSafety(t *testing.T) {
 }
 
 // Demonstrate that we can't accidentally mix up types at compile time
-func ProcessModule(ns NamespaceName, mn ModuleName, pn ProviderName) string {
+func ProcessModule(ns NamespaceName, mn ModuleName, pn ModuleProviderName) string {
 	return string(ns) + "/" + string(mn) + "/" + string(pn)
 }
 
@@ -34,7 +34,7 @@ func TestTypePrevention(t *testing.T) {
 	result := ProcessModule(
 		NamespaceName("my-ns"),
 		ModuleName("my-mod"),
-		ProviderName("aws"),
+		ModuleProviderName("aws"),
 	)
 	expected := "my-ns/my-mod/aws"
 	if result != expected {
@@ -45,6 +45,6 @@ func TestTypePrevention(t *testing.T) {
 	// ProcessModule(
 	//     ModuleName("my-mod"),  // Wrong! NamespaceName expected
 	//     NamespaceName("my-ns"), // Wrong! ModuleName expected
-	//     ProviderName("aws"),
+	//     ModuleProviderName("aws"),
 	// )
 }

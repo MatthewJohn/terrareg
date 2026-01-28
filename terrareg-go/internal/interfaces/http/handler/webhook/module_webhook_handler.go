@@ -15,6 +15,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
 
@@ -229,6 +230,11 @@ func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, name
 		}, nil
 	}
 
+	// Convert to typed values
+	namespaceTyped := types.NamespaceName(namespace)
+	moduleNameTyped := types.ModuleName(moduleName)
+	providerTyped := types.ModuleProviderName(provider)
+
 	// Collect all versions to process
 	var versionRequests []moduleService.VersionImportRequest
 	for _, change := range payload.Changes {
@@ -249,10 +255,10 @@ func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, name
 		}
 
 		importRequest := module.ImportModuleVersionRequest{
-			Namespace: namespace,
-			Module:    moduleName,
-			Provider:  provider,
-			GitTag:    version,
+			Namespace: namespaceTyped,
+			Module:    moduleNameTyped,
+			Provider:  providerTyped,
+			GitTag:    types.GitTag(version),
 		}
 		versionRequests = append(versionRequests, moduleService.VersionImportRequest{
 			Version: version,
@@ -314,7 +320,12 @@ func (h *ModuleWebhookHandler) triggerModuleVersionCreation(ctx context.Context,
 	// 2. Create ImportModuleVersionRequest
 	// 3. Call webhookService.CreateModuleVersionFromTag()
 
-	result, err := h.webhookService.CreateModuleVersionFromTag(ctx, namespace, moduleName, provider, tag)
+	// Convert strings to typed values
+	result, err := h.webhookService.CreateModuleVersionFromTag(ctx,
+		types.NamespaceName(namespace),
+		types.ModuleName(moduleName),
+		types.ModuleProviderName(provider),
+		types.ModuleVersion(tag))
 	if err != nil {
 		return &moduleService.WebhookResult{
 			Success: false,

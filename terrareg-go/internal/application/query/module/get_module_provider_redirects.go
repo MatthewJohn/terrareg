@@ -5,6 +5,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetModuleProviderRedirectsQuery retrieves module provider redirects
@@ -27,7 +28,7 @@ func (q *GetModuleProviderRedirectsQuery) Execute(ctx context.Context) ([]*repos
 }
 
 // ExecuteByFrom retrieves a specific module provider redirect by the from fields
-func (q *GetModuleProviderRedirectsQuery) ExecuteByFrom(ctx context.Context, namespace, module, provider string) (*model.ModuleProvider, error) {
+func (q *GetModuleProviderRedirectsQuery) ExecuteByFrom(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*model.ModuleProvider, error) {
 	// Use the correct method from the interface
 	return q.redirectRepo.GetByOriginalDetails(ctx, namespace, module, provider, false)
 }

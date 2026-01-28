@@ -9,6 +9,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // MockExampleModuleProviderRepository is a mock for ModuleProviderRepository
@@ -29,7 +30,7 @@ func (m *MockExampleModuleProviderRepository) FindByID(ctx context.Context, id i
 	return args.Get(0).(*model.ModuleProvider), args.Error(1)
 }
 
-func (m *MockExampleModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace, moduleName, provider string) (*model.ModuleProvider, error) {
+func (m *MockExampleModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName) (*model.ModuleProvider, error) {
 	args := m.Called(ctx, namespace, moduleName, provider)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -37,7 +38,7 @@ func (m *MockExampleModuleProviderRepository) FindByNamespaceModuleProvider(ctx 
 	return args.Get(0).(*model.ModuleProvider), args.Error(1)
 }
 
-func (m *MockExampleModuleProviderRepository) FindByNamespace(ctx context.Context, namespace string) ([]*model.ModuleProvider, error) {
+func (m *MockExampleModuleProviderRepository) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*model.ModuleProvider, error) {
 	args := m.Called(ctx, namespace)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -58,7 +59,7 @@ func (m *MockExampleModuleProviderRepository) Delete(ctx context.Context, id int
 	return args.Error(0)
 }
 
-func (m *MockExampleModuleProviderRepository) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
+func (m *MockExampleModuleProviderRepository) Exists(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (bool, error) {
 	args := m.Called(ctx, namespace, module, provider)
 	return args.Bool(0), args.Error(1)
 }
@@ -69,10 +70,10 @@ func TestGetExamplesQuery_Execute_Success(t *testing.T) {
 	query := NewGetExamplesQuery(mockRepo)
 
 	// Create test data
-	namespace := "testnamespace"
-	moduleName := "testmodule"
-	provider := "testprovider"
-	version := "1.0.0"
+	namespace := types.NamespaceName("testnamespace")
+	moduleName := types.ModuleName("testmodule")
+	provider := types.ModuleProviderName("testprovider")
+	version := types.ModuleVersion("1.0.0")
 
 	// Create mock module provider with examples
 	moduleProvider := &model.ModuleProvider{}
@@ -101,10 +102,10 @@ func TestGetExamplesQuery_Execute_ModuleProviderNotFound(t *testing.T) {
 	mockRepo := &MockExampleModuleProviderRepository{}
 	query := NewGetExamplesQuery(mockRepo)
 
-	namespace := "nonexistent"
-	moduleName := "testmodule"
-	provider := "testprovider"
-	version := "1.0.0"
+	namespace := types.NamespaceName("nonexistent")
+	moduleName := types.ModuleName("testmodule")
+	provider := types.ModuleProviderName("testprovider")
+	version := types.ModuleVersion("1.0.0")
 
 	// Mock repository to return error
 	mockRepo.On("FindByNamespaceModuleProvider", mock.Anything, namespace, moduleName, provider).

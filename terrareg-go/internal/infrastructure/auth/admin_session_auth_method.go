@@ -163,7 +163,7 @@ func (a *AdminSessionAuthMethod) getNamespaceName(ctx context.Context, namespace
 		return ""
 	}
 
-	return namespace.Name()
+	return string(namespace.Name())
 }
 
 // isHigherPermission returns true if newPermission is higher than existingPermission

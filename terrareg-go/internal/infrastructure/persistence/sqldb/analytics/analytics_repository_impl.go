@@ -10,6 +10,7 @@ import (
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -52,9 +53,9 @@ func (r *AnalyticsRepositoryImpl) RecordDownload(ctx context.Context, event anal
 		AnalyticsToken:      event.AnalyticsToken,
 		AuthToken:           event.AuthToken,
 		Environment:         event.Environment,
-		NamespaceName:       event.NamespaceName,
-		ModuleName:          event.ModuleName,
-		ProviderName:        event.ProviderName,
+		NamespaceName:       types.NamespaceNamePtrToStringPtr(event.NamespaceName),
+		ModuleName:          types.ModuleNamePtrToStringPtr(event.ModuleName),
+		ProviderName:        types.ModuleProviderNamePtrToStringPtr(event.ProviderName),
 	}
 
 	return r.db.WithContext(ctx).Create(&analytics).Error
@@ -71,9 +72,9 @@ func (r *AnalyticsRepositoryImpl) RecordProviderDownload(ctx context.Context, ev
 		AnalyticsToken:      event.AnalyticsToken,
 		AuthToken:           event.AuthToken,
 		Environment:         event.Environment,
-		NamespaceName:       event.NamespaceName,
+		NamespaceName:       types.NamespaceNamePtrToStringPtr(event.NamespaceName),
 		ModuleName:          nil, // Not applicable for provider downloads
-		ProviderName:        event.ProviderName,
+		ProviderName:        types.ModuleProviderNamePtrToStringPtr(event.ProviderName),
 	}
 
 	// Store additional provider-specific data in the analytics text fields if needed
@@ -84,16 +85,21 @@ func (r *AnalyticsRepositoryImpl) RecordProviderDownload(ctx context.Context, ev
 
 // GetDownloadStats retrieves download statistics for a module provider
 // Matches Python: AnalyticsEngine.get_module_provider_download_stats()
-func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespace, module, provider string) (*analyticsCmd.DownloadStats, error) {
+func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*analyticsCmd.DownloadStats, error) {
 	var totalCount int64
 	var weekCount int64
 	var monthCount int64
 	var yearCount int64
 
+	// Convert typed values to strings for DB query
+	namespaceStr := string(namespace)
+	moduleStr := string(module)
+	providerStr := string(provider)
+
 	// Get total downloads (all time)
 	err := r.db.WithContext(ctx).
 		Model(&sqldb.AnalyticsDB{}).
-		Where("namespace_name = ? AND module_name = ? AND provider_name = ?", namespace, module, provider).
+		Where("namespace_name = ? AND module_name = ? AND provider_name = ?", namespaceStr, moduleStr, providerStr).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, err
@@ -104,7 +110,7 @@ func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespac
 	err = r.db.WithContext(ctx).
 		Model(&sqldb.AnalyticsDB{}).
 		Where("namespace_name = ? AND module_name = ? AND provider_name = ? AND timestamp >= ?",
-			namespace, module, provider, sevenDaysAgo).
+			namespaceStr, moduleStr, providerStr, sevenDaysAgo).
 		Count(&weekCount).Error
 	if err != nil {
 		return nil, err
@@ -115,7 +121,7 @@ func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespac
 	err = r.db.WithContext(ctx).
 		Model(&sqldb.AnalyticsDB{}).
 		Where("namespace_name = ? AND module_name = ? AND provider_name = ? AND timestamp >= ?",
-			namespace, module, provider, thirtyOneDaysAgo).
+			namespaceStr, moduleStr, providerStr, thirtyOneDaysAgo).
 		Count(&monthCount).Error
 	if err != nil {
 		return nil, err
@@ -126,7 +132,7 @@ func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespac
 	err = r.db.WithContext(ctx).
 		Model(&sqldb.AnalyticsDB{}).
 		Where("namespace_name = ? AND module_name = ? AND provider_name = ? AND timestamp >= ?",
-			namespace, module, provider, threeHundredSixtyFiveDaysAgo).
+			namespaceStr, moduleStr, providerStr, threeHundredSixtyFiveDaysAgo).
 		Count(&yearCount).Error
 	if err != nil {
 		return nil, err
@@ -240,7 +246,7 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 	}
 
 	// Check if namespace is trusted
-	namespace, err := r.namespaceRepo.FindByName(ctx, result.Namespace)
+	namespace, err := r.namespaceRepo.FindByName(ctx, types.NamespaceName(result.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to check namespace: %w", err)
 	}
@@ -248,10 +254,10 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 
 	return &analyticsCmd.ModuleVersionInfo{
 		ID:          fmt.Sprintf("%s/%s/%s/%s", result.Namespace, result.Module, result.Provider, result.Version), // Format: namespace/name/provider/version
-		Namespace:   result.Namespace,
-		Module:      result.Module,
-		Provider:    result.Provider,
-		Version:     result.Version,
+		Namespace:   types.NamespaceName(result.Namespace),
+		Module:      types.ModuleName(result.Module),
+		Provider:    types.ModuleProviderName(result.Provider),
+		Version:     types.ModuleVersion(result.Version),
 		Owner:       result.Owner,
 		Description: result.Description,
 		Source:      result.Source,
@@ -300,26 +306,31 @@ func (r *AnalyticsRepositoryImpl) GetMostDownloadedThisWeek(ctx context.Context)
 	}
 
 	return &analyticsCmd.ModuleProviderInfo{
-		Namespace:     result.Namespace,
-		Module:        result.Module,
-		Provider:      result.Provider,
+		Namespace:     types.NamespaceName(result.Namespace),
+		Module:        types.ModuleName(result.Module),
+		Provider:      types.ModuleProviderName(result.Provider),
 		DownloadCount: result.DownloadCount,
 	}, nil
 }
 
 // GetModuleProviderID retrieves the ID for a module provider
-func (r *AnalyticsRepositoryImpl) GetModuleProviderID(ctx context.Context, namespace, module, provider string) (int, error) {
+func (r *AnalyticsRepositoryImpl) GetModuleProviderID(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (int, error) {
 	var result struct {
 		ID int
 	}
+
+	// Convert typed values to strings for DB query
+	namespaceStr := string(namespace)
+	moduleStr := string(module)
+	providerStr := string(provider)
 
 	err := r.db.WithContext(ctx).
 		Table("module_provider").
 		Select("module_provider.id AS id").
 		Joins("JOIN namespace ON module_provider.namespace_id = namespace.id").
-		Where("namespace.namespace = ?", namespace).
-		Where("module_provider.module = ?", module).
-		Where("module_provider.provider = ?", provider).
+		Where("namespace.namespace = ?", namespaceStr).
+		Where("module_provider.module = ?", moduleStr).
+		Where("module_provider.provider = ?", providerStr).
 		Scan(&result).Error
 
 	if err != nil {
@@ -394,7 +405,7 @@ func (r *AnalyticsRepositoryImpl) GetLatestTokenVersions(ctx context.Context, mo
 
 		tokenVersions[tokenKey] = analyticsCmd.TokenVersionInfo{
 			TerraformVersion: terraformVersion,
-			ModuleVersion:    result.ModuleVersion,
+			ModuleVersion:    types.ModuleVersion(result.ModuleVersion),
 			Environment:      result.Environment,
 		}
 	}

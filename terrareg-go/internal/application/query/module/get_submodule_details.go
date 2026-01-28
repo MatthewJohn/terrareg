@@ -9,6 +9,7 @@ import (
 	apperrors "github.com/matthewjohn/terrareg/terrareg-go/internal/application/errors"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 )
 
@@ -110,7 +111,7 @@ type SecurityResult struct {
 
 // Execute retrieves submodule details
 // Python reference: /app/terrareg/models.py BaseSubmodule.get_terrareg_api_details()
-func (q *GetSubmoduleDetailsQuery) Execute(ctx context.Context, namespace, moduleName, provider, version, path, requestDomain string) (*SubmoduleDetails, error) {
+func (q *GetSubmoduleDetailsQuery) Execute(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion, path, requestDomain string) (*SubmoduleDetails, error) {
 	// Get module provider first
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, moduleName, provider)
 	if err != nil {
@@ -247,18 +248,18 @@ func (q *GetSubmoduleDetailsQuery) getDisplaySourceURL(moduleVersion *model.Modu
 // Python reference: /app/terrareg/models.py BaseSubmodule.get_usage_example()
 func (q *GetSubmoduleDetailsQuery) getUsageExample(moduleVersion *model.ModuleVersion, submodule *model.Submodule, requestDomain string) string {
 	// Get module name from module provider
-	moduleName := ""
+	moduleName := types.ModuleName("")
 	if moduleVersion.ModuleProvider() != nil {
 		moduleName = moduleVersion.ModuleProvider().Module()
 	}
 	if moduleName == "" {
-		moduleName = submodule.Path()
+		moduleName = types.ModuleName(submodule.Path())
 	}
 
 	// Build terraform source URL using URL service
 	var sourceURL string
 	if moduleVersion.ModuleProvider() != nil {
-		providerID := moduleVersion.ModuleProvider().FrontendID()
+		providerID := string(moduleVersion.ModuleProvider().FrontendID())
 		version := moduleVersion.Version().String()
 		sourceURL = q.urlService.BuildTerraformSourceURL(providerID, version, submodule.Path(), requestDomain)
 	} else {
@@ -268,7 +269,7 @@ func (q *GetSubmoduleDetailsQuery) getUsageExample(moduleVersion *model.ModuleVe
 	// Build terraform block with source and optional version
 	// Python: For HTTPS, version is added as a separate attribute
 	// For HTTP, version is embedded in the URL (so the sourceURL contains it)
-	result := fmt.Sprintf("module \"%s\" {\n  source = \"%s\"", moduleName, sourceURL)
+	result := fmt.Sprintf("module \"%s\" {\n  source = \"%s\"", string(moduleName), sourceURL)
 
 	// Check if version is already in the source URL (HTTP mode)
 	// HTTP URL format: http://domain/modules/provider/{version}

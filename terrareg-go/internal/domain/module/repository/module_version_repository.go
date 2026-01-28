@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ModuleVersionRepository defines the interface for module version persistence
@@ -18,13 +19,13 @@ type ModuleVersionRepository interface {
 	FindByID(ctx context.Context, id int) (*model.ModuleVersion, error)
 
 	// FindByModuleProviderAndVersion retrieves a specific module version
-	FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version string) (*model.ModuleVersion, error)
+	FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version types.ModuleVersion) (*model.ModuleVersion, error)
 
 	// Delete removes a module version
 	Delete(ctx context.Context, id int) error
 
 	// Exists checks if a module version exists
-	Exists(ctx context.Context, moduleProviderID int, version string) (bool, error)
+	Exists(ctx context.Context, moduleProviderID int, version types.ModuleVersion) (bool, error)
 
 	// UpdateModuleDetailsID updates the module details ID for a module version
 	UpdateModuleDetailsID(ctx context.Context, moduleVersionID int, moduleDetailsID int) error

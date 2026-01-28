@@ -4,6 +4,7 @@ import (
 	"context"
 
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // MockAnalyticsRepository is a mock implementation of AnalyticsRepository
@@ -37,7 +38,7 @@ func (m *MockAnalyticsRepository) RecordProviderDownload(ctx context.Context, ev
 // GetDownloadStats returns mocked download stats
 // This is the key mocked method matching Python's get_total_downloads mock
 // Matches Python: AnalyticsEngine.get_module_provider_download_stats()
-func (m *MockAnalyticsRepository) GetDownloadStats(ctx context.Context, namespace, module, provider string) (*analyticsCmd.DownloadStats, error) {
+func (m *MockAnalyticsRepository) GetDownloadStats(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*analyticsCmd.DownloadStats, error) {
 	// Return mocked download stats matching Python format
 	// Python returns: week, month, year, total
 	total := m.TotalDownloads
@@ -88,7 +89,7 @@ func (m *MockAnalyticsRepository) GetMostDownloadedThisWeek(ctx context.Context)
 }
 
 // GetModuleProviderID delegates to real repo
-func (m *MockAnalyticsRepository) GetModuleProviderID(ctx context.Context, namespace, module, provider string) (int, error) {
+func (m *MockAnalyticsRepository) GetModuleProviderID(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (int, error) {
 	return m.realRepo.GetModuleProviderID(ctx, namespace, module, provider)
 }
 

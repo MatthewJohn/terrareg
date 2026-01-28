@@ -8,6 +8,7 @@ import (
 
 	apperrors "github.com/matthewjohn/terrareg/terrareg-go/internal/application/errors"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ExampleHandler handles example-related requests
@@ -37,11 +38,11 @@ func NewExampleHandler(
 func (h *ExampleHandler) HandleExampleDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 	examplePath := chi.URLParam(r, "*")
 
 	// Validate required parameters
@@ -73,11 +74,11 @@ func (h *ExampleHandler) HandleExampleDetails(w http.ResponseWriter, r *http.Req
 func (h *ExampleHandler) HandleExampleReadmeHTML(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 	examplePath := chi.URLParam(r, "*")
 
 	// Validate required parameters
@@ -112,11 +113,11 @@ func (h *ExampleHandler) HandleExampleReadmeHTML(w http.ResponseWriter, r *http.
 func (h *ExampleHandler) HandleExampleFileList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 	examplePath := chi.URLParam(r, "*")
 
 	// Validate required parameters
@@ -144,11 +145,11 @@ func (h *ExampleHandler) HandleExampleFileList(w http.ResponseWriter, r *http.Re
 func (h *ExampleHandler) HandleExampleFile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	// The example path and file path are encoded in the URL path
 	// We need to parse the remaining path to separate example and file

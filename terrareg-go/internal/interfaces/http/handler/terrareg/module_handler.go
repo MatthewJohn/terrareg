@@ -515,10 +515,11 @@ func (h *ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r *http.Requ
 	// Handle analytics token conversion (strip token from namespace if present)
 	// Python converts "test_token-name__testnamespace" to "testnamespace"
 	cleanNamespace := namespace
-	if strings.Contains(namespace, "__") {
-		parts := strings.SplitN(namespace, "__", 2)
+	namespaceStr := string(namespace)
+	if strings.Contains(namespaceStr, "__") {
+		parts := strings.SplitN(namespaceStr, "__", 2)
 		if len(parts) == 2 {
-			cleanNamespace = parts[1]
+			cleanNamespace = types.NamespaceName(parts[1])
 		}
 	}
 
@@ -687,11 +688,11 @@ func (h *ModuleHandler) HandleModuleVersionPublish(w http.ResponseWriter, r *htt
 func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	// Execute query
 	moduleVersion, err := h.getModuleVersionQuery.Execute(ctx, namespace, name, provider, version)
@@ -707,7 +708,7 @@ func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *htt
 	}
 
 	// Convert to DTO - use the same detailed format as module provider endpoint
-	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleProvider, moduleVersion, namespace, name, provider, r.Host)
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleProvider, moduleVersion, string(namespace), string(name), string(provider), r.Host)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -719,11 +720,11 @@ func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *htt
 func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version") // May be empty for latest
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version")) // May be empty for latest
 
 	// Check if module hosting is disallowed
 	// TODO: Implement full logic for ALLOW/ENFORCE modes with git URL handling
@@ -743,7 +744,7 @@ func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Requ
 	// In Terraform Registry API, the X-Terraform-Get header contains the download location
 	// The response body is empty, but we return JSON with version info
 	downloadURL := fmt.Sprintf("/v1/modules/%s/%s/%s/%s/download",
-		namespace, name, provider, downloadInfo.Version.Version().String())
+		string(namespace), string(name), string(provider), downloadInfo.Version.Version().String())
 
 	// Set the X-Terraform-Get header (Terraform will use this to download)
 	w.Header().Set("X-Terraform-Get", downloadURL)
@@ -760,10 +761,13 @@ func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Requ
 func (h *ModuleHandler) HandleModuleProviderSettingsGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespaceStr := chi.URLParam(r, "namespace")
+	nameStr := chi.URLParam(r, "name")
+	providerStr := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(namespaceStr)
+	name := types.ModuleName(nameStr)
+	provider := types.ModuleProviderName(providerStr)
 
 	// Execute query
 	settings, err := h.getModuleProviderSettingsQuery.Execute(ctx, namespace, name, provider)
@@ -774,9 +778,9 @@ func (h *ModuleHandler) HandleModuleProviderSettingsGet(w http.ResponseWriter, r
 
 	// Build response
 	response := moduledto.ModuleProviderSettingsResponse{
-		Namespace:             namespace,
-		Module:                name,
-		Provider:              provider,
+		Namespace:             namespaceStr,
+		Module:                nameStr,
+		Provider:              providerStr,
 		GitProviderID:         settings.GitProviderID,
 		RepoBaseURLTemplate:   settings.RepoBaseURLTemplate,
 		RepoCloneURLTemplate:  settings.RepoCloneURLTemplate,
@@ -794,10 +798,13 @@ func (h *ModuleHandler) HandleModuleProviderSettingsGet(w http.ResponseWriter, r
 func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespaceStr := chi.URLParam(r, "namespace")
+	nameStr := chi.URLParam(r, "name")
+	providerStr := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(namespaceStr)
+	name := types.ModuleName(nameStr)
+	provider := types.ModuleProviderName(providerStr)
 
 	// Parse request body
 	var req moduledto.ModuleProviderSettingsRequest
@@ -808,9 +815,9 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 
 	// Execute command
 	cmdReq := moduleCmd.UpdateModuleProviderSettingsRequest{
-		Namespace:             namespace,
-		Module:                name,
-		Provider:              provider,
+		Namespace:             namespaceStr,
+		Module:                nameStr,
+		Provider:              providerStr,
 		GitProviderID:         req.GitProviderID,
 		RepoBaseURLTemplate:   req.RepoBaseURLTemplate,
 		RepoCloneURLTemplate:  req.RepoCloneURLTemplate,
@@ -834,9 +841,9 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 	}
 
 	response := moduledto.ModuleProviderSettingsResponse{
-		Namespace:             namespace,
-		Module:                name,
-		Provider:              provider,
+		Namespace:             namespaceStr,
+		Module:                nameStr,
+		Provider:              providerStr,
 		GitProviderID:         settings.GitProviderID,
 		RepoBaseURLTemplate:   settings.RepoBaseURLTemplate,
 		RepoCloneURLTemplate:  settings.RepoCloneURLTemplate,
@@ -854,10 +861,10 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 func (h *ModuleHandler) HandleModuleProviderDelete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Execute command
 	cmdReq := moduleCmd.DeleteModuleProviderRequest{
@@ -1010,11 +1017,11 @@ func (h *ModuleHandler) HandleModuleVersionImport(w http.ResponseWriter, r *http
 func (h *ModuleHandler) HandleGetSubmodules(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Get path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Get path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	if namespace == "" || name == "" || provider == "" || version == "" {
 		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
@@ -1036,11 +1043,11 @@ func (h *ModuleHandler) HandleGetSubmodules(w http.ResponseWriter, r *http.Reque
 func (h *ModuleHandler) HandleGetExamples(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Get path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Get path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	if namespace == "" || name == "" || provider == "" || version == "" {
 		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
@@ -1063,10 +1070,13 @@ func (h *ModuleHandler) HandleGetExamples(w http.ResponseWriter, r *http.Request
 func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespaceStr := chi.URLParam(r, "namespace")
+	nameStr := chi.URLParam(r, "name")
+	providerStr := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(namespaceStr)
+	name := types.ModuleName(nameStr)
+	provider := types.ModuleProviderName(providerStr)
 
 	// Extract request domain for usage example generation
 	requestDomain := r.Host
@@ -1082,7 +1092,7 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 	}
 
 	// Convert to Terrareg Provider Details DTO with request domain and analytics token
-	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleProvider, moduleProvider.GetLatestVersion(), namespace, name, provider, requestDomain)
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, moduleProvider, moduleProvider.GetLatestVersion(), namespaceStr, nameStr, providerStr, requestDomain)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
@@ -1092,10 +1102,10 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 func (h *ModuleHandler) HandleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Parse query parameters
 	includeBeta := r.URL.Query().Get("include-beta") == "true"
@@ -1244,11 +1254,11 @@ func (h *ModuleHandler) HandleModuleVersionCreate(w http.ResponseWriter, r *http
 func (h *ModuleHandler) HandleModuleVersionDelete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	// Create delete request
 	req := moduleCmd.DeleteModuleVersionRequest{
@@ -1280,11 +1290,11 @@ func (h *ModuleHandler) HandleModuleVersionDelete(w http.ResponseWriter, r *http
 func (h *ModuleHandler) HandleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	// Create request to get README HTML from module details
 	req := &moduleQuery.GetReadmeHTMLRequest{
@@ -1320,11 +1330,11 @@ func (h *ModuleHandler) HandleModuleVersionReadmeHTML(w http.ResponseWriter, r *
 func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespaceStr := chi.URLParam(r, "namespace")
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	// Record analytics for the download (async, don't block the download)
 	go func() {
@@ -1343,16 +1353,17 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 
 		// Extract analytics token from namespace if present (format: {token}__{namespace})
 		var analyticsToken *string
-		var cleanNamespace string
-		if strings.Contains(namespace, "__") {
-			parts := strings.SplitN(namespace, "__", 2)
+		var cleanNamespaceStr string
+		if strings.Contains(namespaceStr, "__") {
+			parts := strings.SplitN(namespaceStr, "__", 2)
 			if len(parts) == 2 {
 				analyticsToken = &parts[0]
-				cleanNamespace = parts[1]
+				cleanNamespaceStr = parts[1]
 			}
 		} else {
-			cleanNamespace = namespace
+			cleanNamespaceStr = namespaceStr
 		}
+		cleanNamespace := types.NamespaceName(cleanNamespaceStr)
 
 		// Get auth token from context if authenticated
 		authUsername := ""
@@ -1376,7 +1387,8 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 		h.recordModuleDownloadCmd.Execute(ctx, anaylticsReq)
 	}()
 
-	// Create request
+	// Create request (use original namespace with potential analytics token)
+	namespace := types.NamespaceName(namespaceStr)
 	req := &moduleCmd.GenerateModuleSourceRequest{
 		Namespace: namespace,
 		Module:    moduleName,
@@ -1470,10 +1482,10 @@ func (h *ModuleHandler) HandleModuleVersionVariableTemplate(w http.ResponseWrite
 func (h *ModuleHandler) HandleGetIntegrations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Get path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Get path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	if namespace == "" || name == "" || provider == "" {
 		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
@@ -1522,10 +1534,13 @@ func (h *ModuleHandler) HandleModuleProviderRedirectsGet(w http.ResponseWriter, 
 func (h *ModuleHandler) HandleModuleProviderRedirectCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespaceStr := chi.URLParam(r, "namespace")
+	nameStr := chi.URLParam(r, "name")
+	providerStr := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(namespaceStr)
+	name := types.ModuleName(nameStr)
+	provider := types.ModuleProviderName(providerStr)
 
 	// Parse request body
 	var reqBody struct {
@@ -1554,9 +1569,9 @@ func (h *ModuleHandler) HandleModuleProviderRedirectCreate(w http.ResponseWriter
 	RespondJSON(w, http.StatusCreated, map[string]interface{}{
 		"message": "Module provider redirect created successfully",
 		"redirect": map[string]interface{}{
-			"from_namespace":        namespace,
-			"from_module":           name,
-			"from_provider":         provider,
+			"from_namespace":        namespaceStr,
+			"from_module":           nameStr,
+			"from_provider":         providerStr,
 			"to_module_provider_id": reqBody.ToModuleProviderID,
 		},
 	})
@@ -1566,10 +1581,10 @@ func (h *ModuleHandler) HandleModuleProviderRedirectCreate(w http.ResponseWriter
 func (h *ModuleHandler) HandleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	// Parse path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Create command request
 	cmdReq := moduleCmd.DeleteModuleProviderRedirectRequest{

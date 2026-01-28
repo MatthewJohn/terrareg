@@ -15,6 +15,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // NamespaceHandler handles namespace-related requests
@@ -158,7 +159,7 @@ func (h *NamespaceHandler) HandleNamespaceCreate(w http.ResponseWriter, r *http.
 
 	// Execute command
 	cmdReq := namespace.CreateNamespaceRequest{
-		Name:        req.Name,
+		Name:        types.NamespaceName(req.Name),
 		DisplayName: req.DisplayName,
 		Type:        req.Type,
 	}
@@ -208,8 +209,8 @@ func (h *NamespaceHandler) HandleNamespaceDetails(w http.ResponseWriter, r *http
 func (h *NamespaceHandler) HandleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse namespace from URL
-	namespaceName := chi.URLParam(r, "namespace")
+	// Parse namespace from URL and convert to typed value
+	namespaceName := types.NamespaceName(chi.URLParam(r, "namespace"))
 	if namespaceName == "" {
 		RespondError(w, http.StatusBadRequest, "namespace is required")
 		return

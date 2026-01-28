@@ -7,6 +7,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // SourcePreparationServiceInterface defines the interface for source preparation operations
@@ -86,9 +87,9 @@ func (c *ProcessModuleCommand) Execute(ctx context.Context, req ProcessModuleReq
 		// Git-based import
 		preparedSource, err = c.sourcePrepService.PrepareFromGit(ctx,
 			service.PrepareFromGitRequest{
-				Namespace: req.Namespace,
-				Module:    req.Module,
-				Provider:  req.Provider,
+				Namespace: types.NamespaceName(req.Namespace),
+				Module:    types.ModuleName(req.Module),
+				Provider:  types.ModuleProviderName(req.Provider),
 				Version:   req.Version,
 				GitTag:    req.GitTag,
 			})
@@ -99,9 +100,9 @@ func (c *ProcessModuleCommand) Execute(ctx context.Context, req ProcessModuleReq
 		// Archive file
 		preparedSource, err = c.sourcePrepService.PrepareFromArchive(ctx,
 			service.PrepareFromArchiveRequest{
-				Namespace:   req.Namespace,
-				Module:      req.Module,
-				Provider:    req.Provider,
+				Namespace:   types.NamespaceName(req.Namespace),
+				Module:      types.ModuleName(req.Module),
+				Provider:    types.ModuleProviderName(req.Provider),
 				Version:     req.Version,
 				ArchivePath: req.ArchivePath,
 			})
@@ -117,9 +118,9 @@ func (c *ProcessModuleCommand) Execute(ctx context.Context, req ProcessModuleReq
 
 	// 3. Execute processing pipeline
 	processingReq := service.ProcessingRequest{
-		Namespace:  req.Namespace,
-		ModuleName: req.Module,
-		Provider:   req.Provider,
+		Namespace:  types.NamespaceName(req.Namespace),
+		ModuleName: types.ModuleName(req.Module),
+		Provider:   types.ModuleProviderName(req.Provider),
 		Version:    req.Version,
 		GitTag:     req.GitTag,
 		CommitSHA:  preparedSource.CommitSHA,

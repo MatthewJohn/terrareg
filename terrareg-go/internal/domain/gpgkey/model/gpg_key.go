@@ -2,6 +2,8 @@ package gpgkey
 
 import (
 	"time"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GPGKey represents a GPG key entity in the domain layer
@@ -22,7 +24,7 @@ type GPGKey struct {
 // Namespace represents a namespace entity for GPG key scoping
 type Namespace struct {
 	id   int
-	name string
+	name types.NamespaceName
 }
 
 // NewGPGKey creates a new GPG key entity
@@ -140,7 +142,7 @@ func (k *GPGKey) SetID(id int) {
 // Namespace entity methods
 
 // NewNamespace creates a new namespace entity
-func NewNamespace(id int, name string) *Namespace {
+func NewNamespace(id int, name types.NamespaceName) *Namespace {
 	return &Namespace{
 		id:   id,
 		name: name,
@@ -153,7 +155,7 @@ func (n *Namespace) ID() int {
 }
 
 // Name returns the namespace name
-func (n *Namespace) Name() string {
+func (n *Namespace) Name() types.NamespaceName {
 	return n.name
 }
 

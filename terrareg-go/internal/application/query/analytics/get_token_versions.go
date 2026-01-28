@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetTokenVersionsQuery retrieves analytics token information for a module provider
@@ -20,7 +21,7 @@ func NewGetTokenVersionsQuery(analyticsRepo analyticsCmd.AnalyticsRepository) *G
 }
 
 // Execute retrieves token versions for a module provider
-func (q *GetTokenVersionsQuery) Execute(ctx context.Context, namespace, name, provider string) (map[string]analyticsCmd.TokenVersionInfo, error) {
+func (q *GetTokenVersionsQuery) Execute(ctx context.Context, namespace types.NamespaceName, name types.ModuleName, provider types.ModuleProviderName) (map[string]analyticsCmd.TokenVersionInfo, error) {
 	// Get module provider ID first
 	moduleProviderID, err := q.analyticsRepo.GetModuleProviderID(ctx, namespace, name, provider)
 	if err != nil {

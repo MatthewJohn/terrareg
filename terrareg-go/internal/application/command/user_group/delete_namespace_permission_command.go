@@ -6,6 +6,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // DeleteUserGroupNamespacePermissionCommand handles deleting a namespace permission for a user group
@@ -32,11 +33,11 @@ func NewDeleteUserGroupNamespacePermissionCommand(
 func (c *DeleteUserGroupNamespacePermissionCommand) Execute(
 	ctx context.Context,
 	userGroupName string,
-	namespaceName string,
+	namespaceName types.NamespaceName,
 ) error {
 	// Get namespace by name
 	// Python: namespace_obj = Namespace.get(name=namespace)
-	namespace, err := c.namespaceRepo.FindByName(ctx, namespaceName)
+	namespace, err := c.namespaceRepo.FindByName(ctx, types.NamespaceName(namespaceName))
 	if err != nil {
 		return fmt.Errorf("failed to find namespace: %w", err)
 	}

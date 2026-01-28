@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func createMockNamespaceForTest(name string, displayName *string, namespaceType string) *model.Namespace {
-	namespace, _ := model.NewNamespace(name, displayName, model.NamespaceType(namespaceType))
+	namespace, _ := model.NewNamespace(types.NamespaceName(name), displayName, model.NamespaceType(namespaceType))
 	return namespace
 }
 

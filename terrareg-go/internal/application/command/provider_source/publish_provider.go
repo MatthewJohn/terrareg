@@ -7,6 +7,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // PublishProviderCommand publishes a provider from a repository
@@ -76,7 +77,7 @@ func (c *PublishProviderCommand) Execute(ctx context.Context, req PublishProvide
 	}
 
 	// Verify namespace exists
-	namespace, err := c.namespaceRepo.FindByName(ctx, req.Namespace)
+	namespace, err := c.namespaceRepo.FindByName(ctx, types.NamespaceName(req.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to find namespace: %w", err)
 	}

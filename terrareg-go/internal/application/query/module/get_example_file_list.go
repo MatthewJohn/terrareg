@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetExampleFileListQuery retrieves the list of files in an example
@@ -31,7 +32,7 @@ type ExampleFile struct {
 }
 
 // Execute retrieves example file list
-func (q *GetExampleFileListQuery) Execute(ctx context.Context, namespace, moduleName, provider, version, path string) ([]ExampleFile, error) {
+func (q *GetExampleFileListQuery) Execute(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion, path string) ([]ExampleFile, error) {
 	// Get module provider first
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, moduleName, provider)
 	if err != nil {

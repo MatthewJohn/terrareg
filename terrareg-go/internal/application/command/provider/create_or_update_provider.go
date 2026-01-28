@@ -7,6 +7,7 @@ import (
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // CreateOrUpdateProviderCommand handles creating or updating a provider
@@ -48,7 +49,7 @@ func (c *CreateOrUpdateProviderCommand) Execute(ctx context.Context, req CreateO
 	}
 
 	// Find namespace
-	namespace, err := c.namespaceRepo.FindByName(ctx, req.Namespace)
+	namespace, err := c.namespaceRepo.FindByName(ctx, types.NamespaceName(req.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("namespace not found: %w", err)
 	}

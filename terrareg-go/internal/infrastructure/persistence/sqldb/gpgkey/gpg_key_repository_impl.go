@@ -9,6 +9,7 @@ import (
 
 	gpgkeyModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -308,7 +309,7 @@ func (r *gpgKeyRepositoryImpl) dbModelToDomain(gpgKeyDB *sqldb.GPGKeyDB) *gpgkey
 	// TrustSignature not stored in DB model anymore
 
 	// Set namespace entity - NamespaceDB uses "Namespace" field, not "Name"
-	namespace := gpgkeyModel.NewNamespace(gpgKeyDB.Namespace.ID, gpgKeyDB.Namespace.Namespace)
+	namespace := gpgkeyModel.NewNamespace(gpgKeyDB.Namespace.ID, types.NamespaceName(gpgKeyDB.Namespace.Namespace))
 	gpgKey.SetNamespace(namespace)
 
 	return gpgKey

@@ -7,6 +7,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // CreateUserGroupNamespacePermissionCommand handles creating a namespace permission for a user group
@@ -36,9 +37,9 @@ type CreateNamespacePermissionRequest struct {
 // CreateNamespacePermissionResponse represents the response after creating a namespace permission
 // Matches Python JSON response: {user_group, namespace, permission_type}
 type CreateNamespacePermissionResponse struct {
-	UserGroup      string `json:"user_group"`
-	Namespace      string `json:"namespace"`
-	PermissionType string `json:"permission_type"`
+	UserGroup      string              `json:"user_group"`
+	Namespace      types.NamespaceName `json:"namespace"`
+	PermissionType string              `json:"permission_type"`
 }
 
 // ValidPermissionTypes matches Python UserGroupNamespacePermissionType enum
@@ -54,7 +55,7 @@ var validPermissionTypes = map[string]bool{
 func (c *CreateUserGroupNamespacePermissionCommand) Execute(
 	ctx context.Context,
 	userGroupName string,
-	namespaceName string,
+	namespaceName types.NamespaceName,
 	req CreateNamespacePermissionRequest,
 ) (*CreateNamespacePermissionResponse, error) {
 	// Validate permission_type is valid enum value

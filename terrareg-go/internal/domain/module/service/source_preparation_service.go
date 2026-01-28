@@ -13,6 +13,7 @@ import (
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/rs/zerolog"
 )
@@ -34,18 +35,18 @@ type PrepareFromUploadRequest struct {
 
 // PrepareFromGitRequest represents a request to prepare from git repository
 type PrepareFromGitRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
 	Version   string
 	GitTag    *string
 }
 
 // PrepareFromArchiveRequest represents a request to prepare from archive file
 type PrepareFromArchiveRequest struct {
-	Namespace   string
-	Module      string
-	Provider    string
+	Namespace   types.NamespaceName
+	Module      types.ModuleName
+	Provider    types.ModuleProviderName
 	Version     string
 	ArchivePath string
 }
@@ -149,9 +150,9 @@ func (s *SourcePreparationService) PrepareFromGit(
 	req PrepareFromGitRequest,
 ) (*PreparedSource, error) {
 	logEvent := s.logger.Debug().
-		Str("namespace", req.Namespace).
-		Str("module", req.Module).
-		Str("provider", req.Provider).
+		Str("namespace", string(req.Namespace)).
+		Str("module", string(req.Module)).
+		Str("provider", string(req.Provider)).
 		Str("version", req.Version)
 	if req.GitTag != nil {
 		logEvent.Str("git_tag", *req.GitTag)
@@ -259,9 +260,9 @@ func (s *SourcePreparationService) PrepareFromArchive(
 	req PrepareFromArchiveRequest,
 ) (*PreparedSource, error) {
 	s.logger.Debug().
-		Str("namespace", req.Namespace).
-		Str("module", req.Module).
-		Str("provider", req.Provider).
+		Str("namespace", string(req.Namespace)).
+		Str("module", string(req.Module)).
+		Str("provider", string(req.Provider)).
 		Str("version", req.Version).
 		Str("archive_path", req.ArchivePath).
 		Msg("Preparing source from archive")
@@ -324,10 +325,10 @@ func (s *SourcePreparationService) buildCloneURL(req PrepareFromGitRequest, modu
 
 	// Simple template replacement - in production, use a proper template library
 	cloneURL := *cloneURLTemplate
-	cloneURL = strings.ReplaceAll(cloneURL, "{namespace}", req.Namespace)
-	cloneURL = strings.ReplaceAll(cloneURL, "{name}", req.Module)
-	cloneURL = strings.ReplaceAll(cloneURL, "{module}", req.Module)
-	cloneURL = strings.ReplaceAll(cloneURL, "{provider}", req.Provider)
+	cloneURL = strings.ReplaceAll(cloneURL, "{namespace}", string(req.Namespace))
+	cloneURL = strings.ReplaceAll(cloneURL, "{name}", string(req.Module))
+	cloneURL = strings.ReplaceAll(cloneURL, "{module}", string(req.Module))
+	cloneURL = strings.ReplaceAll(cloneURL, "{provider}", string(req.Provider))
 
 	return cloneURL
 }
@@ -342,8 +343,8 @@ func (s *SourcePreparationService) formatGitTag(gitTag string, moduleProvider *m
 	// Simple template replacement
 	formatted := *gitTagFormat
 	formatted = strings.ReplaceAll(formatted, "{version}", gitTag)
-	formatted = strings.ReplaceAll(formatted, "{module}", moduleProvider.Module())
-	formatted = strings.ReplaceAll(formatted, "{provider}", moduleProvider.Provider())
+	formatted = strings.ReplaceAll(formatted, "{module}", string(moduleProvider.Module()))
+	formatted = strings.ReplaceAll(formatted, "{provider}", string(moduleProvider.Provider()))
 
 	return formatted
 }

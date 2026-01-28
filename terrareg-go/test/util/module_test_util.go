@@ -4,24 +4,25 @@ import (
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // CreateMockNamespace creates a mock namespace for testing
 func CreateMockNamespace(name string) *model.Namespace {
-	namespace, _ := model.NewNamespace(name, nil, "NONE")
+	namespace, _ := model.NewNamespace(types.NamespaceName(name), nil, "NONE")
 	return namespace
 }
 
 // CreateMockNamespaceWithDetails creates a mock namespace with display name and type
 func CreateMockNamespaceWithDetails(name string, displayName *string, nsType string) *model.Namespace {
-	namespace, _ := model.NewNamespace(name, displayName, model.NamespaceType(nsType))
+	namespace, _ := model.NewNamespace(types.NamespaceName(name), displayName, model.NamespaceType(nsType))
 	return namespace
 }
 
 // CreateMockModuleProvider creates a mock module provider for testing
 func CreateMockModuleProvider(namespace, moduleName, provider string, verified bool) *model.ModuleProvider {
 	ns := CreateMockNamespace(namespace)
-	mp, _ := model.NewModuleProvider(ns, moduleName, provider)
+	mp, _ := model.NewModuleProvider(ns, types.ModuleName(moduleName), types.ModuleProviderName(provider))
 
 	if verified {
 		mp.Verify()

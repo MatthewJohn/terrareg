@@ -7,6 +7,7 @@ import (
 	gpgkeyModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/model"
 	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GPGKeyService handles GPG key operations
@@ -38,7 +39,7 @@ type CreateGPGKeyRequest struct {
 // CreateGPGKey creates a new GPG key
 func (s *GPGKeyService) CreateGPGKey(ctx context.Context, req CreateGPGKeyRequest) (*gpgkeyModel.GPGKey, error) {
 	// Validate namespace exists
-	namespace, err := s.namespaceRepo.FindByName(ctx, req.Namespace)
+	namespace, err := s.namespaceRepo.FindByName(ctx, types.NamespaceName(req.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate namespace: %w", err)
 	}
@@ -92,7 +93,7 @@ func (s *GPGKeyService) CreateGPGKey(ctx context.Context, req CreateGPGKeyReques
 // GetNamespaceGPGKeys retrieves all GPG keys for a namespace
 func (s *GPGKeyService) GetNamespaceGPGKeys(ctx context.Context, namespace string) ([]*gpgkeyModel.GPGKey, error) {
 	// Validate namespace exists
-	ns, err := s.namespaceRepo.FindByName(ctx, namespace)
+	ns, err := s.namespaceRepo.FindByName(ctx, types.NamespaceName(namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate namespace: %w", err)
 	}

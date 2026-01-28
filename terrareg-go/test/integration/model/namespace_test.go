@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
@@ -39,7 +40,7 @@ func TestNamespace_InvalidNames(t *testing.T) {
 		name := name // capture range variable
 		t.Run(name, func(t *testing.T) {
 			t.Parallel() // Domain validation tests can run in parallel
-			err := model.ValidateNamespaceName(name)
+			err := model.ValidateNamespaceName(types.NamespaceName(name))
 			assert.Error(t, err, "Expected error for invalid namespace name: %s", name)
 		})
 	}
@@ -65,7 +66,7 @@ func TestNamespace_ValidNames(t *testing.T) {
 
 	for _, name := range validNames {
 		t.Run(name, func(t *testing.T) {
-			err := model.ValidateNamespaceName(name)
+			err := model.ValidateNamespaceName(types.NamespaceName(name))
 			assert.NoError(t, err, "Expected no error for valid namespace name: %s", name)
 		})
 	}
@@ -198,24 +199,24 @@ func TestNamespace_CreateDuplicateDisplayName(t *testing.T) {
 // TestNamespace_DomainModelValidation tests domain model validation
 func TestNamespace_DomainModelValidation(t *testing.T) {
 	t.Run("valid namespace", func(t *testing.T) {
-		namespace, err := model.NewNamespace("validnamespace", nil, model.NamespaceTypeNone)
+		namespace, err := model.NewNamespace(types.NamespaceName("validnamespace"), nil, model.NamespaceTypeNone)
 		assert.NoError(t, err)
 		assert.NotNil(t, namespace)
-		assert.Equal(t, "validnamespace", namespace.Name())
+		assert.Equal(t, "validnamespace", string(namespace.Name()))
 	})
 
 	t.Run("invalid namespace", func(t *testing.T) {
-		_, err := model.NewNamespace("invalid@name", nil, model.NamespaceTypeNone)
+		_, err := model.NewNamespace(types.NamespaceName("invalid@name"), nil, model.NamespaceTypeNone)
 		assert.Error(t, err)
 	})
 
 	t.Run("namespace too short", func(t *testing.T) {
-		_, err := model.NewNamespace("a", nil, model.NamespaceTypeNone)
+		_, err := model.NewNamespace(types.NamespaceName("a"), nil, model.NamespaceTypeNone)
 		assert.Error(t, err)
 	})
 
 	t.Run("empty namespace", func(t *testing.T) {
-		_, err := model.NewNamespace("", nil, model.NamespaceTypeNone)
+		_, err := model.NewNamespace(types.NamespaceName(""), nil, model.NamespaceTypeNone)
 		assert.Error(t, err)
 	})
 }
@@ -236,7 +237,7 @@ func TestNamespace_ReservedNames(t *testing.T) {
 
 	for _, name := range reservedNames {
 		t.Run(name, func(t *testing.T) {
-			err := model.ValidateNamespaceName(name)
+			err := model.ValidateNamespaceName(types.NamespaceName(name))
 			assert.Error(t, err, "Expected error for reserved namespace name: %s", name)
 		})
 	}

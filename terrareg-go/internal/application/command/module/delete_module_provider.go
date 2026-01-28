@@ -57,7 +57,7 @@ func (c *DeleteModuleProviderCommand) Execute(ctx context.Context, req DeleteMod
 
 		c.auditService.LogModuleProviderDelete(
 			context.Background(),
-			username,
+			types.NamespaceName(username),
 			req.Namespace,
 			req.Module,
 			req.Provider,

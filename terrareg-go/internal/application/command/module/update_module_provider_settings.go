@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // UpdateModuleProviderSettingsCommand handles updating module provider settings
@@ -41,7 +42,7 @@ type UpdateModuleProviderSettingsRequest struct {
 // Execute updates the module provider settings
 func (c *UpdateModuleProviderSettingsCommand) Execute(ctx context.Context, req UpdateModuleProviderSettingsRequest) error {
 	// Find the module provider
-	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, req.Namespace, req.Module, req.Provider)
+	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, types.NamespaceName(req.Namespace), types.ModuleName(req.Module), types.ModuleProviderName(req.Provider))
 	if err != nil {
 		return fmt.Errorf("module provider not found: %w", err)
 	}

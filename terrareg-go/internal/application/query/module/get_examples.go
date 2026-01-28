@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetExamplesQuery retrieves examples for a module version
@@ -28,7 +29,7 @@ type ExampleInfo struct {
 }
 
 // Execute retrieves examples for a module version
-func (q *GetExamplesQuery) Execute(ctx context.Context, namespace, module, provider, version string) ([]ExampleInfo, error) {
+func (q *GetExamplesQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion) ([]ExampleInfo, error) {
 	// Find the module provider
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(
 		ctx, namespace, module, provider,

@@ -8,6 +8,7 @@ import (
 
 	apperrors "github.com/matthewjohn/terrareg/terrareg-go/internal/application/errors"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // SubmoduleHandler handles submodule-related requests
@@ -31,11 +32,11 @@ func NewSubmoduleHandler(
 func (h *SubmoduleHandler) HandleSubmoduleDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 	submodulePath := chi.URLParam(r, "*")
 
 	// Validate required parameters
@@ -67,11 +68,11 @@ func (h *SubmoduleHandler) HandleSubmoduleDetails(w http.ResponseWriter, r *http
 func (h *SubmoduleHandler) HandleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract path parameters
-	namespace := chi.URLParam(r, "namespace")
-	moduleName := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	// Extract path parameters and convert to typed values
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	moduleName := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 	submodulePath := chi.URLParam(r, "*")
 
 	// Validate required parameters

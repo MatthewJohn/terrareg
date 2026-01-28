@@ -14,6 +14,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	moduleDto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	moduleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/util"
@@ -37,7 +38,7 @@ func (m *MockModuleProviderRepository) FindByID(ctx context.Context, id int) (*m
 	return nil, nil
 }
 
-func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace, moduleName, provider string) (*model.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName) (*model.ModuleProvider, error) {
 	for _, mp := range m.modules {
 		if mp.Namespace().Name() == namespace &&
 			mp.Module() == moduleName &&
@@ -48,7 +49,7 @@ func (m *MockModuleProviderRepository) FindByNamespaceModuleProvider(ctx context
 	return nil, errors.New("not found")
 }
 
-func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace string) ([]*model.ModuleProvider, error) {
+func (m *MockModuleProviderRepository) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*model.ModuleProvider, error) {
 	var result []*model.ModuleProvider
 	for _, mp := range m.modules {
 		if mp.Namespace().Name() == namespace {
@@ -70,7 +71,7 @@ func (m *MockModuleProviderRepository) Delete(ctx context.Context, id int) error
 	return nil
 }
 
-func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
+func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (bool, error) {
 	mp, err := m.FindByNamespaceModuleProvider(ctx, namespace, module, provider)
 	if err != nil {
 		return false, nil

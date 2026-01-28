@@ -6,6 +6,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetModuleProviderSettingsQuery handles retrieving module provider settings
@@ -34,7 +35,7 @@ type ModuleProviderSettings struct {
 }
 
 // Execute retrieves the module provider settings
-func (q *GetModuleProviderSettingsQuery) Execute(ctx context.Context, namespace, module, provider string) (*ModuleProviderSettings, error) {
+func (q *GetModuleProviderSettingsQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*ModuleProviderSettings, error) {
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, module, provider)
 	if err != nil {
 		return nil, fmt.Errorf("module provider not found: %w", err)

@@ -78,20 +78,22 @@ func (q *GetGPGKeyQuery) Execute(ctx context.Context, namespace, keyID string) (
 	return gpgKeyToResponse(gpgKey), nil
 }
 
+type GPGKeyResponseAttributes struct {
+	Namespace      string    `json:"namespace"`
+	ASCIILArmor    string    `json:"ascii-armor"`
+	CreatedAt      time.Time `json:"created-at"`
+	KeyID          string    `json:"key-id"`
+	Source         string    `json:"source"`
+	SourceURL      *string   `json:"source-url"`
+	TrustSignature string    `json:"trust-signature"`
+	UpdatedAt      time.Time `json:"updated-at"`
+}
+
 // GPGKeyResponse represents the API response format for GPG keys
 type GPGKeyResponse struct {
-	Type       string `json:"type"`
-	ID         string `json:"id"`
-	Attributes struct {
-		Namespace      string    `json:"namespace"`
-		ASCIILArmor    string    `json:"ascii-armor"`
-		CreatedAt      time.Time `json:"created-at"`
-		KeyID          string    `json:"key-id"`
-		Source         string    `json:"source"`
-		SourceURL      *string   `json:"source-url"`
-		TrustSignature string    `json:"trust-signature"`
-		UpdatedAt      time.Time `json:"updated-at"`
-	} `json:"attributes"`
+	Type       string                   `json:"type"`
+	ID         string                   `json:"id"`
+	Attributes GPGKeyResponseAttributes `json:"attributes"`
 }
 
 // Helper functions to convert domain models to response DTOs
@@ -108,15 +110,17 @@ func gpgKeyToResponse(gpgKey *gpgkeyModel.GPGKey) *GPGKeyResponse {
 	response := &GPGKeyResponse{
 		Type: "gpg-keys",
 		ID:   gpgKey.KeyID(), // Use key_id as the ID for API responses
+		Attributes: GPGKeyResponseAttributes{
+			Namespace:      string(gpgKey.Namespace().Name()),
+			ASCIILArmor:    gpgKey.ASCIIArmor(),
+			CreatedAt:      gpgKey.CreatedAt(),
+			KeyID:          gpgKey.KeyID(),
+			Source:         gpgKey.Source(),
+			SourceURL:      gpgKey.SourceURL(),
+			TrustSignature: "",
+			UpdatedAt:      gpgKey.UpdatedAt(),
+		},
 	}
-
-	response.Attributes.Namespace = gpgKey.Namespace().Name()
-	response.Attributes.ASCIILArmor = gpgKey.ASCIIArmor()
-	response.Attributes.CreatedAt = gpgKey.CreatedAt()
-	response.Attributes.KeyID = gpgKey.KeyID()
-	response.Attributes.Source = gpgKey.Source()
-	response.Attributes.SourceURL = gpgKey.SourceURL()
-	response.Attributes.UpdatedAt = gpgKey.UpdatedAt()
 
 	if trustSignature := gpgKey.TrustSignature(); trustSignature != nil {
 		response.Attributes.TrustSignature = *trustSignature

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetExampleReadmeHTMLQuery retrieves README HTML for an example
@@ -25,7 +26,7 @@ func NewGetExampleReadmeHTMLQuery(
 }
 
 // Execute retrieves example README as HTML
-func (q *GetExampleReadmeHTMLQuery) Execute(ctx context.Context, namespace, moduleName, provider, version, path string) (string, error) {
+func (q *GetExampleReadmeHTMLQuery) Execute(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion, path string) (string, error) {
 	// Get module provider first
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, moduleName, provider)
 	if err != nil {

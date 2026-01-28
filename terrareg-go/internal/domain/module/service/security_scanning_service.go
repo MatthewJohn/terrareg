@@ -12,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 	"gorm.io/gorm"
 )
@@ -41,10 +42,10 @@ func NewSecurityScanningService(
 
 // SecurityScanRequest represents a request to scan a module version
 type SecurityScanRequest struct {
-	Namespace  string
-	Module     string
-	Provider   string
-	Version    string
+	Namespace  types.NamespaceName
+	Module     types.ModuleName
+	Provider   types.ModuleProviderName
+	Version    types.ModuleVersion
 	ModulePath string
 }
 
@@ -398,20 +399,20 @@ type BatchSecurityScanResult struct {
 type SecurityScanTransactionRequest struct {
 	ModuleVersionID int
 	ModulePath      string
-	Namespace       string
-	Module          string
-	Provider        string
-	Version         string
+	Namespace       types.NamespaceName
+	Module          types.ModuleName
+	Provider        types.ModuleProviderName
+	Version         types.ModuleVersion
 	TransactionCtx  context.Context
 }
 
 type BatchSecurityScanRequest struct {
 	ModuleVersionID int
 	ModulePath      string
-	Namespace       string
-	Module          string
-	Provider        string
-	Version         string
+	Namespace       types.NamespaceName
+	Module          types.ModuleName
+	Provider        types.ModuleProviderName
+	Version         types.ModuleVersion
 }
 
 // ScanWithTransaction executes a security scan within a transaction savepoint
@@ -486,10 +487,10 @@ func (s *SecurityScanningService) ScanBatchModules(
 		scanReq := SecurityScanTransactionRequest{
 			ModuleVersionID: module.ModuleVersionID,
 			ModulePath:      module.ModulePath,
-			Namespace:       module.Namespace,
-			Module:          module.Module,
-			Provider:        module.Provider,
-			Version:         module.Version,
+			Namespace:       types.NamespaceName(module.Namespace),
+			Module:          types.ModuleName(module.Module),
+			Provider:        types.ModuleProviderName(module.Provider),
+			Version:         types.ModuleVersion(module.Version),
 			TransactionCtx:  ctx,
 		}
 
@@ -569,7 +570,7 @@ func (s *SecurityScanningService) ProcessExistingModuleSecurity(
 		Namespace:       moduleProvider.Namespace().Name(),
 		Module:          moduleProvider.Module(),
 		Provider:        moduleProvider.Provider(),
-		Version:         moduleVersion.Version().String(),
+		Version:         types.ModuleVersion(moduleVersion.Version().String()),
 		TransactionCtx:  ctx,
 	}
 

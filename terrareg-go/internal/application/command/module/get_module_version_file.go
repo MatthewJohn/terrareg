@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetModuleVersionFileQuery handles retrieving module version files
@@ -39,12 +40,12 @@ type GetModuleVersionFileResponse struct {
 
 // Execute executes the query to get a module version file
 func (q *GetModuleVersionFileQuery) Execute(ctx context.Context, req *GetModuleVersionFileRequest) (*GetModuleVersionFileResponse, error) {
-	// Convert to service request
+	// Convert to service request with typed values
 	serviceReq := &service.GetModuleFileRequest{
-		Namespace: req.Namespace,
-		Module:    req.Module,
-		Provider:  req.Provider,
-		Version:   req.Version,
+		Namespace: types.NamespaceName(req.Namespace),
+		Module:    types.ModuleName(req.Module),
+		Provider:  types.ModuleProviderName(req.Provider),
+		Version:   types.ModuleVersion(req.Version),
 		Path:      req.Path,
 	}
 

@@ -11,6 +11,7 @@ import (
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	namespaceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -87,13 +88,16 @@ func TestGetGlobalModuleUsage_ExcludingNoEnvironment(t *testing.T) {
 	// testnamespace-exclude/publishedmodule/testprovider - 4 downloads
 	for i := 0; i < 4; i++ {
 		token := "test-token"
+		nsName := types.NamespaceName(namespace1.Namespace)
+		modName := types.ModuleName(provider1.Module)
+		provName := types.ModuleProviderName(provider1.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version1.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace1.Namespace,
-			ModuleName:            &provider1.Module,
-			ProviderName:          &provider1.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
@@ -101,13 +105,16 @@ func TestGetGlobalModuleUsage_ExcludingNoEnvironment(t *testing.T) {
 	// testnamespace-exclude/publishedmodule/secondprovider - 2 downloads
 	for i := 0; i < 2; i++ {
 		token := "test-token"
+		nsName := types.NamespaceName(namespace1.Namespace)
+		modName := types.ModuleName(provider2.Module)
+		provName := types.ModuleProviderName(provider2.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version2.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace1.Namespace,
-			ModuleName:            &provider2.Module,
-			ProviderName:          &provider2.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
@@ -115,26 +122,32 @@ func TestGetGlobalModuleUsage_ExcludingNoEnvironment(t *testing.T) {
 	// testnamespace-exclude/secondmodule/testprovider - 2 downloads
 	for i := 0; i < 2; i++ {
 		token := "test-token"
+		nsName := types.NamespaceName(namespace1.Namespace)
+		modName := types.ModuleName(provider3.Module)
+		provName := types.ModuleProviderName(provider3.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version3.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace1.Namespace,
-			ModuleName:            &provider3.Module,
-			ProviderName:          &provider3.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
 
 	// secondnamespace-exclude/othernamespacemodule/anotherprovider - 1 download
 	token := "test-token"
+	nsName2 := types.NamespaceName(namespace2.Namespace)
+	modName4 := types.ModuleName(provider4.Module)
+	provName4 := types.ModuleProviderName(provider4.Provider)
 	err = analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 		ParentModuleVersionID: version4.ID,
 		Timestamp:             &now,
 		AnalyticsToken:        &token,
-		NamespaceName:         &namespace2.Namespace,
-		ModuleName:            &provider4.Module,
-		ProviderName:          &provider4.Provider,
+		NamespaceName:         &nsName2,
+		ModuleName:            &modName4,
+		ProviderName:          &provName4,
 	})
 	require.NoError(t, err)
 
@@ -192,25 +205,31 @@ func TestGetGlobalModuleUsage_IncludingEmptyAuthToken(t *testing.T) {
 	// Record analytics with token - 5 downloads
 	for i := 0; i < 5; i++ {
 		token := "test-token"
+		nsName := types.NamespaceName(namespace.Namespace)
+		modName := types.ModuleName(provider1.Module)
+		provName := types.ModuleProviderName(provider1.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version1.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace.Namespace,
-			ModuleName:            &provider1.Module,
-			ProviderName:          &provider1.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
 
 	// Record analytics with empty/no token - 1 download
+	nsName2 := types.NamespaceName(namespace.Namespace)
+	modName2 := types.ModuleName(provider2.Module)
+	provName2 := types.ModuleProviderName(provider2.Provider)
 	err = analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 		ParentModuleVersionID: version2.ID,
 		Timestamp:             &now,
 		AnalyticsToken:        nil, // No token
-		NamespaceName:         &namespace.Namespace,
-		ModuleName:            &provider2.Module,
-		ProviderName:          &provider2.Provider,
+		NamespaceName:         &nsName2,
+		ModuleName:            &modName2,
+		ProviderName:          &provName2,
 	})
 	require.NoError(t, err)
 
@@ -261,10 +280,10 @@ func TestRecordModuleDownload_BasicUse(t *testing.T) {
 
 	// Execute record download command
 	err = cmd.Execute(ctx, analyticsCmd.RecordModuleDownloadRequest{
-		Namespace:        namespace.Namespace,
-		Module:           provider.Module,
-		Provider:         provider.Provider,
-		Version:          version.Version,
+		Namespace:        types.NamespaceName(namespace.Namespace),
+		Module:           types.ModuleName(provider.Module),
+		Provider:         types.ModuleProviderName(provider.Provider),
+		Version:          types.ModuleVersion(version.Version),
 		TerraformVersion: &terraformVersion,
 		AnalyticsToken:   &analyticsToken,
 		AuthToken:        nil,
@@ -273,7 +292,7 @@ func TestRecordModuleDownload_BasicUse(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the analytics were recorded
-	stats, err := analyticsRepo.GetDownloadStats(ctx, namespace.Namespace, provider.Module, provider.Provider)
+	stats, err := analyticsRepo.GetDownloadStats(ctx, types.NamespaceName(namespace.Namespace), types.ModuleName(provider.Module), types.ModuleProviderName(provider.Provider))
 	require.NoError(t, err)
 	assert.Equal(t, 1, stats.TotalDownloads)
 
@@ -310,10 +329,10 @@ func TestRecordModuleDownload_InvalidModuleVersion(t *testing.T) {
 
 	// Try to record download for non-existent version - should fail silently
 	err = cmd.Execute(ctx, analyticsCmd.RecordModuleDownloadRequest{
-		Namespace:        namespace.Namespace,
-		Module:           provider.Module,
-		Provider:         provider.Provider,
-		Version:          "999.0.0", // Non-existent version
+		Namespace:        types.NamespaceName(namespace.Namespace),
+		Module:           types.ModuleName(provider.Module),
+		Provider:         types.ModuleProviderName(provider.Provider),
+		Version:          types.ModuleVersion("999.0.0"), // Non-existent version
 		TerraformVersion: &terraformVersion,
 		AnalyticsToken:   &analyticsToken,
 		AuthToken:        nil,
@@ -322,7 +341,7 @@ func TestRecordModuleDownload_InvalidModuleVersion(t *testing.T) {
 	require.NoError(t, err, "Analytics should fail silently for invalid version")
 
 	// Verify no analytics were recorded
-	stats, err := analyticsRepo.GetDownloadStats(ctx, namespace.Namespace, provider.Module, provider.Provider)
+	stats, err := analyticsRepo.GetDownloadStats(ctx, types.NamespaceName(namespace.Namespace), types.ModuleName(provider.Module), types.ModuleProviderName(provider.Provider))
 	require.NoError(t, err)
 	assert.Equal(t, 0, stats.TotalDownloads)
 }
@@ -356,13 +375,16 @@ func TestGetDownloadStats(t *testing.T) {
 
 	token := "token"
 
+	nsName := types.NamespaceName(namespace.Namespace)
+	modName := types.ModuleName(otherProvider.Module)
+	provName := types.ModuleProviderName(otherProvider.Provider)
 	err = analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 		ParentModuleVersionID: otherVersion.ID,
 		Timestamp:             &now,
 		AnalyticsToken:        &token,
-		NamespaceName:         &namespace.Namespace,
-		ModuleName:            &otherProvider.Module,
-		ProviderName:          &otherProvider.Provider,
+		NamespaceName:         &nsName,
+		ModuleName:            &modName,
+		ProviderName:          &provName,
 	})
 	require.NoError(t, err)
 
@@ -377,20 +399,23 @@ func TestGetDownloadStats(t *testing.T) {
 		{date: fourHundredDaysAgo, count: 25},
 	} {
 		for i := 0; i < testData.count; i++ {
+			nsName2 := types.NamespaceName(namespace.Namespace)
+			modName2 := types.ModuleName(provider.Module)
+			provName2 := types.ModuleProviderName(provider.Provider)
 			err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 				ParentModuleVersionID: version.ID,
 				Timestamp:             &testData.date,
 				AnalyticsToken:        &token,
-				NamespaceName:         &namespace.Namespace,
-				ModuleName:            &provider.Module,
-				ProviderName:          &provider.Provider,
+				NamespaceName:         &nsName2,
+				ModuleName:            &modName2,
+				ProviderName:          &provName2,
 			})
 			require.NoError(t, err)
 		}
 	}
 
 	// Get stats
-	stats, err := analyticsRepo.GetDownloadStats(ctx, namespace.Namespace, provider.Module, provider.Provider)
+	stats, err := analyticsRepo.GetDownloadStats(ctx, types.NamespaceName(namespace.Namespace), types.ModuleName(provider.Module), types.ModuleProviderName(provider.Provider))
 	require.NoError(t, err)
 
 	// Should have 8 total downloads
@@ -426,26 +451,32 @@ func TestGetDownloadsByVersionID(t *testing.T) {
 
 	// Record downloads for version 1
 	for i := 0; i < 3; i++ {
+		nsName := types.NamespaceName(namespace.Namespace)
+		modName := types.ModuleName(provider.Module)
+		provName := types.ModuleProviderName(provider.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version1.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace.Namespace,
-			ModuleName:            &provider.Module,
-			ProviderName:          &provider.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
 
 	// Record downloads for version 2
 	for i := 0; i < 7; i++ {
+		nsName := types.NamespaceName(namespace.Namespace)
+		modName := types.ModuleName(provider.Module)
+		provName := types.ModuleProviderName(provider.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version2.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace.Namespace,
-			ModuleName:            &provider.Module,
-			ProviderName:          &provider.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
@@ -487,26 +518,32 @@ func TestGetMostDownloadedThisWeek(t *testing.T) {
 
 	// Record downloads for provider 1 (should be the most downloaded this week)
 	for i := 0; i < 10; i++ {
+		nsName := types.NamespaceName(namespace.Namespace)
+		modName := types.ModuleName(provider1.Module)
+		provName := types.ModuleProviderName(provider1.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version1.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace.Namespace,
-			ModuleName:            &provider1.Module,
-			ProviderName:          &provider1.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
 
 	// Record downloads for provider 2 (less downloads)
 	for i := 0; i < 5; i++ {
+		nsName := types.NamespaceName(namespace.Namespace)
+		modName := types.ModuleName(provider2.Module)
+		provName := types.ModuleProviderName(provider2.Provider)
 		err := analyticsRepo.RecordDownload(ctx, analyticsCmd.AnalyticsEvent{
 			ParentModuleVersionID: version2.ID,
 			Timestamp:             &now,
 			AnalyticsToken:        &token,
-			NamespaceName:         &namespace.Namespace,
-			ModuleName:            &provider2.Module,
-			ProviderName:          &provider2.Provider,
+			NamespaceName:         &nsName,
+			ModuleName:            &modName,
+			ProviderName:          &provName,
 		})
 		require.NoError(t, err)
 	}
@@ -517,9 +554,9 @@ func TestGetMostDownloadedThisWeek(t *testing.T) {
 	require.NotNil(t, result)
 
 	// Should return provider 1 (most downloaded)
-	assert.Equal(t, namespace.Namespace, result.Namespace)
-	assert.Equal(t, provider1.Module, result.Module)
-	assert.Equal(t, provider1.Provider, result.Provider)
+	assert.Equal(t, namespace.Namespace, string(result.Namespace))
+	assert.Equal(t, provider1.Module, string(result.Module))
+	assert.Equal(t, provider1.Provider, string(result.Provider))
 	assert.Equal(t, 10, result.DownloadCount)
 }
 
@@ -562,7 +599,7 @@ func TestGetModuleProviderID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get module provider ID
-	id, err := analyticsRepo.GetModuleProviderID(ctx, namespace.Namespace, provider.Module, provider.Provider)
+	id, err := analyticsRepo.GetModuleProviderID(ctx, types.NamespaceName(namespace.Namespace), types.ModuleName(provider.Module), types.ModuleProviderName(provider.Provider))
 	require.NoError(t, err)
 	assert.Equal(t, provider.ID, id)
 }
@@ -584,7 +621,7 @@ func TestGetModuleProviderID_NotFound(t *testing.T) {
 	// Try to get module provider ID for non-existent provider
 	// Note: The repository implementation returns zero ID with nil error for not found
 	// (This is a known issue with using Scan() with joins)
-	id, err := analyticsRepo.GetModuleProviderID(ctx, "nonexistent", "nonexistent", "nonexistent")
+	id, err := analyticsRepo.GetModuleProviderID(ctx, types.NamespaceName("nonexistent"), types.ModuleName("nonexistent"), types.ModuleProviderName("nonexistent"))
 	require.NoError(t, err)
 	assert.Equal(t, 0, id, "Should return zero ID for non-existent module provider")
 }

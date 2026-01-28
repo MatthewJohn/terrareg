@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
@@ -35,10 +36,10 @@ func TestCreateUserGroupNamespacePermissionCommand_Success(t *testing.T) {
 			mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
 			userGroupName := "testgroup"
-			namespaceName := "testnamespace"
+			namespaceName := types.NamespaceName("testnamespace")
 
 			// Set up mock expectations for namespace
-			mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(createMockNamespace(1, namespaceName), nil).Once()
+			mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(createMockNamespace(1, namespaceName), nil).Once()
 
 			// Set up mock expectations for user group
 			userGroup := &auth.UserGroup{
@@ -130,10 +131,10 @@ func TestCreateUserGroupNamespacePermissionCommand_NamespaceNotFound(t *testing.
 	mockUserGroupRepo := new(mocks.MockUserGroupRepository)
 	mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
-	namespaceName := "nonexistent"
+	namespaceName := types.NamespaceName("nonexistent")
 
 	// Set up mock expectations - namespace not found
-	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(nil, nil).Once()
+	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(nil, nil).Once()
 
 	// Create command
 	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
@@ -163,10 +164,10 @@ func TestCreateUserGroupNamespacePermissionCommand_UserGroupNotFound(t *testing.
 	mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
 	userGroupName := "nonexistent"
-	namespaceName := "testnamespace"
+	namespaceName := types.NamespaceName("testnamespace")
 
 	// Set up mock expectations for namespace (found)
-	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(createMockNamespace(1, namespaceName), nil).Once()
+	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(createMockNamespace(1, namespaceName), nil).Once()
 
 	// Set up mock expectations for user group (not found)
 	mockUserGroupRepo.On("FindByName", ctx, userGroupName).Return((*auth.UserGroup)(nil), nil).Once()
@@ -197,10 +198,10 @@ func TestCreateUserGroupNamespacePermissionCommand_PermissionAlreadyExists(t *te
 	mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
 	userGroupName := "testgroup"
-	namespaceName := "testnamespace"
+	namespaceName := types.NamespaceName("testnamespace")
 
 	// Set up mock expectations for namespace
-	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(createMockNamespace(1, namespaceName), nil).Once()
+	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(createMockNamespace(1, namespaceName), nil).Once()
 
 	// Set up mock expectations for user group
 	userGroup := &auth.UserGroup{
@@ -248,10 +249,10 @@ func TestCreateUserGroupNamespacePermissionCommand_NamespaceFindError(t *testing
 	mockUserGroupRepo := new(mocks.MockUserGroupRepository)
 	mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
-	namespaceName := "testnamespace"
+	namespaceName := types.NamespaceName("testnamespace")
 
 	// Set up mock expectations - namespace repository returns error
-	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(nil, errors.New("database error")).Once()
+	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(nil, errors.New("database error")).Once()
 
 	// Create command
 	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
@@ -278,10 +279,10 @@ func TestCreateUserGroupNamespacePermissionCommand_AddPermissionError(t *testing
 	mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
 	userGroupName := "testgroup"
-	namespaceName := "testnamespace"
+	namespaceName := types.NamespaceName("testnamespace")
 
 	// Set up mock expectations for namespace
-	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(createMockNamespace(1, namespaceName), nil).Once()
+	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(createMockNamespace(1, namespaceName), nil).Once()
 
 	// Set up mock expectations for user group
 	userGroup := &auth.UserGroup{

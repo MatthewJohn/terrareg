@@ -12,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
@@ -65,22 +66,20 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	providers := queryParams["provider"]
 
 	// Only include non-empty namespace values (matching Python behavior)
-	filteredNamespaces := make([]string, 0)
+	filteredNamespaces := make([]types.NamespaceName, 0)
 	for _, ns := range namespaces {
 		if ns != "" {
-			filteredNamespaces = append(filteredNamespaces, ns)
+			filteredNamespaces = append(filteredNamespaces, types.NamespaceName(ns))
 		}
 	}
-	namespaces = filteredNamespaces
 
 	// Only include non-empty provider values
-	filteredProviders := make([]string, 0)
+	filteredProviders := make([]types.ModuleProviderName, 0)
 	for _, p := range providers {
 		if p != "" {
-			filteredProviders = append(filteredProviders, p)
+			filteredProviders = append(filteredProviders, types.ModuleProviderName(p))
 		}
 	}
-	providers = filteredProviders
 
 	// Parse boolean parameters
 	verified := parseBoolPtr(r.URL.Query().Get("verified"))
@@ -106,8 +105,8 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	// Create search parameters
 	params := module.SearchParams{
 		Query:                  query,
-		Namespaces:             namespaces,
-		Providers:              providers,
+		Namespaces:             filteredNamespaces,
+		Providers:              filteredProviders,
 		Verified:               verified,
 		TrustedNamespaces:      trustedNamespaces,
 		Contributed:            contributed,
@@ -168,14 +167,14 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 func (h *TerraformV1ModuleHandler) HandleModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
 	if err != nil {
 		if errors.Is(err, errors.New("not found")) {
-			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Module provider %s/%s/%s not found", namespace, name, provider))
+			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Module provider %s/%s/%s not found", string(namespace), string(name), string(provider)))
 			return
 		}
 		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get module provider details: %s", err.Error()))
@@ -191,14 +190,14 @@ func (h *TerraformV1ModuleHandler) HandleModuleProviderDetails(w http.ResponseWr
 func (h *TerraformV1ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	moduleVersions, err := h.listModuleVersionsQuery.Execute(ctx, namespace, name, provider)
 	if err != nil {
 		if errors.Is(err, errors.New("not found")) {
-			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Module provider %s/%s/%s not found", namespace, name, provider))
+			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Module provider %s/%s/%s not found", string(namespace), string(name), string(provider)))
 			return
 		}
 		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to list module versions: %s", err.Error()))
@@ -226,10 +225,10 @@ func (h *TerraformV1ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r
 func (h *TerraformV1ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version") // Optional
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version")) // Optional
 
 	downloadInfo, err := h.getModuleDownloadQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
@@ -258,10 +257,10 @@ func (h *TerraformV1ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r
 func (h *TerraformV1ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
-	version := chi.URLParam(r, "version")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
+	version := types.ModuleVersion(chi.URLParam(r, "version"))
 
 	moduleVersion, err := h.getModuleVersionQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
@@ -302,9 +301,9 @@ func toModuleProviderResponse(mp *model.ModuleProvider) moduledto.ModuleProvider
 	response := moduledto.ModuleProviderResponse{
 		ProviderBase: moduledto.ProviderBase{
 			ID:        fmt.Sprintf("%d", mp.ID()),
-			Namespace: mp.Namespace().Name(),
-			Name:      mp.Module(),
-			Provider:  mp.Provider(),
+			Namespace: string(mp.Namespace().Name()),
+			Name:      string(mp.Module()),
+			Provider:  string(mp.Provider()),
 			Verified:  mp.IsVerified(),
 			Trusted:   false, // TODO: Get from namespace service
 		},

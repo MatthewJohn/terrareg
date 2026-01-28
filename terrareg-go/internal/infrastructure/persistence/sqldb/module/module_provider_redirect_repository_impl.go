@@ -7,6 +7,7 @@ import (
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"gorm.io/gorm"
 )
 
@@ -103,9 +104,9 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetAll(ctx context.Context) ([]*m
 	for _, result := range results {
 		redirects = append(redirects, &moduleCmd.ModuleProviderRedirect{
 			ID:                 result.ID,
-			FromNamespace:      result.NamespaceName,
-			FromModule:         result.FromModule,
-			FromProvider:       result.FromProvider,
+			FromNamespace:      types.NamespaceName(result.NamespaceName),
+			FromModule:         types.ModuleName(result.FromModule),
+			FromProvider:       types.ModuleProviderName(result.FromProvider),
 			ToModuleProviderID: result.ModuleProviderID,
 		})
 	}
@@ -114,7 +115,7 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetAll(ctx context.Context) ([]*m
 }
 
 // GetByFrom retrieves a redirect by the from fields (implements command interface)
-func (r *ModuleProviderRedirectRepositoryImpl) GetByFrom(ctx context.Context, namespace, moduleName, providerName string) (*moduleCmd.ModuleProviderRedirect, error) {
+func (r *ModuleProviderRedirectRepositoryImpl) GetByFrom(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, providerName types.ModuleProviderName) (*moduleCmd.ModuleProviderRedirect, error) {
 	var redirect struct {
 		ID               int
 		ModuleProviderID int
@@ -123,6 +124,11 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetByFrom(ctx context.Context, na
 		Provider         string
 		NamespaceName    string
 	}
+
+	// Convert typed values to strings for DB query
+	namespaceStr := string(namespace)
+	moduleNameStr := string(moduleName)
+	providerNameStr := string(providerName)
 
 	err := r.db.WithContext(ctx).
 		Table("module_provider_redirect mpr").
@@ -136,7 +142,7 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetByFrom(ctx context.Context, na
 		`).
 		Joins("LEFT JOIN module_provider mp ON mpr.module_provider_id = mp.id").
 		Joins("LEFT JOIN namespace ns ON mp.namespace_id = ns.id").
-		Where("ns.name = ? AND mpr.module = ? AND mpr.provider = ?", namespace, moduleName, providerName).
+		Where("ns.name = ? AND mpr.module = ? AND mpr.provider = ?", namespaceStr, moduleNameStr, providerNameStr).
 		Scan(&redirect).Error
 
 	if err != nil {
@@ -148,34 +154,39 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetByFrom(ctx context.Context, na
 
 	return &moduleCmd.ModuleProviderRedirect{
 		ID:                 redirect.ID,
-		FromNamespace:      redirect.NamespaceName,
-		FromModule:         redirect.Module,
-		FromProvider:       redirect.Provider,
+		FromNamespace:      types.NamespaceName(redirect.NamespaceName),
+		FromModule:         types.ModuleName(redirect.Module),
+		FromProvider:       types.ModuleProviderName(redirect.Provider),
 		ToModuleProviderID: redirect.ModuleProviderID,
 	}, nil
 }
 
 // Delete deletes a module provider redirect (implements command interface)
-func (r *ModuleProviderRedirectRepositoryImpl) Delete(ctx context.Context, namespace, module, provider string) error {
+func (r *ModuleProviderRedirectRepositoryImpl) Delete(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) error {
 	return r.db.WithContext(ctx).
 		Table("module_provider_redirect").
 		Joins("INNER JOIN namespace ns ON module_provider_redirect.namespace_id = ns.id").
-		Where("ns.name = ? AND module_provider_redirect.module = ? AND module_provider_redirect.provider = ?", namespace, module, provider).
+		Where("ns.name = ? AND module_provider_redirect.module = ? AND module_provider_redirect.provider = ?", string(namespace), string(module), string(provider)).
 		Delete(&repository.ModuleProviderRedirect{}).Error
 }
 
 // GetByOriginalDetails retrieves a module provider by original details (implements domain interface)
-func (r *ModuleProviderRedirectRepositoryImpl) GetByOriginalDetails(ctx context.Context, namespace, moduleName, providerName string, caseInsensitive bool) (*model.ModuleProvider, error) {
+func (r *ModuleProviderRedirectRepositoryImpl) GetByOriginalDetails(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, providerName types.ModuleProviderName, caseInsensitive bool) (*model.ModuleProvider, error) {
 	// First try to find a redirect
 	var redirect repository.ModuleProviderRedirect
 	query := r.db.WithContext(ctx).
 		Table("module_provider_redirect").
 		Joins("INNER JOIN namespace ns ON module_provider_redirect.namespace_id = ns.id")
 
+	// Convert typed values to strings for DB query
+	namespaceStr := string(namespace)
+	moduleNameStr := string(moduleName)
+	providerNameStr := string(providerName)
+
 	if caseInsensitive {
-		query = query.Where("LOWER(ns.name) = LOWER(?) AND LOWER(module_provider_redirect.module) = LOWER(?) AND LOWER(module_provider_redirect.provider) = LOWER(?)", namespace, moduleName, providerName)
+		query = query.Where("LOWER(ns.name) = LOWER(?) AND LOWER(module_provider_redirect.module) = LOWER(?) AND LOWER(module_provider_redirect.provider) = LOWER(?)", namespaceStr, moduleNameStr, providerNameStr)
 	} else {
-		query = query.Where("ns.name = ? AND module_provider_redirect.module = ? AND module_provider_redirect.provider = ?", namespace, moduleName, providerName)
+		query = query.Where("ns.name = ? AND module_provider_redirect.module = ? AND module_provider_redirect.provider = ?", namespaceStr, moduleNameStr, providerNameStr)
 	}
 
 	err := query.First(&redirect).Error
@@ -210,17 +221,22 @@ func (r *ModuleProviderRedirectRepositoryImpl) GetByModuleProvider(ctx context.C
 }
 
 // Helper method to find module provider directly
-func (r *ModuleProviderRedirectRepositoryImpl) findModuleProviderDirectly(ctx context.Context, namespace, moduleName, providerName string, caseInsensitive bool) (*model.ModuleProvider, error) {
+func (r *ModuleProviderRedirectRepositoryImpl) findModuleProviderDirectly(ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, providerName types.ModuleProviderName, caseInsensitive bool) (*model.ModuleProvider, error) {
 	var mp model.ModuleProvider
 	query := r.db.WithContext(ctx).
 		Preload("Namespace").
 		Preload("LatestVersion").
 		Joins("INNER JOIN namespace ns ON module_provider.namespace_id = ns.id")
 
+	// Convert typed values to strings for DB query
+	namespaceStr := string(namespace)
+	moduleNameStr := string(moduleName)
+	providerNameStr := string(providerName)
+
 	if caseInsensitive {
-		query = query.Where("LOWER(ns.name) = LOWER(?) AND LOWER(module_provider.module) = LOWER(?) AND LOWER(module_provider.provider) = LOWER(?)", namespace, moduleName, providerName)
+		query = query.Where("LOWER(ns.name) = LOWER(?) AND LOWER(module_provider.module) = LOWER(?) AND LOWER(module_provider.provider) = LOWER(?)", namespaceStr, moduleNameStr, providerNameStr)
 	} else {
-		query = query.Where("ns.name = ? AND module_provider.module = ? AND module_provider.provider = ?", namespace, moduleName, providerName)
+		query = query.Where("ns.name = ? AND module_provider.module = ? AND module_provider.provider = ?", namespaceStr, moduleNameStr, providerNameStr)
 	}
 
 	err := query.First(&mp).Error

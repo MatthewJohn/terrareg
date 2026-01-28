@@ -8,6 +8,7 @@ import (
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/terrareg"
@@ -80,7 +81,7 @@ func (p *ModuleVersionPresenter) ToDTO(ctx context.Context, mv *model.ModuleVers
 	// Add downloads count from analytics
 	downloads := 0
 	if p.analyticsRepo != nil {
-		count, err := p.analyticsRepo.GetDownloadStats(ctx, namespace, moduleName, provider)
+		count, err := p.analyticsRepo.GetDownloadStats(ctx, types.NamespaceName(namespace), types.ModuleName(moduleName), types.ModuleProviderName(provider))
 		if err == nil {
 			downloads = count.TotalDownloads
 		}
@@ -112,8 +113,8 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	}
 
 	response := &terrareg.TerraregModuleProviderDetailsResponse{
-		ID:                    moduleProvider.FrontendID(),
-		ModuleProviderID:      moduleProvider.FrontendID(), // Business-defined provider ID without version
+		ID:                    string(moduleProvider.FrontendID()),
+		ModuleProviderID:      string(moduleProvider.FrontendID()), // Business-defined provider ID without version
 		GitProviderID:         moduleProvider.GitProviderID(),
 		GitTagFormat:          moduleProvider.GitTagFormat(),
 		GitPath:               moduleProvider.GitPath(),
@@ -142,7 +143,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	if mv == nil {
 		return response
 	}
-	response.ID = mv.VersionedID()
+	response.ID = string(mv.VersionedID())
 	response.Owner = mv.Owner()
 	response.Version = mv.Version().String()
 	response.Internal = mv.IsInternal()
@@ -288,7 +289,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	// UI-specific fields - build usage example with proper URL handling
 	if moduleProvider != nil {
 		// Build source URL using URLService for proper HTTP/HTTPS handling
-		providerID := moduleProvider.FrontendID()
+		providerID := string(moduleProvider.FrontendID())
 		version := mv.Version().String()
 		sourceURL := p.urlService.BuildTerraformSourceURL(providerID, version, "", requestDomain)
 		// Use model method to build usage example with the pre-built source URL

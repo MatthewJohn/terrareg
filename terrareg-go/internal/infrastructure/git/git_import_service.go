@@ -14,6 +14,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
@@ -73,20 +74,20 @@ func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleV
 			return nil, fmt.Errorf("either version or git_tag must be provided")
 		}
 		// Derive version from git tag
-		version, err := s.deriveVersionFromGitTag(req.GitTag, moduleProvider)
+		version, err := s.deriveVersionFromGitTag(string(req.GitTag), moduleProvider)
 		if err != nil {
 			return nil, fmt.Errorf("failed to derive version from git tag: %w", err)
 		}
 		if version == "" {
 			return nil, fmt.Errorf("could not derive version from git tag: %s", req.GitTag)
 		}
-		req.Version = version
+		req.Version = types.ModuleVersion(version)
 	}
 
 	moduleVersion, err = moduleProvider.GetVersion(req.Version)
 	if err != nil {
 		// Create new version if it doesn't exist
-		moduleVersion, err = moduleProvider.PublishVersion(req.Version, nil, false)
+		moduleVersion, err = moduleProvider.PublishVersion(string(req.Version), nil, false)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create module version: %w", err)
 		}
@@ -114,10 +115,10 @@ func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleV
 			return nil, fmt.Errorf("module provider is not configured with a git tag format containing a {version} placeholder")
 		}
 		// Generate git tag from format
-		gitRef = strings.ReplaceAll(*gitTagFormat, "{version}", req.Version)
-	} else if req.GitTag != "" {
-		gitRef = req.GitTag
-	}
+		gitRef = strings.ReplaceAll(*gitTagFormat, "{version}", string(req.Version))
+		} else if req.GitTag != "" {
+		gitRef = string(req.GitTag)
+		}
 
 	// Clone repository
 	if err := s.cloneRepository(*gitCloneURL, tmpDir, gitRef); err != nil {
@@ -329,9 +330,9 @@ func (s *GitImportService) extractModuleFromClone(repoDir string, moduleVersion 
 	// Create destination directory in data storage
 	versionStr := moduleVersion.Version().String()
 	destDir := filepath.Join(s.infraConfig.DataDirectory,
-		moduleVersion.ModuleProvider().Namespace().Name(),
-		moduleVersion.ModuleProvider().Module(),
-		moduleVersion.ModuleProvider().Provider(),
+		string(moduleVersion.ModuleProvider().Namespace().Name()),
+		string(moduleVersion.ModuleProvider().Module()),
+		string(moduleVersion.ModuleProvider().Provider()),
 		versionStr,
 	)
 

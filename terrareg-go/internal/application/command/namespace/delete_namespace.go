@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // DeleteNamespaceCommand handles deleting a namespace
@@ -22,7 +23,7 @@ func NewDeleteNamespaceCommand(namespaceRepo repository.NamespaceRepository) *De
 // Execute executes the delete command
 func (c *DeleteNamespaceCommand) Execute(ctx context.Context, namespaceName string) error {
 	// Check if namespace exists
-	existing, err := c.namespaceRepo.FindByName(ctx, namespaceName)
+	existing, err := c.namespaceRepo.FindByName(ctx, types.NamespaceName(namespaceName))
 	if err != nil {
 		return fmt.Errorf("failed to find namespace: %w", err)
 	}

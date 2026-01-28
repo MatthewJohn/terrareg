@@ -112,7 +112,9 @@ func (ws *WebhookService) CreateModuleVersionFromTag(
 		}, nil
 	}
 
-	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, &parsedVersion)
+	// Convert parsedVersion to string pointer for gitTag
+	versionStr := parsedVersion.String()
+	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, &versionStr)
 
 	// Execute the module import
 	domainReq := DomainImportRequest{
@@ -138,7 +140,7 @@ func (ws *WebhookService) CreateModuleVersionFromTag(
 		return &WebhookResult{
 			Success: false,
 			Message: fmt.Sprintf("Failed to import module version %s: %v", version, err),
-			Tag:     version, // Include tag in all responses for Python API parity
+			Tag:     string(version), // Include tag in all responses for Python API parity
 		}, nil
 	} else if !result.Success {
 		errorMsg := ""
@@ -148,7 +150,7 @@ func (ws *WebhookService) CreateModuleVersionFromTag(
 		return &WebhookResult{
 			Success: false,
 			Message: fmt.Sprintf("Failed to import module version %s: %s", version, errorMsg),
-			Tag:     version, // Include tag in all responses for Python API parity
+			Tag:     string(version), // Include tag in all responses for Python API parity
 		}, nil
 	}
 
@@ -156,14 +158,20 @@ func (ws *WebhookService) CreateModuleVersionFromTag(
 		Success:      true,
 		Message:      fmt.Sprintf("Successfully imported module version %s for %s/%s/%s", version, namespace, moduleName, provider),
 		TriggerBuild: true,
-		Tag:          version, // Include tag in all responses for Python API parity
+		Tag:          string(version), // Include tag in all responses for Python API parity
 	}, nil
 }
 
 // DeleteModuleVersion deletes a module version (matching Python behavior for deleted/unpublished actions)
 func (ws *WebhookService) DeleteModuleVersion(ctx context.Context, namespace, moduleName, provider, version string) (*WebhookResult, error) {
+	// Convert to typed values
+	namespaceName := types.NamespaceName(namespace)
+	name := types.ModuleName(moduleName)
+	providerName := types.ModuleProviderName(provider)
+	versionTyped := types.ModuleVersion(version)
+
 	// Find the module provider
-	moduleProvider, err := ws.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, moduleName, provider)
+	moduleProvider, err := ws.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespaceName, name, providerName)
 	if err != nil {
 		return &WebhookResult{
 			Success: false,
@@ -179,7 +187,7 @@ func (ws *WebhookService) DeleteModuleVersion(ctx context.Context, namespace, mo
 	}
 
 	// Find the module version by module provider ID and version
-	moduleVersion, err := ws.moduleVersionRepo.FindByModuleProviderAndVersion(ctx, moduleProvider.ID(), version)
+	moduleVersion, err := ws.moduleVersionRepo.FindByModuleProviderAndVersion(ctx, moduleProvider.ID(), versionTyped)
 	if err != nil {
 		// Python's delete() is idempotent - returns success even if version doesn't exist
 		// Log the error but still return success
@@ -270,12 +278,19 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 
 		err := ws.savepointHelper.WithTransaction(ctx, func(ctx context.Context, tx *gorm.DB) error {
 			// Use module creation wrapper for this version
+			// Convert GitTag to string pointer (empty string becomes nil)
+			var gitTagStr *string
+			if versionReq.Request.GitTag != "" {
+				s := string(versionReq.Request.GitTag)
+				gitTagStr = &s
+			}
+
 			prepareReq := PrepareModuleRequest{
 				Namespace:  namespace,
 				ModuleName: moduleName,
 				Provider:   provider,
 				Version:    versionReq.Version,
-				GitTag:     &versionReq.Request.GitTag,
+				GitTag:     gitTagStr,
 			}
 
 			return ws.moduleCreationWrapper.WithModuleCreationWrapper(
@@ -293,7 +308,7 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 						versionReq.Request.Module,
 						versionReq.Request.Provider,
 						parsedVersion,
-						&versionReq.Request.GitTag,
+						gitTagStr,
 					)
 
 					// Execute the actual module import

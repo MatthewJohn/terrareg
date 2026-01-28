@@ -8,6 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // CreateNamespaceCommand handles creating a new namespace
@@ -24,7 +25,7 @@ func NewCreateNamespaceCommand(namespaceRepo repository.NamespaceRepository) *Cr
 
 // CreateNamespaceRequest represents the request to create a namespace
 type CreateNamespaceRequest struct {
-	Name        string
+	Name        types.NamespaceName
 	DisplayName *string
 	Type        string // "github_organization", "gitlab_group", or empty
 }

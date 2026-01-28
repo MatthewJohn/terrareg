@@ -8,6 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetModuleDownloadQuery handles retrieving download information for a module version
@@ -30,7 +31,7 @@ type DownloadInfo struct {
 
 // Execute executes the query
 // If version is empty string, returns the latest version
-func (q *GetModuleDownloadQuery) Execute(ctx context.Context, namespace, module, provider, version string) (*DownloadInfo, error) {
+func (q *GetModuleDownloadQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName, version types.ModuleVersion) (*DownloadInfo, error) {
 	// First get the module provider
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, module, provider)
 	if err != nil {
@@ -43,7 +44,7 @@ func (q *GetModuleDownloadQuery) Execute(ctx context.Context, namespace, module,
 	var moduleVersion *model.ModuleVersion
 
 	// If version is specified, get that specific version
-	if version != "" {
+	if string(version) != "" {
 		moduleVersion, err = moduleProvider.GetVersion(version)
 		if err != nil || moduleVersion == nil {
 			return nil, fmt.Errorf("version %s not found for %s/%s/%s", version, namespace, module, provider)

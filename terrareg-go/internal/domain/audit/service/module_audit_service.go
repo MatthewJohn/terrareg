@@ -35,14 +35,14 @@ func NewModuleAuditService(auditRepo repository.AuditHistoryRepository) *ModuleA
 // LogModuleProviderCreate logs when a module provider is created
 func (s *ModuleAuditService) LogModuleProviderCreate(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderCreate,
 		"module_provider",
 		objectID,
@@ -55,14 +55,14 @@ func (s *ModuleAuditService) LogModuleProviderCreate(
 // LogModuleProviderDelete logs when a module provider is deleted
 func (s *ModuleAuditService) LogModuleProviderDelete(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderDelete,
 		"module_provider",
 		objectID,
@@ -75,7 +75,7 @@ func (s *ModuleAuditService) LogModuleProviderDelete(
 // LogModuleProviderUpdateGitTagFormat logs when git tag format is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateGitTagFormat(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -84,7 +84,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitTagFormat(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateGitTagFormat,
 		"module_provider",
 		objectID,
@@ -97,7 +97,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitTagFormat(
 // LogModuleProviderUpdateGitProvider logs when git provider is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateGitProvider(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -106,7 +106,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitProvider(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateGitProvider,
 		"module_provider",
 		objectID,
@@ -119,7 +119,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitProvider(
 // LogModuleProviderUpdateGitPath logs when git path is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateGitPath(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -128,7 +128,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitPath(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateGitPath,
 		"module_provider",
 		objectID,
@@ -141,7 +141,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitPath(
 // LogModuleProviderUpdateArchiveGitPath logs when archive git path setting is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateArchiveGitPath(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -152,7 +152,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateArchiveGitPath(
 	oldValueStr := fmt.Sprintf("%v", oldValue)
 	newValueStr := fmt.Sprintf("%v", newValue)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateArchiveGitPath,
 		"module_provider",
 		objectID,
@@ -165,7 +165,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateArchiveGitPath(
 // LogModuleProviderUpdateGitCustomBaseURL logs when custom git base URL is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomBaseURL(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -174,7 +174,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomBaseURL(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateGitCustomBaseURL,
 		"module_provider",
 		objectID,
@@ -187,7 +187,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomBaseURL(
 // LogModuleProviderUpdateGitCustomCloneURL logs when custom git clone URL is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomCloneURL(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -196,7 +196,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomCloneURL(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateGitCustomCloneURL,
 		"module_provider",
 		objectID,
@@ -209,7 +209,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomCloneURL(
 // LogModuleProviderUpdateGitCustomBrowseURL logs when custom git browse URL is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomBrowseURL(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -218,7 +218,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomBrowseURL(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateGitCustomBrowseURL,
 		"module_provider",
 		objectID,
@@ -231,7 +231,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateGitCustomBrowseURL(
 // LogModuleProviderUpdateVerified logs when verified status is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateVerified(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -242,7 +242,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateVerified(
 	oldValueStr := fmt.Sprintf("%v", oldValue)
 	newValueStr := fmt.Sprintf("%v", newValue)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateVerified,
 		"module_provider",
 		objectID,
@@ -255,7 +255,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateVerified(
 // LogModuleProviderUpdateNamespace logs when namespace is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateNamespace(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -264,7 +264,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateNamespace(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateNamespace,
 		"module_provider",
 		objectID,
@@ -277,7 +277,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateNamespace(
 // LogModuleProviderUpdateModuleName logs when module name is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateModuleName(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -286,7 +286,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateModuleName(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateModuleName,
 		"module_provider",
 		objectID,
@@ -299,7 +299,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateModuleName(
 // LogModuleProviderUpdateProviderName logs when provider name is updated
 func (s *ModuleAuditService) LogModuleProviderUpdateProviderName(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -308,7 +308,7 @@ func (s *ModuleAuditService) LogModuleProviderUpdateProviderName(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderUpdateProviderName,
 		"module_provider",
 		objectID,
@@ -321,14 +321,14 @@ func (s *ModuleAuditService) LogModuleProviderUpdateProviderName(
 // LogModuleProviderRedirectDelete logs when a module provider redirect is deleted
 func (s *ModuleAuditService) LogModuleProviderRedirectDelete(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s", namespace, module, provider)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleProviderRedirectDelete,
 		"module_provider_redirect",
 		objectID,
@@ -341,7 +341,7 @@ func (s *ModuleAuditService) LogModuleProviderRedirectDelete(
 // LogModuleVersionIndex logs when a module version is indexed
 func (s *ModuleAuditService) LogModuleVersionIndex(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -349,7 +349,7 @@ func (s *ModuleAuditService) LogModuleVersionIndex(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s/%s", namespace, module, provider, version)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleVersionIndex,
 		"module_version",
 		objectID,
@@ -362,7 +362,7 @@ func (s *ModuleAuditService) LogModuleVersionIndex(
 // LogModuleVersionPublish logs when a module version is published
 func (s *ModuleAuditService) LogModuleVersionPublish(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -370,7 +370,7 @@ func (s *ModuleAuditService) LogModuleVersionPublish(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s/%s", namespace, module, provider, version)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleVersionPublish,
 		"module_version",
 		objectID,
@@ -383,7 +383,7 @@ func (s *ModuleAuditService) LogModuleVersionPublish(
 // LogModuleVersionDelete logs when a module version is deleted
 func (s *ModuleAuditService) LogModuleVersionDelete(
 	ctx context.Context,
-	username string,
+	username types.NamespaceName,
 	namespace types.NamespaceName,
 	module types.ModuleName,
 	provider types.ModuleProviderName,
@@ -391,7 +391,7 @@ func (s *ModuleAuditService) LogModuleVersionDelete(
 ) error {
 	objectID := fmt.Sprintf("%s/%s/%s/%s", namespace, module, provider, version)
 	audit := model.NewAuditHistory(
-		username,
+		string(username),
 		model.AuditActionModuleVersionDelete,
 		"module_version",
 		objectID,

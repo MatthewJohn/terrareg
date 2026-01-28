@@ -6,6 +6,7 @@ import (
 
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	sharedService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetReadmeHTMLQuery retrieves README HTML content for a module version
@@ -27,10 +28,10 @@ func NewGetReadmeHTMLQuery(
 
 // GetReadmeHTMLRequest represents a request to get README HTML
 type GetReadmeHTMLRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
+	Version   types.ModuleVersion
 }
 
 // GetReadmeHTMLResponse represents the response for getting README HTML

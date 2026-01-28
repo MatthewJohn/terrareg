@@ -1094,9 +1094,9 @@ func (mv *ModuleVersion) VersionedID() types.ModuleProviderVersionFrontendId {
 
 // ModuleProviderID returns the provider ID without version
 // Format: namespace/name/provider
-func (mv *ModuleVersion) ModuleProviderID() types.ModulePeroviderFrontendId {
+func (mv *ModuleVersion) ModuleProviderID() types.ModuleProviderFrontendId {
 	if mv.moduleProvider == nil {
-		return types.ModulePeroviderFrontendId("")
+		return types.ModuleProviderFrontendId("")
 	}
 	return mv.moduleProvider.FrontendID()
 }

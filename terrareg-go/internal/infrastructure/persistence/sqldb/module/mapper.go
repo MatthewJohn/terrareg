@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -13,7 +14,7 @@ import (
 func toDBNamespace(ns *model.Namespace) sqldb.NamespaceDB {
 	return sqldb.NamespaceDB{
 		ID:            ns.ID(),
-		Namespace:     ns.Name(),
+		Namespace:     string(ns.Name()),
 		DisplayName:   ns.DisplayName(),
 		NamespaceType: sqldb.NamespaceType(ns.Type()),
 	}
@@ -23,7 +24,7 @@ func toDBNamespace(ns *model.Namespace) sqldb.NamespaceDB {
 func fromDBNamespace(db *sqldb.NamespaceDB) *model.Namespace {
 	return model.ReconstructNamespace(
 		db.ID,
-		db.Namespace,
+		types.NamespaceName(db.Namespace),
 		db.DisplayName,
 		model.NamespaceType(db.NamespaceType),
 	)
@@ -46,8 +47,8 @@ func toDBModuleProvider(mp *model.ModuleProvider) sqldb.ModuleProviderDB {
 	return sqldb.ModuleProviderDB{
 		ID:                    mp.ID(),
 		NamespaceID:           mp.Namespace().ID(),
-		Module:                mp.Module(),
-		Provider:              mp.Provider(),
+		Module:                string(mp.Module()),
+		Provider:              string(mp.Provider()),
 		Verified:              verified,
 		GitProviderID:         mp.GitProviderID(),
 		RepoBaseURLTemplate:   mp.RepoBaseURLTemplate(),
@@ -72,8 +73,8 @@ func fromDBModuleProvider(db *sqldb.ModuleProviderDB, namespace *model.Namespace
 	mp := model.ReconstructModuleProvider(
 		db.ID,
 		namespace,
-		db.Module,
-		db.Provider,
+		types.ModuleName(db.Module),
+		types.ModuleProviderName(db.Provider),
 		verified,
 		db.GitProviderID,
 		db.RepoBaseURLTemplate,

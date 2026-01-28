@@ -5,6 +5,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // NamespaceRepository defines the interface for namespace persistence
@@ -16,7 +17,7 @@ type NamespaceRepository interface {
 	FindByID(ctx context.Context, id int) (*model.Namespace, error)
 
 	// FindByName retrieves a namespace by name
-	FindByName(ctx context.Context, name string) (*model.Namespace, error)
+	FindByName(ctx context.Context, name types.NamespaceName) (*model.Namespace, error)
 
 	// List retrieves namespaces with optional pagination
 	// If opts is nil or opts.Limit is 0, returns all namespaces
@@ -27,5 +28,5 @@ type NamespaceRepository interface {
 	Delete(ctx context.Context, id int) error
 
 	// Exists checks if a namespace exists
-	Exists(ctx context.Context, name string) (bool, error)
+	Exists(ctx context.Context, name types.NamespaceName) (bool, error)
 }

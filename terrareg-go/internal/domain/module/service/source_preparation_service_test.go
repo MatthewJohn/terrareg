@@ -18,6 +18,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ type mockModuleProviderRepo struct {
 }
 
 func (m *mockModuleProviderRepo) FindByNamespaceModuleProvider(
-	ctx context.Context, namespace, moduleName, provider string,
+	ctx context.Context, namespace types.NamespaceName, moduleName types.ModuleName, provider types.ModuleProviderName,
 ) (*model.ModuleProvider, error) {
 	if m.findErr != nil {
 		return nil, m.findErr
@@ -43,7 +44,7 @@ func (m *mockModuleProviderRepo) FindByNamespaceModuleProvider(
 func (m *mockModuleProviderRepo) FindByID(ctx context.Context, id int) (*model.ModuleProvider, error) {
 	return m.moduleProvider, nil
 }
-func (m *mockModuleProviderRepo) FindByNamespace(ctx context.Context, namespace string) ([]*model.ModuleProvider, error) {
+func (m *mockModuleProviderRepo) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*model.ModuleProvider, error) {
 	return nil, nil
 }
 func (m *mockModuleProviderRepo) Save(ctx context.Context, mp *model.ModuleProvider) error {
@@ -55,7 +56,7 @@ func (m *mockModuleProviderRepo) Search(ctx context.Context, query moduleReposit
 func (m *mockModuleProviderRepo) Delete(ctx context.Context, id int) error {
 	return nil
 }
-func (m *mockModuleProviderRepo) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
+func (m *mockModuleProviderRepo) Exists(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (bool, error) {
 	return false, nil
 }
 

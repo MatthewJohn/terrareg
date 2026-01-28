@@ -6,6 +6,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ListModuleProvidersQuery handles listing all providers for a specific module
@@ -21,10 +22,10 @@ func NewListModuleProvidersQuery(moduleProviderRepo repository.ModuleProviderRep
 }
 
 // Execute executes the query
-func (q *ListModuleProvidersQuery) Execute(ctx context.Context, namespace, module string) ([]*model.ModuleProvider, error) {
+func (q *ListModuleProvidersQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName) ([]*model.ModuleProvider, error) {
 	// Build search query to find all providers for this namespace/module combination
 	searchQuery := repository.ModuleSearchQuery{
-		Namespaces: []string{namespace},
+		Namespaces: []types.NamespaceName{namespace},
 		Module:     &module,
 		Limit:      1000, // Get all providers
 		Offset:     0,

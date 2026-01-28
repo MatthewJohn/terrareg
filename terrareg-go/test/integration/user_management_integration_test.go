@@ -9,6 +9,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -45,12 +46,12 @@ func TestUserManagementIntegrationSimple(t *testing.T) {
 
 	t.Run("Create namespace for user group permissions", func(t *testing.T) {
 		// Test namespace repository
-		namespace, err := modulemodel.NewNamespace("user-permission-ns", nil, modulemodel.NamespaceTypeNone)
+		namespace, err := modulemodel.NewNamespace(types.NamespaceName("user-permission-ns"), nil, modulemodel.NamespaceTypeNone)
 		require.NoError(t, err)
 
 		err = namespaceRepo.Save(ctx, namespace)
 		require.NoError(t, err)
-		assert.Equal(t, "user-permission-ns", namespace.Name())
+		assert.Equal(t, "user-permission-ns", string(namespace.Name()))
 	})
 
 	t.Run("Test repository creation", func(t *testing.T) {

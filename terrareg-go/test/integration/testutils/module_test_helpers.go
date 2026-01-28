@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
@@ -177,7 +178,7 @@ func ReconstructNamespaceDomainModel(t *testing.T, db *sqldb.Database, nsDB *sql
 		nsType = model.NamespaceTypeNone
 	}
 
-	return model.ReconstructNamespace(nsDB.ID, nsDB.Namespace, nsDB.DisplayName, nsType)
+	return model.ReconstructNamespace(nsDB.ID, types.NamespaceName(nsDB.Namespace), nsDB.DisplayName, nsType)
 }
 
 // SetLatestVersionForProvider sets the latest version for a module provider

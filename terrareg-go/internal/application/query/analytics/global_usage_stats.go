@@ -48,7 +48,7 @@ func (q *GlobalUsageStatsQuery) Execute(ctx context.Context) (*GlobalUsageStats,
 
 	// Get usage stats for each module provider
 	for _, mp := range moduleProviders.Modules {
-		moduleKey := mp.Namespace().Name() + "/" + mp.Module() + "/" + mp.Provider()
+		moduleKey := string(mp.Namespace().Name()) + "/" + string(mp.Module()) + "/" + string(mp.Provider())
 
 		// Get download stats (this counts total downloads)
 		stats, err := q.analyticsRepo.GetDownloadStats(ctx, mp.Namespace().Name(), mp.Module(), mp.Provider())

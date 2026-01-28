@@ -8,6 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetModuleProviderQuery handles retrieving a specific module provider
@@ -23,7 +24,7 @@ func NewGetModuleProviderQuery(moduleProviderRepo repository.ModuleProviderRepos
 }
 
 // Execute executes the query
-func (q *GetModuleProviderQuery) Execute(ctx context.Context, namespace, module, provider string) (*model.ModuleProvider, error) {
+func (q *GetModuleProviderQuery) Execute(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*model.ModuleProvider, error) {
 	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, module, provider)
 	if err != nil {
 		if errors.Is(err, shared.ErrNotFound) {

@@ -38,9 +38,9 @@ func (p *ModulePresenter) ToDTO(ctx context.Context, mp *model.ModuleProvider) m
 	response := moduledto.ModuleProviderResponse{
 		ProviderBase: moduledto.ProviderBase{
 			ID:        id,
-			Namespace: mp.Namespace().Name(),
-			Name:      mp.Module(),
-			Provider:  mp.Provider(),
+			Namespace: string(mp.Namespace().Name()),
+			Name:      string(mp.Module()),
+			Provider:  string(mp.Provider()),
 			Verified:  mp.IsVerified(),
 			Trusted:   false, // TODO: Get from namespace service
 		},

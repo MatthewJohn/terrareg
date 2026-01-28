@@ -9,6 +9,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
@@ -53,7 +54,7 @@ type PublishModuleVersionRequest struct {
 // Execute executes the command
 func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishModuleVersionRequest) (*model.ModuleVersion, error) {
 	// Find the module provider
-	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, req.Namespace, req.Module, req.Provider)
+	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, types.NamespaceName(req.Namespace), types.ModuleName(req.Module), types.ModuleProviderName(req.Provider))
 	if err != nil {
 		if errors.Is(err, shared.ErrNotFound) {
 			return nil, fmt.Errorf("module provider %s/%s/%s not found", req.Namespace, req.Module, req.Provider)
@@ -62,7 +63,7 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 	}
 
 	// Check if version already exists (e.g., from upload)
-	existingVersion, err := moduleProvider.GetVersion(req.Version)
+	existingVersion, err := moduleProvider.GetVersion(types.ModuleVersion(req.Version))
 	var version *model.ModuleVersion
 	if err == nil && existingVersion != nil {
 		// Version already exists (likely from upload)
@@ -116,20 +117,20 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 		// Log the version index and publish
 		c.auditService.LogModuleVersionIndex(
 			context.Background(),
-			username,
-			req.Namespace,
-			req.Module,
-			req.Provider,
-			req.Version,
+			types.NamespaceName(username),
+			types.NamespaceName(req.Namespace),
+			types.ModuleName(req.Module),
+			types.ModuleProviderName(req.Provider),
+			types.ModuleVersion(req.Version),
 		)
 
 		c.auditService.LogModuleVersionPublish(
 			context.Background(),
-			username,
-			req.Namespace,
-			req.Module,
-			req.Provider,
-			req.Version,
+			types.NamespaceName(username),
+			types.NamespaceName(req.Namespace),
+			types.ModuleName(req.Module),
+			types.ModuleProviderName(req.Provider),
+			types.ModuleVersion(req.Version),
 		)
 	}()
 
