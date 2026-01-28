@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // GetNamespaceGPGKeysQuery handles retrieving GPG keys for a namespace
@@ -23,7 +24,7 @@ func NewGetNamespaceGPGKeysQuery(namespaceRepo namespaceRepo.NamespaceRepository
 // Execute retrieves all GPG keys for a namespace
 func (q *GetNamespaceGPGKeysQuery) Execute(ctx context.Context, namespace string) ([]GPGKeyResponse, error) {
 	// Get namespace
-	_, err := q.namespaceRepo.FindByName(ctx, namespace)
+	_, err := q.namespaceRepo.FindByName(ctx, types.NamespaceName(namespace))
 	if err != nil {
 		return nil, fmt.Errorf("namespace not found: %w", err)
 	}
