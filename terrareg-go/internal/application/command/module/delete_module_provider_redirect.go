@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // DeleteModuleProviderRedirectRequest represents a request to delete a module provider redirect
 type DeleteModuleProviderRedirectRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
 }
 
 // DeleteModuleProviderRedirectCommand deletes a module provider redirect

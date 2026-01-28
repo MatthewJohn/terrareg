@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // RecordModuleDownloadCommand handles recording module downloads for analytics
@@ -26,10 +27,10 @@ func NewRecordModuleDownloadCommand(
 
 // RecordModuleDownloadRequest represents a request to record a module download
 type RecordModuleDownloadRequest struct {
-	Namespace        string
-	Module           string
-	Provider         string
-	Version          string
+	Namespace        types.NamespaceName
+	Module           types.ModuleName
+	Provider         types.ModuleProviderName
+	Version          types.ModuleVersion
 	TerraformVersion *string
 	AnalyticsToken   *string
 	AuthToken        *string

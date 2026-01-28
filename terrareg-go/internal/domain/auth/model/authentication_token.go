@@ -10,6 +10,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // AuthenticationTokenType represents the type of authentication token
@@ -201,7 +202,7 @@ func (t *AuthenticationToken) IsExpired() bool {
 }
 
 // CanAccessNamespace checks if the token can access a specific namespace
-func (t *AuthenticationToken) CanAccessNamespace(namespace string) bool {
+func (t *AuthenticationToken) CanAccessNamespace(namespace types.NamespaceName) bool {
 	// Admin tokens can access all namespaces
 	if t.tokenType == AuthenticationTokenTypeAdmin {
 		return true
@@ -264,7 +265,7 @@ func (t *AuthenticationToken) IsPublish() bool {
 
 // String returns a string representation (without the actual token value)
 func (t *AuthenticationToken) String() string {
-	var namespaceStr string
+	var namespaceStr types.NamespaceName
 	if t.namespace != nil {
 		namespaceStr = t.namespace.Name()
 	}

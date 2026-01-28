@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // CreateModuleProviderRedirectRequest represents a request to create a module provider redirect
 type CreateModuleProviderRedirectRequest struct {
-	FromNamespace      string
-	FromModule         string
-	FromProvider       string
+	FromNamespace      types.NamespaceName
+	FromModule         types.ModuleName
+	FromProvider       types.ModuleProviderName
 	ToModuleProviderID int
 }
 
@@ -24,16 +25,16 @@ type CreateModuleProviderRedirectCommand struct {
 type ModuleProviderRedirectRepository interface {
 	Create(ctx context.Context, req CreateModuleProviderRedirectRequest) error
 	GetAll(ctx context.Context) ([]*ModuleProviderRedirect, error)
-	GetByFrom(ctx context.Context, namespace, module, provider string) (*ModuleProviderRedirect, error)
-	Delete(ctx context.Context, namespace, module, provider string) error
+	GetByFrom(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*ModuleProviderRedirect, error)
+	Delete(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) error
 }
 
 // ModuleProviderRedirect represents a module provider redirect
 type ModuleProviderRedirect struct {
 	ID                 int
-	FromNamespace      string
-	FromModule         string
-	FromProvider       string
+	FromNamespace      types.NamespaceName
+	FromModule         types.ModuleName
+	FromProvider       types.ModuleProviderName
 	ToModuleProviderID int
 }
 

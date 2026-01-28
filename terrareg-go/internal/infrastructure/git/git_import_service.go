@@ -68,25 +68,25 @@ func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleV
 	// Find or create the module version
 	var moduleVersion *model.ModuleVersion
 
-	if req.Version == nil {
-		if req.GitTag == nil {
+	if req.Version == "" {
+		if req.GitTag == "" {
 			return nil, fmt.Errorf("either version or git_tag must be provided")
 		}
 		// Derive version from git tag
-		version, err := s.deriveVersionFromGitTag(*req.GitTag, moduleProvider)
+		version, err := s.deriveVersionFromGitTag(req.GitTag, moduleProvider)
 		if err != nil {
 			return nil, fmt.Errorf("failed to derive version from git tag: %w", err)
 		}
 		if version == "" {
-			return nil, fmt.Errorf("could not derive version from git tag: %s", *req.GitTag)
+			return nil, fmt.Errorf("could not derive version from git tag: %s", req.GitTag)
 		}
-		req.Version = &version
+		req.Version = version
 	}
 
-	moduleVersion, err = moduleProvider.GetVersion(*req.Version)
+	moduleVersion, err = moduleProvider.GetVersion(req.Version)
 	if err != nil {
 		// Create new version if it doesn't exist
-		moduleVersion, err = moduleProvider.PublishVersion(*req.Version, nil, false)
+		moduleVersion, err = moduleProvider.PublishVersion(req.Version, nil, false)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create module version: %w", err)
 		}
@@ -107,16 +107,16 @@ func (s *GitImportService) Execute(ctx context.Context, req module.ImportModuleV
 
 	// Determine git reference for cloning
 	var gitRef string
-	if req.Version != nil {
+	if req.Version != "" {
 		// Check if module provider can index by version
 		gitTagFormat := moduleProvider.GitTagFormat()
 		if gitTagFormat == nil || *gitTagFormat == "" {
 			return nil, fmt.Errorf("module provider is not configured with a git tag format containing a {version} placeholder")
 		}
 		// Generate git tag from format
-		gitRef = strings.ReplaceAll(*gitTagFormat, "{version}", *req.Version)
-	} else if req.GitTag != nil {
-		gitRef = *req.GitTag
+		gitRef = strings.ReplaceAll(*gitTagFormat, "{version}", req.Version)
+	} else if req.GitTag != "" {
+		gitRef = req.GitTag
 	}
 
 	// Clone repository

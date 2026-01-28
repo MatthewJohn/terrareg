@@ -252,7 +252,7 @@ func (h *ModuleWebhookHandler) processBitbucketWebhook(ctx context.Context, name
 			Namespace: namespace,
 			Module:    moduleName,
 			Provider:  provider,
-			GitTag:    &version,
+			GitTag:    version,
 		}
 		versionRequests = append(versionRequests, moduleService.VersionImportRequest{
 			Version: version,

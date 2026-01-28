@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	baserepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/repository"
 )
@@ -145,7 +146,7 @@ func (r *ModuleVersionRepositoryImpl) FindByID(ctx context.Context, id int) (*mo
 }
 
 // FindByModuleProviderAndVersion retrieves a specific module version
-func (r *ModuleVersionRepositoryImpl) FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version string) (*model.ModuleVersion, error) {
+func (r *ModuleVersionRepositoryImpl) FindByModuleProviderAndVersion(ctx context.Context, moduleProviderID int, version types.ModuleVersion) (*model.ModuleVersion, error) {
 	var dbVersion sqldb.ModuleVersionDB
 
 	// Use background context for DB query to avoid HTTP request timeout issues
@@ -175,7 +176,7 @@ func (r *ModuleVersionRepositoryImpl) Delete(ctx context.Context, id int) error 
 }
 
 // Exists checks if a module version exists
-func (r *ModuleVersionRepositoryImpl) Exists(ctx context.Context, moduleProviderID int, version string) (bool, error) {
+func (r *ModuleVersionRepositoryImpl) Exists(ctx context.Context, moduleProviderID int, version types.ModuleVersion) (bool, error) {
 	var count int64
 	err := r.GetDBFromContext(ctx).
 		Model(&sqldb.ModuleVersionDB{}).

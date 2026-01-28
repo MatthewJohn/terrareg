@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // NamespaceType represents the type of namespace
@@ -20,7 +21,7 @@ const (
 // Namespace represents a namespace for modules and providers
 type Namespace struct {
 	id          int
-	name        string
+	name        types.NamespaceName
 	displayName *string
 	nsType      NamespaceType
 }
@@ -28,7 +29,7 @@ type Namespace struct {
 var namespaceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$`)
 
 // NewNamespace creates a new namespace
-func NewNamespace(name string, displayName *string, nsType NamespaceType) (*Namespace, error) {
+func NewNamespace(name types.NamespaceName, displayName *string, nsType NamespaceType) (*Namespace, error) {
 	if err := ValidateNamespaceName(name); err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func NewNamespace(name string, displayName *string, nsType NamespaceType) (*Name
 }
 
 // ReconstructNamespace reconstructs a namespace from persistence (used by repository)
-func ReconstructNamespace(id int, name string, displayName *string, nsType NamespaceType) *Namespace {
+func ReconstructNamespace(id int, name types.NamespaceName, displayName *string, nsType NamespaceType) *Namespace {
 	return &Namespace{
 		id:          id,
 		name:        name,
@@ -51,7 +52,7 @@ func ReconstructNamespace(id int, name string, displayName *string, nsType Names
 }
 
 // ValidateNamespaceName validates a namespace name
-func ValidateNamespaceName(name string) error {
+func ValidateNamespaceName(name types.NamespaceName) error {
 	if name == "" {
 		return fmt.Errorf("%w: namespace name cannot be empty", shared.ErrInvalidNamespace)
 	}
@@ -64,22 +65,24 @@ func ValidateNamespaceName(name string) error {
 		return fmt.Errorf("%w: namespace name must not exceed 128 characters", shared.ErrInvalidNamespace)
 	}
 
+	stringName := string(name)
+
 	// Check for double underscores (sequential underscores not allowed)
-	if strings.Contains(name, "__") {
+	if strings.Contains(stringName, "__") {
 		return fmt.Errorf("%w: namespace name cannot contain sequential underscores", shared.ErrInvalidNamespace)
 	}
 
 	// Convert to lowercase for validation
-	name = strings.ToLower(name)
+	stringName = strings.ToLower(stringName)
 
-	if !namespaceNameRegex.MatchString(name) {
+	if !namespaceNameRegex.MatchString(stringName) {
 		return fmt.Errorf("%w: namespace name must contain only alphanumeric characters, hyphens, and underscores", shared.ErrInvalidNamespace)
 	}
 
 	// Reserved names
 	reserved := []string{"modules", "providers", "v1", "v2", "api", "admin", "login", "logout", "terrareg"}
 	for _, r := range reserved {
-		if strings.ToLower(name) == r {
+		if strings.ToLower(stringName) == r {
 			return fmt.Errorf("%w: '%s' is a reserved namespace name", shared.ErrInvalidNamespace, name)
 		}
 	}
@@ -93,7 +96,7 @@ func (n *Namespace) ID() int {
 }
 
 // Name returns the namespace name
-func (n *Namespace) Name() string {
+func (n *Namespace) Name() types.NamespaceName {
 	return n.name
 }
 
@@ -124,5 +127,5 @@ func (n *Namespace) IsGithub() bool {
 
 // String returns the string representation
 func (n *Namespace) String() string {
-	return n.name
+	return string(n.name)
 }

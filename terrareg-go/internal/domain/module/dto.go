@@ -2,20 +2,27 @@ package module
 
 import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ModuleVersionImportInput represents a minimal, pure domain DTO for module import
 // This contains only the essential domain information needed for import
 type ModuleVersionImportInput struct {
-	Namespace string
-	Module    string
-	Provider  string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
 	Version   *shared.Version
 	GitTag    *string
 }
 
 // NewModuleVersionImportInput creates a domain import input from application request
-func NewModuleVersionImportInput(namespace, moduleName, provider string, version *shared.Version, gitTag *string) *ModuleVersionImportInput {
+func NewModuleVersionImportInput(
+	namespace types.NamespaceName,
+	moduleName types.ModuleName,
+	provider types.ModuleProviderName,
+	version *shared.Version,
+	gitTag *string,
+) *ModuleVersionImportInput {
 	return &ModuleVersionImportInput{
 		Namespace: namespace,
 		Module:    moduleName,

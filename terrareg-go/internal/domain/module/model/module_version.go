@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ModuleVersion is an entity within the ModuleProvider aggregate
@@ -883,15 +884,22 @@ func (mv *ModuleVersion) getSourceGitTag() string {
 }
 
 // expandURLTemplate replaces template variables with actual values
-func (mv *ModuleVersion) expandURLTemplate(template, namespace, moduleName, provider, tag, path string) string {
+func (mv *ModuleVersion) expandURLTemplate(
+	template string,
+	namespace types.NamespaceName,
+	moduleName types.ModuleName,
+	provider types.ModuleProviderName,
+	tag string,
+	path string,
+) string {
 	// Prepare template variables
 	tagURIEncoded := url.QueryEscape(tag)
 
 	// Replace template variables
 	result := template
-	result = strings.ReplaceAll(result, "{namespace}", namespace)
-	result = strings.ReplaceAll(result, "{module}", moduleName)
-	result = strings.ReplaceAll(result, "{provider}", provider)
+	result = strings.ReplaceAll(result, "{namespace}", string(namespace))
+	result = strings.ReplaceAll(result, "{module}", string(moduleName))
+	result = strings.ReplaceAll(result, "{provider}", string(provider))
 	result = strings.ReplaceAll(result, "{tag}", tag)
 	result = strings.ReplaceAll(result, "{tag_uri_encoded}", tagURIEncoded)
 	result = strings.ReplaceAll(result, "{path}", path)
@@ -1073,22 +1081,22 @@ func (mv *ModuleVersion) String() string {
 
 // VersionedID returns the versioned module ID for terrareg API calls
 // Format: namespace/name/provider/version
-func (mv *ModuleVersion) VersionedID() string {
+func (mv *ModuleVersion) VersionedID() types.ModuleProviderVersionFrontendId {
 	if mv.moduleProvider == nil {
-		return ""
+		return types.ModuleProviderVersionFrontendId("")
 	}
-	return fmt.Sprintf("%s/%s/%s/%s",
+	return types.ModuleProviderVersionFrontendId(fmt.Sprintf("%s/%s/%s/%s",
 		mv.moduleProvider.Namespace().Name(),
 		mv.moduleProvider.Module(),
 		mv.moduleProvider.Provider(),
-		mv.version.String())
+		mv.version.String()))
 }
 
 // ModuleProviderID returns the provider ID without version
 // Format: namespace/name/provider
-func (mv *ModuleVersion) ModuleProviderID() string {
+func (mv *ModuleVersion) ModuleProviderID() types.ModulePeroviderFrontendId {
 	if mv.moduleProvider == nil {
-		return ""
+		return types.ModulePeroviderFrontendId("")
 	}
 	return mv.moduleProvider.FrontendID()
 }

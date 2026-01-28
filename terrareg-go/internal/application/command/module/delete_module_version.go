@@ -7,6 +7,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
@@ -32,10 +33,10 @@ func NewDeleteModuleVersionCommand(
 
 // DeleteModuleVersionRequest represents a request to delete a module version
 type DeleteModuleVersionRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
+	Version   types.ModuleVersion
 }
 
 // Execute executes the command to delete a module version

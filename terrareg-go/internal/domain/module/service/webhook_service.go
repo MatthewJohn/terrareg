@@ -11,6 +11,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/transaction"
 )
@@ -65,7 +66,13 @@ func (ws *WebhookService) ProcessWebhook(ctx context.Context, gitProvider, event
 }
 
 // CreateModuleVersionFromTag creates a module version from a git tag
-func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namespace, moduleName, provider, version string) (*WebhookResult, error) {
+func (ws *WebhookService) CreateModuleVersionFromTag(
+	ctx context.Context,
+	namespace types.NamespaceName,
+	moduleName types.ModuleName,
+	provider types.ModuleProviderName,
+	version types.ModuleVersion,
+) (*WebhookResult, error) {
 	// Integrate with the ModuleImporterService workflow:
 	// 1. Find the module provider and validate the tag against version regex
 	// 2. Create ImportModuleVersionRequest
@@ -97,7 +104,7 @@ func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namesp
 	}
 
 	// Create domain input DTO
-	parsedVersion, err := shared.ParseVersion(version)
+	parsedVersion, err := shared.ParseVersion(string(version))
 	if err != nil {
 		return &WebhookResult{
 			Success: false,
@@ -105,7 +112,7 @@ func (ws *WebhookService) CreateModuleVersionFromTag(ctx context.Context, namesp
 		}, nil
 	}
 
-	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, &version)
+	domainInput := module.NewModuleVersionImportInput(namespace, moduleName, provider, parsedVersion, &parsedVersion)
 
 	// Execute the module import
 	domainReq := DomainImportRequest{
@@ -268,7 +275,7 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 				ModuleName: moduleName,
 				Provider:   provider,
 				Version:    versionReq.Version,
-				GitTag:     versionReq.Request.GitTag,
+				GitTag:     &versionReq.Request.GitTag,
 			}
 
 			return ws.moduleCreationWrapper.WithModuleCreationWrapper(
@@ -286,7 +293,7 @@ func (ws *WebhookService) ProcessMultipleVersionsWithSavepoints(
 						versionReq.Request.Module,
 						versionReq.Request.Provider,
 						parsedVersion,
-						versionReq.Request.GitTag,
+						&versionReq.Request.GitTag,
 					)
 
 					// Execute the actual module import

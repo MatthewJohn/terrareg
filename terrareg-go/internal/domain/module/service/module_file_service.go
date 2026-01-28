@@ -8,6 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ModuleFileService handles module file operations following DDD principles
@@ -35,10 +36,10 @@ func NewModuleFileService(
 
 // GetModuleFileRequest represents a request to get a module file
 type GetModuleFileRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
+	Version   types.ModuleVersion
 	Path      string
 }
 
@@ -153,7 +154,13 @@ func (s *ModuleFileService) processMarkdownContent(content string) string {
 }
 
 // ListModuleFiles lists all files for a module version
-func (s *ModuleFileService) ListModuleFiles(ctx context.Context, namespace, moduleName, provider, version string) ([]*model.ModuleVersionFile, error) {
+func (s *ModuleFileService) ListModuleFiles(
+	ctx context.Context,
+	namespace types.NamespaceName,
+	moduleName types.ModuleName,
+	provider types.ModuleProviderName,
+	version types.ModuleVersion,
+) ([]*model.ModuleVersionFile, error) {
 	// Get module provider first
 	moduleProvider, err := s.moduleProviderRepo.FindByNamespaceModuleProvider(
 		ctx,

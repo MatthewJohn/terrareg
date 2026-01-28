@@ -6,6 +6,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
@@ -28,9 +29,9 @@ func NewDeleteModuleProviderCommand(
 
 // DeleteModuleProviderRequest represents a request to delete a module provider
 type DeleteModuleProviderRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
 }
 
 // Execute deletes the module provider

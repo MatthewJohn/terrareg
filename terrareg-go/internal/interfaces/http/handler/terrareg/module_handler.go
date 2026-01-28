@@ -16,6 +16,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
@@ -256,11 +257,11 @@ func (h *ModuleHandler) HandleModuleList(w http.ResponseWriter, r *http.Request)
 	queryParams := r.URL.Query()
 
 	// Parse providers (support multiple values, like Python)
-	var providers []string
+	var providers []types.ModuleProviderName
 	if p := queryParams["provider"]; len(p) > 0 {
 		for _, prov := range p {
 			if prov != "" {
-				providers = append(providers, prov)
+				providers = append(providers, types.ModuleProviderName(prov))
 			}
 		}
 	}
@@ -303,23 +304,23 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 	query := r.URL.Query().Get("q")
 
 	// Parse namespaces (support multiple values, like Python)
-	var namespaces []string
+	var namespaces []types.NamespaceName
 	if ns := r.URL.Query()["namespace"]; len(ns) > 0 {
 		// Only include non-empty namespace values (matching Python behavior)
 		for _, n := range ns {
 			if n != "" {
-				namespaces = append(namespaces, n)
+				namespaces = append(namespaces, types.NamespaceName(n))
 			}
 		}
 	}
 
 	// Parse providers (support multiple values, like Python)
-	var providers []string
+	var providers []types.ModuleProviderName
 	if p := r.URL.Query()["provider"]; len(p) > 0 {
 		// Only include non-empty provider values
 		for _, prov := range p {
 			if prov != "" {
-				providers = append(providers, prov)
+				providers = append(providers, types.ModuleProviderName(prov))
 			}
 		}
 	}
@@ -391,7 +392,7 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 // HandleNamespaceModules handles GET /v1/modules/{namespace}
 func (h *ModuleHandler) HandleNamespaceModules(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	namespace := chi.URLParam(r, "namespace")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
 
 	// Build input for query with namespace filter
 	input := moduleQuery.ListModulesInput{
@@ -430,9 +431,9 @@ func (h *ModuleHandler) HandleModuleProviderCreate(w http.ResponseWriter, r *htt
 	ctx := r.Context()
 
 	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Create command request
 	cmdReq := moduleCmd.CreateModuleProviderRequest{
@@ -460,8 +461,8 @@ func (h *ModuleHandler) HandleModuleDetails(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
 
 	// Execute query to list all providers for this module
 	providers, err := h.listModuleProvidersQuery.Execute(ctx, namespace, name)
@@ -482,9 +483,9 @@ func (h *ModuleHandler) HandleModuleProviderDetails(w http.ResponseWriter, r *ht
 	ctx := r.Context()
 
 	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Execute query
 	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
@@ -507,9 +508,9 @@ func (h *ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	// Parse path parameters
-	namespace := chi.URLParam(r, "namespace")
-	name := chi.URLParam(r, "name")
-	provider := chi.URLParam(r, "provider")
+	namespace := types.NamespaceName(chi.URLParam(r, "namespace"))
+	name := types.ModuleName(chi.URLParam(r, "name"))
+	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 
 	// Handle analytics token conversion (strip token from namespace if present)
 	// Python converts "test_token-name__testnamespace" to "testnamespace"

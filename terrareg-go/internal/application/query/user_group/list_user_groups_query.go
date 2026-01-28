@@ -5,6 +5,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ListUserGroupsQuery retrieves all user groups with their namespace permissions
@@ -36,8 +37,8 @@ type UserGroupResponse struct {
 // NamespacePermissionResponse represents a namespace permission in the API response
 // Matches Python format: {namespace, permission_type}
 type NamespacePermissionResponse struct {
-	Namespace      string `json:"namespace"`
-	PermissionType string `json:"permission_type"`
+	Namespace      types.NamespaceName `json:"namespace"`
+	PermissionType string              `json:"permission_type"`
 }
 
 // Execute retrieves all user groups with their namespace permissions

@@ -9,6 +9,7 @@ import (
 	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 )
 
@@ -68,11 +69,11 @@ func (q *GetInitialSetupQuery) Execute(ctx context.Context) (*InitialSetupRespon
 
 	// 2. Check for module providers in any namespace
 	var firstModuleProvider *model.ModuleProvider
-	var foundNamespace string
+	var foundNamespace types.NamespaceName
 
 	// Check each namespace until we find one with module providers
 	for _, ns := range namespaces {
-		log.Info().Str("namespace", ns.Name()).Msg("InitialSetup: checking for module providers")
+		log.Info().Str("namespace", string(ns.Name())).Msg("InitialSetup: checking for module providers")
 
 		moduleProviders, err := q.moduleProviderRepo.FindByNamespace(ctx, ns.Name())
 		if err != nil {
@@ -98,10 +99,10 @@ func (q *GetInitialSetupQuery) Execute(ctx context.Context) (*InitialSetupRespon
 	}
 
 	log.Info().
-		Str("namespace", foundNamespace).
+		Str("namespace", string(foundNamespace)).
 		Int("provider_id", firstModuleProvider.ID()).
-		Str("module", firstModuleProvider.Module()).
-		Str("provider", firstModuleProvider.Provider()).
+		Str("module", string(firstModuleProvider.Module())).
+		Str("provider", string(firstModuleProvider.Provider())).
 		Msg("InitialSetup: checking versions for provider")
 
 	// 3. Check for versions (including beta and unpublished)

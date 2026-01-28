@@ -13,6 +13,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/git"
 	baserepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/repository"
@@ -155,7 +156,7 @@ func (r *ModuleProviderRepositoryImpl) FindByID(ctx context.Context, id int) (*m
 }
 
 // FindByNamespaceModuleProvider retrieves a module provider by namespace/module/provider
-func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context.Context, namespace, module, provider string) (*model.ModuleProvider, error) {
+func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*model.ModuleProvider, error) {
 	var dbModel sqldb.ModuleProviderDB
 
 	// DEBUG: Log context deadline
@@ -191,7 +192,7 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context
 }
 
 // FindByNamespace retrieves all module providers in a namespace
-func (r *ModuleProviderRepositoryImpl) FindByNamespace(ctx context.Context, namespace string) ([]*model.ModuleProvider, error) {
+func (r *ModuleProviderRepositoryImpl) FindByNamespace(ctx context.Context, namespace types.NamespaceName) ([]*model.ModuleProvider, error) {
 	var dbModels []sqldb.ModuleProviderDB
 
 	err := r.GetDBFromContext(ctx).
@@ -512,7 +513,7 @@ func (r *ModuleProviderRepositoryImpl) Delete(ctx context.Context, id int) error
 }
 
 // Exists checks if a module provider exists
-func (r *ModuleProviderRepositoryImpl) Exists(ctx context.Context, namespace, module, provider string) (bool, error) {
+func (r *ModuleProviderRepositoryImpl) Exists(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (bool, error) {
 	var count int64
 	err := r.GetDBFromContext(ctx).
 		Model(&sqldb.ModuleProviderDB{}).

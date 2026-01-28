@@ -9,6 +9,7 @@ import (
 	configmodule "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 func TestSecurityService_ValidateFilePath(t *testing.T) {
@@ -180,7 +181,7 @@ func TestNamespaceService_IsTrusted(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		namespace   string
+		namespace   types.NamespaceName
 		expected    bool
 		expectError bool
 	}{
@@ -234,7 +235,7 @@ func TestNamespaceService_IsAutoVerified(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		namespace   string
+		namespace   types.NamespaceName
 		expected    bool
 		expectError bool
 	}{

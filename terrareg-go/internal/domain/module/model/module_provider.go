@@ -8,14 +8,15 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // ModuleProvider is the aggregate root for a module provider
 type ModuleProvider struct {
 	id             int
 	namespace      *Namespace
-	module         string
-	provider       string
+	module         types.ModuleName
+	provider       types.ModuleProviderName
 	verified       bool
 	relevanceScore *int // Optional relevance score for search results
 
@@ -44,7 +45,7 @@ var (
 )
 
 // NewModuleProvider creates a new module provider
-func NewModuleProvider(namespace *Namespace, moduleName, providerName string) (*ModuleProvider, error) {
+func NewModuleProvider(namespace *Namespace, moduleName types.ModuleName, providerName types.ModuleProviderName) (*ModuleProvider, error) {
 	if namespace == nil {
 		return nil, fmt.Errorf("namespace cannot be nil")
 	}
@@ -73,7 +74,8 @@ func NewModuleProvider(namespace *Namespace, moduleName, providerName string) (*
 func ReconstructModuleProvider(
 	id int,
 	namespace *Namespace,
-	moduleName, providerName string,
+	moduleName types.ModuleName,
+	providerName types.ModuleProviderName,
 	verified bool,
 	gitProviderID *int,
 	repoBaseURLTemplate, repoCloneURLTemplate, repoBrowseURLTemplate *string,
@@ -101,7 +103,7 @@ func ReconstructModuleProvider(
 }
 
 // ValidateModuleName validates a module name
-func ValidateModuleName(name string) error {
+func ValidateModuleName(name types.ModuleName) error {
 	if name == "" {
 		return fmt.Errorf("%w: module name cannot be empty", shared.ErrInvalidName)
 	}
@@ -115,9 +117,10 @@ func ValidateModuleName(name string) error {
 	}
 
 	// Convert to lowercase for validation
-	name = strings.ToLower(name)
+	nameString := string(name)
+	nameString = strings.ToLower(nameString)
 
-	if !moduleNameRegex.MatchString(name) {
+	if !moduleNameRegex.MatchString(nameString) {
 		return fmt.Errorf("%w: module name must contain only alphanumeric characters, hyphens, and underscores", shared.ErrInvalidName)
 	}
 
@@ -125,7 +128,7 @@ func ValidateModuleName(name string) error {
 }
 
 // ValidateProviderName validates a provider name
-func ValidateProviderName(name string) error {
+func ValidateProviderName(name types.ModuleProviderName) error {
 	if name == "" {
 		return fmt.Errorf("%w: provider name cannot be empty", shared.ErrInvalidProvider)
 	}
@@ -138,8 +141,9 @@ func ValidateProviderName(name string) error {
 		return fmt.Errorf("%w: provider name must not exceed 128 characters", shared.ErrInvalidProvider)
 	}
 
+	stringName := string(name)
 	// Provider names must be lowercase alphanumeric only
-	if !providerNameRegex.MatchString(name) {
+	if !providerNameRegex.MatchString(stringName) {
 		return fmt.Errorf("%w: provider name must contain only lowercase alphanumeric characters", shared.ErrInvalidProvider)
 	}
 
@@ -237,8 +241,8 @@ func (mp *ModuleProvider) updateLatestVersion() {
 }
 
 // GetVersion retrieves a specific version
-func (mp *ModuleProvider) GetVersion(versionStr string) (*ModuleVersion, error) {
-	targetVersion, err := shared.ParseVersion(versionStr)
+func (mp *ModuleProvider) GetVersion(versionStr types.ModuleVersion) (*ModuleVersion, error) {
+	targetVersion, err := shared.ParseVersion(string(versionStr))
 	if err != nil {
 		return nil, err
 	}
@@ -288,19 +292,19 @@ func (mp *ModuleProvider) ID() int {
 	return mp.id
 }
 
-func (mp *ModuleProvider) FrontendID() string {
-	return fmt.Sprintf("%s/%s/%s", mp.Namespace().Name(), mp.Module(), mp.Provider())
+func (mp *ModuleProvider) FrontendID() types.ModulePeroviderFrontendId {
+	return types.ModulePeroviderFrontendId(fmt.Sprintf("%s/%s/%s", mp.Namespace().Name(), mp.Module(), mp.Provider()))
 }
 
 func (mp *ModuleProvider) Namespace() *Namespace {
 	return mp.namespace
 }
 
-func (mp *ModuleProvider) Module() string {
+func (mp *ModuleProvider) Module() types.ModuleName {
 	return mp.module
 }
 
-func (mp *ModuleProvider) Provider() string {
+func (mp *ModuleProvider) Provider() types.ModuleProviderName {
 	return mp.provider
 }
 

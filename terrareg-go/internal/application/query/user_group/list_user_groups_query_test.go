@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
@@ -135,7 +136,7 @@ func TestListUserGroupsQuery_Success(t *testing.T) {
 					case 3:
 						namespaceName = "ns3"
 					}
-					mockNamespaceRepo.On("FindByID", ctx, perm.NamespaceID).Return(createMockNamespace(perm.NamespaceID, namespaceName), nil).Once()
+					mockNamespaceRepo.On("FindByID", ctx, perm.NamespaceID).Return(createMockNamespace(perm.NamespaceID, types.NamespaceName(namespaceName)), nil).Once()
 				}
 			}
 

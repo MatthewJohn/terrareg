@@ -9,6 +9,7 @@ import (
 
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	storageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 )
 
@@ -48,10 +49,10 @@ func NewGenerateModuleSourceCommand(
 
 // GenerateModuleSourceRequest represents a request to generate module source
 type GenerateModuleSourceRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   string
+	Namespace types.NamespaceName
+	Module    types.ModuleName
+	Provider  types.ModuleProviderName
+	Version   types.ModuleVersion
 }
 
 // GenerateModuleSourceResponse represents the generated module source archive information

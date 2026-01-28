@@ -3,6 +3,8 @@ package analytics
 import (
 	"context"
 	"time"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // AnalyticsRepository defines the interface for analytics persistence
@@ -14,7 +16,7 @@ type AnalyticsRepository interface {
 	RecordProviderDownload(ctx context.Context, event ProviderDownloadEvent) error
 
 	// GetDownloadStats retrieves download statistics for a module provider
-	GetDownloadStats(ctx context.Context, namespace, module, provider string) (*DownloadStats, error)
+	GetDownloadStats(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (*DownloadStats, error)
 
 	// GetDownloadsByVersionID retrieves download count for a specific module version ID
 	GetDownloadsByVersionID(ctx context.Context, moduleVersionID int) (int, error)
@@ -30,7 +32,7 @@ type AnalyticsRepository interface {
 	GetMostDownloadedThisWeek(ctx context.Context) (*ModuleProviderInfo, error)
 
 	// GetModuleProviderID retrieves the ID for a module provider
-	GetModuleProviderID(ctx context.Context, namespace, module, provider string) (int, error)
+	GetModuleProviderID(ctx context.Context, namespace types.NamespaceName, module types.ModuleName, provider types.ModuleProviderName) (int, error)
 
 	// GetLatestTokenVersions retrieves the latest analytics entry for each token for a module provider
 	GetLatestTokenVersions(ctx context.Context, moduleProviderID int) (map[string]TokenVersionInfo, error)
@@ -44,9 +46,9 @@ type AnalyticsEvent struct {
 	AnalyticsToken        *string
 	AuthToken             *string
 	Environment           *string
-	NamespaceName         *string
-	ModuleName            *string
-	ProviderName          *string
+	NamespaceName         *types.NamespaceName
+	ModuleName            *types.ModuleName
+	ProviderName          *types.ModuleProviderName
 }
 
 // ProviderDownloadEvent represents a provider download analytics event
@@ -57,9 +59,9 @@ type ProviderDownloadEvent struct {
 	AnalyticsToken    *string
 	AuthToken         *string
 	Environment       *string
-	NamespaceName     *string
-	ProviderName      *string
-	Version           *string
+	NamespaceName     *types.NamespaceName
+	ProviderName      *types.ModuleProviderName
+	Version           *types.ModuleVersion
 	OS                *string
 	Architecture      *string
 	UserAgent         *string
@@ -76,32 +78,32 @@ type DownloadStats struct {
 
 // ModuleVersionInfo represents information about a module version
 type ModuleVersionInfo struct {
-	ID          string  `json:"id"`        // Format: "provider_id/version" (from Python)
-	Namespace   string  `json:"namespace"` // From ModuleProvider.get_api_outline()
-	Module      string  `json:"name"`      // Python uses "name" not "module"
-	Provider    string  `json:"provider"`  // From ModuleProvider.get_api_outline()
-	Version     string  `json:"version"`   // Version-specific
-	Owner       *string `json:"owner,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Source      *string `json:"source,omitempty"`       // From get_source_base_url()
-	PublishedAt *string `json:"published_at,omitempty"` // ISO format from .isoformat()
-	Downloads   int     `json:"downloads"`
-	Internal    bool    `json:"internal"`
-	Trusted     bool    `json:"trusted"`  // From ModuleProvider.get_api_outline()
-	Verified    bool    `json:"verified"` // From ModuleProvider.get_api_outline()
+	ID          string                   `json:"id"`        // Format: "provider_id/version" (from Python)
+	Namespace   types.NamespaceName      `json:"namespace"` // From ModuleProvider.get_api_outline()
+	Module      types.ModuleName         `json:"name"`      // Python uses "name" not "module"
+	Provider    types.ModuleProviderName `json:"provider"`  // From ModuleProvider.get_api_outline()
+	Version     types.ModuleVersion      `json:"version"`   // Version-specific
+	Owner       *string                  `json:"owner,omitempty"`
+	Description *string                  `json:"description,omitempty"`
+	Source      *string                  `json:"source,omitempty"`       // From get_source_base_url()
+	PublishedAt *string                  `json:"published_at,omitempty"` // ISO format from .isoformat()
+	Downloads   int                      `json:"downloads"`
+	Internal    bool                     `json:"internal"`
+	Trusted     bool                     `json:"trusted"`  // From ModuleProvider.get_api_outline()
+	Verified    bool                     `json:"verified"` // From ModuleProvider.get_api_outline()
 }
 
 // ModuleProviderInfo represents information about a module provider with download count
 type ModuleProviderInfo struct {
-	Namespace     string
-	Module        string
-	Provider      string
+	Namespace     types.NamespaceName
+	Module        types.ModuleName
+	Provider      types.ModuleProviderName
 	DownloadCount int
 }
 
 // TokenVersionInfo represents information about a token's latest usage
 type TokenVersionInfo struct {
-	TerraformVersion string  `json:"terraform_version"`
-	ModuleVersion    string  `json:"module_version"`
-	Environment      *string `json:"environment"`
+	TerraformVersion string              `json:"terraform_version"`
+	ModuleVersion    types.ModuleVersion `json:"module_version"`
+	Environment      *string             `json:"environment"`
 }
