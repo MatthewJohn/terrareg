@@ -124,7 +124,7 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 				// Add submodule with nil details (will return empty specs)
 				submodule := modulemodel.NewSubmodule("submod", nil, nil, nil)
 				moduleVersion.AddSubmodule(submodule)
-				mockVersionRepo.On("FindByModuleProviderAndVersion", mock.Anything, mock.AnythingOfType("int"), "1.0.0").
+				mockVersionRepo.On("FindByModuleProviderAndVersion", mock.Anything, mock.AnythingOfType("int"), types.ModuleVersion("1.0.0")).
 					Return(moduleVersion, nil).
 					Once()
 			},
@@ -196,7 +196,7 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			setupMocks: func(mockProviderRepo *MockModuleProviderRepository, mockVersionRepo *MockModuleVersionRepository) {
 				moduleProvider := &modulemodel.ModuleProvider{}
-				mockProviderRepo.On("FindByNamespaceModuleProvider", mock.Anything, "test", "mod", "provider").
+				mockProviderRepo.On("FindByNamespaceModuleProvider", mock.Anything, types.NamespaceName("test"), types.ModuleName("mod"), types.ModuleProviderName("provider")).
 					Return(moduleProvider, nil).
 					Once()
 				// Create a published module version with a submodule
@@ -205,7 +205,7 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 				// Add submodule with nil details (will return empty specs)
 				submodule := modulemodel.NewSubmodule("submod", nil, nil, nil)
 				moduleVersion.AddSubmodule(submodule)
-				mockVersionRepo.On("FindByModuleProviderAndVersion", mock.Anything, mock.AnythingOfType("int"), "1.0.0").
+				mockVersionRepo.On("FindByModuleProviderAndVersion", mock.Anything, mock.AnythingOfType("int"), types.ModuleVersion("1.0.0")).
 					Return(moduleVersion, nil).
 					Once()
 			},

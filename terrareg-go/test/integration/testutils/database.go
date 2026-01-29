@@ -113,6 +113,9 @@ func CreateTestInfraConfigWithPublicURL(t *testing.T, publicURL string) *config.
 		UploadApiKeys:               []string{"test-upload-key"},
 		AdminSessionExpiryMins:      60, // 1 hour for admin sessions
 		TerraformLockTimeoutSeconds: 1800, // 30 minutes default (required for terraform operations)
+		// Terraform configuration for tests - prevents tfswitch from trying to prompt interactively
+		TerraformDefaultVersion: "1.5.7", // Use a specific version to avoid interactive prompts
+		TerraformProduct:        "terraform",
 	}
 }
 

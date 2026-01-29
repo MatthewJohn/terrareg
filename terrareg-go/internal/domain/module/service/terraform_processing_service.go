@@ -631,6 +631,24 @@ func (s *TerraformExecutorService) SwitchTerraformVersions(
 		tfswitchArgs = append(tfswitchArgs, "--bin", s.tfswitchConfig.BinaryPath)
 	}
 
+	// Debug logging to diagnose tfswitch issues
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().
+		Str("tfswitch_binary_path", s.tfswitchConfig.BinaryPath).
+		Strs("tfswitch_args", tfswitchArgs).
+		Str("tf_default_version", s.tfswitchConfig.DefaultTerraformVersion).
+		Str("tf_product", s.tfswitchConfig.TerraformProduct).
+		Str("terraform_archive_mirror", s.tfswitchConfig.ArchiveMirror).
+		Str("working_dir", modulePath).
+		Msg("About to execute tfswitch in SwitchTerraformVersions")
+
+	// Log environment variables for debugging (only TF-related ones)
+	for _, env := range tfswitchEnv {
+		if strings.HasPrefix(env, "TF_") || strings.HasPrefix(env, "TERRAFORM_") {
+			logger.Debug().Str("env_var", env).Msg("Environment variable")
+		}
+	}
+
 	// Create tfswitch command using SystemCommandService
 	cmd := &service.Command{
 		Name: "tfswitch",
@@ -643,15 +661,26 @@ func (s *TerraformExecutorService) SwitchTerraformVersions(
 	result, err := s.commandService.Execute(ctx, cmd)
 	if err != nil {
 		terraformGlobalLock.Unlock()
+
+		logger.Error().
+			Err(err).
+			Str("tfswitch_stdout", result.Stdout).
+			Str("tfswitch_stderr", result.Stderr).
+			Str("tfswitch_exit_code", fmt.Sprintf("%d", result.ExitCode)).
+			Msg("Tfswitch failed to set terraform version in SwitchTerraformVersions")
+
 		// Include both stdout and stderr in the error message for debugging
 		output := result.Stdout
 		if result.Stderr != "" {
 			output += "\nStderr: " + result.Stderr
 		}
-		return nil, fmt.Errorf("terraform version switch failed: %v\nOutput: %s", err, output)
+		return nil, fmt.Errorf("terraform version switch failed: %v\nCommand: tfswitch %s\nModulePath: %s\nOutput: %s",
+			err, strings.Join(tfswitchArgs, " "), modulePath, output)
 	}
 
-	_ = result.Stdout // Ignore output on success
+	logger.Info().
+		Str("tfswitch_output", result.Stdout).
+		Msg("Terraform version successfully set via tfswitch in SwitchTerraformVersions")
 
 	// Return cleanup function to release lock
 	cleanup := func() {
