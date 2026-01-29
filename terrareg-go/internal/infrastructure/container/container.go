@@ -737,8 +737,14 @@ func NewContainer(
 	cookieService := authservice.NewCookieService(infraConfig) // Uses InfrastructureConfig for auth settings
 	c.CookieService = cookieService
 
+	// Initialize audit service (needed for authentication service)
+	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
+
+	// Initialize authentication audit service for login events (needed before auth service)
+	authenticationAuditService := auditservice.NewAuthenticationAuditService(c.AuditHistoryRepo)
+
 	// Initialize authentication service (orchestrates session and cookie operations)
-	authenticationService, err := authservice.NewAuthenticationService(sessionService, cookieService)
+	authenticationService, err := authservice.NewAuthenticationService(sessionService, cookieService, authenticationAuditService)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authentication service: %w", err)
 	}
@@ -750,9 +756,6 @@ func NewContainer(
 		logger,
 		authservice.DefaultSessionDatabaseConfig().CleanupInterval,
 	)
-
-	// Initialize audit service
-	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
 
 	// Initialize module audit service for module operations
 	moduleAuditService := auditservice.NewModuleAuditService(c.AuditHistoryRepo)

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rs/zerolog/log"
-
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/rs/zerolog/log"
 )
 
 // AuthenticationService orchestrates session and cookie operations for authentication flows
@@ -18,21 +18,27 @@ type AuthenticationService struct {
 	sessionService *SessionService
 	// cookieService handles cookie encryption and validation (required)
 	cookieService *CookieService
+	// authAuditService handles audit logging for login events (optional)
+	authAuditService *auditservice.AuthenticationAuditService
 }
 
 // NewAuthenticationService creates a new authentication service
 // Returns an error if any required dependency is nil
-func NewAuthenticationService(sessionService *SessionService, cookieService *CookieService) (*AuthenticationService, error) {
+func NewAuthenticationService(sessionService *SessionService, cookieService *CookieService, authAuditService *auditservice.AuthenticationAuditService) (*AuthenticationService, error) {
 	if sessionService == nil {
 		return nil, fmt.Errorf("sessionService cannot be nil")
 	}
 	if cookieService == nil {
 		return nil, fmt.Errorf("cookieService cannot be nil")
 	}
+	if authAuditService == nil {
+		return nil, fmt.Errorf("authAuditService cannot be nil")
+	}
 
 	return &AuthenticationService{
-		sessionService: sessionService,
-		cookieService:  cookieService,
+		sessionService:   sessionService,
+		cookieService:    cookieService,
+		authAuditService: authAuditService,
 	}, nil
 }
 
@@ -119,6 +125,10 @@ func (as *AuthenticationService) CreateSessionFromAuthContext(
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	// Log audit event for successful login (async, non-blocking)
+	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65
+	as.authAuditService.LogUserLogin(ctx, authCtx.GetUsername(), sessionData.AuthMethod)
 
 	return nil
 }
@@ -327,6 +337,10 @@ func (as *AuthenticationService) CreateSession(ctx context.Context, w http.Respo
 		Str("session_id", sessionID).
 		Msg("CreateSession: completed successfully")
 
+	// Log audit event for successful login (async, non-blocking)
+	// Python reference: /app/terrareg/server/api/open_id_callback.py:86
+	as.authAuditService.LogUserLogin(ctx, sessionData.Username, sessionData.AuthMethod)
+
 	return nil
 }
 
@@ -394,7 +408,7 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 	// Create admin session data
 	sessionData := &SessionData{
 		SessionID:   sessionID,
-		Username:    "admin",
+		Username:    "Built-in admin",
 		AuthMethod:  "ADMIN_API_KEY",
 		IsAdmin:     true,
 		SiteAdmin:   false,
@@ -446,6 +460,10 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 	log.Info().
 		Str("session_id", sessionID).
 		Msg("CreateAdminSession: completed successfully")
+
+	// Log audit event for successful admin login (async, non-blocking)
+	// Python reference: /app/terrareg/server/api/terrareg_admin_authenticate.py:28
+	as.authAuditService.LogUserLogin(ctx, sessionData.Username, sessionData.AuthMethod)
 
 	return nil
 }
