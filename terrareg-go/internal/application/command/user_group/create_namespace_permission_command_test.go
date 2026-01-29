@@ -56,7 +56,7 @@ func TestCreateUserGroupNamespacePermissionCommand_Success(t *testing.T) {
 			mockUserGroupRepo.On("AddNamespacePermission", ctx, userGroup.ID, mock.AnythingOfType("int"), mock.AnythingOfType("auth.PermissionType")).Return(nil).Once()
 
 			// Create command
-			command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+			command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 			// Execute
 			req := CreateNamespacePermissionRequest{
@@ -105,7 +105,7 @@ func TestCreateUserGroupNamespacePermissionCommand_InvalidPermissionType(t *test
 			mockNamespaceRepo := new(mocks.MockNamespaceRepository)
 
 			// Create command
-			command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+			command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 			// Execute
 			req := CreateNamespacePermissionRequest{
@@ -137,7 +137,7 @@ func TestCreateUserGroupNamespacePermissionCommand_NamespaceNotFound(t *testing.
 	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(nil, nil).Once()
 
 	// Create command
-	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	req := CreateNamespacePermissionRequest{
@@ -173,7 +173,7 @@ func TestCreateUserGroupNamespacePermissionCommand_UserGroupNotFound(t *testing.
 	mockUserGroupRepo.On("FindByName", ctx, userGroupName).Return((*auth.UserGroup)(nil), nil).Once()
 
 	// Create command
-	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	req := CreateNamespacePermissionRequest{
@@ -222,7 +222,7 @@ func TestCreateUserGroupNamespacePermissionCommand_PermissionAlreadyExists(t *te
 	mockUserGroupRepo.On("GetNamespacePermissions", ctx, userGroup.ID).Return(existingPermissions, nil).Once()
 
 	// Create command
-	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	req := CreateNamespacePermissionRequest{
@@ -255,7 +255,7 @@ func TestCreateUserGroupNamespacePermissionCommand_NamespaceFindError(t *testing
 	mockNamespaceRepo.On("FindByName", ctx, types.NamespaceName(namespaceName)).Return(nil, errors.New("database error")).Once()
 
 	// Create command
-	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	req := CreateNamespacePermissionRequest{
@@ -299,7 +299,7 @@ func TestCreateUserGroupNamespacePermissionCommand_AddPermissionError(t *testing
 	mockUserGroupRepo.On("AddNamespacePermission", ctx, userGroup.ID, mock.AnythingOfType("int"), mock.AnythingOfType("auth.PermissionType")).Return(errors.New("database error")).Once()
 
 	// Create command
-	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewCreateUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	req := CreateNamespacePermissionRequest{

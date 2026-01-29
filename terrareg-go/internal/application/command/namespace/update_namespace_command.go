@@ -61,9 +61,11 @@ func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName type
 		oldDisplayName := namespace.DisplayName()
 		namespace.SetDisplayName(req.DisplayName)
 
-		// Log audit event for display name change (async, non-blocking)
+		// Log audit event for display name change (synchronous)
 		// Python reference: /app/terrareg/models.py:1118 - AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
-		go c.namespaceAuditService.LogNamespaceModifyDisplayName(ctx, namespaceName, oldDisplayName, req.DisplayName)
+		if c.namespaceAuditService != nil {
+			c.namespaceAuditService.LogNamespaceModifyDisplayName(ctx, namespaceName, oldDisplayName, req.DisplayName)
+		}
 	}
 
 	// Save the updated namespace

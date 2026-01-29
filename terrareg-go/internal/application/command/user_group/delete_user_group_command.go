@@ -12,11 +12,11 @@ import (
 // Matches Python: ApiTerraregAuthUserGroup._delete(user_group)
 type DeleteUserGroupCommand struct {
 	userGroupRepo         repository.UserGroupRepository
-	userGroupAuditService *auditservice.UserGroupAuditService
+	userGroupAuditService auditservice.UserGroupAuditServiceInterface
 }
 
 // NewDeleteUserGroupCommand creates a new delete user group command
-func NewDeleteUserGroupCommand(userGroupRepo repository.UserGroupRepository, userGroupAuditService *auditservice.UserGroupAuditService) *DeleteUserGroupCommand {
+func NewDeleteUserGroupCommand(userGroupRepo repository.UserGroupRepository, userGroupAuditService auditservice.UserGroupAuditServiceInterface) *DeleteUserGroupCommand {
 	return &DeleteUserGroupCommand{
 		userGroupRepo:         userGroupRepo,
 		userGroupAuditService: userGroupAuditService,
@@ -43,9 +43,11 @@ func (c *DeleteUserGroupCommand) Execute(ctx context.Context, userGroupName stri
 		return fmt.Errorf("failed to delete user group: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:256 - AuditAction.USER_GROUP_DELETE
-	go c.userGroupAuditService.LogUserGroupDelete(ctx, userGroupName)
+	if c.userGroupAuditService != nil {
+		c.userGroupAuditService.LogUserGroupDelete(ctx, userGroupName)
+	}
 
 	return nil
 }

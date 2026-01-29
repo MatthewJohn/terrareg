@@ -17,6 +17,7 @@ import (
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
 func TestAuthenticationIntegration(t *testing.T) {
@@ -58,7 +59,8 @@ func TestAuthenticationIntegration(t *testing.T) {
 
 	// Create auth service with minimal dependencies
 	cookieService := authservice.NewCookieService(infraConfig)
-	authService, err := authservice.NewAuthenticationService(sessionService, cookieService)
+	mockAuditService := new(mocks.MockAuthenticationAuditService)
+	authService, err := authservice.NewAuthenticationService(sessionService, cookieService, mockAuditService)
 	require.NoError(t, err)
 	_ = authService
 

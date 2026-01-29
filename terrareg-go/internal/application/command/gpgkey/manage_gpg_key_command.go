@@ -11,12 +11,12 @@ import (
 
 // ManageGPGKeyCommand handles GPG key management operations
 type ManageGPGKeyCommand struct {
-	gpgKeyService       *service.GPGKeyService
-	gpgKeyAuditService *auditservice.GpgKeyAuditService
+	gpgKeyService       service.GPGKeyServiceInterface
+	gpgKeyAuditService auditservice.GpgKeyAuditServiceInterface
 }
 
 // NewManageGPGKeyCommand creates a new command for managing GPG keys
-func NewManageGPGKeyCommand(gpgKeyService *service.GPGKeyService, gpgKeyAuditService *auditservice.GpgKeyAuditService) *ManageGPGKeyCommand {
+func NewManageGPGKeyCommand(gpgKeyService service.GPGKeyServiceInterface, gpgKeyAuditService auditservice.GpgKeyAuditServiceInterface) *ManageGPGKeyCommand {
 	return &ManageGPGKeyCommand{
 		gpgKeyService:       gpgKeyService,
 		gpgKeyAuditService: gpgKeyAuditService,
@@ -71,9 +71,9 @@ func (c *ManageGPGKeyCommand) CreateGPGKey(ctx context.Context, req CreateGPGKey
 		return nil, fmt.Errorf("failed to create GPG key: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:4056 - AuditAction.GPG_KEY_CREATE
-	go c.gpgKeyAuditService.LogGpgKeyCreate(ctx, gpgKey.KeyID(), req.Namespace)
+	c.gpgKeyAuditService.LogGpgKeyCreate(ctx, gpgKey.KeyID(), req.Namespace)
 
 	// Convert domain model to response
 	response := &CreateGPGKeyResponse{
@@ -111,9 +111,9 @@ func (c *ManageGPGKeyCommand) DeleteGPGKey(ctx context.Context, req DeleteGPGKey
 		return fmt.Errorf("failed to delete GPG key: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:4178 - AuditAction.GPG_KEY_DELETE
-	go c.gpgKeyAuditService.LogGpgKeyDelete(ctx, req.KeyID, req.Namespace)
+	c.gpgKeyAuditService.LogGpgKeyDelete(ctx, req.KeyID, req.Namespace)
 
 	return nil
 }

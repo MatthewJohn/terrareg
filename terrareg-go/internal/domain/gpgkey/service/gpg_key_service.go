@@ -10,11 +10,22 @@ import (
 	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
+// GPGKeyServiceInterface defines the interface for GPG key operations
+// This allows for proper mocking in tests
+type GPGKeyServiceInterface interface {
+	CreateGPGKey(ctx context.Context, req CreateGPGKeyRequest) (*gpgkeyModel.GPGKey, error)
+	DeleteGPGKey(ctx context.Context, namespace, keyID string) error
+}
+
 // GPGKeyService handles GPG key operations
+// It implements GPGKeyServiceInterface
 type GPGKeyService struct {
 	gpgKeyRepo    gpgkeyRepo.GPGKeyRepository
 	namespaceRepo moduleRepo.NamespaceRepository
 }
+
+// Ensure GPGKeyService implements the interface at compile time
+var _ GPGKeyServiceInterface = (*GPGKeyService)(nil)
 
 // NewGPGKeyService creates a new GPG key service
 func NewGPGKeyService(

@@ -16,14 +16,14 @@ import (
 type CreateUserGroupNamespacePermissionCommand struct {
 	userGroupRepo         repository.UserGroupRepository
 	namespaceRepo         moduleRepo.NamespaceRepository
-	userGroupAuditService *auditservice.UserGroupAuditService
+	userGroupAuditService auditservice.UserGroupAuditServiceInterface
 }
 
 // NewCreateUserGroupNamespacePermissionCommand creates a new create namespace permission command
 func NewCreateUserGroupNamespacePermissionCommand(
 	userGroupRepo repository.UserGroupRepository,
 	namespaceRepo moduleRepo.NamespaceRepository,
-	userGroupAuditService *auditservice.UserGroupAuditService,
+	userGroupAuditService auditservice.UserGroupAuditServiceInterface,
 ) *CreateUserGroupNamespacePermissionCommand {
 	return &CreateUserGroupNamespacePermissionCommand{
 		userGroupRepo:         userGroupRepo,
@@ -108,9 +108,11 @@ func (c *CreateUserGroupNamespacePermissionCommand) Execute(
 		return nil, fmt.Errorf("failed to create namespace permission: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:385 - AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD
-	go c.userGroupAuditService.LogUserGroupNamespacePermissionAdd(ctx, userGroupName, namespaceName, req.PermissionType)
+	if c.userGroupAuditService != nil {
+		c.userGroupAuditService.LogUserGroupNamespacePermissionAdd(ctx, userGroupName, namespaceName, req.PermissionType)
+	}
 
 	// Return response matching Python format
 	return &CreateNamespacePermissionResponse{

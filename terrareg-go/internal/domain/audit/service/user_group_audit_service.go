@@ -8,11 +8,25 @@ import (
 	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
+// UserGroupAuditServiceInterface defines the interface for user group audit operations
+// This allows for proper mocking in tests while keeping the implementation in UserGroupAuditService
+type UserGroupAuditServiceInterface interface {
+	LogUserGroupCreate(ctx context.Context, groupName string) error
+	LogUserGroupDelete(ctx context.Context, groupName string) error
+	LogUserGroupNamespacePermissionAdd(ctx context.Context, groupName string, namespace types.NamespaceName, permissionType string) error
+	LogUserGroupNamespacePermissionModify(ctx context.Context, groupName string, namespace types.NamespaceName, oldPermission, newPermission string) error
+	LogUserGroupNamespacePermissionDelete(ctx context.Context, groupName string, namespace types.NamespaceName, permissionType string) error
+}
+
 // UserGroupAuditService handles audit logging for user group operations
+// It implements UserGroupAuditServiceInterface
 // Python reference: /app/terrareg/models.py - user group audit event creation
 type UserGroupAuditService struct {
 	auditRepo auditRepo.AuditHistoryRepository
 }
+
+// Ensure UserGroupAuditService implements the interface at compile time
+var _ UserGroupAuditServiceInterface = (*UserGroupAuditService)(nil)
 
 // NewUserGroupAuditService creates a new UserGroupAuditService
 func NewUserGroupAuditService(auditRepo auditRepo.AuditHistoryRepository) *UserGroupAuditService {

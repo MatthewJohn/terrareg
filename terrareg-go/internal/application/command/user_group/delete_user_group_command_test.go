@@ -29,7 +29,7 @@ func TestDeleteUserGroupCommand_Success(t *testing.T) {
 	mockRepo.On("Delete", ctx, existingGroup.ID).Return(nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupCommand(mockRepo)
+	command := NewDeleteUserGroupCommand(mockRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, groupName)
@@ -51,7 +51,7 @@ func TestDeleteUserGroupCommand_NotFound(t *testing.T) {
 	mockRepo.On("FindByName", ctx, groupName).Return((*auth.UserGroup)(nil), nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupCommand(mockRepo)
+	command := NewDeleteUserGroupCommand(mockRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, groupName)
@@ -77,7 +77,7 @@ func TestDeleteUserGroupCommand_FindByNameError(t *testing.T) {
 	mockRepo.On("FindByName", ctx, groupName).Return((*auth.UserGroup)(nil), errors.New("database error")).Once()
 
 	// Create command
-	command := NewDeleteUserGroupCommand(mockRepo)
+	command := NewDeleteUserGroupCommand(mockRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, groupName)
@@ -109,7 +109,7 @@ func TestDeleteUserGroupCommand_DeleteError(t *testing.T) {
 	mockRepo.On("Delete", ctx, existingGroup.ID).Return(errors.New("database error")).Once()
 
 	// Create command
-	command := NewDeleteUserGroupCommand(mockRepo)
+	command := NewDeleteUserGroupCommand(mockRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, groupName)
@@ -138,7 +138,7 @@ func TestDeleteUserGroupCommand_DeleteSiteAdminGroup(t *testing.T) {
 	mockRepo.On("Delete", ctx, existingGroup.ID).Return(nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupCommand(mockRepo)
+	command := NewDeleteUserGroupCommand(mockRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, groupName)
@@ -166,7 +166,7 @@ func TestDeleteUserGroupCommand_DeleteNonSiteAdminGroup(t *testing.T) {
 	mockRepo.On("Delete", ctx, existingGroup.ID).Return(nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupCommand(mockRepo)
+	command := NewDeleteUserGroupCommand(mockRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, groupName)

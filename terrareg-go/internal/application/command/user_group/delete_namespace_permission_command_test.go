@@ -63,7 +63,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_Success(t *testing.T) {
 			mockUserGroupRepo.On("RemoveNamespacePermission", ctx, userGroup.ID, mock.AnythingOfType("int")).Return(nil).Once()
 
 			// Create command
-			command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+			command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 			// Execute
 			err := command.Execute(ctx, userGroupName, namespaceName)
@@ -89,7 +89,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_NamespaceNotFound(t *testing.
 	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(nil, nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, "testgroup", namespaceName)
@@ -120,7 +120,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_UserGroupNotFound(t *testing.
 	mockUserGroupRepo.On("FindByName", ctx, userGroupName).Return((*auth.UserGroup)(nil), nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, userGroupName, namespaceName)
@@ -167,7 +167,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_PermissionNotFound(t *testing
 	mockUserGroupRepo.On("GetNamespacePermissions", ctx, userGroup.ID).Return(existingPermissions, nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, userGroupName, namespaceName)
@@ -195,7 +195,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_NamespaceFindError(t *testing
 	mockNamespaceRepo.On("FindByName", ctx, namespaceName).Return(nil, errors.New("database error")).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, "testgroup", namespaceName)
@@ -223,7 +223,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_UserGroupFindError(t *testing
 	mockUserGroupRepo.On("FindByName", ctx, userGroupName).Return((*auth.UserGroup)(nil), errors.New("database error")).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, userGroupName, namespaceName)
@@ -260,7 +260,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_GetPermissionsError(t *testin
 	mockUserGroupRepo.On("GetNamespacePermissions", ctx, userGroup.ID).Return([]auth.NamespacePermission{}, errors.New("database error")).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, userGroupName, namespaceName)
@@ -310,7 +310,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_RemovePermissionError(t *test
 	mockUserGroupRepo.On("RemoveNamespacePermission", ctx, userGroup.ID, mock.AnythingOfType("int")).Return(errors.New("database error")).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, userGroupName, namespaceName)
@@ -362,7 +362,7 @@ func TestDeleteUserGroupNamespacePermissionCommand_MultiplePermissionsForSameNam
 	mockUserGroupRepo.On("RemoveNamespacePermission", ctx, userGroup.ID, mock.AnythingOfType("int")).Return(nil).Once()
 
 	// Create command
-	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo)
+	command := NewDeleteUserGroupNamespacePermissionCommand(mockUserGroupRepo, mockNamespaceRepo, nil)
 
 	// Execute
 	err := command.Execute(ctx, userGroupName, namespaceName)

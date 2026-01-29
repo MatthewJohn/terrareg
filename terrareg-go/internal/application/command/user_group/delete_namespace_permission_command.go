@@ -15,14 +15,14 @@ import (
 type DeleteUserGroupNamespacePermissionCommand struct {
 	userGroupRepo         repository.UserGroupRepository
 	namespaceRepo         moduleRepo.NamespaceRepository
-	userGroupAuditService *auditservice.UserGroupAuditService
+	userGroupAuditService auditservice.UserGroupAuditServiceInterface
 }
 
 // NewDeleteUserGroupNamespacePermissionCommand creates a new delete namespace permission command
 func NewDeleteUserGroupNamespacePermissionCommand(
 	userGroupRepo repository.UserGroupRepository,
 	namespaceRepo moduleRepo.NamespaceRepository,
-	userGroupAuditService *auditservice.UserGroupAuditService,
+	userGroupAuditService auditservice.UserGroupAuditServiceInterface,
 ) *DeleteUserGroupNamespacePermissionCommand {
 	return &DeleteUserGroupNamespacePermissionCommand{
 		userGroupRepo:         userGroupRepo,
@@ -86,9 +86,11 @@ func (c *DeleteUserGroupNamespacePermissionCommand) Execute(
 		return fmt.Errorf("failed to delete namespace permission: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:463 - AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE
-	go c.userGroupAuditService.LogUserGroupNamespacePermissionDelete(ctx, userGroupName, namespaceName, existingPermissionType)
+	if c.userGroupAuditService != nil {
+		c.userGroupAuditService.LogUserGroupNamespacePermissionDelete(ctx, userGroupName, namespaceName, existingPermissionType)
+	}
 
 	return nil
 }

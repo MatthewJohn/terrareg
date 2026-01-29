@@ -18,13 +18,13 @@ type AuthenticationService struct {
 	sessionService *SessionService
 	// cookieService handles cookie encryption and validation (required)
 	cookieService *CookieService
-	// authAuditService handles audit logging for login events (optional)
-	authAuditService *auditservice.AuthenticationAuditService
+	// authAuditService handles audit logging for login events (required)
+	authAuditService auditservice.AuthenticationAuditServiceInterface
 }
 
 // NewAuthenticationService creates a new authentication service
 // Returns an error if any required dependency is nil
-func NewAuthenticationService(sessionService *SessionService, cookieService *CookieService, authAuditService *auditservice.AuthenticationAuditService) (*AuthenticationService, error) {
+func NewAuthenticationService(sessionService *SessionService, cookieService *CookieService, authAuditService auditservice.AuthenticationAuditServiceInterface) (*AuthenticationService, error) {
 	if sessionService == nil {
 		return nil, fmt.Errorf("sessionService cannot be nil")
 	}
@@ -126,7 +126,7 @@ func (as *AuthenticationService) CreateSessionFromAuthContext(
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// Log audit event for successful login (async, non-blocking)
+	// Log audit event for successful login
 	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65
 	as.authAuditService.LogUserLogin(ctx, authCtx.GetUsername(), sessionData.AuthMethod)
 
@@ -337,7 +337,7 @@ func (as *AuthenticationService) CreateSession(ctx context.Context, w http.Respo
 		Str("session_id", sessionID).
 		Msg("CreateSession: completed successfully")
 
-	// Log audit event for successful login (async, non-blocking)
+	// Log audit event for successful login
 	// Python reference: /app/terrareg/server/api/open_id_callback.py:86
 	as.authAuditService.LogUserLogin(ctx, sessionData.Username, sessionData.AuthMethod)
 
@@ -461,7 +461,7 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 		Str("session_id", sessionID).
 		Msg("CreateAdminSession: completed successfully")
 
-	// Log audit event for successful admin login (async, non-blocking)
+	// Log audit event for successful admin login
 	// Python reference: /app/terrareg/server/api/terrareg_admin_authenticate.py:28
 	as.authAuditService.LogUserLogin(ctx, sessionData.Username, sessionData.AuthMethod)
 

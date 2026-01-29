@@ -13,16 +13,16 @@ import (
 
 // CreateOrUpdateProviderCommand handles creating or updating a provider
 type CreateOrUpdateProviderCommand struct {
-	providerRepo       providerRepo.ProviderRepository
-	namespaceRepo       namespaceRepo.NamespaceRepository
-	providerAuditService *auditservice.ProviderAuditService
+	providerRepo         providerRepo.ProviderRepository
+	namespaceRepo         namespaceRepo.NamespaceRepository
+	providerAuditService auditservice.ProviderAuditServiceInterface
 }
 
 // NewCreateOrUpdateProviderCommand creates a new create/update provider command
 func NewCreateOrUpdateProviderCommand(
 	providerRepo providerRepo.ProviderRepository,
 	namespaceRepo namespaceRepo.NamespaceRepository,
-	providerAuditService *auditservice.ProviderAuditService,
+	providerAuditService auditservice.ProviderAuditServiceInterface,
 ) *CreateOrUpdateProviderCommand {
 	return &CreateOrUpdateProviderCommand{
 		providerRepo:         providerRepo,
@@ -87,9 +87,11 @@ func (c *CreateOrUpdateProviderCommand) Execute(ctx context.Context, req CreateO
 		return nil, fmt.Errorf("failed to save provider: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:4229 - AuditAction.PROVIDER_CREATE
-	go c.providerAuditService.LogProviderCreate(ctx, req.Name, req.Namespace)
+	if c.providerAuditService != nil {
+		c.providerAuditService.LogProviderCreate(ctx, req.Name, req.Namespace)
+	}
 
 	return newProvider, nil
 }

@@ -56,7 +56,7 @@ func TestCreateUserGroupCommand_Success(t *testing.T) {
 			mockRepo.On("Save", ctx, mock.AnythingOfType("*auth.UserGroup")).Return(1, nil).Once()
 
 			// Create command
-			command, err := NewCreateUserGroupCommand(mockRepo)
+			command, err := NewCreateUserGroupCommand(mockRepo, nil)
 			require.NoError(t, err)
 
 			// Execute
@@ -114,7 +114,7 @@ func TestCreateUserGroupCommand_InvalidName(t *testing.T) {
 			mockRepo := new(mocks.MockUserGroupRepository)
 
 			// Create command
-			command, err := NewCreateUserGroupCommand(mockRepo)
+			command, err := NewCreateUserGroupCommand(mockRepo, nil)
 			require.NoError(t, err)
 
 			// Execute
@@ -142,7 +142,7 @@ func TestCreateUserGroupCommand_SiteAdminNil(t *testing.T) {
 	mockRepo := new(mocks.MockUserGroupRepository)
 
 	// Create command
-	command, err := NewCreateUserGroupCommand(mockRepo)
+	command, err := NewCreateUserGroupCommand(mockRepo, nil)
 	require.NoError(t, err)
 
 	// Execute with nil site_admin
@@ -174,7 +174,7 @@ func TestCreateUserGroupCommand_AlreadyExists(t *testing.T) {
 	mockRepo.On("FindByName", ctx, groupName).Return(existingGroup, nil).Once()
 
 	// Create command
-	command, err := NewCreateUserGroupCommand(mockRepo)
+	command, err := NewCreateUserGroupCommand(mockRepo, nil)
 	require.NoError(t, err)
 
 	// Execute
@@ -205,7 +205,7 @@ func TestCreateUserGroupCommand_FindByNameError(t *testing.T) {
 	mockRepo.On("FindByName", ctx, groupName).Return((*auth.UserGroup)(nil), errors.New("database error")).Once()
 
 	// Create command
-	command, err := NewCreateUserGroupCommand(mockRepo)
+	command, err := NewCreateUserGroupCommand(mockRepo, nil)
 	require.NoError(t, err)
 
 	// Execute
@@ -237,7 +237,7 @@ func TestCreateUserGroupCommand_SaveError(t *testing.T) {
 	mockRepo.On("Save", ctx, mock.AnythingOfType("*auth.UserGroup")).Return(0, errors.New("database error")).Once()
 
 	// Create command
-	command, err := NewCreateUserGroupCommand(mockRepo)
+	command, err := NewCreateUserGroupCommand(mockRepo, nil)
 	require.NoError(t, err)
 
 	// Execute
@@ -256,4 +256,73 @@ func TestCreateUserGroupCommand_SaveError(t *testing.T) {
 
 	// Verify mocks were called
 	mockRepo.AssertExpectations(t)
+}
+
+func TestCreateUserGroupCommand_Success_CallsAuditService(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(mocks.MockUserGroupRepository)
+	mockAuditService := new(mocks.MockUserGroupAuditService)
+
+	groupName := "testgroup"
+
+	// Set up mock expectations
+	mockRepo.On("FindByName", ctx, groupName).Return((*auth.UserGroup)(nil), nil).Once()
+	mockRepo.On("Save", ctx, mock.AnythingOfType("*auth.UserGroup")).Return(1, nil).Once()
+
+	// Set up audit service mock - expect LogUserGroupCreate call
+	mockAuditService.On("LogUserGroupCreate", ctx, groupName).Return(nil)
+
+	// Create command with audit service
+	command, err := NewCreateUserGroupCommand(mockRepo, mockAuditService)
+	require.NoError(t, err)
+
+	// Execute
+	siteAdmin := true
+	req := CreateUserGroupRequest{
+		Name:      groupName,
+		SiteAdmin: &siteAdmin,
+	}
+
+	result, err := command.Execute(ctx, req)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Equal(t, groupName, result.Name)
+
+	// Verify mocks were called (synchronous - no sleep needed)
+	mockRepo.AssertExpectations(t)
+	mockAuditService.AssertExpectations(t)
+}
+
+func TestCreateUserGroupCommand_SaveError_NoAuditCall(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(mocks.MockUserGroupRepository)
+	mockAuditService := new(mocks.MockUserGroupAuditService)
+
+	groupName := "testgroup"
+
+	// Set up mock expectations - save returns error
+	mockRepo.On("FindByName", ctx, groupName).Return((*auth.UserGroup)(nil), nil).Once()
+	mockRepo.On("Save", ctx, mock.AnythingOfType("*auth.UserGroup")).Return(0, errors.New("database error")).Once()
+
+	// Create command with audit service
+	command, err := NewCreateUserGroupCommand(mockRepo, mockAuditService)
+	require.NoError(t, err)
+
+	// Execute
+	siteAdmin := true
+	req := CreateUserGroupRequest{
+		Name:      groupName,
+		SiteAdmin: &siteAdmin,
+	}
+
+	result, err := command.Execute(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	// Verify audit service was NOT called (since operation failed)
+	mockAuditService.AssertNotCalled(t, "LogUserGroupCreate", ctx, mock.Anything)
 }

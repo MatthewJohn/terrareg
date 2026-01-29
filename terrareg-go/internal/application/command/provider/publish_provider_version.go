@@ -14,14 +14,14 @@ import (
 type PublishProviderVersionCommand struct {
 	providerRepo         providerRepo.ProviderRepository
 	namespaceRepo         namespaceRepo.NamespaceRepository
-	providerAuditService *auditservice.ProviderAuditService
+	providerAuditService auditservice.ProviderAuditServiceInterface
 }
 
 // NewPublishProviderVersionCommand creates a new publish provider version command
 func NewPublishProviderVersionCommand(
 	providerRepo providerRepo.ProviderRepository,
 	namespaceRepo namespaceRepo.NamespaceRepository,
-	providerAuditService *auditservice.ProviderAuditService,
+	providerAuditService auditservice.ProviderAuditServiceInterface,
 ) *PublishProviderVersionCommand {
 	return &PublishProviderVersionCommand{
 		providerRepo:         providerRepo,
@@ -58,9 +58,11 @@ func (c *PublishProviderVersionCommand) Execute(ctx context.Context, req Publish
 		return nil, fmt.Errorf("failed to save provider: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: implied by module version index pattern - AuditAction.PROVIDER_VERSION_INDEX
-	go c.providerAuditService.LogProviderVersionIndex(ctx, req.ProviderName, req.Namespace, req.Version)
+	if c.providerAuditService != nil {
+		c.providerAuditService.LogProviderVersionIndex(ctx, req.ProviderName, req.Namespace, req.Version)
+	}
 
 	return providerVersion, nil
 }

@@ -63,9 +63,11 @@ func (c *CreateNamespaceCommand) Execute(ctx context.Context, req CreateNamespac
 		return nil, fmt.Errorf("failed to save namespace: %w", err)
 	}
 
-	// Log audit event (async, non-blocking)
+	// Log audit event (synchronous)
 	// Python reference: /app/terrareg/models.py:1144 - AuditAction.NAMESPACE_CREATE
-	go c.namespaceAuditService.LogNamespaceCreate(ctx, req.Name)
+	if c.namespaceAuditService != nil {
+		c.namespaceAuditService.LogNamespaceCreate(ctx, req.Name)
+	}
 
 	return namespace, nil
 }
