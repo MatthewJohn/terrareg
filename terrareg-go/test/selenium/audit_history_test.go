@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	integrationTestUtils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
-
 	"github.com/chromedp/chromedp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +31,7 @@ func newAuditHistoryTest(t *testing.T) *SeleniumTest {
 	// Setup test data to prevent redirect to initial-setup
 	// Python reference: /app/test/selenium/test_audit_history.py - setup_method
 	db := st.server.GetDB()
-	integrationTestUtils.CreateNamespace(t, db, "test-namespace", nil)
+	SetupAuditHistoryTestData(t, db)
 
 	return st
 }
@@ -124,7 +122,11 @@ func testAuditHistoryBasicView(t *testing.T) {
 	// Python: self.selenium_instance.get(self.get_url('/audit-history'))
 	st.NavigateTo("/audit-history")
 
+	// Wait for page title to confirm we're on the audit history page
 	// Python: assert self.selenium_instance.find_element(By.CLASS_NAME, 'breadcrumb').text == 'Audit History'
+	st.WaitForTitle("Audit History - Terrareg")
+
+	// Now check for breadcrumb
 	st.AssertTextContent(".breadcrumb", "Audit History")
 
 	// Python: audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')

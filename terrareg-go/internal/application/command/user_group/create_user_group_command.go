@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 )
@@ -13,17 +14,19 @@ import (
 // Matches Python: UserGroup.create(name, site_admin)
 type CreateUserGroupCommand struct {
 	// userGroupRepo handles user group persistence (required)
-	userGroupRepo repository.UserGroupRepository
+	userGroupRepo         repository.UserGroupRepository
+	userGroupAuditService *auditservice.UserGroupAuditService
 }
 
 // NewCreateUserGroupCommand creates a new create user group command
 // Returns an error if userGroupRepo is nil
-func NewCreateUserGroupCommand(userGroupRepo repository.UserGroupRepository) (*CreateUserGroupCommand, error) {
+func NewCreateUserGroupCommand(userGroupRepo repository.UserGroupRepository, userGroupAuditService *auditservice.UserGroupAuditService) (*CreateUserGroupCommand, error) {
 	if userGroupRepo == nil {
 		return nil, fmt.Errorf("userGroupRepo cannot be nil")
 	}
 	return &CreateUserGroupCommand{
-		userGroupRepo: userGroupRepo,
+		userGroupRepo:         userGroupRepo,
+		userGroupAuditService: userGroupAuditService,
 	}, nil
 }
 
@@ -82,6 +85,10 @@ func (c *CreateUserGroupCommand) Execute(ctx context.Context, req CreateUserGrou
 	if err := c.userGroupRepo.Save(ctx, userGroup); err != nil {
 		return nil, fmt.Errorf("failed to save user group: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:183 - AuditAction.USER_GROUP_CREATE
+	go c.userGroupAuditService.LogUserGroupCreate(ctx, req.Name)
 
 	// Return response matching Python format
 	return &CreateUserGroupResponse{

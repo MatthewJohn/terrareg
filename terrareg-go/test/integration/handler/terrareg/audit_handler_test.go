@@ -221,8 +221,9 @@ func TestAuditHandler_HandleAuditHistoryGet_Sorting(t *testing.T) {
 	data := response["data"].([]interface{})
 	assert.Len(t, data, 3)
 	// First row should have user1 (earliest timestamp)
-	firstRow := data[0].([]interface{})
-	assert.Contains(t, firstRow[1], "user1")
+	// New format: data is []map[string]interface{}
+	firstRow := data[0].(map[string]interface{})
+	assert.Contains(t, firstRow["username"], "user1")
 }
 
 // TestAuditHandler_HandleAuditHistoryGet_DefaultParameters tests default parameter handling
@@ -286,11 +287,10 @@ func TestAuditHandler_HandleAuditHistoryGet_DataFormat(t *testing.T) {
 	data := response["data"].([]interface{})
 	assert.Len(t, data, 1)
 
-	// Verify row format: [timestamp, username, action, object_id, old_value, new_value]
-	row := data[0].([]interface{})
-	assert.Len(t, row, 6)
-	assert.NotEmpty(t, row[0]) // timestamp
-	assert.Equal(t, "test-user", row[1])
-	assert.Equal(t, "CREATE", row[2])
-	assert.Equal(t, "123", row[3])
+	// Verify row format: map[string]interface{} with keys: timestamp, username, action, object_id, old_value, new_value
+	row := data[0].(map[string]interface{})
+	assert.NotEmpty(t, row["timestamp"]) // timestamp
+	assert.Equal(t, "test-user", row["username"])
+	assert.Equal(t, "CREATE", row["action"])
+	assert.Equal(t, "123", row["object_id"])
 }

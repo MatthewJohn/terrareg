@@ -4,19 +4,22 @@ import (
 	"context"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	gpgkey "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/service"
 )
 
 // ManageGPGKeyCommand handles GPG key management operations
 type ManageGPGKeyCommand struct {
-	gpgKeyService *service.GPGKeyService
+	gpgKeyService       *service.GPGKeyService
+	gpgKeyAuditService *auditservice.GpgKeyAuditService
 }
 
 // NewManageGPGKeyCommand creates a new command for managing GPG keys
-func NewManageGPGKeyCommand(gpgKeyService *service.GPGKeyService) *ManageGPGKeyCommand {
+func NewManageGPGKeyCommand(gpgKeyService *service.GPGKeyService, gpgKeyAuditService *auditservice.GpgKeyAuditService) *ManageGPGKeyCommand {
 	return &ManageGPGKeyCommand{
-		gpgKeyService: gpgKeyService,
+		gpgKeyService:       gpgKeyService,
+		gpgKeyAuditService: gpgKeyAuditService,
 	}
 }
 
@@ -68,6 +71,10 @@ func (c *ManageGPGKeyCommand) CreateGPGKey(ctx context.Context, req CreateGPGKey
 		return nil, fmt.Errorf("failed to create GPG key: %w", err)
 	}
 
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:4056 - AuditAction.GPG_KEY_CREATE
+	go c.gpgKeyAuditService.LogGpgKeyCreate(ctx, gpgKey.KeyID(), req.Namespace)
+
 	// Convert domain model to response
 	response := &CreateGPGKeyResponse{
 		Type: "gpg-keys",
@@ -103,6 +110,10 @@ func (c *ManageGPGKeyCommand) DeleteGPGKey(ctx context.Context, req DeleteGPGKey
 		}
 		return fmt.Errorf("failed to delete GPG key: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:4178 - AuditAction.GPG_KEY_DELETE
+	go c.gpgKeyAuditService.LogGpgKeyDelete(ctx, req.KeyID, req.Namespace)
 
 	return nil
 }

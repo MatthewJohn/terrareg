@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
@@ -12,18 +13,21 @@ import (
 // DeleteUserGroupNamespacePermissionCommand handles deleting a namespace permission for a user group
 // Matches Python: ApiTerraregAuthUserGroupNamespacePermissions._delete(user_group, namespace)
 type DeleteUserGroupNamespacePermissionCommand struct {
-	userGroupRepo repository.UserGroupRepository
-	namespaceRepo moduleRepo.NamespaceRepository
+	userGroupRepo         repository.UserGroupRepository
+	namespaceRepo         moduleRepo.NamespaceRepository
+	userGroupAuditService *auditservice.UserGroupAuditService
 }
 
 // NewDeleteUserGroupNamespacePermissionCommand creates a new delete namespace permission command
 func NewDeleteUserGroupNamespacePermissionCommand(
 	userGroupRepo repository.UserGroupRepository,
 	namespaceRepo moduleRepo.NamespaceRepository,
+	userGroupAuditService *auditservice.UserGroupAuditService,
 ) *DeleteUserGroupNamespacePermissionCommand {
 	return &DeleteUserGroupNamespacePermissionCommand{
-		userGroupRepo: userGroupRepo,
-		namespaceRepo: namespaceRepo,
+		userGroupRepo:         userGroupRepo,
+		namespaceRepo:         namespaceRepo,
+		userGroupAuditService: userGroupAuditService,
 	}
 }
 
@@ -63,9 +67,11 @@ func (c *DeleteUserGroupNamespacePermissionCommand) Execute(
 	}
 
 	permissionExists := false
+	var existingPermissionType string
 	for _, perm := range permissions {
 		if perm.NamespaceID == namespace.ID() {
 			permissionExists = true
+			existingPermissionType = string(perm.PermissionType)
 			break
 		}
 	}
@@ -79,6 +85,10 @@ func (c *DeleteUserGroupNamespacePermissionCommand) Execute(
 	if err := c.userGroupRepo.RemoveNamespacePermission(ctx, userGroup.ID, namespace.ID()); err != nil {
 		return fmt.Errorf("failed to delete namespace permission: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:463 - AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE
+	go c.userGroupAuditService.LogUserGroupNamespacePermissionDelete(ctx, userGroupName, namespaceName, existingPermissionType)
 
 	return nil
 }

@@ -4,19 +4,22 @@ import (
 	"context"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 )
 
 // DeleteUserGroupCommand handles deleting a user group
 // Matches Python: ApiTerraregAuthUserGroup._delete(user_group)
 type DeleteUserGroupCommand struct {
-	userGroupRepo repository.UserGroupRepository
+	userGroupRepo         repository.UserGroupRepository
+	userGroupAuditService *auditservice.UserGroupAuditService
 }
 
 // NewDeleteUserGroupCommand creates a new delete user group command
-func NewDeleteUserGroupCommand(userGroupRepo repository.UserGroupRepository) *DeleteUserGroupCommand {
+func NewDeleteUserGroupCommand(userGroupRepo repository.UserGroupRepository, userGroupAuditService *auditservice.UserGroupAuditService) *DeleteUserGroupCommand {
 	return &DeleteUserGroupCommand{
-		userGroupRepo: userGroupRepo,
+		userGroupRepo:         userGroupRepo,
+		userGroupAuditService: userGroupAuditService,
 	}
 }
 
@@ -39,6 +42,10 @@ func (c *DeleteUserGroupCommand) Execute(ctx context.Context, userGroupName stri
 	if err := c.userGroupRepo.Delete(ctx, userGroup.ID); err != nil {
 		return fmt.Errorf("failed to delete user group: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:256 - AuditAction.USER_GROUP_DELETE
+	go c.userGroupAuditService.LogUserGroupDelete(ctx, userGroupName)
 
 	return nil
 }

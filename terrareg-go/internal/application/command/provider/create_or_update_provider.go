@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
@@ -12,18 +13,21 @@ import (
 
 // CreateOrUpdateProviderCommand handles creating or updating a provider
 type CreateOrUpdateProviderCommand struct {
-	providerRepo  providerRepo.ProviderRepository
-	namespaceRepo namespaceRepo.NamespaceRepository
+	providerRepo       providerRepo.ProviderRepository
+	namespaceRepo       namespaceRepo.NamespaceRepository
+	providerAuditService *auditservice.ProviderAuditService
 }
 
 // NewCreateOrUpdateProviderCommand creates a new create/update provider command
 func NewCreateOrUpdateProviderCommand(
 	providerRepo providerRepo.ProviderRepository,
 	namespaceRepo namespaceRepo.NamespaceRepository,
+	providerAuditService *auditservice.ProviderAuditService,
 ) *CreateOrUpdateProviderCommand {
 	return &CreateOrUpdateProviderCommand{
-		providerRepo:  providerRepo,
-		namespaceRepo: namespaceRepo,
+		providerRepo:         providerRepo,
+		namespaceRepo:         namespaceRepo,
+		providerAuditService: providerAuditService,
 	}
 }
 
@@ -82,6 +86,10 @@ func (c *CreateOrUpdateProviderCommand) Execute(ctx context.Context, req CreateO
 	if err := c.providerRepo.Save(ctx, newProvider); err != nil {
 		return nil, fmt.Errorf("failed to save provider: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:4229 - AuditAction.PROVIDER_CREATE
+	go c.providerAuditService.LogProviderCreate(ctx, req.Name, req.Namespace)
 
 	return newProvider, nil
 }

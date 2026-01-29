@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	auditRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/model"
 	"github.com/rs/zerolog"
 )
 
@@ -24,14 +26,17 @@ type AuthEvent struct {
 }
 
 // AuditLogger handles comprehensive audit logging for authentication events
+// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
 type AuditLogger struct {
-	logger zerolog.Logger
+	logger   zerolog.Logger
+	auditRepo auditRepo.AuditHistoryRepository
 }
 
 // NewAuditLogger creates a new audit logger
-func NewAuditLogger(baseLogger zerolog.Logger) *AuditLogger {
+func NewAuditLogger(baseLogger zerolog.Logger, auditRepo auditRepo.AuditHistoryRepository) *AuditLogger {
 	return &AuditLogger{
-		logger: baseLogger.With().Str("component", "audit").Logger(),
+		logger:   baseLogger.With().Str("component", "audit").Logger(),
+		auditRepo: auditRepo,
 	}
 }
 
@@ -83,6 +88,7 @@ func (a *AuditLogger) LogAuthEvent(ctx context.Context, event AuthEvent) {
 }
 
 // LogLoginAttempt logs a login attempt
+// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
 func (a *AuditLogger) LogLoginAttempt(ctx context.Context, provider, username, ipAddress, userAgent, sessionID string, success bool, errorMsg string) {
 	event := AuthEvent{
 		Timestamp: time.Now().UTC(),
@@ -100,6 +106,23 @@ func (a *AuditLogger) LogLoginAttempt(ctx context.Context, provider, username, i
 	}
 
 	a.LogAuthEvent(ctx, event)
+
+	// Create database audit entry for successful logins
+	// Python reference: /app/terrareg/audit.py - create_audit_event for USER_LOGIN
+	if success && username != "" {
+		audit := model.NewAuditHistory(
+			username,
+			model.AuditActionUserLogin,
+			"User",
+			username,
+			nil,
+			nil,
+		)
+		// Create audit entry asynchronously to avoid blocking
+		go func() {
+			_ = a.auditRepo.Create(context.Background(), audit)
+		}()
+	}
 }
 
 // LogLogoutAttempt logs a logout attempt

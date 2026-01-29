@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
@@ -13,18 +14,21 @@ import (
 // CreateUserGroupNamespacePermissionCommand handles creating a namespace permission for a user group
 // Matches Python: ApiTerraregAuthUserGroupNamespacePermissions._post(user_group, namespace)
 type CreateUserGroupNamespacePermissionCommand struct {
-	userGroupRepo repository.UserGroupRepository
-	namespaceRepo moduleRepo.NamespaceRepository
+	userGroupRepo         repository.UserGroupRepository
+	namespaceRepo         moduleRepo.NamespaceRepository
+	userGroupAuditService *auditservice.UserGroupAuditService
 }
 
 // NewCreateUserGroupNamespacePermissionCommand creates a new create namespace permission command
 func NewCreateUserGroupNamespacePermissionCommand(
 	userGroupRepo repository.UserGroupRepository,
 	namespaceRepo moduleRepo.NamespaceRepository,
+	userGroupAuditService *auditservice.UserGroupAuditService,
 ) *CreateUserGroupNamespacePermissionCommand {
 	return &CreateUserGroupNamespacePermissionCommand{
-		userGroupRepo: userGroupRepo,
-		namespaceRepo: namespaceRepo,
+		userGroupRepo:         userGroupRepo,
+		namespaceRepo:         namespaceRepo,
+		userGroupAuditService: userGroupAuditService,
 	}
 }
 
@@ -103,6 +107,10 @@ func (c *CreateUserGroupNamespacePermissionCommand) Execute(
 	if err := c.userGroupRepo.AddNamespacePermission(ctx, userGroup.ID, namespace.ID(), permissionType); err != nil {
 		return nil, fmt.Errorf("failed to create namespace permission: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:385 - AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD
+	go c.userGroupAuditService.LogUserGroupNamespacePermissionAdd(ctx, userGroupName, namespaceName, req.PermissionType)
 
 	// Return response matching Python format
 	return &CreateNamespacePermissionResponse{

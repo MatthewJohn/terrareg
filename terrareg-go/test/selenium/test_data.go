@@ -1,6 +1,7 @@
 package selenium
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -222,6 +223,76 @@ module "root" {
 	submoduleDetails := integrationTestUtils.CreateModuleDetails(t, db, "# Submodule README\n\nThis is a test submodule.")
 	submoduleType := "submodule"
 	_ = integrationTestUtils.CreateSubmodule(t, db, moduleVersion1_5_0.ID, "modules/example-submodule1", "", submoduleType, &submoduleDetails.ID)
+}
+
+// SetupAuditHistoryTestData creates audit history test data.
+// Python reference: /app/test/selenium/test_audit_history.py - TestAuditHistory._setup_test_audit_data
+func SetupAuditHistoryTestData(t *testing.T, db *sqldb.Database) {
+	// Clear existing audit history
+	db.DB.Exec("DELETE FROM audit_history")
+
+	// Create test namespace to prevent redirect to initial-setup
+	integrationTestUtils.CreateNamespace(t, db, "test-namespace", nil)
+
+	// Create test audit history entries matching the Python test data
+	// Python reference: /app/test/selenium/test_audit_history.py - _AUDIT_DATA
+
+	// User group entries
+	// Format: username, action, object_type, object_id, old_value, new_value, timestamp
+	userGroupDeleteTime := time.Date(2099, 1, 2, 9, 2, 0, 0, time.UTC)
+	createAuditEntry(t, db, "useradmin", "user_group_delete", "UserGroup", "test-user-group", nil, nil, userGroupDeleteTime)
+
+	userGroupCreateTime := time.Date(2099, 1, 2, 9, 1, 0, 0, time.UTC)
+	createAuditEntry(t, db, "useradmin", "user_group_create", "UserGroup", "test-user-group", nil, nil, userGroupCreateTime)
+
+	// Namespace entries
+	namespaceCreateTime := time.Date(2020, 11, 27, 19, 14, 0, 0, time.UTC)
+	createAuditEntry(t, db, "test-event-admin", "namespace_create", "Namespace", "test-namespace", nil, nil, namespaceCreateTime)
+
+	// Module provider entries
+	moduleProviderCreateTime := time.Date(2020, 11, 27, 19, 14, 10, 0, time.UTC)
+	createAuditEntry(t, db, "test-event-admin", "module_provider_create", "ModuleProvider", "test-namespace/test-module/provider", nil, nil, moduleProviderCreateTime)
+
+	oldCloneURL := "old-git-clone-url"
+	newCloneURL := "new-git-clone-url"
+	moduleProviderUpdateTime := time.Date(2020, 11, 28, 8, 47, 20, 0, time.UTC)
+	createAuditEntry(t, db, "namespaceadmin", "module_provider_update_git_custom_clone_url", "ModuleProvider", "test-namespace/test-module/provider", &oldCloneURL, &newCloneURL, moduleProviderUpdateTime)
+
+	// Module version entries
+	moduleVersionIndex2Time := time.Date(2021, 12, 28, 19, 15, 10, 0, time.UTC)
+	createAuditEntry(t, db, "namespaceowner", "module_version_index", "ModuleVersion", "test-namespace/test-module/provider/2.0.1", nil, nil, moduleVersionIndex2Time)
+
+	moduleVersionIndex1Time := time.Date(2021, 12, 28, 19, 16, 23, 0, time.UTC)
+	createAuditEntry(t, db, "namespaceowner", "module_version_index", "ModuleVersion", "test-namespace/test-module/provider/2.0.1", nil, nil, moduleVersionIndex1Time)
+
+	moduleVersionPublishTime := time.Date(2021, 12, 29, 19, 23, 31, 0, time.UTC)
+	createAuditEntry(t, db, "namespaceowner", "module_version_publish", "ModuleVersion", "test-namespace/test-module/provider/2.0.1", nil, nil, moduleVersionPublishTime)
+
+	moduleVersionDeleteTime := time.Date(2021, 12, 29, 20, 12, 23, 0, time.UTC)
+	createAuditEntry(t, db, "namespaceowner", "module_version_delete", "ModuleVersion", "test-namespace/test-module/provider/2.0.1", nil, nil, moduleVersionDeleteTime)
+
+	// User login entries (testuser1-9)
+	for i := 1; i <= 9; i++ {
+		username := fmt.Sprintf("testuser%d", i)
+		objectID := fmt.Sprintf("testuser%d", i)
+		loginTime := time.Date(2020, 1, 2, 9, 49+i-1, 20+(i-1), 0, time.UTC)
+		createAuditEntry(t, db, username, "user_login", "User", objectID, nil, nil, loginTime)
+	}
+}
+
+// createAuditEntry creates a single audit history entry
+func createAuditEntry(t *testing.T, db *sqldb.Database, username, action, objectType, objectID string, oldValue, newValue *string, timestamp time.Time) {
+	auditEntry := sqldb.AuditHistoryDB{
+		Timestamp:  &timestamp,
+		Username:   &username,
+		Action:     sqldb.AuditAction(action),
+		ObjectType: &objectType,
+		ObjectID:   &objectID,
+		OldValue:   oldValue,
+		NewValue:   newValue,
+	}
+	err := db.DB.Create(&auditEntry).Error
+	require.NoError(t, err, "Failed to create audit entry")
 }
 
 // SetupLoginTestData creates minimal test data for login tests.

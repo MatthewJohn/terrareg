@@ -757,6 +757,22 @@ func NewContainer(
 	// Initialize module audit service for module operations
 	moduleAuditService := auditservice.NewModuleAuditService(c.AuditHistoryRepo)
 
+	// Initialize namespace audit service for namespace operations
+	namespaceAuditService := auditservice.NewNamespaceAuditService(c.AuditHistoryRepo)
+
+	// Initialize user group audit service for user group operations
+	userGroupAuditService := auditservice.NewUserGroupAuditService(c.AuditHistoryRepo)
+
+	// Initialize GPG key audit service for GPG key operations
+	gpgKeyAuditService := auditservice.NewGpgKeyAuditService(c.AuditHistoryRepo)
+
+	// Initialize provider audit service for provider operations
+	providerAuditService := auditservice.NewProviderAuditService(c.AuditHistoryRepo)
+
+	// Initialize repository audit service for repository operations
+	// TODO: Wire up RepositoryAuditService when repository commands are implemented
+	// repositoryAuditService := auditservice.NewRepositoryAuditService(c.AuditHistoryRepo)
+
 	// Initialize graph service
 	c.GraphService = domainGraphService.NewGraphService(c.GraphRepo)
 
@@ -783,9 +799,9 @@ func NewContainer(
 	c.StateStorageService = authservice.NewStateStorageService(c.SessionService)
 
 	// Initialize commands
-	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
-	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo)
-	c.DeleteNamespaceCmd = namespace.NewDeleteNamespaceCommand(c.NamespaceRepo)
+	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo, namespaceAuditService)
+	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo, namespaceAuditService)
+	c.DeleteNamespaceCmd = namespace.NewDeleteNamespaceCommand(c.NamespaceRepo, namespaceAuditService)
 	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo, moduleAuditService)
 	publishModuleVersionCmd, err := moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo, moduleAuditService)
 	if err != nil {
@@ -866,8 +882,8 @@ func NewContainer(
 	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
 	c.GetNamespaceGPGKeysQuery = providerQuery.NewGetNamespaceGPGKeysQuery(c.NamespaceRepo)
 	c.GetProviderLogosQuery = providerLogoQuery.NewGetAllProviderLogosQuery(c.ProviderLogoRepo)
-	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
-	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo, providerAuditService)
+	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo, providerAuditService)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.GetProviderDownloadQuery = providerCmd.NewGetProviderDownloadQuery(c.ProviderRepo, c.NamespaceRepo, c.AnalyticsRepo, c.GPGKeyRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
@@ -876,20 +892,20 @@ func NewContainer(
 
 	// User group commands and queries
 	c.ListUserGroupsQuery = userGroupQuery.NewListUserGroupsQuery(c.UserGroupRepo, c.NamespaceRepo)
-	createUserGroupCmd, err := userGroupCmd.NewCreateUserGroupCommand(c.UserGroupRepo)
+	createUserGroupCmd, err := userGroupCmd.NewCreateUserGroupCommand(c.UserGroupRepo, userGroupAuditService)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create create user group command: %w", err)
 	}
 	c.CreateUserGroupCmd = createUserGroupCmd
-	c.DeleteUserGroupCmd = userGroupCmd.NewDeleteUserGroupCommand(c.UserGroupRepo)
-	c.CreateUserGroupNamespacePermissionCmd = userGroupCmd.NewCreateUserGroupNamespacePermissionCommand(c.UserGroupRepo, c.NamespaceRepo)
-	c.DeleteUserGroupNamespacePermissionCmd = userGroupCmd.NewDeleteUserGroupNamespacePermissionCommand(c.UserGroupRepo, c.NamespaceRepo)
+	c.DeleteUserGroupCmd = userGroupCmd.NewDeleteUserGroupCommand(c.UserGroupRepo, userGroupAuditService)
+	c.CreateUserGroupNamespacePermissionCmd = userGroupCmd.NewCreateUserGroupNamespacePermissionCommand(c.UserGroupRepo, c.NamespaceRepo, userGroupAuditService)
+	c.DeleteUserGroupNamespacePermissionCmd = userGroupCmd.NewDeleteUserGroupNamespacePermissionCommand(c.UserGroupRepo, c.NamespaceRepo, userGroupAuditService)
 
 	// Graph queries
 	c.GetModuleDependencyGraphQuery = graphQuery.NewGetModuleDependencyGraphQuery(c.GraphService)
 
 	// GPG key commands and queries
-	c.ManageGPGKeyCmd2 = gpgkeyCmd.NewManageGPGKeyCommand(c.GPGKeyService)
+	c.ManageGPGKeyCmd2 = gpgkeyCmd.NewManageGPGKeyCommand(c.GPGKeyService, gpgKeyAuditService)
 	c.GetNamespaceGPGKeysQuery2 = gpgkeyQuery.NewGetNamespaceGPGKeysQuery(c.GPGKeyService)
 	c.GetMultipleNamespaceGPGKeysQuery = gpgkeyQuery.NewGetMultipleNamespaceGPGKeysQuery(c.GPGKeyService)
 	c.GetGPGKeyQuery = gpgkeyQuery.NewGetGPGKeyQuery(c.GPGKeyService)

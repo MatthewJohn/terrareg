@@ -19,11 +19,12 @@ type GetAuditHistoryRequest struct {
 }
 
 // GetAuditHistoryResponse represents the response from get audit history query
+// Matches Python response format with object fields
 type GetAuditHistoryResponse struct {
-	Data            [][]interface{} `json:"data"`
-	Draw            int             `json:"draw"`
-	RecordsTotal    int             `json:"recordsTotal"`
-	RecordsFiltered int             `json:"recordsFiltered"`
+	Data            []map[string]interface{} `json:"data"`
+	Draw            int                     `json:"draw"`
+	RecordsTotal    int                     `json:"recordsTotal"`
+	RecordsFiltered int                     `json:"recordsFiltered"`
 }
 
 // GetAuditHistoryQuery retrieves audit history with pagination
@@ -56,16 +57,16 @@ func (q *GetAuditHistoryQuery) Execute(ctx context.Context, req GetAuditHistoryR
 		return nil, err
 	}
 
-	// Convert to DataTables format
-	data := make([][]interface{}, len(result.Records))
+	// Convert to DataTables object format (matching Python implementation)
+	data := make([]map[string]interface{}, len(result.Records))
 	for i, record := range result.Records {
-		data[i] = []interface{}{
-			record.Timestamp().Format("2006-01-02 15:04:05"),
-			record.Username(),
-			string(record.Action()),
-			record.ObjectID(),
-			record.OldValue(),
-			record.NewValue(),
+		data[i] = map[string]interface{}{
+			"timestamp": record.Timestamp().Format("2006-01-02 15:04:05"),
+			"username":  record.Username(),
+			"action":    string(record.Action()),
+			"object_id": record.ObjectID(),
+			"old_value": record.OldValue(),
+			"new_value": record.NewValue(),
 		}
 	}
 

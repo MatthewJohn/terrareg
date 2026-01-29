@@ -246,8 +246,8 @@ func (h *NamespaceHandler) HandleNamespaceUpdate(w http.ResponseWriter, r *http.
 func (h *NamespaceHandler) HandleNamespaceDelete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse namespace from URL
-	namespaceName := chi.URLParam(r, "namespace")
+	// Parse namespace from URL and convert to typed value
+	namespaceName := types.NamespaceName(chi.URLParam(r, "namespace"))
 	if namespaceName == "" {
 		RespondError(w, http.StatusBadRequest, "namespace is required")
 		return

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -13,13 +14,15 @@ import (
 
 // CreateNamespaceCommand handles creating a new namespace
 type CreateNamespaceCommand struct {
-	namespaceRepo repository.NamespaceRepository
+	namespaceRepo       repository.NamespaceRepository
+	namespaceAuditService *auditservice.NamespaceAuditService
 }
 
 // NewCreateNamespaceCommand creates a new create namespace command
-func NewCreateNamespaceCommand(namespaceRepo repository.NamespaceRepository) *CreateNamespaceCommand {
+func NewCreateNamespaceCommand(namespaceRepo repository.NamespaceRepository, namespaceAuditService *auditservice.NamespaceAuditService) *CreateNamespaceCommand {
 	return &CreateNamespaceCommand{
-		namespaceRepo: namespaceRepo,
+		namespaceRepo:       namespaceRepo,
+		namespaceAuditService: namespaceAuditService,
 	}
 }
 
@@ -59,6 +62,10 @@ func (c *CreateNamespaceCommand) Execute(ctx context.Context, req CreateNamespac
 	if err := c.namespaceRepo.Save(ctx, namespace); err != nil {
 		return nil, fmt.Errorf("failed to save namespace: %w", err)
 	}
+
+	// Log audit event (async, non-blocking)
+	// Python reference: /app/terrareg/models.py:1144 - AuditAction.NAMESPACE_CREATE
+	go c.namespaceAuditService.LogNamespaceCreate(ctx, req.Name)
 
 	return namespace, nil
 }

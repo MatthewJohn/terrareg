@@ -56,11 +56,6 @@ func CreateTestApplicationServices(t *testing.T, db *sqldb.Database, repos *Test
 
 	listModulesQuery := moduleQuery.NewListModulesQuery(repos.ModuleProvider)
 
-	// Create namespace commands
-	createNamespaceCmd := namespaceCmd.NewCreateNamespaceCommand(repos.Namespace)
-	updateNamespaceCmd := namespaceCmd.NewUpdateNamespaceCommand(repos.Namespace)
-	deleteNamespaceCmd := namespaceCmd.NewDeleteNamespaceCommand(repos.Namespace)
-
 	// Create analytics queries
 	globalStatsQuery := analytics.NewGlobalStatsQuery(repos.Namespace, repos.ModuleProvider, repos.Analytics)
 	globalUsageStatsQuery := analytics.NewGlobalUsageStatsQuery(repos.ModuleProvider, repos.Analytics)
@@ -77,6 +72,14 @@ func CreateTestApplicationServices(t *testing.T, db *sqldb.Database, repos *Test
 	require.NoError(t, err, "Failed to create AuditHistoryRepository")
 	auditSvc := auditService.NewAuditService(auditHistoryRepo)
 	getAuditHistoryQuery := auditQuery.NewGetAuditHistoryQuery(auditSvc)
+
+	// Create namespace audit service
+	namespaceAuditService := auditService.NewNamespaceAuditService(auditHistoryRepo)
+
+	// Create namespace commands
+	createNamespaceCmd := namespaceCmd.NewCreateNamespaceCommand(repos.Namespace, namespaceAuditService)
+	updateNamespaceCmd := namespaceCmd.NewUpdateNamespaceCommand(repos.Namespace, namespaceAuditService)
+	deleteNamespaceCmd := namespaceCmd.NewDeleteNamespaceCommand(repos.Namespace, namespaceAuditService)
 
 	return &TestApplicationServices{
 		// Module Queries

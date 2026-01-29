@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // UpdateNamespaceCommand handles updating namespace details
 type UpdateNamespaceCommand struct {
-	namespaceRepo repository.NamespaceRepository
+	namespaceRepo         repository.NamespaceRepository
+	namespaceAuditService *auditservice.NamespaceAuditService
 }
 
 // UpdateNamespaceRequest represents a request to update a namespace
@@ -27,9 +29,10 @@ type UpdateNamespaceResponse struct {
 }
 
 // NewUpdateNamespaceCommand creates a new update namespace command
-func NewUpdateNamespaceCommand(namespaceRepo repository.NamespaceRepository) *UpdateNamespaceCommand {
+func NewUpdateNamespaceCommand(namespaceRepo repository.NamespaceRepository, namespaceAuditService *auditservice.NamespaceAuditService) *UpdateNamespaceCommand {
 	return &UpdateNamespaceCommand{
-		namespaceRepo: namespaceRepo,
+		namespaceRepo:         namespaceRepo,
+		namespaceAuditService: namespaceAuditService,
 	}
 }
 
@@ -55,7 +58,12 @@ func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName type
 	if req.DisplayName != nil {
 		// Note: In Python, display name validation allows spaces, hyphens, underscores
 		// For now, we'll just set it as-is
+		oldDisplayName := namespace.DisplayName()
 		namespace.SetDisplayName(req.DisplayName)
+
+		// Log audit event for display name change (async, non-blocking)
+		// Python reference: /app/terrareg/models.py:1118 - AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
+		go c.namespaceAuditService.LogNamespaceModifyDisplayName(ctx, namespaceName, oldDisplayName, req.DisplayName)
 	}
 
 	// Save the updated namespace

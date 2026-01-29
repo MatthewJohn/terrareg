@@ -14,6 +14,8 @@ import (
 
 	providerCommand "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
+	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
+	auditRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
@@ -496,7 +498,9 @@ func TestProviderHandler_HandleCreateOrUpdateProvider_Success(t *testing.T) {
 
 	providerRepository := providerRepo.NewProviderRepository(db.DB)
 	namespaceRepository := moduleRepo.NewNamespaceRepository(db.DB)
-	createOrUpdateProviderCmd := providerCommand.NewCreateOrUpdateProviderCommand(providerRepository, namespaceRepository)
+	auditHistoryRepository, _ := auditRepo.NewAuditHistoryRepository(db.DB)
+	providerAuditService := auditservice.NewProviderAuditService(auditHistoryRepository)
+	createOrUpdateProviderCmd := providerCommand.NewCreateOrUpdateProviderCommand(providerRepository, namespaceRepository, providerAuditService)
 	handler := terrareg.NewProviderHandler(nil, nil, nil, nil, nil, createOrUpdateProviderCmd, nil, nil, nil)
 
 	requestBody := providerCommand.CreateOrUpdateProviderRequest{
@@ -530,7 +534,9 @@ func TestProviderHandler_HandleCreateOrUpdateProvider_MissingFields(t *testing.T
 
 	providerRepository := providerRepo.NewProviderRepository(db.DB)
 	namespaceRepository := moduleRepo.NewNamespaceRepository(db.DB)
-	createOrUpdateProviderCmd := providerCommand.NewCreateOrUpdateProviderCommand(providerRepository, namespaceRepository)
+	auditHistoryRepository, _ := auditRepo.NewAuditHistoryRepository(db.DB)
+	providerAuditService := auditservice.NewProviderAuditService(auditHistoryRepository)
+	createOrUpdateProviderCmd := providerCommand.NewCreateOrUpdateProviderCommand(providerRepository, namespaceRepository, providerAuditService)
 	handler := terrareg.NewProviderHandler(nil, nil, nil, nil, nil, createOrUpdateProviderCmd, nil, nil, nil)
 
 	requestBody := providerCommand.CreateOrUpdateProviderRequest{
@@ -557,7 +563,9 @@ func TestProviderHandler_HandleCreateOrUpdateProvider_InvalidJSON(t *testing.T) 
 
 	providerRepository := providerRepo.NewProviderRepository(db.DB)
 	namespaceRepository := moduleRepo.NewNamespaceRepository(db.DB)
-	createOrUpdateProviderCmd := providerCommand.NewCreateOrUpdateProviderCommand(providerRepository, namespaceRepository)
+	auditHistoryRepository, _ := auditRepo.NewAuditHistoryRepository(db.DB)
+	providerAuditService := auditservice.NewProviderAuditService(auditHistoryRepository)
+	createOrUpdateProviderCmd := providerCommand.NewCreateOrUpdateProviderCommand(providerRepository, namespaceRepository, providerAuditService)
 	handler := terrareg.NewProviderHandler(nil, nil, nil, nil, nil, createOrUpdateProviderCmd, nil, nil, nil)
 
 	req := httptest.NewRequest("POST", "/v1/providers", strings.NewReader("invalid json"))
