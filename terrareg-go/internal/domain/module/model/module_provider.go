@@ -394,12 +394,12 @@ func (mp *ModuleProvider) GetViewURL() string {
 
 // GetUploadEndpoint returns the upload endpoint URL
 func (mp *ModuleProvider) GetUploadEndpoint() string {
-	return fmt.Sprintf("/v1/terrareg/modules/%d/${{version}}/upload", mp.id)
+	return fmt.Sprintf("/v1/terrareg/modules/%s/%s/%s/${{version}}/upload", mp.namespace.Name(), mp.module, mp.provider)
 }
 
 // GetPublishEndpoint returns the publish endpoint URL
 func (mp *ModuleProvider) GetPublishEndpoint() string {
-	return fmt.Sprintf("/v1/terrareg/modules/%d/${{version}}/publish", mp.id)
+	return fmt.Sprintf("/v1/terrareg/modules/%s/%s/%s/${{version}}/publish", mp.namespace.Name(), mp.module, mp.provider)
 }
 
 // SetRelevanceScore sets the relevance score for search results

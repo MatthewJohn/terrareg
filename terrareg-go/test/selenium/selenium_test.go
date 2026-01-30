@@ -650,3 +650,22 @@ func (st *SeleniumTest) WaitForURLContains(expectedStr string) {
 		}
 	}
 }
+
+// WaitForTitle waits for the page title to match the expected value.
+func (st *SeleniumTest) WaitForTitle(expectedTitle string) {
+	timeout := time.After(30 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			require.Fail(st.t, "Title did not match expected value")
+		case <-ticker.C:
+			currentTitle := st.GetTitle()
+			if currentTitle == expectedTitle {
+				return
+			}
+		}
+	}
+}

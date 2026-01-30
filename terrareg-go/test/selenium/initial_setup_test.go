@@ -34,8 +34,9 @@ func testInitialSetupPage(t *testing.T) {
 	// Python: self.selenium_instance.get(self.get_url('/'))
 	//         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
 	st.NavigateTo("/")
-	currentURL := st.GetCurrentURL()
-	assert.Contains(t, currentURL, "/initial-setup", "Should redirect to initial-setup")
+	// Wait for redirect to /initial-setup (JavaScript redirect takes time)
+	// Python reference: self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
+	st.WaitForURLContains("/initial-setup")
 
 	// Python: self.assert_equals(lambda: self.selenium_instance.title, 'Initial Setup - Terrareg')
 	title := st.GetTitle()

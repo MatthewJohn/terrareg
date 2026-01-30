@@ -159,9 +159,25 @@ func testAuditHistoryPagination(t *testing.T) {
 	performAdminAuthentication(st, "unittest-password")
 	st.NavigateTo("/audit-history")
 
-	// Python: audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')
-	// Python: self.assert_equals(lambda: len(self._get_audit_rows(audit_table)), 11)
-	rowCount := st.GetElementCount("#audit-history-table tr")
+	// Wait for DataTables to load - wait for at least 11 rows (10 data + 1 header)
+	// DataTables loads data asynchronously, so we need to poll for the expected count
+	timeout := time.After(30 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	var rowCount int
+	for {
+		select {
+		case <-timeout:
+			require.Fail(t, "Timeout waiting for audit history table to load")
+		case <-ticker.C:
+			rowCount = st.GetElementCount("#audit-history-table tr")
+			if rowCount >= 11 {
+				goto found
+			}
+		}
+	}
+found:
 	assert.Equal(t, 11, rowCount) // 10 rows + header row
 
 	// Python: Ensure previous is disabled and next is available
@@ -190,9 +206,24 @@ func testAuditHistoryColumnOrdering(t *testing.T) {
 	performAdminAuthentication(st, "unittest-password")
 	st.NavigateTo("/audit-history")
 
-	// Python: audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')
-	// Python: self.assert_equals(lambda: len(self._get_audit_rows(audit_table)), 11)
-	rowCount := st.GetElementCount("#audit-history-table tr")
+	// Wait for DataTables to load
+	timeout := time.After(30 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	var rowCount int
+	for {
+		select {
+		case <-timeout:
+			require.Fail(t, "Timeout waiting for audit history table to load")
+		case <-ticker.C:
+			rowCount = st.GetElementCount("#audit-history-table tr")
+			if rowCount >= 11 {
+				goto found
+			}
+		}
+	}
+found:
 	assert.Equal(t, 11, rowCount) // 10 rows + header row
 
 	// Python: column_headers = [r for r in audit_table.find_elements(By.TAG_NAME, 'th')]
@@ -225,7 +256,7 @@ func testAuditHistoryResultFiltering(t *testing.T) {
 		{
 			"MODULE_VERSION_INDEX",
 			3, // 2 results + header
-			[]string{"MODULE_VERSION_INDEX"},
+			[]string{"module_version_index"}, // The action is stored as lowercase in the database
 		},
 		{
 			"test-namespace",
