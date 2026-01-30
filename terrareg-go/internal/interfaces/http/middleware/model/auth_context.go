@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 )
 
@@ -17,6 +19,11 @@ type AuthContext struct {
 
 	// Request metadata
 	IsAuthenticated bool `json:"is_authenticated"`
+
+	// Additional fields for backward compatibility
+	UserID    string    `json:"user_id,omitempty"`
+	UserGroups []string `json:"user_groups,omitempty"`
+	Expiry    *time.Time `json:"expiry,omitempty"`
 }
 
 // HasPermission checks if the user has the specified permission for a namespace

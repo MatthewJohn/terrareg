@@ -58,14 +58,14 @@ func TestOAuth2StateTokenGeneration(t *testing.T) {
 func TestOAuth2AuthorizationCodeFlow(t *testing.T) {
 	tests := []struct {
 		name          string
-		scenario      func(*testing.T, *authservice.AuthenticationService)
+		scenario      func(*testing.T, *authservice.SessionManagementService)
 		expectError   bool
 		expectSession bool
 		description   string
 	}{
 		{
 			name: "Successful authorization code exchange",
-			scenario: func(t *testing.T, authService *authservice.AuthenticationService) {
+			scenario: func(t *testing.T, authService *authservice.SessionManagementService) {
 				// Simulate successful OAuth callback
 				_ = map[string]interface{}{
 					"auth_method": "OAUTH",
@@ -83,7 +83,7 @@ func TestOAuth2AuthorizationCodeFlow(t *testing.T) {
 		},
 		{
 			name: "Authorization code already used",
-			scenario: func(t *testing.T, authService *authservice.AuthenticationService) {
+			scenario: func(t *testing.T, authService *authservice.SessionManagementService) {
 				// Simulate reusing an authorization code
 				// In production, this should return an error
 				// For testing, we document this scenario
@@ -94,7 +94,7 @@ func TestOAuth2AuthorizationCodeFlow(t *testing.T) {
 		},
 		{
 			name: "Invalid authorization code",
-			scenario: func(t *testing.T, authService *authservice.AuthenticationService) {
+			scenario: func(t *testing.T, authService *authservice.SessionManagementService) {
 				// Simulate invalid authorization code
 				// Provider would reject the code
 			},
@@ -104,7 +104,7 @@ func TestOAuth2AuthorizationCodeFlow(t *testing.T) {
 		},
 		{
 			name: "Expired authorization code",
-			scenario: func(t *testing.T, authService *authservice.AuthenticationService) {
+			scenario: func(t *testing.T, authService *authservice.SessionManagementService) {
 				// Simulate expired authorization code
 				// Codes typically expire in 10 minutes
 			},
@@ -114,7 +114,7 @@ func TestOAuth2AuthorizationCodeFlow(t *testing.T) {
 		},
 		{
 			name: "Redirect URI mismatch",
-			scenario: func(t *testing.T, authService *authservice.AuthenticationService) {
+			scenario: func(t *testing.T, authService *authservice.SessionManagementService) {
 				// Simulate redirect URI mismatch during token exchange
 				// This is a security measure to prevent authorization code injection
 			},

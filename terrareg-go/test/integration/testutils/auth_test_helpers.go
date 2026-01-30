@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
@@ -36,7 +37,7 @@ func BuildAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, meth
 
 	// Create encrypted cookie value
 	expiry := time.Now().Add(1 * time.Hour)
-	sessionData := &service.SessionData{
+	sessionData := &auth.SessionData{
 		SessionID:  sessionID,
 		UserID:     username,
 		Username:   username,
@@ -118,7 +119,7 @@ func BuildAuthenticatedRequestWithNamespacePermission(
 
 	// Create encrypted cookie value with user groups
 	expiry := time.Now().Add(1 * time.Hour)
-	sessionData := &service.SessionData{
+	sessionData := &auth.SessionData{
 		SessionID:  sessionID,
 		UserID:     username,
 		Username:   username,
@@ -193,7 +194,7 @@ func BuildAuthenticatedRequestWithMultipleNamespacePermissions(
 
 	// Create encrypted cookie value with user groups
 	expiry := time.Now().Add(1 * time.Hour)
-	sessionData := &service.SessionData{
+	sessionData := &auth.SessionData{
 		SessionID:  sessionID,
 		UserID:     username,
 		Username:   username,

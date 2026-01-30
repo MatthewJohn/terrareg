@@ -7,16 +7,14 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 )
 
 // LoginHandler handles authentication requests
 type LoginHandler struct {
-	// createSessionCmd handles session creation (required)
-	createSessionCmd *auth.CreateSessionCommand
-	// cookieSessionService handles cookie operations (required)
-	cookieSessionService *service.CookieSessionService
+	// sessionManagementService handles session and cookie operations (required)
+	sessionManagementService *service.SessionManagementService
 	// logger for logging (required)
 	logger zerolog.Logger
 }
@@ -24,21 +22,16 @@ type LoginHandler struct {
 // NewLoginHandler creates a new LoginHandler
 // Returns an error if any required dependency is nil
 func NewLoginHandler(
-	createSessionCmd *auth.CreateSessionCommand,
-	cookieSessionService *service.CookieSessionService,
+	sessionManagementService *service.SessionManagementService,
 	logger zerolog.Logger,
 ) (*LoginHandler, error) {
-	if createSessionCmd == nil {
-		return nil, fmt.Errorf("createSessionCmd cannot be nil")
-	}
-	if cookieSessionService == nil {
-		return nil, fmt.Errorf("cookieSessionService cannot be nil")
+	if sessionManagementService == nil {
+		return nil, fmt.Errorf("sessionManagementService cannot be nil")
 	}
 
 	return &LoginHandler{
-		createSessionCmd:     createSessionCmd,
-		cookieSessionService: cookieSessionService,
-		logger:               logger,
+		sessionManagementService: sessionManagementService,
+		logger:                   logger,
 	}, nil
 }
 
@@ -74,34 +67,21 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create session
-	sessionReq := &auth.CreateSessionRequest{
-		Username:   req.Username,
-		AuthMethod: "session_password",
-		IsAdmin:    true, // TODO: Implement proper admin check
-	}
-
-	sessionResp, err := h.createSessionCmd.Execute(r.Context(), sessionReq)
+	// Create session and set cookie in one operation
+	err := h.sessionManagementService.CreateSessionAndCookie(
+		r.Context(),
+		w,
+		auth.AuthMethodAdminSession,
+		req.Username,
+		true, // TODO: Implement proper admin check
+		nil, // userGroups
+		nil, // permissions
+		nil, // providerData
+		nil, // ttl - will use default
+	)
 	if err != nil {
-		h.logger.Error().Err(err).Msg("Failed to create session")
+		h.logger.Error().Err(err).Msg("Failed to create session and cookie")
 		h.respondError(w, "Authentication failed", http.StatusUnauthorized)
-		return
-	}
-
-	// Set session cookie
-	sessionData := &service.SessionData{
-		SessionID:  sessionResp.SessionID,
-		UserID:     sessionResp.Username, // Use username as UserID for now
-		Username:   sessionResp.Username,
-		AuthMethod: sessionResp.AuthMethod,
-		IsAdmin:    sessionResp.IsAdmin,
-		SiteAdmin:  sessionResp.SiteAdmin,
-		UserGroups: sessionResp.UserGroups,
-		Expiry:     &sessionResp.Expiry,
-	}
-	if err := h.cookieSessionService.SetSessionCookie(w, sessionData); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to set session cookie")
-		h.respondError(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
 
@@ -110,8 +90,12 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogout handles logout requests
 func (h *LoginHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	// Clear session cookie
-	h.cookieSessionService.ClearSessionCookie(w)
+	// Clear session and cookie
+	if err := h.sessionManagementService.ClearSessionAndCookie(r.Context(), w, r); err != nil {
+		h.logger.Error().Err(err).Msg("Failed to clear session and cookie")
+		h.respondError(w, "Failed to clear session", http.StatusInternalServerError)
+		return
+	}
 	h.respondSuccess(w)
 }
 

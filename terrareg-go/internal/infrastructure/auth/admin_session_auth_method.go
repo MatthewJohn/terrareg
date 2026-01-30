@@ -12,9 +12,10 @@ import (
 
 // AdminSessionAuthMethod implements immutable authentication for admin users via session cookies
 type AdminSessionAuthMethod struct {
-	sessionRepo   repository.SessionRepository
-	userGroupRepo repository.UserGroupRepository
-	namespaceRepo moduleRepo.NamespaceRepository
+	sessionRepo     repository.SessionRepository
+	userGroupRepo   repository.UserGroupRepository
+	namespaceRepo   moduleRepo.NamespaceRepository
+	sessionManager  auth.SessionManager
 }
 
 // NewAdminSessionAuthMethod creates a new immutable admin session authentication method
@@ -22,11 +23,13 @@ func NewAdminSessionAuthMethod(
 	sessionRepo repository.SessionRepository,
 	userGroupRepo repository.UserGroupRepository,
 	namespaceRepo moduleRepo.NamespaceRepository,
+	sessionManager auth.SessionManager,
 ) *AdminSessionAuthMethod {
 	return &AdminSessionAuthMethod{
-		sessionRepo:   sessionRepo,
-		userGroupRepo: userGroupRepo,
-		namespaceRepo: namespaceRepo,
+		sessionRepo:     sessionRepo,
+		userGroupRepo:   userGroupRepo,
+		namespaceRepo:   namespaceRepo,
+		sessionManager:  sessionManager,
 	}
 }
 
@@ -36,8 +39,9 @@ func (a *AdminSessionAuthMethod) GetProviderType() auth.AuthMethodType {
 }
 
 // IsEnabled returns whether this authentication method is enabled
+// Admin session auth requires session management to be available (SECRET_KEY configured)
 func (a *AdminSessionAuthMethod) IsEnabled() bool {
-	return true
+	return a.sessionManager != nil && a.sessionManager.IsAvailable()
 }
 
 // Authenticate authenticates a request and returns an AdminSessionAuthContext

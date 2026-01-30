@@ -347,23 +347,41 @@ if dbVersion.ModuleProviderID > 0 {
 
 ### Architecture
 
-Three-tier authentication system:
+Four-tier authentication system following DDD principles:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│         AuthenticationService (Orchestrator)          │
-│  - Coordinates session and cookie operations         │
-│  - Provides complete authentication flows             │
+│              AuthFactory (Orchestrator)              │
+│  - Tries auth methods in priority order              │
+│  - Returns AuthContext interface                     │
 └─────────────────────────────────────────────────────┘
-          │                              │
-    ┌─────┴─────┐                  ┌─────┴─────┐
-    ▼           ▼                  ▼           ▼
-┌────────┐  ┌────────┐        ┌────────┐  ┌────────┐
-│ Session│  │ Cookie │        │ Domain │  │ Infra  │
-│Service │  │Service │        │ Models │  │ Auth   │
-│(DB Ops)│  │(Crypto)│        │        │  │Methods │
-└────────┘  └────────┘        └────────┘  └────────┘
+          │
+    ┌─────┴─────┐
+    ▼           ▼
+┌────────────────┐  ┌──────────────────────────────┐
+│SessionManagement│  │   Infrastructure AuthMethods  │
+│Service (Coord)  │  │ - AdminApiKey, SAML, OIDC... │
+│                 │  └──────────────────────────────┘
+│  Coordinates    │              │
+│  session +      │              ▼
+│  cookie ops     │        ┌────────────┐
+└────────────────┘        │   Domain   │
+       │      │           │  AuthCtx   │
+   ┌───┴──────┴───┐       │  Interface │
+   ▼              ▼       └────────────┘
+┌────────┐  ┌────────┐
+│ Session│  │ Cookie │
+│Service │  │Service │
+│(DB Ops)│  │(Crypto)│
+└────────┘  └────────┘
 ```
+
+### Key Services
+
+1. **SessionService** - Pure database operations (create, validate, delete, refresh sessions)
+2. **CookieService** - Cookie encryption/decryption (AES-256-GCM) and HTTP cookie management
+3. **SessionManagementService** - Coordinates session + cookie operations (CRUD on both)
+4. **AuthFactory** - Orchestrates authentication by trying auth methods in priority order
 
 ### Session Management
 
@@ -1636,11 +1654,10 @@ When initializing services in the container, handle constructor errors:
 
 ```go
 // In container.go
-authenticationService, err := authservice.NewAuthenticationService(sessionService, cookieService)
-if err != nil {
-	return nil, fmt.Errorf("failed to create authentication service: %w", err)
-}
-c.AuthenticationService = authenticationService
+// SessionManagementService returns nil if SECRET_KEY is empty (login methods disabled)
+sessionManagementService := authservice.NewSessionManagementService(sessionService, cookieService)
+// No error returned - nil is valid when SECRET_KEY not configured
+c.SessionManagementService = sessionManagementService
 ```
 
 ### Testing Nil Checks

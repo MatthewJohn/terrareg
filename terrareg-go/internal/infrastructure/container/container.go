@@ -176,11 +176,10 @@ type Container struct {
 	TransactionProcessingOrchestrator   *moduleService.TransactionProcessingOrchestrator
 	SourcePreparationService            *moduleService.SourcePreparationService
 	ArchiveExtractionService            *moduleService.ArchiveExtractionService
-	AuthFactory                         *authservice.AuthFactory
-	SessionService                      *authservice.SessionService
-	CookieService                       *authservice.CookieService
-	AuthenticationService               *authservice.AuthenticationService
-	SessionCleanupService               *authservice.SessionCleanupService
+	AuthFactory                *authservice.AuthFactory
+	SessionService             *authservice.SessionService
+	SessionManagementService   *authservice.SessionManagementService
+	SessionCleanupService       *authservice.SessionCleanupService
 	TerraformIdpService                 *authservice.TerraformIdpService
 	OIDCService                         *authservice.OIDCService
 	SAMLService                         *authservice.SAMLService
@@ -735,20 +734,13 @@ func NewContainer(
 
 	// Initialize cookie service (pure cookie operations)
 	cookieService := authservice.NewCookieService(infraConfig) // Uses InfrastructureConfig for auth settings
-	c.CookieService = cookieService
+
+	// Initialize session management service (combines session + cookie operations)
+	sessionManagementService := authservice.NewSessionManagementService(sessionService, cookieService)
+	c.SessionManagementService = sessionManagementService
 
 	// Initialize audit service (needed for authentication service)
 	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
-
-	// Initialize authentication audit service for login events (needed before auth service)
-	authenticationAuditService := auditservice.NewAuthenticationAuditService(c.AuditHistoryRepo)
-
-	// Initialize authentication service (orchestrates session and cookie operations)
-	authenticationService, err := authservice.NewAuthenticationService(sessionService, cookieService, authenticationAuditService)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create authentication service: %w", err)
-	}
-	c.AuthenticationService = authenticationService
 
 	// Initialize session cleanup service
 	c.SessionCleanupService = authservice.NewSessionCleanupService(
@@ -796,7 +788,7 @@ func NewContainer(
 	c.SAMLService, _ = authservice.NewSAMLService(infraConfig)
 
 	// Initialize AuthFactory after all services are created
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, c.NamespaceRepo, infraConfig, c.TerraformIdpService, c.OIDCService, c.ProviderSourceFactory, c.CookieService, &c.Logger)
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, c.NamespaceRepo, infraConfig, c.TerraformIdpService, c.OIDCService, c.ProviderSourceFactory, c.SessionManagementService, &c.Logger)
 
 	// Initialize StateStorageService
 	c.StateStorageService = authservice.NewStateStorageService(c.SessionService)
@@ -1006,7 +998,7 @@ func NewContainer(
 		c.SamlLoginCmd,
 		c.SamlMetadataCmd,
 		c.GithubOAuthCmd,
-		c.AuthenticationService,
+		c.SessionManagementService,
 		c.StateStorageService,
 		infraConfig,
 		c.ListUserGroupsQuery,
@@ -1015,7 +1007,7 @@ func NewContainer(
 		c.CreateUserGroupNamespacePermissionCmd,
 		c.DeleteUserGroupNamespacePermissionCmd,
 	)
-	c.ProviderSourceHandler = terrareg.NewProviderSourceHandler(c.ProviderSourceFactory, c.AuthenticationService)
+	c.ProviderSourceHandler = terrareg.NewProviderSourceHandler(c.ProviderSourceFactory, c.SessionManagementService)
 
 	// Initialize provider source API queries and commands
 	c.GetOrganizationsQuery, err = providerSourceQuery.NewGetOrganizationsQuery(c.ProviderSourceFactory, c.SessionRepo)
@@ -1086,7 +1078,7 @@ func NewContainer(
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(domainConfig, c.AuthFactory) // Uses DomainConfig for auth settings
-	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.AuthenticationService, c.Logger)
+	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.AuthFactory, c.Logger)
 
 	// Initialize template renderer
 	templateRenderer, err := template.NewRenderer(domainConfig, infraConfig)

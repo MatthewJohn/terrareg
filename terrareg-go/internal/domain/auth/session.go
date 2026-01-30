@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"time"
 )
 
@@ -29,4 +30,30 @@ func (s *Session) IsExpired() bool {
 // SetProviderSourceAuth updates provider source auth data
 func (s *Session) SetProviderSourceAuth(data []byte) {
 	s.ProviderSourceAuth = data
+}
+
+// SessionData represents the data stored in an encrypted session cookie
+// This is the data that gets encrypted and stored in the HTTP cookie
+type SessionData struct {
+	SessionID   string                 `json:"session_id"`
+	UserID      string                 `json:"user_id"`
+	Username    string                 `json:"username"`
+	AuthMethod  string                 `json:"auth_method"`
+	IsAdmin     bool                   `json:"is_admin"`
+	SiteAdmin   bool                   `json:"site_admin"`
+	UserGroups  []string               `json:"user_groups"`
+	Permissions map[string]string      `json:"permissions,omitempty"`
+	Expiry      *time.Time             `json:"expiry"`
+	LastAccessed *time.Time             `json:"last_accessed,omitempty"`
+}
+
+// SessionManager is an interface for session validation operations
+// This interface allows infrastructure layer to use session management without import cycle
+type SessionManager interface {
+	// ValidateSessionCookie validates a session cookie by decrypting and checking the database
+	// Returns the session if valid, nil if invalid/expired
+	ValidateSessionCookie(ctx context.Context, cookieValue string) (*Session, error)
+
+	// IsAvailable returns true if session management is available (SECRET_KEY configured)
+	IsAvailable() bool
 }

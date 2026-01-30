@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
@@ -24,22 +25,22 @@ import (
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
-	adminLoginCmd        *authCmd.AdminLoginCommand
-	checkSessionQuery    *authQuery.CheckSessionQuery
-	isAuthenticatedQuery *authQuery.IsAuthenticatedQuery
-	oidcLoginCmd         *authCmd.OidcLoginCommand
-	oidcCallbackCmd      *authCmd.OidcCallbackCommand
-	samlLoginCmd         *authCmd.SamlLoginCommand
-	samlMetadataCmd      *authCmd.SamlMetadataCommand
-	githubOAuthCmd       *authCmd.GithubOAuthCommand
-	authService          *service.AuthenticationService
-	stateStorageService  *service.StateStorageService
-	infraConfig          *config.InfrastructureConfig
-	listUserGroupsQuery  *userGroupQuery.ListUserGroupsQuery
-	createUserGroupCmd   *userGroupCmd.CreateUserGroupCommand
-	deleteUserGroupCmd   *userGroupCmd.DeleteUserGroupCommand
-	createNsPermCmd      *userGroupCmd.CreateUserGroupNamespacePermissionCommand
-	deleteNsPermCmd      *userGroupCmd.DeleteUserGroupNamespacePermissionCommand
+	adminLoginCmd           *authCmd.AdminLoginCommand
+	checkSessionQuery       *authQuery.CheckSessionQuery
+	isAuthenticatedQuery    *authQuery.IsAuthenticatedQuery
+	oidcLoginCmd            *authCmd.OidcLoginCommand
+	oidcCallbackCmd         *authCmd.OidcCallbackCommand
+	samlLoginCmd            *authCmd.SamlLoginCommand
+	samlMetadataCmd         *authCmd.SamlMetadataCommand
+	githubOAuthCmd          *authCmd.GithubOAuthCommand
+	sessionManagementService *service.SessionManagementService
+	stateStorageService     *service.StateStorageService
+	infraConfig             *config.InfrastructureConfig
+	listUserGroupsQuery     *userGroupQuery.ListUserGroupsQuery
+	createUserGroupCmd      *userGroupCmd.CreateUserGroupCommand
+	deleteUserGroupCmd      *userGroupCmd.DeleteUserGroupCommand
+	createNsPermCmd         *userGroupCmd.CreateUserGroupNamespacePermissionCommand
+	deleteNsPermCmd         *userGroupCmd.DeleteUserGroupNamespacePermissionCommand
 }
 
 // NewAuthHandler creates a new auth handler
@@ -52,7 +53,7 @@ func NewAuthHandler(
 	samlLoginCmd *authCmd.SamlLoginCommand,
 	samlMetadataCmd *authCmd.SamlMetadataCommand,
 	githubOAuthCmd *authCmd.GithubOAuthCommand,
-	authService *service.AuthenticationService,
+	sessionManagementService *service.SessionManagementService,
 	stateStorageService *service.StateStorageService,
 	infraConfig *config.InfrastructureConfig,
 	listUserGroupsQuery *userGroupQuery.ListUserGroupsQuery,
@@ -62,22 +63,22 @@ func NewAuthHandler(
 	deleteNsPermCmd *userGroupCmd.DeleteUserGroupNamespacePermissionCommand,
 ) *AuthHandler {
 	return &AuthHandler{
-		adminLoginCmd:        adminLoginCmd,
-		checkSessionQuery:    checkSessionQuery,
-		isAuthenticatedQuery: isAuthenticatedQuery,
-		oidcLoginCmd:         oidcLoginCmd,
-		oidcCallbackCmd:      oidcCallbackCmd,
-		samlLoginCmd:         samlLoginCmd,
-		samlMetadataCmd:      samlMetadataCmd,
-		githubOAuthCmd:       githubOAuthCmd,
-		authService:          authService,
-		stateStorageService:  stateStorageService,
-		infraConfig:          infraConfig,
-		listUserGroupsQuery:  listUserGroupsQuery,
-		createUserGroupCmd:   createUserGroupCmd,
-		deleteUserGroupCmd:   deleteUserGroupCmd,
-		createNsPermCmd:      createNsPermCmd,
-		deleteNsPermCmd:      deleteNsPermCmd,
+		adminLoginCmd:           adminLoginCmd,
+		checkSessionQuery:       checkSessionQuery,
+		isAuthenticatedQuery:    isAuthenticatedQuery,
+		oidcLoginCmd:            oidcLoginCmd,
+		oidcCallbackCmd:         oidcCallbackCmd,
+		samlLoginCmd:            samlLoginCmd,
+		samlMetadataCmd:         samlMetadataCmd,
+		githubOAuthCmd:          githubOAuthCmd,
+		sessionManagementService: sessionManagementService,
+		stateStorageService:     stateStorageService,
+		infraConfig:             infraConfig,
+		listUserGroupsQuery:     listUserGroupsQuery,
+		createUserGroupCmd:      createUserGroupCmd,
+		deleteUserGroupCmd:      deleteUserGroupCmd,
+		createNsPermCmd:         createNsPermCmd,
+		deleteNsPermCmd:         deleteNsPermCmd,
 	}
 }
 
@@ -118,28 +119,27 @@ func (h *AuthHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create admin session using the authentication service (DDD-compliant approach)
-	// The authentication service orchestrates session and cookie operations
+	// Set session cookie for the existing session created by the admin login command
 	log.Info().
 		Str("session_id", response.SessionID).
-		Msg("Creating admin session")
+		Msg("Setting admin session cookie")
 
-	if err := h.authService.CreateAdminSession(ctx, w, response.SessionID); err != nil {
-		// If session creation fails, return error
+	if err := h.sessionManagementService.SetCookieForExistingSession(ctx, w, response.SessionID); err != nil {
+		// If cookie setting fails, return error
 		log.Error().
 			Err(err).
 			Str("session_id", response.SessionID).
-			Msg("Failed to create admin session")
+			Msg("Failed to set admin session cookie")
 
 		RespondJSON(w, http.StatusInternalServerError, map[string]interface{}{
-			"message": "Failed to create session",
+			"message": "Failed to set session cookie",
 		})
 		return
 	}
 
 	log.Info().
 		Str("session_id", response.SessionID).
-		Msg("Admin session created successfully")
+		Msg("Admin session cookie set successfully")
 
 	// Respond with Python-compatible format
 	RespondJSON(w, http.StatusOK, map[string]interface{}{
@@ -235,9 +235,9 @@ func (h *AuthHandler) HandleOIDCCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Create session using auth service
-	if err := h.authService.CreateSession(ctx, w, response.SessionID); err != nil {
-		RespondError(w, http.StatusInternalServerError, "Failed to create session")
+	// Set session cookie for the existing session
+	if err := h.sessionManagementService.SetCookieForExistingSession(ctx, w, response.SessionID); err != nil {
+		RespondError(w, http.StatusInternalServerError, "Failed to set session cookie")
 		return
 	}
 
@@ -317,8 +317,22 @@ func (h *AuthHandler) HandleSAMLACS(w http.ResponseWriter, r *http.Request) {
 	samlAuthCtx := auth.NewSamlAuthContext(ctx, relayState, make(map[string][]string))
 	samlAuthCtx.ExtractUserDetails() // Extract what we can from attributes
 
-	// Create session using the authentication service
-	err := h.authService.CreateSessionFromAuthContext(ctx, w, samlAuthCtx, nil)
+	// Extract data from AuthContext to create session
+	providerData := samlAuthCtx.GetProviderData()
+	ttl := 24 * time.Hour
+
+	// Create session and set cookie using SessionManagementService
+	err := h.sessionManagementService.CreateSessionAndCookie(
+		ctx,
+		w,
+		samlAuthCtx.GetProviderType(),
+		samlAuthCtx.GetUsername(),
+		samlAuthCtx.IsAdmin(),
+		samlAuthCtx.GetUserGroupNames(),
+		samlAuthCtx.GetAllNamespacePermissions(),
+		providerData,
+		&ttl,
+	)
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -405,8 +419,8 @@ func (h *AuthHandler) HandleGitHubOAuth(w http.ResponseWriter, r *http.Request) 
 func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Clear session
-	if err := h.authService.ClearSession(ctx, w, r); err != nil {
+	// Clear session and cookie
+	if err := h.sessionManagementService.ClearSessionAndCookie(ctx, w, r); err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

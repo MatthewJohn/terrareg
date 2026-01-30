@@ -19,15 +19,15 @@ import (
 // AuthFactory handles authentication with immutable AuthMethod implementations
 // It uses AuthMethod factories to create AuthContext instances with authentication state
 type AuthFactory struct {
-	authMethods           []auth.AuthMethod
-	mutex                 sync.RWMutex
-	sessionRepo           repository.SessionRepository
-	userGroupRepo         repository.UserGroupRepository
-	namespaceRepo         moduleRepo.NamespaceRepository
-	config                *infraConfig.InfrastructureConfig
-	logger                *zerolog.Logger
-	providerSourceFactory *provider_source_service.ProviderSourceFactory
-	cookieService         *CookieService
+	authMethods               []auth.AuthMethod
+	mutex                     sync.RWMutex
+	sessionRepo               repository.SessionRepository
+	userGroupRepo             repository.UserGroupRepository
+	namespaceRepo             moduleRepo.NamespaceRepository
+	config                    *infraConfig.InfrastructureConfig
+	logger                    *zerolog.Logger
+	providerSourceFactory     *provider_source_service.ProviderSourceFactory
+	sessionManagementService  *SessionManagementService
 }
 
 // NewAuthFactory creates a new immutable authentication factory
@@ -39,18 +39,18 @@ func NewAuthFactory(
 	terraformIdpService *TerraformIdpService,
 	oidcService *OIDCService,
 	providerSourceFactory *provider_source_service.ProviderSourceFactory,
-	cookieService *CookieService,
+	sessionManagementService *SessionManagementService,
 	logger *zerolog.Logger,
 ) *AuthFactory {
 	factory := &AuthFactory{
-		authMethods:           make([]auth.AuthMethod, 0),
-		sessionRepo:           sessionRepo,
-		userGroupRepo:         userGroupRepo,
-		namespaceRepo:         namespaceRepo,
-		config:                config,
-		logger:                logger,
-		providerSourceFactory: providerSourceFactory,
-		cookieService:         cookieService,
+		authMethods:              make([]auth.AuthMethod, 0),
+		sessionRepo:              sessionRepo,
+		userGroupRepo:            userGroupRepo,
+		namespaceRepo:            namespaceRepo,
+		config:                   config,
+		logger:                   logger,
+		providerSourceFactory:    providerSourceFactory,
+		sessionManagementService: sessionManagementService,
 	}
 
 	// Initialize immutable auth methods in priority order
@@ -84,6 +84,7 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 		af.sessionRepo,
 		af.userGroupRepo,
 		af.namespaceRepo,
+		af.sessionManagementService,
 	)
 	af.RegisterAuthMethod(adminSessionAuthMethod)
 
@@ -325,8 +326,8 @@ func (af *AuthFactory) getStringPtr(s string) *string {
 	return &s
 }
 
-// extractSessionID extracts and decrypts session ID from headers/cookies
-// The session cookie contains encrypted session data that must be decrypted first
+// extractSessionID extracts and validates session ID from headers/cookies
+// Uses SessionManagementService to validate the session cookie and return the session ID
 func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
 	// Check for session ID in headers first (for testing purposes)
 	if sessionID, exists := headers["X-Session-ID"]; exists && sessionID != "" {
@@ -334,8 +335,8 @@ func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
 	}
 
 	// Check cookie header for encrypted session data
-	if af.cookieService == nil {
-		// No cookie service configured, can't decrypt session
+	if af.sessionManagementService == nil {
+		// No session management service configured (SECRET_KEY empty)
 		return nil
 	}
 
@@ -345,17 +346,18 @@ func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
 		for _, cookie := range cookies {
 			cookie = strings.TrimSpace(cookie)
 			if strings.HasPrefix(cookie, "terrareg_session=") {
-				encryptedSession := strings.TrimPrefix(cookie, "terrareg_session=")
-				encryptedSession = strings.TrimSuffix(encryptedSession, "\"")
-				if encryptedSession != "" {
-					// Decrypt the session cookie to get the actual session ID
-					sessionData, err := af.cookieService.DecryptSession(encryptedSession)
+				cookieValue := strings.TrimPrefix(cookie, "terrareg_session=")
+				cookieValue = strings.TrimSuffix(cookieValue, "\"")
+				if cookieValue != "" {
+					// Validate the session cookie using SessionManagementService
+					// This decrypts the cookie AND validates the session in the database
+					session, err := af.sessionManagementService.ValidateSessionCookie(context.Background(), cookieValue)
 					if err != nil {
-						af.logger.Debug().Err(err).Msg("Failed to decrypt session cookie")
+						af.logger.Debug().Err(err).Msg("Failed to validate session cookie")
 						return nil
 					}
-					if sessionData.SessionID != "" {
-						return &sessionData.SessionID
+					if session != nil && session.ID != "" {
+						return &session.ID
 					}
 				}
 			}

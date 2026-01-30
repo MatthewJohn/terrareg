@@ -10,12 +10,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 )
 
 // CreateTestSession creates a test session in the database and returns the session ID
@@ -47,52 +48,64 @@ func CreateTestSession(t *testing.T, db *sqldb.Database, username string, isAdmi
 	return session.ID
 }
 
-// CreateTestCookieSessionService creates a test CookieSessionService with proper dependencies
-// Returns both the CookieSessionService and the container for testing
-func CreateTestCookieSessionService(t *testing.T, db *sqldb.Database) (*service.CookieSessionService, *container.Container) {
+// CreateTestSessionManagementService creates a test SessionManagementService with proper dependencies
+// Returns both the SessionManagementService and the container for testing
+func CreateTestSessionManagementService(t *testing.T, db *sqldb.Database) (*service.SessionManagementService, *container.Container) {
 	// Create container to get all dependencies
 	// This will use the same SECRET_KEY as the rest of the test infrastructure
 	cont := CreateTestContainer(t, db)
 
-	// Use the container's services directly to ensure SECRET_KEY consistency
-	// The container's CookieService uses the same SECRET_KEY as CreateTestInfraConfig
-	cookieSessionService := service.NewCookieSessionService(
-		cont.SessionService,
-		cont.CookieService,
-		cont.SessionRepo,
-		cont.InfraConfig,
-	)
-
-	return cookieSessionService, cont
+	// Use the container's SessionManagementService directly
+	return cont.SessionManagementService, cont
 }
 
-// CreateTestSessionViaService creates a test session using the CookieSessionService
+// CreateTestSessionViaService creates a test session using the SessionManagementService
 // This is the preferred method as it properly initializes all session components
-func CreateTestSessionViaService(t *testing.T, cookieSessionService *service.CookieSessionService, username string, isAdmin bool) *service.CreateSessionResponse {
+func CreateTestSessionViaService(t *testing.T, sessionManagementService *service.SessionManagementService, cookieService *service.CookieService, username string, isAdmin bool) string {
 	ctx := context.Background()
 
-	req := &service.CreateSessionRequest{
-		AuthMethod: "session_password",
-		Username:   username,
-		IsAdmin:    isAdmin,
-		SiteAdmin:  isAdmin,
-		UserGroups: []string{},
-	}
+	// Create a response recorder to capture the cookie
+	w := httptest.NewRecorder()
 
-	resp, err := cookieSessionService.CreateSession(ctx, req)
+	// Create session and set cookie
+	err := sessionManagementService.CreateSessionAndCookie(
+		ctx,
+		w,
+		"ADMIN_SESSION",
+		username,
+		isAdmin,
+		[]string{},
+		nil, // permissions
+		nil, // providerData
+		nil, // ttl - use default
+	)
 	require.NoError(t, err)
-	require.NotNil(t, resp)
-	require.True(t, resp.Authenticated)
-	require.Equal(t, username, resp.Username)
 
-	return resp
+	// Get the session ID from the response by decrypting the cookie
+	cookies := w.Result().Cookies()
+	require.NotEmpty(t, cookies, "Session cookie should be set")
+
+	var sessionCookie *http.Cookie
+	for _, c := range cookies {
+		if c.Name == "terrareg_session" {
+			sessionCookie = c
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie, "Session cookie should be set")
+
+	// Decrypt the cookie to get the session ID
+	sessionData, err := cookieService.DecryptSession(sessionCookie.Value)
+	require.NoError(t, err)
+
+	return sessionData.SessionID
 }
 
 // CreateTestSessionCookie creates an encrypted session cookie for testing
 // This is used to simulate an authenticated user in tests
 func CreateTestSessionCookie(t *testing.T, cookieService *service.CookieService, sessionID, username string, isAdmin bool) string {
 	expiry := time.Now().Add(1 * time.Hour)
-	sessionData := &service.SessionData{
+	sessionData := &auth.SessionData{
 		SessionID:  sessionID,
 		UserID:     username,
 		Username:   username,
@@ -140,7 +153,7 @@ func CreateAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, met
 
 	// Create encrypted cookie value
 	expiry := time.Now().Add(1 * time.Hour)
-	sessionData := &service.SessionData{
+	sessionData := &auth.SessionData{
 		SessionID:  sessionID,
 		UserID:     username,
 		Username:   username,
@@ -152,11 +165,14 @@ func CreateAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, met
 	}
 
 	// Create authentication context with session data
-	authCtx := &service.AuthenticationContext{
-		SessionData:     sessionData,
-		IsAuthenticated: true,
+	authCtx := &model.AuthContext{
+		SessionID:       sessionID,
+		UserID:          username,
+		Username:        username,
 		AuthMethod:      "session_password",
 		IsAdmin:         isAdmin,
+		IsAuthenticated: true,
+		Expiry:          &expiry,
 	}
 
 	// Encrypt session data for cookie
@@ -189,7 +205,7 @@ func AssertSessionDoesNotExist(t *testing.T, db *sqldb.Database, sessionID strin
 }
 
 // GetSessionFromCookie extracts and decrypts session data from a cookie in the response recorder
-func GetSessionFromCookie(t *testing.T, cookieService *service.CookieService, w *httptest.ResponseRecorder) *service.SessionData {
+func GetSessionFromCookie(t *testing.T, cookieService *service.CookieService, w *httptest.ResponseRecorder) *auth.SessionData {
 	cookies := w.Result().Cookies()
 	require.NotEmpty(t, cookies, "Response should contain session cookie")
 
@@ -292,10 +308,11 @@ func CreateTestContainerWithAuth(t *testing.T, db *sqldb.Database) *container.Co
 	return CreateTestContainer(t, db)
 }
 
-// CreateTestCreateSessionCommand creates a CreateSessionCommand for testing
-func CreateTestCreateSessionCommand(t *testing.T, db *sqldb.Database) *auth.CreateSessionCommand {
-	cookieSessionService, _ := CreateTestCookieSessionService(t, db)
-	return auth.NewCreateSessionCommand(cookieSessionService)
+// CreateTestSessionManagementServiceForTesting creates a SessionManagementService for testing
+// This is a convenience wrapper for CreateTestSessionManagementService
+func CreateTestSessionManagementServiceForTesting(t *testing.T, db *sqldb.Database) *service.SessionManagementService {
+	sessionManagementService, _ := CreateTestSessionManagementService(t, db)
+	return sessionManagementService
 }
 
 // CreateUserGroup is a wrapper for CreateTestAuthUserGroup with consistent naming

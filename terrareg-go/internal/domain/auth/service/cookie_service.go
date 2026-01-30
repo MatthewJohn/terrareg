@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
@@ -72,11 +73,10 @@ func NewCookieService(config *infraConfig.InfrastructureConfig) *CookieService {
 	}
 }
 
-// SessionData represents the data stored in the new session cookie
-// This type is defined in authentication_service.go to avoid duplication
+// SessionData is defined in the auth package (domain/auth/session.go)
 
 // EncryptSession encrypts session data for storage in cookie
-func (cs *CookieService) EncryptSession(data *SessionData) (string, error) {
+func (cs *CookieService) EncryptSession(data *auth.SessionData) (string, error) {
 	// Serialize session data
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -109,7 +109,7 @@ func (cs *CookieService) EncryptSession(data *SessionData) (string, error) {
 }
 
 // DecryptSession decrypts session data from cookie
-func (cs *CookieService) DecryptSession(encrypted string) (*SessionData, error) {
+func (cs *CookieService) DecryptSession(encrypted string) (*auth.SessionData, error) {
 	// Decode base64
 	ciphertext, err := base64.StdEncoding.DecodeString(encrypted)
 	if err != nil {
@@ -143,7 +143,7 @@ func (cs *CookieService) DecryptSession(encrypted string) (*SessionData, error) 
 	}
 
 	// Deserialize session data
-	var data SessionData
+	var data auth.SessionData
 	if err := json.Unmarshal(jsonData, &data); err != nil {
 		return nil, fmt.Errorf("failed to deserialize session data: %w", err)
 	}
@@ -198,7 +198,7 @@ type CookieOptions struct {
 }
 
 // ValidateSessionCookie validates the session cookie format and expiry
-func (cs *CookieService) ValidateSessionCookie(cookieValue string) (*SessionData, error) {
+func (cs *CookieService) ValidateSessionCookie(cookieValue string) (*auth.SessionData, error) {
 	if cookieValue == "" {
 		return nil, ErrNoSessionCookie
 	}
@@ -218,7 +218,7 @@ func (cs *CookieService) ValidateSessionCookie(cookieValue string) (*SessionData
 }
 
 // SetSessionCookie sets an encrypted session cookie
-func (cs *CookieService) SetSessionCookie(w http.ResponseWriter, sessionData *SessionData) error {
+func (cs *CookieService) SetSessionCookie(w http.ResponseWriter, sessionData *auth.SessionData) error {
 	// Encrypt session data
 	encryptedSession, err := cs.EncryptSession(sessionData)
 	if err != nil {

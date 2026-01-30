@@ -20,8 +20,8 @@ func TestSessionHandler_HandleGetSession_Success_WithValidSession(t *testing.T) 
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create authenticated request with session
 	req, _ := testutils.CreateAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/auth/session", "testuser", true)
@@ -48,8 +48,8 @@ func TestSessionHandler_HandleGetSession_Failure_NoSession(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create request without session
 	req := httptest.NewRequest("GET", "/v1/terrareg/auth/session", nil)
@@ -74,8 +74,8 @@ func TestSessionHandler_HandleGetSession_Success_IncludesUserData(t *testing.T) 
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create authenticated request with user groups
 	req, _ := testutils.CreateAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/auth/session", "testuser", true)
@@ -106,8 +106,8 @@ func TestSessionHandler_HandleDeleteSession_Success_WithValidSession(t *testing.
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create authenticated request with session
 	req, _ := testutils.CreateAuthenticatedRequestWithSession(t, db, "DELETE", "/v1/terrareg/auth/session", "testuser", true)
@@ -146,8 +146,8 @@ func TestSessionHandler_HandleDeleteSession_Failure_NoSession(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create request without session
 	req := httptest.NewRequest("DELETE", "/v1/terrareg/auth/session", nil)
@@ -166,8 +166,8 @@ func TestSessionHandler_HandleDeleteSession_Success_ClearsCookie(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create authenticated request
 	req, _ := testutils.CreateAuthenticatedRequestWithSession(t, db, "DELETE", "/v1/terrareg/auth/session", "testuser", true)
@@ -198,8 +198,8 @@ func TestSessionHandler_HandleRefreshSession_Success_ValidSession(t *testing.T) 
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create authenticated request
 	req, _ := testutils.CreateAuthenticatedRequestWithSession(t, db, "POST", "/v1/terrareg/auth/session/refresh", "testuser", true)
@@ -235,8 +235,8 @@ func TestSessionHandler_HandleRefreshSession_Failure_NoSession(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create request without session
 	req := httptest.NewRequest("POST", "/v1/terrareg/auth/session/refresh", nil)
@@ -255,8 +255,8 @@ func TestSessionHandler_HandleRefreshSession_ReturnsUpdatedSession(t *testing.T)
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	cookieSessionService, _ := testutils.CreateTestCookieSessionService(t, db)
-	handler := auth.NewSessionHandler(cookieSessionService, testutils.TestLogger)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
+	handler := auth.NewSessionHandler(sessionManagementService, testutils.TestLogger)
 
 	// Create authenticated request
 	req, _ := testutils.CreateAuthenticatedRequestWithSession(t, db, "POST", "/v1/terrareg/auth/session/refresh", "testuser", true)

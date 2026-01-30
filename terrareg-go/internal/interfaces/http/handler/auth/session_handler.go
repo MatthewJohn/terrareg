@@ -13,18 +13,18 @@ import (
 
 // SessionHandler handles session management requests
 type SessionHandler struct {
-	cookieSessionService *service.CookieSessionService
-	logger               zerolog.Logger
+	sessionManagementService *service.SessionManagementService
+	logger                   zerolog.Logger
 }
 
 // NewSessionHandler creates a new SessionHandler
 func NewSessionHandler(
-	cookieSessionService *service.CookieSessionService,
+	sessionManagementService *service.SessionManagementService,
 	logger zerolog.Logger,
 ) *SessionHandler {
 	return &SessionHandler{
-		cookieSessionService: cookieSessionService,
-		logger:               logger,
+		sessionManagementService: sessionManagementService,
+		logger:                   logger,
 	}
 }
 
@@ -48,7 +48,7 @@ func (h *SessionHandler) HandleGetSession(w http.ResponseWriter, r *http.Request
 			Authenticated: true,
 			UserID:        sessionData.UserID,
 			Username:      sessionData.Username,
-			AuthMethod:    sessionData.AuthMethod,
+			AuthMethod:    string(sessionData.AuthMethod),
 			IsAdmin:       sessionData.IsAdmin,
 			UserGroups:    sessionData.UserGroups,
 		}
@@ -71,15 +71,12 @@ func (h *SessionHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Delete session from database
-	if err := h.cookieSessionService.DeleteSession(r.Context(), sessionData.SessionID); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to delete session from database")
+	// Clear session and cookie in one operation
+	if err := h.sessionManagementService.ClearSessionAndCookie(r.Context(), w, r); err != nil {
+		h.logger.Error().Err(err).Msg("Failed to clear session and cookie")
 		http.Error(w, "Failed to delete session", http.StatusInternalServerError)
 		return
 	}
-
-	// Clear session cookie
-	h.cookieSessionService.ClearSessionCookie(w)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]bool{
@@ -95,13 +92,18 @@ func (h *SessionHandler) HandleRefreshSession(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Update last accessed time
-	now := time.Now()
-	sessionData.LastAccessed = &now
+	// Default TTL of 24 hours if session has no expiry
+	ttl := 24 * time.Hour
+	if sessionData.Expiry != nil {
+		ttl = time.Until(*sessionData.Expiry)
+		if ttl <= 0 {
+			ttl = 24 * time.Hour
+		}
+	}
 
-	// Re-encrypt and set updated session cookie
-	if err := h.cookieSessionService.SetSessionCookie(w, sessionData); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to refresh session cookie")
+	// Refresh session and update cookie in one operation
+	if err := h.sessionManagementService.RefreshSessionAndCookie(r.Context(), w, r, ttl); err != nil {
+		h.logger.Error().Err(err).Msg("Failed to refresh session and cookie")
 		http.Error(w, "Failed to refresh session", http.StatusInternalServerError)
 		return
 	}
