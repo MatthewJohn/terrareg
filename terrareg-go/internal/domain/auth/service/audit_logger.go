@@ -87,6 +87,32 @@ func (a *AuditLogger) LogAuthEvent(ctx context.Context, event AuthEvent) {
 	logEntry.Msg("authentication_event")
 }
 
+// LogLoginAttemptDirect creates a database audit entry for a login event
+// This is a convenience method for direct audit logging without the full log event
+// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
+// Note: Python uses old_value=None, new_value=None for login events
+func (a *AuditLogger) LogLoginAttemptDirect(ctx context.Context, provider, username, sessionID string) {
+	if username == "" {
+		return
+	}
+
+	// Create database audit entry for successful logins
+	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65
+	// Note: Python uses old_value=None, new_value=None for login events
+	audit := model.NewAuditHistory(
+		username,
+		model.AuditActionUserLogin,
+		"User",
+		username,
+		nil, // old_value is None (matching Python)
+		nil, // new_value is None (matching Python)
+	)
+	// Create audit entry asynchronously to avoid blocking
+	go func() {
+		_ = a.auditRepo.Create(context.Background(), audit)
+	}()
+}
+
 // LogLoginAttempt logs a login attempt
 // Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
 func (a *AuditLogger) LogLoginAttempt(ctx context.Context, provider, username, ipAddress, userAgent, sessionID string, success bool, errorMsg string) {
@@ -108,15 +134,16 @@ func (a *AuditLogger) LogLoginAttempt(ctx context.Context, provider, username, i
 	a.LogAuthEvent(ctx, event)
 
 	// Create database audit entry for successful logins
-	// Python reference: /app/terrareg/audit.py - create_audit_event for USER_LOGIN
+	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
+	// Note: Python uses old_value=None, new_value=None for login events
 	if success && username != "" {
 		audit := model.NewAuditHistory(
 			username,
 			model.AuditActionUserLogin,
 			"User",
 			username,
-			nil,
-			nil,
+			nil, // old_value is None (matching Python)
+			nil, // new_value is None (matching Python)
 		)
 		// Create audit entry asynchronously to avoid blocking
 		go func() {

@@ -17,7 +17,6 @@ import (
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
-	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
 func TestAuthenticationIntegration(t *testing.T) {
@@ -57,12 +56,13 @@ func TestAuthenticationIntegration(t *testing.T) {
 		SecretKey:  "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}
 
-	// Create auth service with minimal dependencies
+	// Create cookie service
 	cookieService := authservice.NewCookieService(infraConfig)
-	mockAuditService := new(mocks.MockAuthenticationAuditService)
-	authService, err := authservice.NewAuthenticationService(sessionService, cookieService, mockAuditService)
-	require.NoError(t, err)
-	_ = authService
+
+	// Create session management service (this is what replaced AuthenticationService)
+	sessionManagementService := authservice.NewSessionManagementService(sessionService, cookieService)
+	require.NotNil(t, sessionManagementService)
+	_ = sessionManagementService
 
 	t.Run("Create session", func(t *testing.T) {
 		// Create a session directly using the repository

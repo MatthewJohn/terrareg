@@ -21,7 +21,7 @@ func TestLoginHandler_HandleLogin_Success_ValidCredentials(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler with real dependencies
-	sessionManagementService, cont := testutils.CreateTestSessionManagementService(t, db)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
 	handler, err := auth.NewLoginHandler(sessionManagementService, testutils.TestLogger)
 	require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestLoginHandler_HandleLogin_Success_ValidCredentials(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, response.Success)
 
-	// Verify session cookie was set
+	// Verify session cookie was set and get session data
 	cookies := w.Result().Cookies()
 	assert.NotEmpty(t, cookies, "Session cookie should be set")
 
@@ -63,17 +63,12 @@ func TestLoginHandler_HandleLogin_Success_ValidCredentials(t *testing.T) {
 	require.NotNil(t, sessionCookie, "Session cookie should be set")
 	assert.NotEmpty(t, sessionCookie.Value, "Session cookie value should not be empty")
 
-	// Decrypt the cookie to get session data
-	// Use the container from CreateTestSessionManagementService to ensure SECRET_KEY consistency
-	decryptedSessionData, err := cont.CookieService.DecryptSession(sessionCookie.Value)
+	// Validate the session and get decrypted session data using SessionManagementService
+	// GetSessionFromCookie decrypts the cookie and validates the session
+	session, decryptedSessionData, err := sessionManagementService.GetSessionFromCookie(req.Context(), req)
 	require.NoError(t, err, "Session cookie should be decryptable")
+	require.NotNil(t, session)
 	require.NotNil(t, decryptedSessionData)
-
-	// Now validate the session using the SessionManagementService
-	// ValidateSessionCookie expects the encrypted cookie value
-	session, err := sessionManagementService.ValidateSessionCookie(req.Context(), sessionCookie.Value)
-	require.NoError(t, err)
-	assert.NotNil(t, session)
 	assert.Equal(t, decryptedSessionData.SessionID, session.ID)
 }
 
@@ -209,7 +204,7 @@ func TestLoginHandler_HandleLogin_CreatesSessionInDatabase(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create handler
-	sessionManagementService, cont := testutils.CreateTestSessionManagementService(t, db)
+	sessionManagementService, _ := testutils.CreateTestSessionManagementService(t, db)
 	handler, err := auth.NewLoginHandler(sessionManagementService, testutils.TestLogger)
 	require.NoError(t, err)
 
@@ -241,9 +236,10 @@ func TestLoginHandler_HandleLogin_CreatesSessionInDatabase(t *testing.T) {
 	}
 	require.NotNil(t, sessionCookie)
 
-	// Decrypt cookie to get session ID
-	decryptedSessionData, err := cont.CookieService.DecryptSession(sessionCookie.Value)
+	// Get session data using SessionManagementService
+	session, decryptedSessionData, err := sessionManagementService.GetSessionFromCookie(req.Context(), req)
 	require.NoError(t, err)
+	require.NotNil(t, session)
 	require.NotNil(t, decryptedSessionData)
 
 	// Verify session exists in database

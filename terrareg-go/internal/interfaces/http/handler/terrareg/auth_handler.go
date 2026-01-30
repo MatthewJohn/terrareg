@@ -124,7 +124,7 @@ func (h *AuthHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request) {
 		Str("session_id", response.SessionID).
 		Msg("Setting admin session cookie")
 
-	if err := h.sessionManagementService.SetCookieForExistingSession(ctx, w, response.SessionID); err != nil {
+	if err := h.sessionManagementService.SetCookieForExistingSession(ctx, w, response.SessionID, "Built-in admin", "ADMIN_API_KEY"); err != nil {
 		// If cookie setting fails, return error
 		log.Error().
 			Err(err).
@@ -236,7 +236,9 @@ func (h *AuthHandler) HandleOIDCCallback(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Set session cookie for the existing session
-	if err := h.sessionManagementService.SetCookieForExistingSession(ctx, w, response.SessionID); err != nil {
+	// Note: Passing empty username/authMethod to skip audit logging here
+	// The audit logging should be done in the command layer when full user context is available
+	if err := h.sessionManagementService.SetCookieForExistingSession(ctx, w, response.SessionID, "", ""); err != nil {
 		RespondError(w, http.StatusInternalServerError, "Failed to set session cookie")
 		return
 	}

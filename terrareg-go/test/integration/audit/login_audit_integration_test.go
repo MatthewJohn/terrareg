@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
@@ -18,6 +17,10 @@ import (
 // verifyUserLoginAuditEntry checks database for USER_LOGIN audit entry
 func verifyUserLoginAuditEntry(t *testing.T, db *sqldb.Database, username, authMethod string) {
 	t.Helper()
+
+	// Wait a bit for async audit logging to complete
+	// Audit entries are created asynchronously via goroutines
+	time.Sleep(50 * time.Millisecond)
 
 	var auditHistoryDB sqldb.AuditHistoryDB
 	err := db.DB.Where("action = ? AND username = ?", sqldb.AuditActionUserLogin, username).
@@ -29,10 +32,10 @@ func verifyUserLoginAuditEntry(t *testing.T, db *sqldb.Database, username, authM
 	assert.Equal(t, sqldb.AuditActionUserLogin, auditHistoryDB.Action)
 	assert.Equal(t, "User", *auditHistoryDB.ObjectType)
 
-	// The old_value should contain the auth method
-	if auditHistoryDB.OldValue != nil {
-		assert.Equal(t, authMethod, *auditHistoryDB.OldValue)
-	}
+	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65-69
+	// Python uses old_value=None, new_value=None for login events
+	assert.Nil(t, auditHistoryDB.OldValue, "old_value should be nil (matching Python behavior)")
+	assert.Nil(t, auditHistoryDB.NewValue, "new_value should be nil (matching Python behavior)")
 
 	// Verify timestamp is recent
 	assert.NotNil(t, auditHistoryDB.Timestamp)
@@ -60,8 +63,8 @@ func TestLoginAudit_AdminApiKey(t *testing.T) {
 	// Create response writer for cookie
 	w := httptest.NewRecorder()
 
-	// Create admin session (this should trigger audit logging)
-	err = cont.AuthenticationService.CreateAdminSession(ctx, w, session.ID)
+	// Set cookie for existing session with username and auth method for audit logging
+	err = cont.SessionManagementService.SetCookieForExistingSession(ctx, w, session.ID, "Built-in admin", "ADMIN_API_KEY")
 	require.NoError(t, err)
 
 	// Verify audit entry was created
@@ -93,7 +96,16 @@ func TestLoginAudit_GitHubOAuth(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// Create session from auth context (this should trigger audit logging)
-	err := cont.AuthenticationService.CreateSessionFromAuthContext(ctx, w, githubAuthCtx, nil)
+	err := cont.SessionManagementService.CreateSessionAndCookie(
+		ctx, w,
+		githubAuthCtx.GetProviderType(),
+		githubAuthCtx.GetUsername(),
+		githubAuthCtx.IsAdmin(),
+		githubAuthCtx.GetUserGroupNames(),
+		githubAuthCtx.GetAllNamespacePermissions(),
+		githubAuthCtx.GetProviderData(),
+		nil, // ttl - use default
+	)
 	require.NoError(t, err)
 
 	// Verify audit entry was created
@@ -133,7 +145,16 @@ func TestLoginAudit_SAML(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// Create session from auth context (this should trigger audit logging)
-	err := cont.AuthenticationService.CreateSessionFromAuthContext(ctx, w, samlAuthCtx, nil)
+	err := cont.SessionManagementService.CreateSessionAndCookie(
+		ctx, w,
+		samlAuthCtx.GetProviderType(),
+		samlAuthCtx.GetUsername(),
+		samlAuthCtx.IsAdmin(),
+		samlAuthCtx.GetUserGroupNames(),
+		samlAuthCtx.GetAllNamespacePermissions(),
+		samlAuthCtx.GetProviderData(),
+		nil, // ttl - use default
+	)
 	require.NoError(t, err)
 
 	// Verify audit entry was created
@@ -179,7 +200,16 @@ func TestLoginAudit_OIDC(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// Create session from auth context (this should trigger audit logging)
-	err := cont.AuthenticationService.CreateSessionFromAuthContext(ctx, w, oidcAuthCtx, nil)
+	err := cont.SessionManagementService.CreateSessionAndCookie(
+		ctx, w,
+		oidcAuthCtx.GetProviderType(),
+		oidcAuthCtx.GetUsername(),
+		oidcAuthCtx.IsAdmin(),
+		oidcAuthCtx.GetUserGroupNames(),
+		oidcAuthCtx.GetAllNamespacePermissions(),
+		oidcAuthCtx.GetProviderData(),
+		nil, // ttl - use default
+	)
 	require.NoError(t, err)
 
 	// Verify audit entry was created
@@ -209,7 +239,7 @@ func TestLoginAudit_MultipleLogins(t *testing.T) {
 	require.NoError(t, err)
 
 	w1 := httptest.NewRecorder()
-	err = cont.AuthenticationService.CreateAdminSession(ctx, w1, session1.ID)
+	err = cont.SessionManagementService.SetCookieForExistingSession(ctx, w1, session1.ID, "Built-in admin", "ADMIN_API_KEY")
 	require.NoError(t, err)
 
 	// Wait a bit to ensure different timestamps
@@ -220,8 +250,12 @@ func TestLoginAudit_MultipleLogins(t *testing.T) {
 	require.NoError(t, err)
 
 	w2 := httptest.NewRecorder()
-	err = cont.AuthenticationService.CreateAdminSession(ctx, w2, session2.ID)
+	err = cont.SessionManagementService.SetCookieForExistingSession(ctx, w2, session2.ID, "Built-in admin", "ADMIN_API_KEY")
 	require.NoError(t, err)
+
+	// Wait for async audit logging to complete
+	// Audit entries are created asynchronously via goroutines
+	time.Sleep(50 * time.Millisecond)
 
 	// Verify both audit entries exist
 	var auditEntries []sqldb.AuditHistoryDB
@@ -237,37 +271,36 @@ func TestLoginAudit_MultipleLogins(t *testing.T) {
 	assert.True(t, auditEntries[1].Timestamp.After(*auditEntries[0].Timestamp))
 }
 
-// TestLoginAudit_AuditServiceRequired tests that audit service is required
-func TestLoginAudit_AuditServiceRequired(t *testing.T) {
+// TestLoginAudit_SessionManagementServiceIsProperlyInitialized tests that session management service is properly initialized
+func TestLoginAudit_SessionManagementServiceIsProperlyInitialized(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create test container with all services
 	cont := testutils.CreateTestContainer(t, db)
 
-	// Verify that constructor returns error when audit service is nil
-	_, err := authservice.NewAuthenticationService(
-		cont.SessionService,
-		cont.CookieService,
-		nil, // No audit service - should fail
-	)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "authAuditService cannot be nil")
+	// Verify that SessionManagementService is properly initialized
+	// It should not be nil since SECRET_KEY is configured in test container
+	require.NotNil(t, cont.SessionManagementService, "SessionManagementService should be initialized when SECRET_KEY is configured")
+	require.True(t, cont.SessionManagementService.IsAvailable(), "SessionManagementService should be available")
 
-	// Verify that container always provides a valid audit service
-	// by checking that creating a session through the container works
+	// Verify that we can create a session and cookie through SessionManagementService
 	ctx := context.Background()
-	session, err := cont.SessionService.CreateSession(ctx, "ADMIN_API_KEY", []byte("{}"), nil)
-	require.NoError(t, err)
-
 	w := httptest.NewRecorder()
-	err = cont.AuthenticationService.CreateAdminSession(ctx, w, session.ID)
+
+	err := cont.SessionManagementService.CreateSessionAndCookie(
+		ctx, w,
+		auth.AuthMethodAdminApiKey,
+		"Test User",
+		true,
+		[]string{},
+		nil,
+		nil,
+		nil,
+	)
 	require.NoError(t, err)
 
-	// Verify audit entry was created (container provides audit service)
-	var auditHistoryDB sqldb.AuditHistoryDB
-	err = db.DB.Where("action = ? AND username = ?", sqldb.AuditActionUserLogin, "Built-in admin").
-		Order("timestamp DESC").
-		First(&auditHistoryDB).Error
-	require.NoError(t, err, "Expected USER_LOGIN audit entry")
+	// Verify a cookie was set
+	cookies := w.Result().Cookies()
+	require.NotEmpty(t, cookies, "Session cookie should be set")
 }

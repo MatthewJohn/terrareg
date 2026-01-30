@@ -742,6 +742,13 @@ func NewContainer(
 	// Initialize audit service (needed for authentication service)
 	auditService := auditservice.NewAuditService(c.AuditHistoryRepo)
 
+	// Initialize audit logger for login events
+	// Wire it up to SessionManagementService if both are available
+	if sessionManagementService != nil {
+		auditLogger := authservice.NewAuditLogger(logger, c.AuditHistoryRepo)
+		sessionManagementService.SetAuditLogger(auditLogger)
+	}
+
 	// Initialize session cleanup service
 	c.SessionCleanupService = authservice.NewSessionCleanupService(
 		sessionService,

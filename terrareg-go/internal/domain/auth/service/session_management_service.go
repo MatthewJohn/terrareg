@@ -18,6 +18,7 @@ var _ auth.SessionManager = (*SessionManagementService)(nil)
 type SessionManagementService struct {
 	sessionService *SessionService
 	cookieService  *CookieService
+	auditLogger    *AuditLogger // Optional - for audit logging of login events
 }
 
 // NewSessionManagementService creates a new session management service
@@ -33,7 +34,14 @@ func NewSessionManagementService(
 	return &SessionManagementService{
 		sessionService: sessionService,
 		cookieService:  cookieService,
+		auditLogger:    nil, // Can be set later with SetAuditLogger
 	}
+}
+
+// SetAuditLogger sets the audit logger for login event logging
+// This is optional - if nil, no audit logging will occur
+func (s *SessionManagementService) SetAuditLogger(auditLogger *AuditLogger) {
+	s.auditLogger = auditLogger
 }
 
 // CreateSessionAndCookie creates a session in the database and sets the encrypted cookie
@@ -97,6 +105,12 @@ func (s *SessionManagementService) CreateSessionAndCookie(
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	// Log login event to audit if audit logger is configured
+	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
+	if s.auditLogger != nil && username != "" {
+		s.auditLogger.LogLoginAttempt(ctx, string(authMethod), username, "", "", session.ID, true, "")
+	}
 
 	return nil
 }
@@ -227,10 +241,13 @@ func (s *SessionManagementService) GetSessionFromCookie(
 
 // SetCookieForExistingSession sets a session cookie for an already-existing session
 // This is useful when a session was created elsewhere and we just need to set the cookie
+// Optional username and authMethod parameters for audit logging
+// Python reference: /app/terrareg/server/api/terrareg_admin_authenticate.py:28 - USER_LOGIN audit
 func (s *SessionManagementService) SetCookieForExistingSession(
 	ctx context.Context,
 	w http.ResponseWriter,
 	sessionID string,
+	username, authMethod string, // Optional - for audit logging (pass "" for no audit)
 ) error {
 	// Get the session from the database
 	session, err := s.sessionService.ValidateSession(ctx, sessionID)
@@ -243,8 +260,8 @@ func (s *SessionManagementService) SetCookieForExistingSession(
 	// The cookie contains the session ID which is the most important part
 	sessionData := &auth.SessionData{
 		SessionID:  session.ID,
-		AuthMethod: "", // Will be filled from provider data if available
-		Username:    "",
+		AuthMethod: authMethod,
+		Username:    username,
 		IsAdmin:     false,
 		SiteAdmin:   false,
 		UserGroups:  []string{},
@@ -272,6 +289,12 @@ func (s *SessionManagementService) SetCookieForExistingSession(
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	// Log login event to audit if audit logger is configured and username is provided
+	// Python reference: /app/terrareg/server/api/github/github_login_callback.py:65 - USER_LOGIN audit
+	if s.auditLogger != nil && username != "" && authMethod != "" {
+		s.auditLogger.LogLoginAttempt(ctx, authMethod, username, "", "", session.ID, true, "")
+	}
 
 	return nil
 }
