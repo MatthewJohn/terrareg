@@ -46,7 +46,13 @@ func prepareSecretKey(keyStr string) ([]byte, error) {
 }
 
 // NewCookieService creates a new cookie service
+// Returns nil if SECRET_KEY is not configured (cookie-based auth is not available)
 func NewCookieService(config *infraConfig.InfrastructureConfig) *CookieService {
+	// If SECRET_KEY is empty, cookie-based auth is not available
+	if config.SecretKey == "" {
+		return nil
+	}
+
 	// Determine if cookies should be secure based on the public URL scheme
 	// Use URLService to check the protocol
 	urlService := urlservice.NewURLService(config)
@@ -145,16 +151,20 @@ func (cs *CookieService) DecryptSession(encrypted string) (*SessionData, error) 
 	return &data, nil
 }
 
+func (cs *CookieService) getDefaultCookieOptions() *CookieOptions {
+	return &CookieOptions{
+		Path:     "/",
+		MaxAge:   -1, // Session cookie
+		Secure:   cs.isSecure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
 // SetCookie sets an HTTP cookie with options
 func (cs *CookieService) SetCookie(w http.ResponseWriter, name, value string, options *CookieOptions) {
 	if options == nil {
-		options = &CookieOptions{
-			Path:     "/",
-			MaxAge:   -1, // Session cookie
-			Secure:   cs.isSecure,
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-		}
+		options = cs.getDefaultCookieOptions()
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -170,13 +180,7 @@ func (cs *CookieService) SetCookie(w http.ResponseWriter, name, value string, op
 
 // ClearCookie removes a cookie by setting MaxAge to -1
 func (cs *CookieService) ClearCookie(w http.ResponseWriter, name string) {
-	cs.SetCookie(w, name, "", &CookieOptions{
-		Path:     "/",
-		MaxAge:   -1,
-		Secure:   cs.isSecure,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
+	cs.SetCookie(w, name, "", nil)
 }
 
 // GetSessionCookieName returns the configured session cookie name

@@ -23,13 +23,14 @@ type AuthenticationService struct {
 }
 
 // NewAuthenticationService creates a new authentication service
-// Returns an error if any required dependency is nil
+// Returns nil if cookieService is nil (SECRET_KEY not configured - cookie-based auth unavailable)
 func NewAuthenticationService(sessionService *SessionService, cookieService *CookieService, authAuditService auditservice.AuthenticationAuditServiceInterface) (*AuthenticationService, error) {
 	if sessionService == nil {
 		return nil, fmt.Errorf("sessionService cannot be nil")
 	}
 	if cookieService == nil {
-		return nil, fmt.Errorf("cookieService cannot be nil")
+		// SECRET_KEY not configured - cookie-based auth is not available
+		return nil, nil
 	}
 	if authAuditService == nil {
 		return nil, fmt.Errorf("authAuditService cannot be nil")

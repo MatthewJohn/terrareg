@@ -139,7 +139,9 @@ func ConfigForInitialSetupTests() map[string]string {
 	baseConfig := getDefaultTestConfig()
 
 	// Override for initial setup - empty database triggers setup wizard
+	// Set SECRET_KEY and auth tokens to empty to simulate unconfigured state
 	return mergeMaps(baseConfig, map[string]string{
+		"SECRET_KEY":                 "", // Unconfigured - no secret key set
 		"UPLOAD_API_KEYS":            "",
 		"ADMIN_AUTHENTICATION_TOKEN": "",
 		// Keep ALLOW_MODULE_HOSTING and other settings
