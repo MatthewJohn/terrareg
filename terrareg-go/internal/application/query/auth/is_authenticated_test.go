@@ -136,23 +136,23 @@ func TestIsAuthenticatedResponse_JSONSerialization(t *testing.T) {
 
 func TestGetSessionData(t *testing.T) {
 	tests := []struct {
-		name             string
-		setupContext     func() context.Context
-		expectNilSession bool
+		name                string
+		setupContext        func() context.Context
+		expectAuthenticated bool
 	}{
 		{
 			name: "Empty context",
 			setupContext: func() context.Context {
 				return context.Background()
 			},
-			expectNilSession: true,
+			expectAuthenticated: false,
 		},
 		{
 			name: "Context with unrelated value",
 			setupContext: func() context.Context {
 				return context.WithValue(context.Background(), "unrelated_key", "unrelated_value")
 			},
-			expectNilSession: true,
+			expectAuthenticated: false,
 		},
 	}
 
@@ -161,11 +161,9 @@ func TestGetSessionData(t *testing.T) {
 			ctx := tt.setupContext()
 			sessionData := middleware.GetSessionData(ctx)
 
-			if tt.expectNilSession {
-				assert.Nil(t, sessionData, "Expected nil session data")
-			} else {
-				assert.NotNil(t, sessionData, "Expected non-nil session data")
-			}
+			// GetSessionData always returns an AuthContext, never nil
+			assert.NotNil(t, sessionData, "GetSessionData should always return non-nil AuthContext")
+			assert.Equal(t, tt.expectAuthenticated, sessionData.IsAuthenticated, "IsAuthenticated mismatch")
 		})
 	}
 }
