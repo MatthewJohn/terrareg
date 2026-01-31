@@ -114,7 +114,7 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 
 	// 7. GitHub auth method (using provider source pattern)
 	if af.providerSourceFactory != nil {
-		githubAuthMethod := infraAuth.NewGitHubAuthMethod(af.providerSourceFactory)
+		githubAuthMethod := infraAuth.NewGitHubAuthMethod(af.providerSourceFactory, af.sessionRepo)
 		af.RegisterAuthMethod(githubAuthMethod)
 	}
 

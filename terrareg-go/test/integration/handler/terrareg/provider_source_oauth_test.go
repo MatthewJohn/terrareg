@@ -219,7 +219,7 @@ func TestProviderSourceHandler_HandleGitHubAuthStatus_Authenticated(t *testing.T
 
 	// Now check auth status
 	authReq := httptest.NewRequest("GET", "/test-github/auth/status", nil)
-	authReq.Header.Set("Cookie", "terrareg_session="+sessionCookie.Value)
+	authReq.AddCookie(sessionCookie)
 	authW := httptest.NewRecorder()
 
 	router.ServeHTTP(authW, authReq)
@@ -327,7 +327,7 @@ func TestProviderSourceHandler_HandleGitHubCallback_WithOrganizations(t *testing
 
 	// Check auth status to verify organizations were stored
 	authReq := httptest.NewRequest("GET", "/test-github/auth/status", nil)
-	authReq.Header.Set("Cookie", "terrareg_session="+sessionCookie.Value)
+	authReq.AddCookie(sessionCookie)
 	authW := httptest.NewRecorder()
 
 	router.ServeHTTP(authW, authReq)
@@ -335,8 +335,8 @@ func TestProviderSourceHandler_HandleGitHubCallback_WithOrganizations(t *testing
 	assert.Equal(t, http.StatusOK, authW.Code)
 
 	var response map[string]interface{}
-	json.Unmarshal(authW.Body.Bytes(), &response)
-	require.NoError(t, json.Unmarshal(authW.Body.Bytes(), &response))
+	err := json.Unmarshal(authW.Body.Bytes(), &response)
+	require.NoError(t, err)
 
 	// Verify authenticated with organizations
 	assert.True(t, bool(response["authenticated"].(bool)))
