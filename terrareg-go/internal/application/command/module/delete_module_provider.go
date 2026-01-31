@@ -47,22 +47,20 @@ func (c *DeleteModuleProviderCommand) Execute(ctx context.Context, req DeleteMod
 		return fmt.Errorf("failed to delete module provider: %w", err)
 	}
 
-	// Log audit event (async, don't block the response)
-	go func() {
-		username := "system"
-		// Try to get username from auth context if available
-		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-			username = authCtx.Username
-		}
+	// Log audit event (synchronous)
+	username := "system"
+	// Try to get username from auth context if available
+	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+		username = authCtx.Username
+	}
 
-		c.auditService.LogModuleProviderDelete(
-			context.Background(),
-			types.NamespaceName(username),
-			req.Namespace,
-			req.Module,
-			req.Provider,
-		)
-	}()
+	_ = c.auditService.LogModuleProviderDelete(
+		ctx,
+		types.NamespaceName(username),
+		req.Namespace,
+		req.Module,
+		req.Provider,
+	)
 
 	return nil
 }

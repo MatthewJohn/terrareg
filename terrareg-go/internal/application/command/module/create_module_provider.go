@@ -71,22 +71,20 @@ func (c *CreateModuleProviderCommand) Execute(ctx context.Context, req CreateMod
 		return nil, fmt.Errorf("failed to save module provider: %w", err)
 	}
 
-	// Log audit event (async, don't block the response)
-	go func() {
-		username := "system"
-		// Try to get username from auth context if available
-		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-			username = authCtx.Username
-		}
+	// Log audit event (synchronous)
+	username := "system"
+	// Try to get username from auth context if available
+	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+		username = authCtx.Username
+	}
 
-		c.auditService.LogModuleProviderCreate(
-			context.Background(),
-			types.NamespaceName(username),
-			req.Namespace,
-			req.Module,
-			req.Provider,
-		)
-	}()
+	_ = c.auditService.LogModuleProviderCreate(
+		ctx,
+		types.NamespaceName(username),
+		req.Namespace,
+		req.Module,
+		req.Provider,
+	)
 
 	return moduleProvider, nil
 }

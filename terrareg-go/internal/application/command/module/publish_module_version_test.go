@@ -3,7 +3,6 @@ package module_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -126,9 +125,6 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 
 	// Execute
 	result, err := command.Execute(ctx, req)
-
-	// Wait for goroutines to complete (audit logging happens in background)
-	time.Sleep(10 * time.Millisecond)
 
 	// Assert
 	require.NoError(t, err)
@@ -257,9 +253,6 @@ func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
 
 	// Execute
 	result, err := command.Execute(ctx, req)
-
-	// Wait for goroutines to complete (audit logging happens in background)
-	time.Sleep(10 * time.Millisecond)
 
 	// Assert
 	require.NoError(t, err)

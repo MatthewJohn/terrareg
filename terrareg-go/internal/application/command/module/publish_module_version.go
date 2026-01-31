@@ -106,33 +106,30 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 		return nil, fmt.Errorf("failed to save module provider: %w", err)
 	}
 
-	// Log audit event (async, don't block the response)
-	go func() {
-		// Get username from context
-		username := "system"
-		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-			username = authCtx.Username
-		}
+	// Log audit event (synchronous)
+	username := "system"
+	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+		username = authCtx.Username
+	}
 
-		// Log the version index and publish
-		c.auditService.LogModuleVersionIndex(
-			context.Background(),
-			types.NamespaceName(username),
-			types.NamespaceName(req.Namespace),
-			types.ModuleName(req.Module),
-			types.ModuleProviderName(req.Provider),
-			types.ModuleVersion(req.Version),
-		)
+	// Log the version index and publish
+	_ = c.auditService.LogModuleVersionIndex(
+		ctx,
+		types.NamespaceName(username),
+		types.NamespaceName(req.Namespace),
+		types.ModuleName(req.Module),
+		types.ModuleProviderName(req.Provider),
+		types.ModuleVersion(req.Version),
+	)
 
-		c.auditService.LogModuleVersionPublish(
-			context.Background(),
-			types.NamespaceName(username),
-			types.NamespaceName(req.Namespace),
-			types.ModuleName(req.Module),
-			types.ModuleProviderName(req.Provider),
-			types.ModuleVersion(req.Version),
-		)
-	}()
+	_ = c.auditService.LogModuleVersionPublish(
+		ctx,
+		types.NamespaceName(username),
+		types.NamespaceName(req.Namespace),
+		types.ModuleName(req.Module),
+		types.ModuleProviderName(req.Provider),
+		types.ModuleVersion(req.Version),
+	)
 
 	return version, nil
 }

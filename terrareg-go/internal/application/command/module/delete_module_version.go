@@ -67,23 +67,21 @@ func (c *DeleteModuleVersionCommand) Execute(ctx context.Context, req DeleteModu
 		return err
 	}
 
-	// Log audit event (async, don't block the response)
-	go func() {
-		username := "system"
-		// Try to get username from auth context if available
-		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-			username = authCtx.Username
-		}
+	// Log audit event (synchronous)
+	username := "system"
+	// Try to get username from auth context if available
+	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
+		username = authCtx.Username
+	}
 
-		c.auditService.LogModuleVersionDelete(
-			context.Background(),
-			types.NamespaceName(username),
-			req.Namespace,
-			req.Module,
-			req.Provider,
-			req.Version,
-		)
-	}()
+	_ = c.auditService.LogModuleVersionDelete(
+		ctx,
+		types.NamespaceName(username),
+		req.Namespace,
+		req.Module,
+		req.Provider,
+		req.Version,
+	)
 
 	// TODO: Update provider's latest_version_id if this was the latest
 	// TODO: Delete associated files from storage
