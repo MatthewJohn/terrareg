@@ -63,9 +63,14 @@ func TestLoginHandler_HandleLogin_Success_ValidCredentials(t *testing.T) {
 	require.NotNil(t, sessionCookie, "Session cookie should be set")
 	assert.NotEmpty(t, sessionCookie.Value, "Session cookie value should not be empty")
 
+	// Create a new request with the cookie to validate the session
+	// The cookie was set on the response, so we need to add it to a new request
+	verifyReq := httptest.NewRequest("GET", "/v1/terrareg/auth/session", nil)
+	verifyReq.AddCookie(sessionCookie)
+
 	// Validate the session and get decrypted session data using SessionManagementService
 	// GetSessionFromCookie decrypts the cookie and validates the session
-	session, decryptedSessionData, err := sessionManagementService.GetSessionFromCookie(req.Context(), req)
+	session, decryptedSessionData, err := sessionManagementService.GetSessionFromCookie(verifyReq.Context(), verifyReq)
 	require.NoError(t, err, "Session cookie should be decryptable")
 	require.NotNil(t, session)
 	require.NotNil(t, decryptedSessionData)
@@ -236,8 +241,13 @@ func TestLoginHandler_HandleLogin_CreatesSessionInDatabase(t *testing.T) {
 	}
 	require.NotNil(t, sessionCookie)
 
+	// Create a new request with the cookie to validate the session
+	// The cookie was set on the response, so we need to add it to a new request
+	verifyReq := httptest.NewRequest("GET", "/v1/terrareg/auth/session", nil)
+	verifyReq.AddCookie(sessionCookie)
+
 	// Get session data using SessionManagementService
-	session, decryptedSessionData, err := sessionManagementService.GetSessionFromCookie(req.Context(), req)
+	session, decryptedSessionData, err := sessionManagementService.GetSessionFromCookie(verifyReq.Context(), verifyReq)
 	require.NoError(t, err)
 	require.NotNil(t, session)
 	require.NotNil(t, decryptedSessionData)

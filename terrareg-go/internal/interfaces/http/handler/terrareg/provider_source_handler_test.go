@@ -11,7 +11,8 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	provider_source_service "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 )
@@ -118,7 +119,22 @@ func (m *MockProviderSourceInstance) PublishProviderFromRepository(ctx context.C
 // MockAuthenticationService for testing
 type MockAuthenticationService struct {
 	createSessionFunc func(ctx context.Context, w http.ResponseWriter, authCtx auth.AuthContext, ttl *time.Duration) error
-	validateFunc      func(ctx context.Context, r *http.Request) (*authservice.AuthenticationContext, error)
+	validateFunc      func(ctx context.Context, r *http.Request) (auth.AuthContext, error)
+}
+
+func (m *MockAuthenticationService) CreateSessionAndCookie(ctx context.Context, w http.ResponseWriter, authMethod auth.AuthMethodType, username string, isAdmin bool, userGroups []string, permissions map[string]string, providerData map[string]interface{}, ttl *time.Duration) error {
+	if m.createSessionFunc != nil {
+		// Create a mock auth context for the old API
+		authCtx := &mockAuthContext{
+			authMethod:  string(authMethod),
+			username:    username,
+			isAdmin:     isAdmin,
+			userGroups:  userGroups,
+			permissions: permissions,
+		}
+		return m.createSessionFunc(ctx, w, authCtx, ttl)
+	}
+	return nil
 }
 
 func (m *MockAuthenticationService) CreateSessionFromAuthContext(ctx context.Context, w http.ResponseWriter, authCtx auth.AuthContext, ttl *time.Duration) error {
@@ -128,35 +144,42 @@ func (m *MockAuthenticationService) CreateSessionFromAuthContext(ctx context.Con
 	return nil
 }
 
-func (m *MockAuthenticationService) ValidateRequest(ctx context.Context, r *http.Request) (*authservice.AuthenticationContext, error) {
+func (m *MockAuthenticationService) ValidateRequest(ctx context.Context, r *http.Request) (auth.AuthContext, error) {
 	if m.validateFunc != nil {
 		return m.validateFunc(ctx, r)
 	}
 	// Return unauthenticated context by default
-	return &authservice.AuthenticationContext{
-		IsAuthenticated: false,
+	return &mockAuthContext{
+		isAuthenticated: false,
 	}, nil
 }
 
-func (m *MockAuthenticationService) InvalidateSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+// mockAuthContext is a mock implementation of auth.AuthContext for testing
+type mockAuthContext struct {
+	isAuthenticated bool
+	authMethod     string
+	username       string
+	isAdmin        bool
+	userGroups     []string
+	permissions    map[string]string
 }
 
-func (m *MockAuthenticationService) RefreshSession(ctx context.Context, w http.ResponseWriter, r *http.Request, ttl time.Duration) error {
-	return nil
-}
-
-func (m *MockAuthenticationService) CreateSession(ctx context.Context, w http.ResponseWriter, sessionID string) error {
-	return nil
-}
-
-func (m *MockAuthenticationService) ClearSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-func (m *MockAuthenticationService) CreateAdminSession(ctx context.Context, w http.ResponseWriter, sessionID string) error {
-	return nil
-}
+func (m *mockAuthContext) IsBuiltInAdmin() bool                      { return false }
+func (m *mockAuthContext) IsAdmin() bool                            { return m.isAdmin }
+func (m *mockAuthContext) IsAuthenticated() bool                    { return m.isAuthenticated }
+func (m *mockAuthContext) RequiresCSRF() bool                       { return false }
+func (m *mockAuthContext) CheckAuthState() bool                     { return false }
+func (m *mockAuthContext) CanPublishModuleVersion(string) bool      { return true }
+func (m *mockAuthContext) CanUploadModuleVersion(string) bool        { return true }
+func (m *mockAuthContext) CheckNamespaceAccess(_, _ string) bool     { return true }
+func (m *mockAuthContext) GetAllNamespacePermissions() map[string]string { return m.permissions }
+func (m *mockAuthContext) GetUsername() string                       { return m.username }
+func (m *mockAuthContext) GetUserGroupNames() []string              { return m.userGroups }
+func (m *mockAuthContext) CanAccessReadAPI() bool                   { return true }
+func (m *mockAuthContext) CanAccessTerraformAPI() bool               { return true }
+func (m *mockAuthContext) GetTerraformAuthToken() string             { return "" }
+func (m *mockAuthContext) GetProviderType() auth.AuthMethodType      { return auth.AuthMethodType(m.authMethod) }
+func (m *mockAuthContext) GetProviderData() map[string]interface{}  { return nil }
 
 // TestNewProviderSourceHandler tests the constructor
 func TestNewProviderSourceHandler(t *testing.T) {
@@ -173,8 +196,8 @@ func TestNewProviderSourceHandler(t *testing.T) {
 		t.Error("providerSourceFactory not set correctly")
 	}
 
-	if handler.authService == nil {
-		t.Error("authService not set correctly")
+	if handler.sessionManagementService == nil {
+		t.Error("sessionManagementService not set correctly")
 	}
 }
 
@@ -466,17 +489,7 @@ func TestProviderSourceHandler_HandleAuthStatus(t *testing.T) {
 				providerSource: &MockProviderSourceInstance{},
 			}
 
-			authService := &MockAuthenticationService{
-				validateFunc: func(ctx context.Context, r *http.Request) (*authservice.AuthenticationContext, error) {
-					return &authservice.AuthenticationContext{
-						IsAuthenticated: tt.isAuthenticated,
-						Username:        "test-user",
-						AuthMethod:      "GITHUB",
-					}, nil
-				},
-			}
-
-			handler := NewProviderSourceHandler(factory, authService)
+			handler := NewProviderSourceHandler(factory, &MockAuthenticationService{})
 
 			req := httptest.NewRequest("GET", "/"+tt.providerSource+"/auth/status", nil)
 			w := httptest.NewRecorder()
@@ -485,6 +498,16 @@ func TestProviderSourceHandler_HandleAuthStatus(t *testing.T) {
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("provider_source", tt.providerSource)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			// Set auth context in request if authenticated
+			if tt.isAuthenticated {
+				authCtx := &model.AuthContext{
+					IsAuthenticated: true,
+					AuthMethod:     auth.AuthMethodGitHub,
+					Username:       "test-user",
+				}
+				req = req.WithContext(middleware.WithAuthenticationContext(req.Context(), authCtx))
+			}
 
 			handler.HandleAuthStatus(w, req)
 

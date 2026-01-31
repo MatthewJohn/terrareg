@@ -18,10 +18,6 @@ import (
 func verifyUserLoginAuditEntry(t *testing.T, db *sqldb.Database, username, authMethod string) {
 	t.Helper()
 
-	// Wait a bit for async audit logging to complete
-	// Audit entries are created asynchronously via goroutines
-	time.Sleep(50 * time.Millisecond)
-
 	var auditHistoryDB sqldb.AuditHistoryDB
 	err := db.DB.Where("action = ? AND username = ?", sqldb.AuditActionUserLogin, username).
 		Order("timestamp DESC").
@@ -252,10 +248,6 @@ func TestLoginAudit_MultipleLogins(t *testing.T) {
 	w2 := httptest.NewRecorder()
 	err = cont.SessionManagementService.SetCookieForExistingSession(ctx, w2, session2.ID, "Built-in admin", "ADMIN_API_KEY")
 	require.NoError(t, err)
-
-	// Wait for async audit logging to complete
-	// Audit entries are created asynchronously via goroutines
-	time.Sleep(50 * time.Millisecond)
 
 	// Verify both audit entries exist
 	var auditEntries []sqldb.AuditHistoryDB

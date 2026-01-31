@@ -43,7 +43,7 @@ func (h *SessionHandler) HandleGetSession(w http.ResponseWriter, r *http.Request
 	sessionData := middleware.GetSessionData(r.Context())
 
 	var response GetSessionResponse
-	if sessionData != nil {
+	if sessionData.IsAuthenticated {
 		response = GetSessionResponse{
 			Authenticated: true,
 			UserID:        sessionData.UserID,
@@ -66,7 +66,7 @@ func (h *SessionHandler) HandleGetSession(w http.ResponseWriter, r *http.Request
 // HandleDeleteSession handles requests to delete the current session (logout)
 func (h *SessionHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Request) {
 	sessionData := middleware.GetSessionData(r.Context())
-	if sessionData == nil {
+	if !sessionData.IsAuthenticated {
 		http.Error(w, "No active session", http.StatusBadRequest)
 		return
 	}
@@ -87,7 +87,7 @@ func (h *SessionHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Requ
 // HandleRefreshSession handles requests to refresh the current session
 func (h *SessionHandler) HandleRefreshSession(w http.ResponseWriter, r *http.Request) {
 	sessionData := middleware.GetSessionData(r.Context())
-	if sessionData == nil {
+	if !sessionData.IsAuthenticated {
 		http.Error(w, "No active session", http.StatusBadRequest)
 		return
 	}

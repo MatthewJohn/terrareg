@@ -12,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	provider_source_service "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // ProviderSourceFactoryInterface defines the interface for provider source factory
@@ -177,11 +178,25 @@ func (h *ProviderSourceHandler) HandleAuthStatus(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// TODO: Re-implement authentication status check using AuthFactory
-	// For now, return unauthenticated status
+	// Get authentication status from request context
+	// The middleware should have set the auth context
 	response := map[string]interface{}{
-		"authenticated": false,
 		"provider_type": string(providerSource.Type()),
+	}
+
+	// Try to get auth context from middleware
+	authCtx := middleware.GetSessionData(r.Context())
+	if authCtx != nil && authCtx.IsAuthenticated {
+		response["authenticated"] = true
+		response["username"] = authCtx.Username
+
+		// Only include auth_method for provider source authentication types (not built-in admin)
+		authMethod := string(authCtx.AuthMethod)
+		if authMethod != "" && authMethod != string(auth.AuthMethodNotAuthenticated) {
+			response["auth_method"] = authMethod
+		}
+	} else {
+		response["authenticated"] = false
 	}
 
 	w.Header().Set("Content-Type", "application/json")

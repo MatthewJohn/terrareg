@@ -107,10 +107,8 @@ func (a *AuditLogger) LogLoginAttemptDirect(ctx context.Context, provider, usern
 		nil, // old_value is None (matching Python)
 		nil, // new_value is None (matching Python)
 	)
-	// Create audit entry asynchronously to avoid blocking
-	go func() {
-		_ = a.auditRepo.Create(context.Background(), audit)
-	}()
+	// Create audit entry synchronously
+	_ = a.auditRepo.Create(ctx, audit)
 }
 
 // LogLoginAttempt logs a login attempt
@@ -145,10 +143,8 @@ func (a *AuditLogger) LogLoginAttempt(ctx context.Context, provider, username, i
 			nil, // old_value is None (matching Python)
 			nil, // new_value is None (matching Python)
 		)
-		// Create audit entry asynchronously to avoid blocking
-		go func() {
-			_ = a.auditRepo.Create(context.Background(), audit)
-		}()
+		// Create audit entry synchronously
+		_ = a.auditRepo.Create(ctx, audit)
 	}
 }
 
