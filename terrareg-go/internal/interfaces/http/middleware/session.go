@@ -35,10 +35,10 @@ func (m *SessionMiddleware) Session(next http.Handler) http.Handler {
 		// Use auth factory to validate request - now returns domain AuthContext directly
 		authCtx, err := m.authFactory.AuthenticateRequest(ctx, getHeadersMap(r), getFormDataMap(r), getQueryParamsMap(r))
 		if err != nil {
-			// Log error but continue without authentication
-			m.logger.Debug().Err(err).Msg("Failed to validate authentication, continuing without auth")
-			// Set not authenticated context and continue
-			authCtx = authservice.NewNotAuthenticatedAuthContext()
+			// Hard error - return error response instead of continuing
+			m.logger.Error().Err(err).Msg("Authentication request failed with hard error")
+			http.Error(w, "Authentication failed", http.StatusInternalServerError)
+			return
 		}
 
 		// Add domain auth context to request context

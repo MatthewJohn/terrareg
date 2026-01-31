@@ -211,7 +211,7 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 
 	// No authentication method succeeded - return NotAuthenticated
 	af.logger.Debug().Msg("No authentication method succeeded, returning NotAuthenticated")
-	return NewNotAuthenticatedAuthContext(), nil
+	return NewNotAuthenticatedAuthContext(af.config.AllowUnauthenticatedAccess), nil
 }
 
 // NewAuthenticationResponseFromAuthContext creates AuthenticationResponse from AuthContext for HTTP responses
@@ -290,12 +290,12 @@ func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
 func (af *AuthFactory) GetCurrentAuthContext() auth.AuthContext {
 	// Return NotAuthenticated as default - this is a placeholder
 	// The application layer should use AuthenticateRequest instead
-	return NewNotAuthenticatedAuthContext()
+	return NewNotAuthenticatedAuthContext(af.config.AllowUnauthenticatedAccess)
 }
 
 // NotAuthenticated returns the NotAuthenticated auth context
 func (af *AuthFactory) NotAuthenticated() auth.AuthContext {
-	return NewNotAuthenticatedAuthContext()
+	return NewNotAuthenticatedAuthContext(af.config.AllowUnauthenticatedAccess)
 }
 
 // generateRequestID generates a unique request ID
@@ -361,12 +361,15 @@ func (af *AuthFactory) extractSessionID(headers map[string]string) *string {
 // NotAuthenticatedAuthContext represents the fallback authentication context for unauthenticated users
 type NotAuthenticatedAuthContext struct {
 	auth.BaseAuthContext
+	allowUnauthenticatedAccess bool
 }
 
 // NewNotAuthenticatedAuthContext creates a new not authenticated context
-func NewNotAuthenticatedAuthContext() *NotAuthenticatedAuthContext {
+// allowUnauthenticatedAccess determines whether unauthenticated users can access the read API
+func NewNotAuthenticatedAuthContext(allowUnauthenticatedAccess bool) *NotAuthenticatedAuthContext {
 	return &NotAuthenticatedAuthContext{
-		BaseAuthContext: auth.BaseAuthContext{},
+		BaseAuthContext:             auth.BaseAuthContext{},
+		allowUnauthenticatedAccess: allowUnauthenticatedAccess,
 	}
 }
 
@@ -416,7 +419,7 @@ func (n *NotAuthenticatedAuthContext) GetUserGroupNames() []string {
 }
 
 func (n *NotAuthenticatedAuthContext) CanAccessReadAPI() bool {
-	return true // Unauthenticated users can access the read API
+	return n.allowUnauthenticatedAccess
 }
 
 func (n *NotAuthenticatedAuthContext) CanAccessTerraformAPI() bool {

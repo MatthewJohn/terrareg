@@ -71,7 +71,13 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 
 		// Authenticate the request
 		authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
-		if err != nil || authCtx == nil || !authCtx.IsAuthenticated() {
+		if err != nil {
+			// Hard error - return internal server error
+			http.Error(w, "Authentication failed", http.StatusInternalServerError)
+			return
+		}
+		if authCtx == nil || !authCtx.IsAuthenticated() {
+			// No authentication - return unauthorized
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -93,9 +99,14 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 
 		// Try to authenticate the request (optional)
 		authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
-		if err != nil || authCtx == nil {
-			// Set not authenticated context for consistency
-			authCtx = authservice.NewNotAuthenticatedAuthContext()
+		if err != nil {
+			// Hard error - return error response
+			http.Error(w, "Authentication failed", http.StatusInternalServerError)
+			return
+		}
+		if authCtx == nil {
+			// No authentication found - continue with not authenticated context
+			authCtx = m.authFactory.NotAuthenticated()
 		}
 
 		// Set auth context (authenticated or not)
@@ -107,12 +118,15 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 
 // GetAuthContext retrieves the auth context from the request context
 // Returns domain auth.AuthContext interface - never nil (returns NotAuthenticatedAuthContext if not set)
+// Note: This is a standalone function and doesn't have access to authFactory config.
+// It returns a default NotAuthenticatedAuthContext with AllowUnauthenticatedAccess=true for safety.
 func GetAuthContext(ctx context.Context) auth.AuthContext {
 	if authCtx, ok := ctx.Value(authContextKey).(auth.AuthContext); ok {
 		return authCtx
 	}
-	// Return not authenticated context as default
-	return authservice.NewNotAuthenticatedAuthContext()
+	// Return not authenticated context as default with AllowUnauthenticatedAccess=true for safety
+	// This ensures unauthenticated read access works by default
+	return authservice.NewNotAuthenticatedAuthContext(true)
 }
 
 // GetAuthMethodFromContext retrieves the auth method from the request context
