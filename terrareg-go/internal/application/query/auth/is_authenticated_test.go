@@ -28,7 +28,7 @@ func TestIsAuthenticatedQuery_Execute(t *testing.T) {
 				return context.Background()
 			},
 			expectAuthenticated: false,
-			expectReadAccess:    false,
+			expectReadAccess:    true, // Unauthenticated users can access read API
 			expectSiteAdmin:     false,
 			expectPermissions:   0,
 		},
@@ -38,7 +38,7 @@ func TestIsAuthenticatedQuery_Execute(t *testing.T) {
 				return context.WithValue(context.Background(), "other_key", "value")
 			},
 			expectAuthenticated: false,
-			expectReadAccess:    false,
+			expectReadAccess:    true, // Unauthenticated users can access read API
 			expectSiteAdmin:     false,
 			expectPermissions:   0,
 		},
@@ -163,7 +163,8 @@ func TestGetSessionData(t *testing.T) {
 
 			// GetSessionData always returns an AuthContext, never nil
 			assert.NotNil(t, sessionData, "GetSessionData should always return non-nil AuthContext")
-			assert.Equal(t, tt.expectAuthenticated, sessionData.IsAuthenticated, "IsAuthenticated mismatch")
+			// Use interface method IsAuthenticated() instead of field access
+			assert.Equal(t, tt.expectAuthenticated, sessionData.IsAuthenticated(), "IsAuthenticated mismatch")
 		})
 	}
 }

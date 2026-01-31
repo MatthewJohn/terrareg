@@ -13,7 +13,6 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 )
 
 // BuildUnauthenticatedRequest creates a request without authentication
@@ -226,15 +225,15 @@ func BuildAdminRequest(t *testing.T, db *sqldb.Database, method, url string) (*h
 
 // BuildAuthenticatedRequest is a compatibility wrapper that returns both request and AuthContext
 // Note: This returns an AuthContext for reference, but the actual authentication is done via session cookie
-func BuildAuthenticatedRequest(t *testing.T, db *sqldb.Database, method, url, username string, isAdmin bool) (*http.Request, *model.AuthContext) {
+func BuildAuthenticatedRequest(t *testing.T, db *sqldb.Database, method, url, username string, isAdmin bool) (*http.Request, auth.AuthContext) {
 	req, _ := BuildAuthenticatedRequestWithSession(t, db, method, url, username, isAdmin)
 
-	authCtx := &model.AuthContext{
-		AuthMethod:      "session_password",
-		Username:        username,
-		IsAdmin:         isAdmin,
-		IsAuthenticated: true,
-		Permissions:     make(map[string]string),
+	// Return test auth context for reference
+	authCtx := &testAuthContext{
+		username:        username,
+		authMethod:      "session_password",
+		isAdmin:         isAdmin,
+		isAuthenticated: true,
 	}
 
 	return req, authCtx

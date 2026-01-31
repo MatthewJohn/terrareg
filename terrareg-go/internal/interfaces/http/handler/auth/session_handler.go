@@ -43,14 +43,14 @@ func (h *SessionHandler) HandleGetSession(w http.ResponseWriter, r *http.Request
 	sessionData := middleware.GetSessionData(r.Context())
 
 	var response GetSessionResponse
-	if sessionData.IsAuthenticated {
+	if sessionData.IsAuthenticated() {
 		response = GetSessionResponse{
 			Authenticated: true,
-			UserID:        sessionData.UserID,
-			Username:      sessionData.Username,
-			AuthMethod:    string(sessionData.AuthMethod),
-			IsAdmin:       sessionData.IsAdmin,
-			UserGroups:    sessionData.UserGroups,
+			UserID:        sessionData.GetUsername(), // UserID is same as Username in our system
+			Username:      sessionData.GetUsername(),
+			AuthMethod:    string(sessionData.GetProviderType()),
+			IsAdmin:       sessionData.IsAdmin(),
+			UserGroups:    sessionData.GetUserGroupNames(),
 		}
 	} else {
 		response = GetSessionResponse{
@@ -66,7 +66,7 @@ func (h *SessionHandler) HandleGetSession(w http.ResponseWriter, r *http.Request
 // HandleDeleteSession handles requests to delete the current session (logout)
 func (h *SessionHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Request) {
 	sessionData := middleware.GetSessionData(r.Context())
-	if !sessionData.IsAuthenticated {
+	if !sessionData.IsAuthenticated() {
 		http.Error(w, "No active session", http.StatusBadRequest)
 		return
 	}
@@ -87,19 +87,13 @@ func (h *SessionHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Requ
 // HandleRefreshSession handles requests to refresh the current session
 func (h *SessionHandler) HandleRefreshSession(w http.ResponseWriter, r *http.Request) {
 	sessionData := middleware.GetSessionData(r.Context())
-	if !sessionData.IsAuthenticated {
+	if !sessionData.IsAuthenticated() {
 		http.Error(w, "No active session", http.StatusBadRequest)
 		return
 	}
 
-	// Default TTL of 24 hours if session has no expiry
+	// Default TTL of 24 hours
 	ttl := 24 * time.Hour
-	if sessionData.Expiry != nil {
-		ttl = time.Until(*sessionData.Expiry)
-		if ttl <= 0 {
-			ttl = 24 * time.Hour
-		}
-	}
 
 	// Refresh session and update cookie in one operation
 	if err := h.sessionManagementService.RefreshSessionAndCookie(r.Context(), w, r, ttl); err != nil {

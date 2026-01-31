@@ -145,8 +145,8 @@ func (af *AuthFactory) RegisterAuthMethod(authMethod auth.AuthMethod) {
 }
 
 // AuthenticateRequest authenticates an HTTP request using immutable AuthMethods
-// Returns an AuthenticationResponse containing the AuthContext with all permissions
-func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (*model.AuthenticationResponse, error) {
+// Returns an AuthContext interface with all authentication state and permissions
+func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (auth.AuthContext, error) {
 	af.mutex.RLock()
 	defer af.mutex.RUnlock()
 
@@ -197,56 +197,47 @@ func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formDat
 			continue
 		}
 
-		// If we got an authenticated context, build response
+		// If we got an authenticated context, return it
 		if authContext != nil && authContext.IsAuthenticated() {
-			// Build response using the AuthContext
-			response := model.NewAuthenticationResponse(
-				af.generateRequestID(),
-				true,
-				authContext.GetProviderType(),
-			)
-			response.AuthMethod = authContext.GetProviderType()
-			response.Username = authContext.GetUsername()
-			response.IsAdmin = authContext.IsAdmin()
-			response.UserGroups = authContext.GetUserGroupNames()
-			response.Permissions = authContext.GetAllNamespacePermissions()
-			response.CanPublish = authContext.CanPublishModuleVersion("")
-			response.CanUpload = authContext.CanUploadModuleVersion("")
-			response.CanAccessAPI = authContext.CanAccessReadAPI()
-			response.CanAccessTerraform = authContext.CanAccessTerraformAPI()
-			response.TerraformToken = af.getStringPtr(authContext.GetTerraformAuthToken())
-
-			// Set session ID if available
-			if sessionID != nil {
-				response.SessionID = sessionID
-			} else if data := authContext.GetProviderData(); data != nil {
-				if authSessionID, ok := data["session_id"].(string); ok && authSessionID != "" {
-					response.SessionID = &authSessionID
-				}
-			}
-
 			af.logger.Info().
 				Str("auth_method", string(authContext.GetProviderType())).
 				Str("username", authContext.GetUsername()).
 				Bool("is_admin", authContext.IsAdmin()).
 				Msg("Authentication successful")
 
-			return response, nil
+			return authContext, nil
 		}
 	}
 
 	// No authentication method succeeded - return NotAuthenticated
-	response := model.NewAuthenticationResponse(
-		af.generateRequestID(),
-		false,
-		auth.AuthMethodNotAuthenticated,
-	)
-	response.AuthMethod = auth.AuthMethodNotAuthenticated
-	response.Username = ""
-	response.CanAccessAPI = true // Not authenticated users can still access read API
-
 	af.logger.Debug().Msg("No authentication method succeeded, returning NotAuthenticated")
-	return response, nil
+	return NewNotAuthenticatedAuthContext(), nil
+}
+
+// NewAuthenticationResponseFromAuthContext creates AuthenticationResponse from AuthContext for HTTP responses
+// Used only when HTTP response is needed (e.g., for backward compatibility)
+func NewAuthenticationResponseFromAuthContext(authCtx auth.AuthContext) *model.AuthenticationResponse {
+	response := &model.AuthenticationResponse{
+		Success:           authCtx.IsAuthenticated(),
+		AuthMethod:        authCtx.GetProviderType(),
+		Username:          authCtx.GetUsername(),
+		IsAdmin:           authCtx.IsAdmin(),
+		UserGroups:        authCtx.GetUserGroupNames(),
+		Permissions:       authCtx.GetAllNamespacePermissions(),
+		CanPublish:        authCtx.CanPublishModuleVersion(""),
+		CanUpload:         authCtx.CanUploadModuleVersion(""),
+		CanAccessAPI:      authCtx.CanAccessReadAPI(),
+		CanAccessTerraform: authCtx.CanAccessTerraformAPI(),
+	}
+
+	// Set session ID from provider data if available
+	if data := authCtx.GetProviderData(); data != nil {
+		if authSessionID, ok := data["session_id"].(string); ok && authSessionID != "" {
+			response.SessionID = &authSessionID
+		}
+	}
+
+	return response
 }
 
 // CheckNamespacePermission checks if the current auth context has permission for a namespace

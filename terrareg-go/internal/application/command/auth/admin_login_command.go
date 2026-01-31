@@ -68,7 +68,7 @@ func (c *AdminLoginCommand) Execute(ctx context.Context, req *AdminLoginRequest)
 	}
 
 	// Verify authentication succeeded and this is an admin
-	if !response.Success || !response.IsAdmin {
+	if !response.IsAuthenticated() || !response.IsAdmin() {
 		return &AdminLoginResponse{
 			Authenticated: false,
 		}, fmt.Errorf("not an admin authentication token")
@@ -80,7 +80,7 @@ func (c *AdminLoginCommand) Execute(ctx context.Context, req *AdminLoginRequest)
 	providerData := map[string]interface{}{
 		"auth_method": "ADMIN_API_KEY",
 		"is_admin":    true,
-		"username":    response.Username,
+		"username":    response.GetUsername(),
 	}
 	providerDataBytes, _ := json.Marshal(providerData)
 

@@ -16,7 +16,6 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 )
 
 // CreateTestSession creates a test session in the database and returns the session ID
@@ -164,15 +163,15 @@ func CreateAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, met
 		Expiry:     &expiry,
 	}
 
-	// Create authentication context with session data
-	authCtx := &model.AuthContext{
-		SessionID:       sessionID,
-		UserID:          username,
-		Username:        username,
-		AuthMethod:      "session_password",
-		IsAdmin:         isAdmin,
-		IsAuthenticated: true,
-		Expiry:          &expiry,
+	// Create a test auth context for setting in the request context
+	// This allows handlers to use middleware.GetSessionData() in tests
+	authCtx := &testAuthContext{
+		sessionID:       sessionID,
+		username:        username,
+		authMethod:      "session_password",
+		isAdmin:         isAdmin,
+		isAuthenticated: true,
+		expiry:          &expiry,
 	}
 
 	// Encrypt session data for cookie
@@ -187,6 +186,83 @@ func CreateAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, met
 	req = req.WithContext(middleware.WithAuthenticationContext(req.Context(), authCtx))
 
 	return req, cookieValue
+}
+
+// testAuthContext is a simple auth.AuthContext implementation for testing
+type testAuthContext struct {
+	sessionID       string
+	username        string
+	authMethod      string
+	isAdmin         bool
+	isAuthenticated bool
+	expiry          *time.Time
+}
+
+// Implement auth.AuthContext interface
+func (t *testAuthContext) IsBuiltInAdmin() bool {
+	return false
+}
+
+func (t *testAuthContext) IsAdmin() bool {
+	return t.isAdmin
+}
+
+func (t *testAuthContext) IsAuthenticated() bool {
+	return t.isAuthenticated
+}
+
+func (t *testAuthContext) RequiresCSRF() bool {
+	return true
+}
+
+func (t *testAuthContext) CheckAuthState() bool {
+	return t.isAuthenticated
+}
+
+func (t *testAuthContext) CanPublishModuleVersion(namespace string) bool {
+	return t.isAdmin
+}
+
+func (t *testAuthContext) CanUploadModuleVersion(namespace string) bool {
+	return t.isAdmin
+}
+
+func (t *testAuthContext) CheckNamespaceAccess(permissionType, namespace string) bool {
+	return t.isAdmin
+}
+
+func (t *testAuthContext) GetAllNamespacePermissions() map[string]string {
+	return make(map[string]string)
+}
+
+func (t *testAuthContext) GetUsername() string {
+	return t.username
+}
+
+func (t *testAuthContext) GetUserGroupNames() []string {
+	return []string{}
+}
+
+func (t *testAuthContext) CanAccessReadAPI() bool {
+	return true
+}
+
+func (t *testAuthContext) CanAccessTerraformAPI() bool {
+	return false
+}
+
+func (t *testAuthContext) GetTerraformAuthToken() string {
+	return ""
+}
+
+func (t *testAuthContext) GetProviderType() auth.AuthMethodType {
+	return auth.AuthMethodType(t.authMethod)
+}
+
+func (t *testAuthContext) GetProviderData() map[string]interface{} {
+	data := make(map[string]interface{})
+	data["session_id"] = t.sessionID
+	return data
 }
 
 // AssertSessionExists verifies that a session exists in the database

@@ -108,8 +108,8 @@ func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishMo
 
 	// Log audit event (synchronous)
 	username := "system"
-	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-		username = authCtx.Username
+	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated() {
+		username = authCtx.GetUsername()
 	}
 
 	// Log the version index and publish

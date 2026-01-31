@@ -200,8 +200,8 @@ func (h *ProviderSourceAPIHandler) HandlePublishProvider(w http.ResponseWriter, 
 	authCtx := terrareg_middleware.GetAuthContext(ctx)
 
 	// Python reference: lines 72-74 - ensure user is GitHub authenticated OR admin
-	isAdmin := authCtx.IsAdmin
-	hasGithubAuth := authCtx.IsAuthenticated && authCtx.AuthMethod == "github"
+	isAdmin := authCtx.IsAdmin()
+	hasGithubAuth := authCtx.IsAuthenticated() && authCtx.GetProviderType() == "github"
 
 	// If not admin and not GitHub auth, return 403 immediately
 	// This matches Python behavior where permission check fails before repository lookup
@@ -226,7 +226,7 @@ func (h *ProviderSourceAPIHandler) HandlePublishProvider(w http.ResponseWriter, 
 	// Check namespace permission (additional check for non-admins)
 	// Python reference: decorator with check_namespace_access (FULL permission)
 	if !isAdmin {
-		hasFullPermission := authCtx.HasPermission("FULL", repository.Owner)
+		hasFullPermission := authCtx.CheckNamespaceAccess("FULL", repository.Owner)
 		if !hasFullPermission {
 			RespondError(w, http.StatusForbidden, "Insufficient permissions")
 			return
@@ -270,8 +270,12 @@ func (h *ProviderSourceAPIHandler) HandlePublishProvider(w http.ResponseWriter, 
 
 func getSessionIDFromContext(ctx context.Context) string {
 	authCtx := terrareg_middleware.GetAuthContext(ctx)
-	if authCtx != nil && authCtx.IsAuthenticated {
-		return authCtx.SessionID
+	if authCtx != nil && authCtx.IsAuthenticated() {
+		if data := authCtx.GetProviderData(); data != nil {
+			if sessionID, ok := data["session_id"].(string); ok {
+				return sessionID
+			}
+		}
 	}
 	return ""
 }
@@ -279,7 +283,7 @@ func getSessionIDFromContext(ctx context.Context) string {
 func getIsAdminFromContext(ctx context.Context) bool {
 	authCtx := terrareg_middleware.GetAuthContext(ctx)
 	if authCtx != nil {
-		return authCtx.IsAdmin
+		return authCtx.IsAdmin()
 	}
 	return false
 }

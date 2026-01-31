@@ -6,9 +6,8 @@ import (
 
 	"github.com/rs/zerolog"
 
-	domainAuthModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 )
 
 // SessionMiddleware handles session management for HTTP requests
@@ -33,59 +32,23 @@ func (m *SessionMiddleware) Session(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Use auth factory to validate request
-		authResponse, err := m.authFactory.AuthenticateRequest(ctx, getHeadersMap(r), getFormDataMap(r), getQueryParamsMap(r))
+		// Use auth factory to validate request - now returns domain AuthContext directly
+		authCtx, err := m.authFactory.AuthenticateRequest(ctx, getHeadersMap(r), getFormDataMap(r), getQueryParamsMap(r))
 		if err != nil {
 			// Log error but continue without authentication
 			m.logger.Debug().Err(err).Msg("Failed to validate authentication, continuing without auth")
-			// Set unauthenticated context and continue
-			ctx = context.WithValue(ctx, middlewareAuthContextKey, &model.AuthContext{
-				IsAuthenticated: false,
-			})
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
+			// Set not authenticated context and continue
+			authCtx = authservice.NewNotAuthenticatedAuthContext()
 		}
 
-		// Convert AuthenticationResponse to model.AuthContext for handler use
-		authCtx := m.createAuthContext(authResponse)
-
-		// Add authentication context to request context
-		ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+		// Add domain auth context to request context
+		ctx = context.WithValue(ctx, authContextKey, authCtx)
 
 		// Update the request with the new context
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// createAuthContext creates a model.AuthContext from domain AuthenticationResponse
-func (m *SessionMiddleware) createAuthContext(authResponse *domainAuthModel.AuthenticationResponse) *model.AuthContext {
-	if authResponse == nil || !authResponse.Success {
-		return &model.AuthContext{
-			IsAuthenticated: false,
-		}
-	}
-
-	authCtx := &model.AuthContext{
-		AuthMethod:      authResponse.AuthMethod,
-		Username:        authResponse.Username,
-		IsAdmin:         authResponse.IsAdmin,
-		Permissions:     authResponse.Permissions,
-		IsAuthenticated: true,
-		UserGroups:      authResponse.UserGroups,
-		// UserID is not available in AuthenticationResponse, using empty string
-		UserID: "",
-		// Expiry - use TokenExpiry if available
-		Expiry: authResponse.TokenExpiry,
-	}
-
-	// Set session ID if available
-	if authResponse.SessionID != nil {
-		authCtx.SessionID = *authResponse.SessionID
-	}
-
-	return authCtx
 }
 
 // Helper functions to extract request data
@@ -132,16 +95,18 @@ func GetCSRFToken(ctx context.Context) string {
 
 // GetSessionData is a compatibility function that returns auth context
 // This maps the old GetSessionData API to the new GetAuthContext API
-func GetSessionData(ctx context.Context) *model.AuthContext {
+// Returns domain auth.AuthContext interface - never nil
+func GetSessionData(ctx context.Context) auth.AuthContext {
 	return GetAuthContext(ctx)
 }
 
 // GetAuthenticationContext is an alias for GetAuthContext for compatibility
-func GetAuthenticationContext(ctx context.Context) *model.AuthContext {
+// Returns domain auth.AuthContext interface - never nil
+func GetAuthenticationContext(ctx context.Context) auth.AuthContext {
 	return GetAuthContext(ctx)
 }
 
 // WithAuthenticationContext sets auth context in the request context (for testing compatibility)
-func WithAuthenticationContext(ctx context.Context, authCtx *model.AuthContext) context.Context {
-	return context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+func WithAuthenticationContext(ctx context.Context, authCtx auth.AuthContext) context.Context {
+	return context.WithValue(ctx, authContextKey, authCtx)
 }

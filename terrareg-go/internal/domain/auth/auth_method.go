@@ -88,61 +88,13 @@ const (
 )
 
 // BaseAuthMethod provides common functionality for authentication methods
+// AuthMethods are factories that create AuthContext instances.
+// AuthContext interface methods belong in BaseAuthContextImplementation, NOT here.
 type BaseAuthMethod struct{}
 
 // NewBaseAuthMethod creates a new base authentication method
 func NewBaseAuthMethod() *BaseAuthMethod {
 	return &BaseAuthMethod{}
-}
-
-// Default implementations for BaseAuthMethod
-
-func (b *BaseAuthMethod) IsBuiltInAdmin() bool {
-	return false
-}
-
-func (b *BaseAuthMethod) IsAdmin() bool {
-	return false
-}
-
-func (b *BaseAuthMethod) IsAuthenticated() bool {
-	return true
-}
-
-func (b *BaseAuthMethod) RequiresCSRF() bool {
-	return true
-}
-
-func (b *BaseAuthMethod) CanPublishModuleVersion(namespace string) bool {
-	return false
-}
-
-func (b *BaseAuthMethod) CanUploadModuleVersion(namespace string) bool {
-	return false
-}
-
-func (b *BaseAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
-	return false
-}
-
-func (b *BaseAuthMethod) GetAllNamespacePermissions() map[string]string {
-	return make(map[string]string)
-}
-
-func (b *BaseAuthMethod) CanAccessReadAPI() bool {
-	return true
-}
-
-func (b *BaseAuthMethod) CanAccessTerraformAPI() bool {
-	return false
-}
-
-func (b *BaseAuthMethod) GetTerraformAuthToken() string {
-	return ""
-}
-
-func (b *BaseAuthMethod) GetProviderData() map[string]interface{} {
-	return make(map[string]interface{})
 }
 
 // BaseAuthContext provides common context for all auth contexts

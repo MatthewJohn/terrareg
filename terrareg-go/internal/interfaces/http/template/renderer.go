@@ -197,13 +197,13 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 
 	// Add authentication context for templates
 	sessionData := middleware.GetSessionData(ctx)
-	if sessionData != nil {
+	if sessionData.IsAuthenticated() {
 		data["session_authenticated"] = true
-		data["session_username"] = sessionData.Username
-		data["session_user_id"] = sessionData.SessionID // Use SessionID as fallback since UserID is not in new SessionData
-		data["session_is_admin"] = sessionData.IsAdmin
-		data["session_auth_method"] = sessionData.AuthMethod
-		data["session_user_groups"] = []string{} // Empty slice since UserGroups is not in new SessionData
+		data["session_username"] = sessionData.GetUsername()
+		data["session_user_id"] = "" // Domain AuthContext doesn't expose UserID directly
+		data["session_is_admin"] = sessionData.IsAdmin()
+		data["session_auth_method"] = string(sessionData.GetProviderType())
+		data["session_user_groups"] = sessionData.GetUserGroupNames()
 	} else {
 		data["session_authenticated"] = false
 		data["session_username"] = ""

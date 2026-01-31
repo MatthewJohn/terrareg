@@ -1367,8 +1367,8 @@ func (h *ModuleHandler) HandleModuleVersionSourceDownload(w http.ResponseWriter,
 
 		// Get auth token from context if authenticated
 		authUsername := ""
-		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-			authUsername = authCtx.Username
+		if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated() {
+			authUsername = authCtx.GetUsername()
 		}
 
 		// Create analytics recording request

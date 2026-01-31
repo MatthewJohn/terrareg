@@ -12,10 +12,36 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	provider_source_service "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 )
+
+// mockAuthContext is a mock implementation of auth.AuthContext for testing
+type mockAuthContext struct {
+	isAuthenticated bool
+	authMethod      string
+	username        string
+	isAdmin         bool
+	userGroups      []string
+	permissions     map[string]string
+}
+
+func (m *mockAuthContext) IsBuiltInAdmin() bool                      { return false }
+func (m *mockAuthContext) IsAdmin() bool                            { return m.isAdmin }
+func (m *mockAuthContext) IsAuthenticated() bool                    { return m.isAuthenticated }
+func (m *mockAuthContext) RequiresCSRF() bool                       { return false }
+func (m *mockAuthContext) CheckAuthState() bool                     { return false }
+func (m *mockAuthContext) CanPublishModuleVersion(string) bool      { return true }
+func (m *mockAuthContext) CanUploadModuleVersion(string) bool        { return true }
+func (m *mockAuthContext) CheckNamespaceAccess(_, _ string) bool     { return true }
+func (m *mockAuthContext) GetAllNamespacePermissions() map[string]string { return m.permissions }
+func (m *mockAuthContext) GetUsername() string                       { return m.username }
+func (m *mockAuthContext) GetUserGroupNames() []string              { return m.userGroups }
+func (m *mockAuthContext) CanAccessReadAPI() bool                   { return true }
+func (m *mockAuthContext) CanAccessTerraformAPI() bool               { return true }
+func (m *mockAuthContext) GetTerraformAuthToken() string             { return "" }
+func (m *mockAuthContext) GetProviderType() auth.AuthMethodType      { return auth.AuthMethodType(m.authMethod) }
+func (m *mockAuthContext) GetProviderData() map[string]interface{}  { return nil }
 
 // MockProviderSourceFactory for testing
 type MockProviderSourceFactory struct {
@@ -153,33 +179,6 @@ func (m *MockAuthenticationService) ValidateRequest(ctx context.Context, r *http
 		isAuthenticated: false,
 	}, nil
 }
-
-// mockAuthContext is a mock implementation of auth.AuthContext for testing
-type mockAuthContext struct {
-	isAuthenticated bool
-	authMethod     string
-	username       string
-	isAdmin        bool
-	userGroups     []string
-	permissions    map[string]string
-}
-
-func (m *mockAuthContext) IsBuiltInAdmin() bool                      { return false }
-func (m *mockAuthContext) IsAdmin() bool                            { return m.isAdmin }
-func (m *mockAuthContext) IsAuthenticated() bool                    { return m.isAuthenticated }
-func (m *mockAuthContext) RequiresCSRF() bool                       { return false }
-func (m *mockAuthContext) CheckAuthState() bool                     { return false }
-func (m *mockAuthContext) CanPublishModuleVersion(string) bool      { return true }
-func (m *mockAuthContext) CanUploadModuleVersion(string) bool        { return true }
-func (m *mockAuthContext) CheckNamespaceAccess(_, _ string) bool     { return true }
-func (m *mockAuthContext) GetAllNamespacePermissions() map[string]string { return m.permissions }
-func (m *mockAuthContext) GetUsername() string                       { return m.username }
-func (m *mockAuthContext) GetUserGroupNames() []string              { return m.userGroups }
-func (m *mockAuthContext) CanAccessReadAPI() bool                   { return true }
-func (m *mockAuthContext) CanAccessTerraformAPI() bool               { return true }
-func (m *mockAuthContext) GetTerraformAuthToken() string             { return "" }
-func (m *mockAuthContext) GetProviderType() auth.AuthMethodType      { return auth.AuthMethodType(m.authMethod) }
-func (m *mockAuthContext) GetProviderData() map[string]interface{}  { return nil }
 
 // TestNewProviderSourceHandler tests the constructor
 func TestNewProviderSourceHandler(t *testing.T) {
@@ -501,10 +500,10 @@ func TestProviderSourceHandler_HandleAuthStatus(t *testing.T) {
 
 			// Set auth context in request if authenticated
 			if tt.isAuthenticated {
-				authCtx := &model.AuthContext{
-					IsAuthenticated: true,
-					AuthMethod:     auth.AuthMethodGitHub,
-					Username:       "test-user",
+				authCtx := &mockAuthContext{
+					isAuthenticated: true,
+					authMethod:      string(auth.AuthMethodGitHub),
+					username:        "test-user",
 				}
 				req = req.WithContext(middleware.WithAuthenticationContext(req.Context(), authCtx))
 			}

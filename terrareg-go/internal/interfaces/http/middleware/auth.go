@@ -8,17 +8,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	domainAuthModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware/model"
 )
 
-// authMiddlewareKeyType is a custom type for auth middleware context keys
-type authMiddlewareKeyType string
+// authContextKeyType is a custom type for auth context keys
+type authContextKeyType string
 
 const (
-	middlewareAuthContextKey authMiddlewareKeyType = "auth_middleware_context"
+	authContextKey authContextKeyType = "domain_auth_context"
 )
 
 // AuthMiddleware provides authentication middleware
@@ -33,30 +31,6 @@ func NewAuthMiddleware(cfg *domainConfig.DomainConfig, authFactory *authservice.
 		domainConfig: cfg,
 		authFactory:  authFactory,
 	}
-}
-
-// createAuthContext creates a structured AuthContext from authentication response
-func (m *AuthMiddleware) createAuthContext(authResponse *domainAuthModel.AuthenticationResponse) *model.AuthContext {
-	if authResponse == nil || !authResponse.Success {
-		return &model.AuthContext{
-			IsAuthenticated: false,
-		}
-	}
-
-	authCtx := &model.AuthContext{
-		AuthMethod:      authResponse.AuthMethod,
-		Username:        authResponse.Username,
-		IsAdmin:         authResponse.IsAdmin,
-		Permissions:     authResponse.Permissions,
-		IsAuthenticated: true,
-	}
-
-	// Set session ID if available
-	if authResponse.SessionID != nil {
-		authCtx.SessionID = *authResponse.SessionID
-	}
-
-	return authCtx
 }
 
 // extractRequestData extracts headers, form data, and query params from request
@@ -83,7 +57,7 @@ func (m *AuthMiddleware) extractRequestData(r *http.Request) (map[string]string,
 }
 
 // authenticateRequest performs common authentication logic
-func (m *AuthMiddleware) authenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (*domainAuthModel.AuthenticationResponse, error) {
+func (m *AuthMiddleware) authenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (auth.AuthContext, error) {
 	return m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams)
 }
 
@@ -96,15 +70,14 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 		headers, formData, queryParams := m.extractRequestData(r)
 
 		// Authenticate the request
-		authResponse, err := m.authenticateRequest(ctx, headers, formData, queryParams)
-		if err != nil || authResponse == nil || !authResponse.Success {
+		authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
+		if err != nil || authCtx == nil || !authCtx.IsAuthenticated() {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		// Create and set auth context
-		authCtx := m.createAuthContext(authResponse)
-		ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+		// Set auth context
+		ctx = context.WithValue(ctx, authContextKey, authCtx)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -119,50 +92,56 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 		headers, formData, queryParams := m.extractRequestData(r)
 
 		// Try to authenticate the request (optional)
-		if authResponse, err := m.authenticateRequest(ctx, headers, formData, queryParams); err == nil {
-			authCtx := m.createAuthContext(authResponse)
-			ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
-		} else {
-			// Set empty auth context for consistency
-			authCtx := &model.AuthContext{IsAuthenticated: false}
-			ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+		authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
+		if err != nil || authCtx == nil {
+			// Set not authenticated context for consistency
+			authCtx = authservice.NewNotAuthenticatedAuthContext()
 		}
+
+		// Set auth context (authenticated or not)
+		ctx = context.WithValue(ctx, authContextKey, authCtx)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// GetAuthContext retrieves the complete auth context from the request context
-func GetAuthContext(ctx context.Context) *model.AuthContext {
-	if authCtx, ok := ctx.Value(middlewareAuthContextKey).(*model.AuthContext); ok {
+// GetAuthContext retrieves the auth context from the request context
+// Returns domain auth.AuthContext interface - never nil (returns NotAuthenticatedAuthContext if not set)
+func GetAuthContext(ctx context.Context) auth.AuthContext {
+	if authCtx, ok := ctx.Value(authContextKey).(auth.AuthContext); ok {
 		return authCtx
 	}
-	return &model.AuthContext{IsAuthenticated: false}
+	// Return not authenticated context as default
+	return authservice.NewNotAuthenticatedAuthContext()
 }
 
 // GetAuthMethodFromContext retrieves the auth method from the request context
 func GetAuthMethodFromContext(ctx context.Context) (auth.AuthMethodType, bool) {
 	authCtx := GetAuthContext(ctx)
-	return authCtx.AuthMethod, authCtx.IsAuthenticated
+	return authCtx.GetProviderType(), authCtx.IsAuthenticated()
 }
 
 // GetUserFromContext retrieves the user from the request context
 func GetUserFromContext(ctx context.Context) (string, bool) {
 	authCtx := GetAuthContext(ctx)
-	return authCtx.Username, authCtx.IsAuthenticated
+	return authCtx.GetUsername(), authCtx.IsAuthenticated()
 }
 
 // GetIsAdminFromContext retrieves admin status from context
 func GetIsAdminFromContext(ctx context.Context) bool {
 	authCtx := GetAuthContext(ctx)
-	return authCtx.IsAuthenticated && authCtx.IsAdmin
+	return authCtx.IsAuthenticated() && authCtx.IsAdmin()
 }
 
 // GetSessionIDFromContext retrieves session ID from context
 func GetSessionIDFromContext(ctx context.Context) string {
 	authCtx := GetAuthContext(ctx)
-	if authCtx.IsAuthenticated {
-		return authCtx.SessionID
+	if authCtx.IsAuthenticated() {
+		if data := authCtx.GetProviderData(); data != nil {
+			if sessionID, ok := data["session_id"].(string); ok {
+				return sessionID
+			}
+		}
 	}
 	return ""
 }
@@ -170,8 +149,8 @@ func GetSessionIDFromContext(ctx context.Context) string {
 // GetPermissionsFromContext retrieves user permissions from context
 func GetPermissionsFromContext(ctx context.Context) (map[string]string, bool) {
 	authCtx := GetAuthContext(ctx)
-	if authCtx.IsAuthenticated {
-		return authCtx.Permissions, true
+	if authCtx.IsAuthenticated() {
+		return authCtx.GetAllNamespacePermissions(), true
 	}
 	return nil, false
 }
@@ -179,7 +158,7 @@ func GetPermissionsFromContext(ctx context.Context) (map[string]string, bool) {
 // CheckNamespacePermission checks if the current user has permission for a namespace
 func (m *AuthMiddleware) CheckNamespacePermission(ctx context.Context, permissionType, namespace string) bool {
 	authCtx := GetAuthContext(ctx)
-	return authCtx.HasPermission(permissionType, namespace)
+	return authCtx.CheckNamespaceAccess(permissionType, namespace)
 }
 
 // RequireAdmin is a middleware that requires admin authentication
@@ -191,15 +170,14 @@ func (m *AuthMiddleware) RequireAdmin(next http.Handler) http.Handler {
 		headers, formData, queryParams := m.extractRequestData(r)
 
 		// Authenticate the request
-		authResponse, err := m.authenticateRequest(ctx, headers, formData, queryParams)
-		if err != nil || authResponse == nil || !authResponse.Success || !authResponse.IsAdmin {
+		authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
+		if err != nil || authCtx == nil || !authCtx.IsAuthenticated() || !authCtx.IsAdmin() {
 			http.Error(w, "Admin access required", http.StatusForbidden)
 			return
 		}
 
-		// Create and set auth context
-		authCtx := m.createAuthContext(authResponse)
-		ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+		// Set auth context
+		ctx = context.WithValue(ctx, authContextKey, authCtx)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -215,8 +193,8 @@ func (m *AuthMiddleware) RequireNamespacePermission(permissionType, namespacePar
 			headers, formData, queryParams := m.extractRequestData(r)
 
 			// Authenticate the request
-			authResponse, err := m.authenticateRequest(ctx, headers, formData, queryParams)
-			if err != nil || authResponse == nil || !authResponse.Success {
+			authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
+			if err != nil || authCtx == nil || !authCtx.IsAuthenticated() {
 				http.Error(w, "Authentication required", http.StatusUnauthorized)
 				return
 			}
@@ -234,15 +212,14 @@ func (m *AuthMiddleware) RequireNamespacePermission(permissionType, namespacePar
 				return
 			}
 
-			// Create auth context and check namespace permission
-			authCtx := m.createAuthContext(authResponse)
-			if !authCtx.HasPermission(permissionType, namespaceName) {
+			// Check namespace permission using domain auth context
+			if !authCtx.CheckNamespaceAccess(permissionType, namespaceName) {
 				http.Error(w, "Insufficient permissions", http.StatusForbidden)
 				return
 			}
 
 			// Set auth context
-			ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+			ctx = context.WithValue(ctx, authContextKey, authCtx)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -259,8 +236,8 @@ func (m *AuthMiddleware) RequireUploadPermission(namespaceParam string) func(htt
 			headers, formData, queryParams := m.extractRequestData(r)
 
 			// Authenticate the request
-			authResponse, err := m.authenticateRequest(ctx, headers, formData, queryParams)
-			if err != nil || authResponse == nil || !authResponse.Success {
+			authCtx, err := m.authenticateRequest(ctx, headers, formData, queryParams)
+			if err != nil || authCtx == nil || !authCtx.IsAuthenticated() {
 				http.Error(w, "Authentication required", http.StatusUnauthorized)
 				return
 			}
@@ -280,18 +257,16 @@ func (m *AuthMiddleware) RequireUploadPermission(namespaceParam string) func(htt
 
 			// Check if the authenticated user can upload to this namespace
 			// Admin users can upload to any namespace
-			if !authResponse.IsAdmin {
-				// For non-admin users, check namespace-specific permissions
-				permission, hasPermission := authResponse.Permissions[namespaceName]
-				if !hasPermission || (permission != "FULL" && permission != "MODIFY") {
+			if !authCtx.IsAdmin() {
+				// For non-admin users, check namespace-specific permissions using domain method
+				if !authCtx.CheckNamespaceAccess("FULL", namespaceName) && !authCtx.CheckNamespaceAccess("MODIFY", namespaceName) {
 					http.Error(w, "Insufficient upload permissions", http.StatusForbidden)
 					return
 				}
 			}
 
-			// Create and set auth context
-			authCtx := m.createAuthContext(authResponse)
-			ctx = context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+			// Set auth context
+			ctx = context.WithValue(ctx, authContextKey, authCtx)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -299,8 +274,8 @@ func (m *AuthMiddleware) RequireUploadPermission(namespaceParam string) func(htt
 }
 
 // SetAuthContextInContext sets the auth context in the request context
-func SetAuthContextInContext(ctx context.Context, authCtx *model.AuthContext) context.Context {
-	return context.WithValue(ctx, middlewareAuthContextKey, authCtx)
+func SetAuthContextInContext(ctx context.Context, authCtx auth.AuthContext) context.Context {
+	return context.WithValue(ctx, authContextKey, authCtx)
 }
 
 // decodeJSON parses JSON from request body

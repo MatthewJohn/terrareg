@@ -186,12 +186,12 @@ func (h *ProviderSourceHandler) HandleAuthStatus(w http.ResponseWriter, r *http.
 
 	// Try to get auth context from middleware
 	authCtx := middleware.GetSessionData(r.Context())
-	if authCtx != nil && authCtx.IsAuthenticated {
+	if authCtx != nil && authCtx.IsAuthenticated() {
 		response["authenticated"] = true
-		response["username"] = authCtx.Username
+		response["username"] = authCtx.GetUsername()
 
 		// Only include auth_method for provider source authentication types (not built-in admin)
-		authMethod := string(authCtx.AuthMethod)
+		authMethod := string(authCtx.GetProviderType())
 		if authMethod != "" && authMethod != string(auth.AuthMethodNotAuthenticated) {
 			response["auth_method"] = authMethod
 		}

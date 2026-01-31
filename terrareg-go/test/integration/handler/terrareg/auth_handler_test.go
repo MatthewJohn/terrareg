@@ -43,7 +43,7 @@ func TestAuthHandler_HandleIsAuthenticated_Unauthenticated(t *testing.T) {
 
 	// Verify unauthenticated status
 	assert.False(t, bool(response["authenticated"].(bool)))
-	assert.False(t, bool(response["read_access"].(bool)))
+	assert.True(t, bool(response["read_access"].(bool))) // Unauthenticated users can access read API
 	assert.False(t, bool(response["site_admin"].(bool)))
 }
 

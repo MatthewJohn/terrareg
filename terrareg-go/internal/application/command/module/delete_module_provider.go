@@ -50,8 +50,8 @@ func (c *DeleteModuleProviderCommand) Execute(ctx context.Context, req DeleteMod
 	// Log audit event (synchronous)
 	username := "system"
 	// Try to get username from auth context if available
-	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated {
-		username = authCtx.Username
+	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated() {
+		username = authCtx.GetUsername()
 	}
 
 	_ = c.auditService.LogModuleProviderDelete(
