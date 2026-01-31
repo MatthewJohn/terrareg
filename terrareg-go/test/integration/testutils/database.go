@@ -661,6 +661,13 @@ func WithPublicURL(publicURL string) InfraConfigOption {
 	}
 }
 
+// WithAllowUnauthenticatedAccess sets whether unauthenticated users can access the read API
+func WithAllowUnauthenticatedAccess(allow bool) InfraConfigOption {
+	return func(cfg *config.InfrastructureConfig) {
+		cfg.AllowUnauthenticatedAccess = allow
+	}
+}
+
 // CreateTestWebhookHandler creates a test webhook handler with proper dependencies
 // It uses the container to wire all dependencies together
 func CreateTestWebhookHandler(t *testing.T, db *sqldb.Database, uploadAPIKeys []string) *webhook.ModuleWebhookHandler {

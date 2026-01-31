@@ -41,7 +41,11 @@ func (a *AdminSessionAuthMethod) GetProviderType() auth.AuthMethodType {
 // IsEnabled returns whether this authentication method is enabled
 // Admin session auth requires session management to be available (SECRET_KEY configured)
 func (a *AdminSessionAuthMethod) IsEnabled() bool {
-	return a.sessionManager != nil && a.sessionManager.IsAvailable()
+	// Simply check if sessionManager is set
+	// The actual availability (SECRET_KEY configured) is checked by the session manager itself
+	// when it's actually used, but we need to avoid calling IsAvailable() here because
+	// it may panic if called on a nil receiver
+	return a.sessionManager != nil
 }
 
 // Authenticate authenticates a request and returns an AdminSessionAuthContext

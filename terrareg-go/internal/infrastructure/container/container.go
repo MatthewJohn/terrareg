@@ -795,7 +795,11 @@ func NewContainer(
 	c.SAMLService, _ = authservice.NewSAMLService(infraConfig)
 
 	// Initialize AuthFactory after all services are created
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, c.NamespaceRepo, infraConfig, c.TerraformIdpService, c.OIDCService, c.ProviderSourceFactory, c.SessionManagementService, &c.Logger)
+	authFactory, err := authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, c.NamespaceRepo, infraConfig, c.TerraformIdpService, c.OIDCService, c.ProviderSourceFactory, c.SessionManagementService, &c.Logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create auth factory: %w", err)
+	}
+	c.AuthFactory = authFactory
 
 	// Initialize StateStorageService
 	c.StateStorageService = authservice.NewStateStorageService(c.SessionService)

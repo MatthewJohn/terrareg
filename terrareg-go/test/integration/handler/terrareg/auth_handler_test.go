@@ -13,12 +13,13 @@ import (
 )
 
 // TestAuthHandler_HandleIsAuthenticated_Unauthenticated tests the is_authenticated endpoint for unauthenticated requests
+// with AllowUnauthenticatedAccess enabled (default behavior)
 func TestAuthHandler_HandleIsAuthenticated_Unauthenticated(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	// Get the real server router from the container
-	cont := testutils.CreateTestContainer(t, db)
+	// Create container with AllowUnauthenticatedAccess explicitly set to true (default behavior)
+	cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithAllowUnauthenticatedAccess(true))
 	router := cont.Server.Router()
 
 	// Create request to is_authenticated endpoint
@@ -43,7 +44,43 @@ func TestAuthHandler_HandleIsAuthenticated_Unauthenticated(t *testing.T) {
 
 	// Verify unauthenticated status
 	assert.False(t, bool(response["authenticated"].(bool)))
-	assert.True(t, bool(response["read_access"].(bool))) // Unauthenticated users can access read API
+	assert.True(t, bool(response["read_access"].(bool))) // Unauthenticated users can access read API when enabled
+	assert.False(t, bool(response["site_admin"].(bool)))
+}
+
+// TestAuthHandler_HandleIsAuthenticated_Unauthenticated_AccessDisabled tests the is_authenticated endpoint
+// for unauthenticated requests when AllowUnauthenticatedAccess is disabled
+func TestAuthHandler_HandleIsAuthenticated_Unauthenticated_AccessDisabled(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	// Create container with AllowUnauthenticatedAccess explicitly set to false
+	cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithAllowUnauthenticatedAccess(false))
+	router := cont.Server.Router()
+
+	// Create request to is_authenticated endpoint
+	req := httptest.NewRequest("GET", "/v1/terrareg/auth/admin/is_authenticated", nil)
+	w := httptest.NewRecorder()
+
+	// Serve the request
+	router.ServeHTTP(w, req)
+
+	// Should return 200 OK with unauthenticated status
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	// Verify response structure
+	assert.Contains(t, response, "authenticated")
+	assert.Contains(t, response, "read_access")
+	assert.Contains(t, response, "site_admin")
+	assert.Contains(t, response, "namespace_permissions")
+
+	// Verify unauthenticated status
+	assert.False(t, bool(response["authenticated"].(bool)))
+	assert.False(t, bool(response["read_access"].(bool))) // Unauthenticated users cannot access read API when disabled
 	assert.False(t, bool(response["site_admin"].(bool)))
 }
 

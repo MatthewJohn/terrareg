@@ -31,6 +31,7 @@ type AuthFactory struct {
 }
 
 // NewAuthFactory creates a new immutable authentication factory
+// Returns an error if required dependencies are nil
 func NewAuthFactory(
 	sessionRepo repository.SessionRepository,
 	userGroupRepo repository.UserGroupRepository,
@@ -41,7 +42,26 @@ func NewAuthFactory(
 	providerSourceFactory *provider_source_service.ProviderSourceFactory,
 	sessionManagementService *SessionManagementService,
 	logger *zerolog.Logger,
-) *AuthFactory {
+) (*AuthFactory, error) {
+	// Validate required dependencies
+	if sessionRepo == nil {
+		return nil, fmt.Errorf("sessionRepo is required")
+	}
+	if userGroupRepo == nil {
+		return nil, fmt.Errorf("userGroupRepo is required")
+	}
+	if namespaceRepo == nil {
+		return nil, fmt.Errorf("namespaceRepo is required")
+	}
+	if config == nil {
+		return nil, fmt.Errorf("config is required")
+	}
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
+	}
+	// providerSourceFactory and sessionManagementService are optional for now
+	// to maintain backward compatibility, but this should be reviewed
+
 	factory := &AuthFactory{
 		authMethods:              make([]auth.AuthMethod, 0),
 		sessionRepo:              sessionRepo,
@@ -56,7 +76,7 @@ func NewAuthFactory(
 	// Initialize immutable auth methods in priority order
 	factory.initializeAuthMethods(terraformIdpService, oidcService)
 
-	return factory
+	return factory, nil
 }
 
 // initializeAuthMethods sets up immutable authentication methods in priority order
@@ -79,14 +99,16 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 		af.RegisterAuthMethod(adminApiKeyAuthMethod)
 	}
 
-	// 2. Admin Session auth method
-	adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(
-		af.sessionRepo,
-		af.userGroupRepo,
-		af.namespaceRepo,
-		af.sessionManagementService,
-	)
-	af.RegisterAuthMethod(adminSessionAuthMethod)
+	// 2. Admin Session auth method - only register if session management is available (SECRET_KEY configured)
+	if af.sessionManagementService != nil {
+		adminSessionAuthMethod := infraAuth.NewAdminSessionAuthMethod(
+			af.sessionRepo,
+			af.userGroupRepo,
+			af.namespaceRepo,
+			af.sessionManagementService,
+		)
+		af.RegisterAuthMethod(adminSessionAuthMethod)
+	}
 
 	// 3. Upload API Key auth method
 	uploadApiKeyAuthMethod := infraAuth.NewUploadApiKeyAuthMethod(af.config)
