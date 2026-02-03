@@ -149,7 +149,8 @@ func TestModifyEndpoints_AllAuthMethods(t *testing.T) {
 			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 			_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-			authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+			cont := testutils.CreateTestServer(t, db)
+		authHelper := testutils.NewAuthHelper(t, db, cont)
 			setupFunc := authMethod.setup(t, db, authHelper)
 
 			endpoints := []struct {
@@ -203,14 +204,14 @@ func TestModifyEndpoints_CrossNamespacePermissions(t *testing.T) {
 	_ = testutils.CreatePublishedModuleVersion(t, db, mp1.ID, "1.0.0")
 	_ = testutils.CreatePublishedModuleVersion(t, db, mp2.ID, "1.0.0")
 
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user group with MODIFY permission only for ns1
 	authHelper.SetupUserGroupWithPermissions("ns1-only-group", false, map[string]string{"ns1": "MODIFY"})
 	cookie := authHelper.CreateSessionForUser("ns1user", false, []string{"ns1-only-group"}, nil)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	router := cont.Router
 
 	tests := []struct {
 		name           string
@@ -324,7 +325,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			setup: func(t *testing.T, req *http.Request) {
 				db := testutils.SetupTestDatabase(t)
 				defer testutils.CleanupTestDatabase(t, db)
-				authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+				cont := testutils.CreateTestServer(t, db)
+		authHelper := testutils.NewAuthHelper(t, db, cont)
 				authHelper.SetupUserGroupWithPermissions("read-group", false, map[string]string{"test-ns": "READ"})
 				cookie := authHelper.CreateSessionForUser("readuser", false, []string{"read-group"}, nil)
 				req.Header.Set("Cookie", cookie)
@@ -336,7 +338,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			setup: func(t *testing.T, req *http.Request) {
 				db := testutils.SetupTestDatabase(t)
 				defer testutils.CleanupTestDatabase(t, db)
-				authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+				cont := testutils.CreateTestServer(t, db)
+		authHelper := testutils.NewAuthHelper(t, db, cont)
 				authHelper.SetupUserGroupWithPermissions("modify-group", false, map[string]string{"test-ns": "MODIFY"})
 				cookie := authHelper.CreateSessionForUser("modifyuser", false, []string{"modify-group"}, nil)
 				req.Header.Set("Cookie", cookie)
@@ -348,7 +351,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			setup: func(t *testing.T, req *http.Request) {
 				db := testutils.SetupTestDatabase(t)
 				defer testutils.CleanupTestDatabase(t, db)
-				authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+				cont := testutils.CreateTestServer(t, db)
+		authHelper := testutils.NewAuthHelper(t, db, cont)
 				authHelper.SetupUserGroupWithPermissions("full-group", false, map[string]string{"test-ns": "FULL"})
 				cookie := authHelper.CreateSessionForUser("fulluser", false, []string{"full-group"}, nil)
 				req.Header.Set("Cookie", cookie)

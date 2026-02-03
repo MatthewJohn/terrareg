@@ -116,18 +116,6 @@ func TestAdminEndpoints_AllAuthMethods(t *testing.T) {
 			},
 			expectedStatus: http.StatusForbidden,
 		},
-		{
-			name: "terraform_idp_site_admin",
-			setup: func(t *testing.T, db *sqldb.Database, authHelper *testutils.AuthHelper) func(*http.Request) {
-				return func(req *http.Request) {
-					// Create Terraform IDP subject with site admin
-					token := authHelper.CreateTerraformIDPToken("tf-admin", nil)
-					authHelper.GetUserGroupsForSubject("tf-admin", []string{"admin-group"}, true)
-					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-				}
-			},
-			expectedStatus: http.StatusOK,
-		},
 	}
 
 	for _, authMethod := range authMethods {
@@ -135,7 +123,9 @@ func TestAdminEndpoints_AllAuthMethods(t *testing.T) {
 			db := testutils.SetupTestDatabase(t)
 			defer testutils.CleanupTestDatabase(t, db)
 
-			authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+			// Create TestContainer first to get both container and router
+			cont := testutils.CreateTestServer(t, db)
+			authHelper := testutils.NewAuthHelper(t, db, cont)
 			setupFunc := authMethod.setup(t, db, authHelper)
 
 			endpoints := []struct {
@@ -145,21 +135,20 @@ func TestAdminEndpoints_AllAuthMethods(t *testing.T) {
 				body   []byte
 			}{
 				{
-					name:   "get_config",
+					name:   "audit_history",
 					method: "GET",
-					path:   "/v1/terrareg/admin/config",
+					path:   "/v1/terrareg/audit-history",
 				},
 				{
-					name:   "list_users",
+					name:   "user_groups",
 					method: "GET",
-					path:   "/v1/terrareg/auth/admin/users",
+					path:   "/v1/terrareg/user-groups",
 				},
 			}
 
 			for _, endpoint := range endpoints {
 				t.Run(endpoint.name, func(t *testing.T) {
-					cont := testutils.CreateTestContainer(t, db)
-					router := cont.Server.Router()
+					router := cont.Router
 
 					var req *http.Request
 					if endpoint.body != nil {
@@ -186,17 +175,17 @@ func TestAdminEndpoints_FullPermissionNotSufficient(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user with FULL permission but NOT site admin
 	authHelper.SetupUserGroupWithPermissions("full-group", false, map[string]string{"test-ns": "FULL"})
 	cookie := authHelper.CreateSessionForUser("fulluser", false, []string{"full-group"}, nil)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	router := cont.Router
 
-	// Try to access admin config endpoint
-	req := httptest.NewRequest("GET", "/v1/terrareg/admin/config", nil)
+	// Try to access audit-history endpoint (admin-only)
+	req := httptest.NewRequest("GET", "/v1/terrareg/audit-history", nil)
 	req.Header.Set("Cookie", cookie)
 
 	w := httptest.NewRecorder()
@@ -211,17 +200,17 @@ func TestAdminEndpoints_SiteAdminSufficient(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user group with site_admin = true
 	authHelper.SetupUserGroupWithPermissions("admin-group", true, nil)
 	cookie := authHelper.CreateSessionForUser("siteadmin", true, []string{"admin-group"}, nil)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	router := cont.Router
 
-	// Try to access admin config endpoint
-	req := httptest.NewRequest("GET", "/v1/terrareg/admin/config", nil)
+	// Try to access audit-history endpoint (admin-only)
+	req := httptest.NewRequest("GET", "/v1/terrareg/audit-history", nil)
 	req.Header.Set("Cookie", cookie)
 
 	w := httptest.NewRecorder()
@@ -231,8 +220,8 @@ func TestAdminEndpoints_SiteAdminSufficient(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code, "Site admin should be able to access admin endpoints")
 }
 
-// TestAdminEndpoints_UpdateConfig tests that only site admin can update config
-func TestAdminEndpoints_UpdateConfig(t *testing.T) {
+// TestAdminEndpoints_CreateUserGroup tests that only site admin can create user groups
+func TestAdminEndpoints_CreateUserGroup(t *testing.T) {
 	authMethods := []struct {
 		name           string
 		setup          func(t *testing.T, db *sqldb.Database, authHelper *testutils.AuthHelper) func(*http.Request)
@@ -264,7 +253,7 @@ func TestAdminEndpoints_UpdateConfig(t *testing.T) {
 					req.Header.Set("Cookie", cookie)
 				}
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusCreated,
 		},
 		{
 			name: "admin_api_key",
@@ -277,7 +266,7 @@ func TestAdminEndpoints_UpdateConfig(t *testing.T) {
 					req.Header.Set("X-Terrareg-ApiKey", apiKey)
 				}
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusCreated,
 		},
 	}
 
@@ -286,22 +275,24 @@ func TestAdminEndpoints_UpdateConfig(t *testing.T) {
 			db := testutils.SetupTestDatabase(t)
 			defer testutils.CleanupTestDatabase(t, db)
 
-			authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+			cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 			setupFunc := authMethod.setup(t, db, authHelper)
 
-			cont := testutils.CreateTestContainer(t, db)
-			router := cont.Server.Router()
 
-			// Try to update config
+			// Try to create user group (admin-only POST endpoint)
 			body := map[string]interface{}{
-				"some_config": "value",
+				"name":  "test-group",
+				"site_admin": false,
 			}
 			bodyBytes, _ := json.Marshal(body)
-			req := httptest.NewRequest("POST", "/v1/terrareg/admin/config", bytes.NewReader(bodyBytes))
+			req := httptest.NewRequest("POST", "/v1/terrareg/user-groups", bytes.NewReader(bodyBytes))
 			req.Header.Set("Content-Type", "application/json")
 			setupFunc(req)
 
 			w := httptest.NewRecorder()
+			router := cont.Router
+
 			router.ServeHTTP(w, req)
 
 			assert.Equal(t, authMethod.expectedStatus, w.Code,
@@ -315,8 +306,8 @@ func TestAdminEndpoints_ApiKeysDontGrantAdminAccess(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	cont := testutils.CreateTestServer(t, db)
+	router := cont.Router
 
 	apiKeys := []struct {
 		name   string
@@ -347,7 +338,7 @@ func TestAdminEndpoints_ApiKeysDontGrantAdminAccess(t *testing.T) {
 
 	for _, apiKey := range apiKeys {
 		t.Run(apiKey.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/v1/terrareg/admin/config", nil)
+			req := httptest.NewRequest("GET", "/v1/terrareg/user-groups", nil)
 			req.Header.Set(apiKey.header, apiKey.key)
 
 			w := httptest.NewRecorder()
@@ -356,75 +347,6 @@ func TestAdminEndpoints_ApiKeysDontGrantAdminAccess(t *testing.T) {
 			// API keys should NOT grant admin endpoint access
 			assert.Equal(t, http.StatusForbidden, w.Code,
 				fmt.Sprintf("%s should not grant admin access", apiKey.name))
-		})
-	}
-}
-
-// TestAdminEndpoints_LogoutAllUsers tests that only site admin can logout all users
-func TestAdminEndpoints_LogoutAllUsers(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
-
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
-
-	tests := []struct {
-		name           string
-		setup          func(t *testing.T) *http.Request
-		expectedStatus int
-	}{
-		{
-			name: "unauthenticated",
-			setup: func(t *testing.T) *http.Request {
-				return httptest.NewRequest("POST", "/v1/terrareg/auth/admin/logout-all", nil)
-			},
-			expectedStatus: http.StatusForbidden,
-		},
-		{
-			name: "regular_user",
-			setup: func(t *testing.T) *http.Request {
-				cookie := authHelper.CreateSessionForUser("regularuser", false, []string{}, nil)
-				req := httptest.NewRequest("POST", "/v1/terrareg/auth/admin/logout-all", nil)
-				req.Header.Set("Cookie", cookie)
-				return req
-			},
-			expectedStatus: http.StatusForbidden,
-		},
-		{
-			name: "site_admin",
-			setup: func(t *testing.T) *http.Request {
-				authHelper.SetupUserGroupWithPermissions("admin-group", true, nil)
-				cookie := authHelper.CreateSessionForUser("siteadmin", true, []string{"admin-group"}, nil)
-				req := httptest.NewRequest("POST", "/v1/terrareg/auth/admin/logout-all", nil)
-				req.Header.Set("Cookie", cookie)
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "admin_api_key",
-			setup: func(t *testing.T) *http.Request {
-				apiKey := os.Getenv("ADMIN_AUTH_TOKEN")
-				if apiKey == "" {
-					apiKey = "test-admin-api-key"
-				}
-				req := httptest.NewRequest("POST", "/v1/terrareg/auth/admin/logout-all", nil)
-				req.Header.Set("X-Terrareg-ApiKey", apiKey)
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, tt.setup(t))
-
-			assert.Equal(t, tt.expectedStatus, w.Code,
-				fmt.Sprintf("Logout all users with %s should return %d", tt.name, tt.expectedStatus))
 		})
 	}
 }

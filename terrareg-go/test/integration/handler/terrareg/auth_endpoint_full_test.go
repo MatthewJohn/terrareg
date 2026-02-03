@@ -172,7 +172,8 @@ func TestFullEndpoints_AllAuthMethods(t *testing.T) {
 			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 			_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-			authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+			cont := testutils.CreateTestServer(t, db)
+			authHelper := testutils.NewAuthHelper(t, db, cont)
 			setupFunc := authMethod.setup(t, db, authHelper)
 
 			endpoints := []struct {

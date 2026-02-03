@@ -1,7 +1,6 @@
 package terrareg
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,17 +25,17 @@ func TestPublicEndpoints_AllAuthMethods(t *testing.T) {
 		{
 			name:   "health",
 			method: "GET",
-			path:   "/v1/health",
+			path:   "/v1/terrareg/health",
 		},
 		{
 			name:   "version",
 			method: "GET",
-			path:   "/v1/version",
+			path:   "/v1/terrareg/version",
 		},
 		{
 			name:   "analytics",
-			method: "POST",
-			path:   "/v1/terraform-modules/v1/analytics",
+			method: "GET",
+			path:   "/v1/terrareg/analytics/global/stats_summary",
 		},
 	}
 
@@ -146,7 +145,7 @@ func TestPublicEndpoints_HealthResponseStructure(t *testing.T) {
 	cont := testutils.CreateTestContainer(t, db)
 	router := cont.Server.Router()
 
-	req := httptest.NewRequest("GET", "/v1/health", nil)
+	req := httptest.NewRequest("GET", "/v1/terrareg/health", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -168,7 +167,7 @@ func TestPublicEndpoints_VersionResponseStructure(t *testing.T) {
 	cont := testutils.CreateTestContainer(t, db)
 	router := cont.Server.Router()
 
-	req := httptest.NewRequest("GET", "/v1/version", nil)
+	req := httptest.NewRequest("GET", "/v1/terrareg/version", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -191,16 +190,7 @@ func TestPublicEndpoints_AnalyticsAcceptsUnauthenticated(t *testing.T) {
 		testutils.WithAllowUnauthenticatedAccess(false))
 	router := cont.Server.Router()
 
-	// Create analytics payload
-	payload := map[string]interface{}{
-		"version": "1.0.0",
-		"platform": "linux_amd64",
-	}
-	body, _ := json.Marshal(payload)
-	reqBody := bytes.NewReader(body)
-
-	req := httptest.NewRequest("POST", "/v1/terraform-modules/v1/analytics", reqBody)
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest("GET", "/v1/terrareg/analytics/global/stats_summary", nil)
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)

@@ -26,7 +26,8 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	endpoints := []struct {
 		name   string
@@ -196,7 +197,8 @@ func TestReadEndpoints_IsAuthenticatedResponseStructure(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	tests := []struct {
 		name                 string
@@ -286,7 +288,8 @@ func TestReadEndpoints_NamespacePermissionsInResponse(t *testing.T) {
 	_ = testutils.CreateNamespace(t, db, "ns-modify", nil)
 	_ = testutils.CreateNamespace(t, db, "ns-read", nil)
 
-	authHelper := testutils.NewAuthHelper(t, db, &testutils.TestServer{})
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user group with mixed permissions
 	authHelper.SetupUserGroupWithPermissions("mixed-group", false, map[string]string{
@@ -297,8 +300,7 @@ func TestReadEndpoints_NamespacePermissionsInResponse(t *testing.T) {
 
 	cookie := authHelper.CreateSessionForUser("mixeduser", false, []string{"mixed-group"}, nil)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	router := cont.Router
 
 	req := httptest.NewRequest("GET", "/v1/terrareg/auth/admin/is_authenticated", nil)
 	req.Header.Set("Cookie", cookie)

@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -684,4 +685,21 @@ func GetNamespace(t *testing.T, db *sqldb.Database, name string) sqldb.Namespace
 	err := db.DB.Where("namespace = ?", name).First(&namespace).Error
 	require.NoError(t, err, "Namespace should exist: %s", name)
 	return namespace
+}
+
+// TestContainer wraps a container with its router for testing
+// This allows tests to access both the container (for services) and the router (for HTTP requests)
+type TestContainer struct {
+	*container.Container
+	Router http.Handler
+}
+
+// CreateTestServer creates a TestContainer with both the container and router initialized
+// This is the preferred way to create a test server for integration tests
+func CreateTestServer(t *testing.T, db *sqldb.Database) *TestContainer {
+	cont := CreateTestContainer(t, db)
+	return &TestContainer{
+		Container: cont,
+		Router:    cont.Server.Router(),
+	}
 }
