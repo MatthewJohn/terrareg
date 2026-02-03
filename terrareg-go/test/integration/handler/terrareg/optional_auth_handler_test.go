@@ -6,298 +6,148 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
 )
 
-// TestConfig_AllAuthMethods tests GET /v1/terrareg/config endpoint with OptionalAuth
-// All authentication states should return 200
-func TestConfig_AllAuthMethods(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
-
-	tests := []struct {
-		name           string
-		setupAuth      func(*testing.T, *sqldb.Database) *http.Request
-		expectedStatus int
-	}{
-		{
-			name: "unauthenticated request returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				return testutils.BuildUnauthenticatedRequest(t, "GET", "/v1/terrareg/config")
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "authenticated regular user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/config", "regular-user", false)
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "authenticated admin user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAdminRequest(t, db, "GET", "/v1/terrareg/config")
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := tt.setupAuth(t, db)
-			w := testutils.ServeHTTP(router, req)
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
+type authCase struct {
+	name     string
+	buildReq func(*testing.T, *sqldb.Database, string) *http.Request
 }
 
-// TestHealth_AllAuthMethods tests GET /v1/terrareg/health endpoint with OptionalAuth
-func TestHealth_AllAuthMethods(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
-
-	tests := []struct {
-		name           string
-		setupAuth      func(*testing.T, *sqldb.Database) *http.Request
-		expectedStatus int
-	}{
-		{
-			name: "unauthenticated request returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				return testutils.BuildUnauthenticatedRequest(t, "GET", "/v1/terrareg/health")
-			},
-			expectedStatus: http.StatusOK,
+var authCases = []authCase{
+	{
+		name: "unauthenticated",
+		buildReq: func(t *testing.T, _ *sqldb.Database, path string) *http.Request {
+			return testutils.BuildUnauthenticatedRequest(t, http.MethodGet, path)
 		},
-		{
-			name: "authenticated regular user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/health", "regular-user", false)
-				return req
-			},
-			expectedStatus: http.StatusOK,
+	},
+	{
+		name: "authenticated regular user",
+		buildReq: func(t *testing.T, db *sqldb.Database, path string) *http.Request {
+			req, _ := testutils.BuildAuthenticatedRequestWithSession(
+				t,
+				db,
+				http.MethodGet,
+				path,
+				"regular-user",
+				false,
+			)
+			return req
 		},
-		{
-			name: "authenticated admin user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAdminRequest(t, db, "GET", "/v1/terrareg/health")
-				return req
-			},
-			expectedStatus: http.StatusOK,
+	},
+	{
+		name: "authenticated admin user",
+		buildReq: func(t *testing.T, db *sqldb.Database, path string) *http.Request {
+			req, _ := testutils.BuildAdminRequest(
+				t,
+				db,
+				http.MethodGet,
+				path,
+			)
+			return req
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := tt.setupAuth(t, db)
-			w := testutils.ServeHTTP(router, req)
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
+	},
 }
 
-// TestVersion_AllAuthMethods tests GET /v1/terrareg/version endpoint with OptionalAuth
-func TestVersion_AllAuthMethods(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
-
-	tests := []struct {
-		name           string
-		setupAuth      func(*testing.T, *sqldb.Database) *http.Request
-		expectedStatus int
-	}{
-		{
-			name: "unauthenticated request returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				return testutils.BuildUnauthenticatedRequest(t, "GET", "/v1/terrareg/version")
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "authenticated regular user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/version", "regular-user", false)
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "authenticated admin user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAdminRequest(t, db, "GET", "/v1/terrareg/version")
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := tt.setupAuth(t, db)
-			w := testutils.ServeHTTP(router, req)
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
+type endpointCase struct {
+	name       string
+	path       string
+	setup      func(*testing.T, *sqldb.Database)
+	withChiCtx func(*testing.T, *http.Request) *http.Request
+	container  func(*testing.T, *sqldb.Database) *container.Container
 }
 
-// TestModuleList_AllAuthMethods tests GET /v1/terrareg/modules/{namespace} endpoint with OptionalAuth
-func TestModuleList_AllAuthMethods(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
-
-	// Create test namespace
-	_ = testutils.CreateNamespace(t, db, "module-list-namespace", nil)
-
-	tests := []struct {
-		name           string
-		setupAuth      func(*testing.T, *sqldb.Database) *http.Request
-		expectedStatus int
-	}{
+func TestOptionalAuthEndpoints(t *testing.T) {
+	endpoints := []endpointCase{
 		{
-			name: "unauthenticated request returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req := testutils.BuildUnauthenticatedRequest(t, "GET", "/v1/terrareg/modules/module-list-namespace")
-				return testutils.AddChiContext(t, req, map[string]string{"namespace": "module-list-namespace"})
-			},
-			expectedStatus: http.StatusOK,
+			name:      "config",
+			path:      "/v1/terrareg/config",
+			container: testutils.CreateTestContainer,
 		},
 		{
-			name: "authenticated regular user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/modules/module-list-namespace", "regular-user", false)
-				return testutils.AddChiContext(t, req, map[string]string{"namespace": "module-list-namespace"})
-			},
-			expectedStatus: http.StatusOK,
+			name:      "health",
+			path:      "/v1/terrareg/health",
+			container: testutils.CreateTestContainer,
 		},
 		{
-			name: "authenticated admin user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAdminRequest(t, db, "GET", "/v1/terrareg/modules/module-list-namespace")
-				return testutils.AddChiContext(t, req, map[string]string{"namespace": "module-list-namespace"})
-			},
-			expectedStatus: http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := tt.setupAuth(t, db)
-			w := testutils.ServeHTTP(router, req)
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
-}
-
-// TestModuleVersions_AllAuthMethods tests GET /v1/terrareg/modules/{namespace}/{name}/{provider}/versions endpoint with OptionalAuth
-func TestModuleVersions_AllAuthMethods(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithAllowUnauthenticatedAccess(true))
-	router := cont.Server.Router()
-
-	// Create test data
-	namespace := testutils.CreateNamespace(t, db, "version-list-namespace", nil)
-	_ = testutils.CreateModuleProvider(t, db, namespace.ID, "testmod", "testprovider")
-
-	tests := []struct {
-		name           string
-		setupAuth      func(*testing.T, *sqldb.Database) *http.Request
-		expectedStatus int
-	}{
-		{
-			name: "unauthenticated request returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req := testutils.BuildUnauthenticatedRequest(t, "GET", "/v1/terrareg/modules/version-list-namespace/testmod/testprovider/versions")
-				return testutils.AddChiContext(t, req, map[string]string{"namespace": "version-list-namespace", "name": "testmod", "provider": "testprovider"})
-			},
-			expectedStatus: http.StatusOK,
+			name:      "version",
+			path:      "/v1/terrareg/version",
+			container: testutils.CreateTestContainer,
 		},
 		{
-			name: "authenticated regular user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/modules/version-list-namespace/testmod/testprovider/versions", "regular-user", false)
-				return testutils.AddChiContext(t, req, map[string]string{"namespace": "version-list-namespace", "name": "testmod", "provider": "testprovider"})
+			name: "module list",
+			path: "/v1/terrareg/modules/module-list-namespace",
+			setup: func(t *testing.T, db *sqldb.Database) {
+				_ = testutils.CreateNamespace(t, db, "module-list-namespace", nil)
 			},
-			expectedStatus: http.StatusOK,
+			withChiCtx: func(t *testing.T, req *http.Request) *http.Request {
+				return testutils.AddChiContext(t, req, map[string]string{
+					"namespace": "module-list-namespace",
+				})
+			},
+			container: testutils.CreateTestContainer,
 		},
 		{
-			name: "authenticated admin user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAdminRequest(t, db, "GET", "/v1/terrareg/modules/version-list-namespace/testmod/testprovider/versions")
-				return testutils.AddChiContext(t, req, map[string]string{"namespace": "version-list-namespace", "name": "testmod", "provider": "testprovider"})
+			name: "module versions",
+			path: "/v1/terrareg/modules/version-list-namespace/testmod/testprovider/versions",
+			setup: func(t *testing.T, db *sqldb.Database) {
+				ns := testutils.CreateNamespace(t, db, "version-list-namespace", nil)
+				_ = testutils.CreateModuleProvider(t, db, ns.ID, "testmod", "testprovider")
 			},
-			expectedStatus: http.StatusOK,
+			withChiCtx: func(t *testing.T, req *http.Request) *http.Request {
+				return testutils.AddChiContext(t, req, map[string]string{
+					"namespace": "version-list-namespace",
+					"name":      "testmod",
+					"provider":  "testprovider",
+				})
+			},
+			container: func(t *testing.T, db *sqldb.Database) *container.Container {
+				return testutils.CreateTestContainerWithConfig(
+					t,
+					db,
+					testutils.WithAllowUnauthenticatedAccess(true),
+				)
+			},
+		},
+		{
+			name: "analytics",
+			path: "/v1/terrareg/analytics/global/stats_summary",
+			container: func(t *testing.T, db *sqldb.Database) *container.Container {
+				return testutils.CreateTestContainerWithConfig(
+					t,
+					db,
+					testutils.WithAllowUnauthenticatedAccess(true),
+				)
+			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := tt.setupAuth(t, db)
-			w := testutils.ServeHTTP(router, req)
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
-}
+	for _, ep := range endpoints {
+		t.Run(ep.name, func(t *testing.T) {
+			db := testutils.SetupTestDatabase(t)
+			defer testutils.CleanupTestDatabase(t, db)
 
-// TestAnalytics_AllAuthMethods tests GET /v1/terrareg/analytics/* endpoints with OptionalAuth
-func TestAnalytics_AllAuthMethods(t *testing.T) {
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
+			if ep.setup != nil {
+				ep.setup(t, db)
+			}
 
-	cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithAllowUnauthenticatedAccess(true))
-	router := cont.Server.Router()
+			cont := ep.container(t, db)
+			router := cont.Server.Router()
 
-	tests := []struct {
-		name           string
-		setupAuth      func(*testing.T, *sqldb.Database) *http.Request
-		expectedStatus int
-	}{
-		{
-			name: "unauthenticated request returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				return testutils.BuildUnauthenticatedRequest(t, "GET", "/v1/terrareg/analytics/global/stats_summary")
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "authenticated regular user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/analytics/global/stats_summary", "regular-user", false)
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "authenticated admin user returns 200",
-			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
-				req, _ := testutils.BuildAdminRequest(t, db, "GET", "/v1/terrareg/analytics/global/stats_summary")
-				return req
-			},
-			expectedStatus: http.StatusOK,
-		},
-	}
+			for _, auth := range authCases {
+				t.Run(auth.name, func(t *testing.T) {
+					req := auth.buildReq(t, db, ep.path)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := tt.setupAuth(t, db)
-			w := testutils.ServeHTTP(router, req)
-			assert.Equal(t, tt.expectedStatus, w.Code)
+					if ep.withChiCtx != nil {
+						req = ep.withChiCtx(t, req)
+					}
+
+					w := testutils.ServeHTTP(router, req)
+					assert.Equal(t, http.StatusOK, w.Code)
+				})
+			}
 		})
 	}
 }

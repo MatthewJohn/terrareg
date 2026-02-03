@@ -192,8 +192,8 @@ func (s *Server) setupRoutes() {
 		r.Get("/modules/search", s.TerraformV1ModuleHandler.HandleModuleSearch) // Use the new handler
 		r.Get("/modules/{namespace}", s.handleNamespaceModules)
 		r.Get("/modules/{namespace}/{name}", s.handleModuleDetails)
-		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)                   // Must come before general provider route
-		r.Get("/modules/{namespace}/{name}/{provider}", s.TerraformV1ModuleHandler.HandleModuleProviderDetails)             // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)       // Must come before general provider route
+		r.Get("/modules/{namespace}/{name}/{provider}", s.TerraformV1ModuleHandler.HandleModuleProviderDetails) // Use the new handler
 		r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireTerraformAccess).Get("/modules/{namespace}/{name}/{provider}/versions", s.TerraformV1ModuleHandler.HandleModuleVersions)
 		r.Get("/modules/{namespace}/{name}/{provider}/download", s.TerraformV1ModuleHandler.HandleModuleDownload)           // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.TerraformV1ModuleHandler.HandleModuleVersionDetails)    // Use the new handler
@@ -247,10 +247,12 @@ func (s *Server) setupRoutes() {
 			r.With(s.AuthMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}", s.handleModuleProviderDelete)
 			r.With(s.AuthMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
 			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettings)
+			// @TODO Put method does not exist in python
 			r.With(s.AuthMiddleware.RequireNamespacePermission("MODIFY", "{namespace}")).Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
 			r.With(s.AuthMiddleware.RequireNamespacePermission("MODIFY", "{namespace}")).Put("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
 			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
 			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
+			// @TODO: This should exist, redirects are created when renaming/moving a module
 			r.With(s.AuthMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Put("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirectCreate)
 			r.With(s.AuthMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
 
