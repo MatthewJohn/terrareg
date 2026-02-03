@@ -73,7 +73,7 @@ func TestPublicEndpoints_AllAuthMethods(t *testing.T) {
 				if apiKey == "" {
 					apiKey = "test-publish-key"
 				}
-				req.Header.Set("X-Terrareg-PublishKey", apiKey)
+				req.Header.Set("X-Terrareg-ApiKey", apiKey)
 			},
 		},
 		{

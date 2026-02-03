@@ -100,7 +100,7 @@ func TestAdminEndpoints_AllAuthMethods(t *testing.T) {
 					if apiKey == "" {
 						apiKey = "test-publish-key"
 					}
-					req.Header.Set("X-Terrareg-PublishKey", apiKey)
+					req.Header.Set("X-Terrareg-ApiKey", apiKey)
 				}
 			},
 			// Publish API key doesn't grant admin access
@@ -326,7 +326,7 @@ func TestAdminEndpoints_ApiKeysDontGrantAdminAccess(t *testing.T) {
 		},
 		{
 			name:   "publish_key",
-			header: "X-Terrareg-PublishKey",
+			header: "X-Terrareg-ApiKey",
 			key: func() string {
 				if k := os.Getenv("PUBLISH_AUTH_TOKEN"); k != "" {
 					return k

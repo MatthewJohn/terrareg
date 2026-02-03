@@ -53,7 +53,8 @@ func TestModifyEndpoints_AllAuthMethods(t *testing.T) {
 					if apiKey == "" {
 						apiKey = "test-upload-key"
 					}
-					req.Header.Set("X-Terrareg-UploadKey", apiKey)
+					// Python uses X-Terrareg-ApiKey for all API key types
+					req.Header.Set("X-Terrareg-ApiKey", apiKey)
 				}
 			},
 			// Upload key doesn't grant MODIFY access to settings endpoints
@@ -135,7 +136,9 @@ func TestModifyEndpoints_AllAuthMethods(t *testing.T) {
 					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 				}
 			},
-			expectedStatus: map[string]int{"": http.StatusOK},
+			// Python: check_namespace_access returns False for terraform tokens
+			// Namespace permissions are not supported for terraform IDP tokens
+			expectedStatus: map[string]int{"": http.StatusForbidden},
 		},
 	}
 
@@ -316,7 +319,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 				if apiKey == "" {
 					apiKey = "test-publish-key"
 				}
-				req.Header.Set("X-Terrareg-PublishKey", apiKey)
+				// Python uses X-Terrareg-ApiKey for all API key types
+				req.Header.Set("X-Terrareg-ApiKey", apiKey)
 			},
 			expectedStatus: http.StatusOK,
 		},

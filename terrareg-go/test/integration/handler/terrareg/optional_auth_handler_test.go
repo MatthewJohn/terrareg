@@ -208,7 +208,7 @@ func TestModuleVersions_AllAuthMethods(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
+	cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithAllowUnauthenticatedAccess(true))
 	router := cont.Server.Router()
 
 	// Create test data
@@ -260,7 +260,7 @@ func TestAnalytics_AllAuthMethods(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
+	cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithAllowUnauthenticatedAccess(true))
 	router := cont.Server.Router()
 
 	tests := []struct {

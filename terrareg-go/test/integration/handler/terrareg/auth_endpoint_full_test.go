@@ -53,7 +53,7 @@ func TestFullEndpoints_AllAuthMethods(t *testing.T) {
 					if apiKey == "" {
 						apiKey = "test-upload-key"
 					}
-					req.Header.Set("X-Terrareg-UploadKey", apiKey)
+					req.Header.Set("X-Terrareg-ApiKey", apiKey)
 				}
 			},
 			expectedStatus: map[string]int{"": http.StatusOK},
@@ -66,7 +66,7 @@ func TestFullEndpoints_AllAuthMethods(t *testing.T) {
 					if apiKey == "" {
 						apiKey = "test-publish-key"
 					}
-					req.Header.Set("X-Terrareg-PublishKey", apiKey)
+					req.Header.Set("X-Terrareg-ApiKey", apiKey)
 				}
 			},
 			expectedStatus: map[string]int{"": http.StatusOK},
@@ -137,6 +137,7 @@ func TestFullEndpoints_AllAuthMethods(t *testing.T) {
 					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 				}
 			},
+			// Python: check_namespace_access returns False for terraform tokens
 			expectedStatus: map[string]int{"": http.StatusForbidden},
 		},
 		{
@@ -147,7 +148,8 @@ func TestFullEndpoints_AllAuthMethods(t *testing.T) {
 					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 				}
 			},
-			// MODIFY permission is NOT sufficient for FULL endpoints
+			// Python: check_namespace_access returns False for terraform tokens
+			// Namespace permissions are not supported for terraform IDP tokens
 			expectedStatus: map[string]int{"": http.StatusForbidden},
 		},
 		{
@@ -158,7 +160,9 @@ func TestFullEndpoints_AllAuthMethods(t *testing.T) {
 					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 				}
 			},
-			expectedStatus: map[string]int{"": http.StatusOK},
+			// Python: check_namespace_access returns False for terraform tokens
+			// Namespace permissions are not supported for terraform IDP tokens
+			expectedStatus: map[string]int{"": http.StatusForbidden},
 		},
 	}
 
@@ -327,7 +331,7 @@ func TestFullEndpoints_UploadApiKeyWorks(t *testing.T) {
 	if apiKey == "" {
 		apiKey = "test-upload-key"
 	}
-	req.Header.Set("X-Terrareg-UploadKey", apiKey)
+	req.Header.Set("X-Terrareg-ApiKey", apiKey)
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
