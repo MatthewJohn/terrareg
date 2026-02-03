@@ -669,6 +669,14 @@ func WithAllowUnauthenticatedAccess(allow bool) InfraConfigOption {
 	}
 }
 
+// WithTerraformOIDCConfig sets Terraform OIDC configuration for testing
+// This enables the Terraform OIDC auth method for tests that need to use terraform_idp_token
+func WithTerraformOIDCConfig(signingKeyPath string) InfraConfigOption {
+	return func(cfg *config.InfrastructureConfig) {
+		cfg.TerraformOidcIdpSigningKeyPath = signingKeyPath
+	}
+}
+
 // CreateTestWebhookHandler creates a test webhook handler with proper dependencies
 // It uses the container to wire all dependencies together
 func CreateTestWebhookHandler(t *testing.T, db *sqldb.Database, uploadAPIKeys []string) *webhook.ModuleWebhookHandler {

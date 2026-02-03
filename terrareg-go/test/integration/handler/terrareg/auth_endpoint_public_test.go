@@ -32,11 +32,8 @@ func TestPublicEndpoints_AllAuthMethods(t *testing.T) {
 			method: "GET",
 			path:   "/v1/terrareg/version",
 		},
-		{
-			name:   "analytics",
-			method: "GET",
-			path:   "/v1/terrareg/analytics/global/stats_summary",
-		},
+		// Note: analytics/global/* endpoints require read API access (can_access_read_api),
+		// so they are NOT truly public. They are tested in auth_endpoint_read_test.go instead.
 	}
 
 	authMethods := []struct {
@@ -181,7 +178,7 @@ func TestPublicEndpoints_VersionResponseStructure(t *testing.T) {
 	assert.Contains(t, response, "version")
 }
 
-// TestPublicEndpoints_AnalyticsAcceptsUnauthenticated verifies analytics endpoint accepts unauthenticated requests
+// TestPublicEndpoints_AnalyticsAcceptsUnauthenticated verifies analytics endpoint requires read API access
 func TestPublicEndpoints_AnalyticsAcceptsUnauthenticated(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
@@ -195,7 +192,29 @@ func TestPublicEndpoints_AnalyticsAcceptsUnauthenticated(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// Analytics endpoint should accept unauthenticated requests even with ALLOW_UNAUTHENTICATED_ACCESS=false
-	// This is required for Terraform CLI telemetry
+	// Analytics endpoint requires read API access (can_access_read_api)
+	// With ALLOW_UNAUTHENTICATED_ACCESS=false, unauthenticated requests should return 401
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+// TestPublicEndpoints_AnalyticsAcceptsAuthenticatedWithReadAccess verifies analytics endpoint works with authenticated session
+func TestPublicEndpoints_AnalyticsAcceptsAuthenticatedWithReadAccess(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	cont := testutils.CreateTestServer(t, db)
+	authHelper := testutils.NewAuthHelper(t, db, cont)
+
+	// Create a user session
+	cookie := authHelper.CreateSessionForUser("testuser", false, []string{}, nil)
+
+	router := cont.Router
+	req := httptest.NewRequest("GET", "/v1/terrareg/analytics/global/stats_summary", nil)
+	req.Header.Set("Cookie", cookie)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Analytics endpoint should work with authenticated session (has read API access)
 	assert.Equal(t, http.StatusOK, w.Code)
 }

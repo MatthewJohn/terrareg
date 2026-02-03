@@ -116,6 +116,40 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 	})
 }
 
+// RequireReadAccess is a middleware that requires read API access
+// It rejects requests with 401 when CanAccessReadAPI() returns false
+func (m *AuthMiddleware) RequireReadAccess(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authCtx := GetAuthContext(ctx)
+
+		// Check if user can access read API
+		if !authCtx.CanAccessReadAPI() {
+			http.Error(w, "Authentication required", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// RequireTerraformAccess is a middleware that requires terraform API access
+// It rejects requests with 401 when CanAccessTerraformAPI() returns false
+func (m *AuthMiddleware) RequireTerraformAccess(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authCtx := GetAuthContext(ctx)
+
+		// Check if user can access terraform API
+		if !authCtx.CanAccessTerraformAPI() {
+			http.Error(w, "Authentication required", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // GetAuthContext retrieves the auth context from the request context
 // Returns domain auth.AuthContext interface - never nil (returns NotAuthenticatedAuthContext if not set)
 // Note: This is a standalone function and doesn't have access to authFactory config.

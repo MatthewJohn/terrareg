@@ -188,13 +188,13 @@ func (s *Server) setupRoutes() {
 	// Terraform Registry API v1
 	s.router.Route("/v1", func(r chi.Router) {
 		// Modules
-		r.Get("/modules", s.TerraformV1ModuleHandler.HandleModuleList)          // Use the new handler
+		r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireReadAccess).Get("/modules", s.TerraformV1ModuleHandler.HandleModuleList)
 		r.Get("/modules/search", s.TerraformV1ModuleHandler.HandleModuleSearch) // Use the new handler
 		r.Get("/modules/{namespace}", s.handleNamespaceModules)
 		r.Get("/modules/{namespace}/{name}", s.handleModuleDetails)
 		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)                   // Must come before general provider route
 		r.Get("/modules/{namespace}/{name}/{provider}", s.TerraformV1ModuleHandler.HandleModuleProviderDetails)             // Use the new handler
-		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.TerraformV1ModuleHandler.HandleModuleVersions)           // Use the new handler
+		r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireTerraformAccess).Get("/modules/{namespace}/{name}/{provider}/versions", s.TerraformV1ModuleHandler.HandleModuleVersions)
 		r.Get("/modules/{namespace}/{name}/{provider}/download", s.TerraformV1ModuleHandler.HandleModuleDownload)           // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.TerraformV1ModuleHandler.HandleModuleVersionDetails)    // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/{version}/download", s.TerraformV1ModuleHandler.HandleModuleDownload) // Use the new handler
@@ -219,12 +219,12 @@ func (s *Server) setupRoutes() {
 
 			// Analytics
 			r.Route("/analytics", func(r chi.Router) {
-				r.With(s.AuthMiddleware.OptionalAuth).Get("/global/stats_summary", s.handleGlobalStatsSummary)
-				r.With(s.AuthMiddleware.OptionalAuth).Get("/global/usage_stats", s.handleGlobalUsageStats)
-				r.With(s.AuthMiddleware.OptionalAuth).Get("/global/most_recently_published_module_version", s.handleMostRecentlyPublished)
-				r.With(s.AuthMiddleware.OptionalAuth).Get("/global/most_downloaded_module_provider_this_week", s.handleMostDownloadedThisWeek)
-				r.With(s.AuthMiddleware.OptionalAuth).Get("/{namespace}/{name}/{provider}/{version}", s.handleModuleVersionAnalytics)
-				r.With(s.AuthMiddleware.OptionalAuth).Get("/{namespace}/{name}/{provider}/token_versions", s.handleAnalyticsTokenVersions)
+				r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireReadAccess).Get("/global/stats_summary", s.handleGlobalStatsSummary)
+				r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireReadAccess).Get("/global/usage_stats", s.handleGlobalUsageStats)
+				r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireReadAccess).Get("/global/most_recently_published_module_version", s.handleMostRecentlyPublished)
+				r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireReadAccess).Get("/global/most_downloaded_module_provider_this_week", s.handleMostDownloadedThisWeek)
+				r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireTerraformAccess).Get("/{namespace}/{name}/{provider}/{version}", s.handleModuleVersionAnalytics)
+				r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireTerraformAccess).Get("/{namespace}/{name}/{provider}/token_versions", s.handleAnalyticsTokenVersions)
 			})
 
 			// Initial setup
@@ -241,7 +241,7 @@ func (s *Server) setupRoutes() {
 			// Modules
 			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
 			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
-			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
+			r.With(s.AuthMiddleware.OptionalAuth, s.AuthMiddleware.RequireReadAccess).Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
 			r.With(s.AuthMiddleware.OptionalAuth).Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
 			r.With(s.AuthMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
 			r.With(s.AuthMiddleware.RequireNamespacePermission("FULL", "{namespace}")).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)

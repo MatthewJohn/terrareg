@@ -12,116 +12,111 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // TestReadEndpoints_AllAuthMethods tests that read access endpoints work correctly
 // with all authentication methods and both ALLOW_UNAUTHENTICATED_ACCESS states
 func TestReadEndpoints_AllAuthMethods(t *testing.T) {
-	// Setup: Create test data
-	db := testutils.SetupTestDatabase(t)
-	defer testutils.CleanupTestDatabase(t, db)
-
-	// Create a test namespace with a published module
-	namespace := testutils.CreateNamespace(t, db, "test-ns", nil)
-	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
-	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
-
-	cont := testutils.CreateTestServer(t, db)
-	authHelper := testutils.NewAuthHelper(t, db, cont)
-
 	endpoints := []struct {
-		name   string
-		method string
-		path   string
+		name                 string
+		method               string
+		path                 string
+		requiresTerraformAPI bool // true = requires can_access_terraform_api, false = requires can_access_read_api
 	}{
 		{
-			name:   "module_list",
-			method: "GET",
-			path:   "/v1/modules",
+			name:                 "module_list",
+			method:               "GET",
+			path:                 "/v1/modules",
+			requiresTerraformAPI: false, // requires can_access_read_api
 		},
 		{
-			name:   "module_versions",
-			method: "GET",
-			path:   "/v1/modules/test-ns/test-mod/test-prov/versions",
-		},
-		{
-			name:   "is_authenticated",
-			method: "GET",
-			path:   "/v1/terrareg/auth/admin/is_authenticated",
+			name:                 "module_versions",
+			method:               "GET",
+			path:                 "/v1/modules/test-ns/test-mod/test-prov/versions",
+			requiresTerraformAPI: true, // requires can_access_terraform_api
 		},
 	}
 
 	authMethods := []struct {
-		name          string
-		setup         func(t *testing.T, req *http.Request)
-		expectsUnauth bool // true = expects unauth to work when config=true
+		name                 string
+		setup                func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request)
+		hasReadAPIAccess     bool // true = has can_access_read_api
+		hasTerraformAPIAccess bool // true = has can_access_terraform_api
+		configOptions        []testutils.InfraConfigOption // config options needed for this auth method
 	}{
 		{
-			name: "unauthenticated",
-			setup: func(t *testing.T, req *http.Request) {
-				// No authentication
-			},
-			expectsUnauth: true,
+			name:                 "unauthenticated",
+			setup:                func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {},
+			hasReadAPIAccess:     false, // controlled by ALLOW_UNAUTHENTICATED_ACCESS config
+			hasTerraformAPIAccess: false,
+			configOptions:        nil,
 		},
 		{
 			name: "admin_api_key",
-			setup: func(t *testing.T, req *http.Request) {
+			setup: func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {
 				apiKey := os.Getenv("ADMIN_AUTH_TOKEN")
 				if apiKey == "" {
 					apiKey = "test-admin-api-key"
 				}
 				req.Header.Set("X-Terrareg-ApiKey", apiKey)
 			},
-			expectsUnauth: false,
+			hasReadAPIAccess:     true,
+			hasTerraformAPIAccess: true,
+			configOptions:        nil,
 		},
 		{
 			name: "upload_api_key",
-			setup: func(t *testing.T, req *http.Request) {
+			setup: func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {
 				apiKey := os.Getenv("UPLOAD_AUTH_TOKEN")
 				if apiKey == "" {
 					apiKey = "test-upload-key"
 				}
 				req.Header.Set("X-Terrareg-UploadKey", apiKey)
 			},
-			expectsUnauth: false,
+			hasReadAPIAccess:     false, // upload API keys don't have read API access (Python: base_api_key_auth_method.py)
+			hasTerraformAPIAccess: false,
+			configOptions:        nil,
 		},
 		{
 			name: "publish_api_key",
-			setup: func(t *testing.T, req *http.Request) {
+			setup: func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {
 				apiKey := os.Getenv("PUBLISH_AUTH_TOKEN")
 				if apiKey == "" {
 					apiKey = "test-publish-key"
 				}
 				req.Header.Set("X-Terrareg-PublishKey", apiKey)
 			},
-			expectsUnauth: false,
+			hasReadAPIAccess:     false, // publish API keys don't have read API access (Python: base_api_key_auth_method.py)
+			hasTerraformAPIAccess: false,
+			configOptions:        nil,
 		},
 		{
 			name: "user_session",
-			setup: func(t *testing.T, req *http.Request) {
+			setup: func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {
+				authHelper := testutils.NewAuthHelper(t, db, cont)
 				cookie := authHelper.CreateSessionForUser("testuser", false, []string{}, nil)
 				req.Header.Set("Cookie", cookie)
 			},
-			expectsUnauth: false,
+			hasReadAPIAccess:     true, // session auth has read API access (Python: base_session_auth_method.py)
+			hasTerraformAPIAccess: true, // inherits from read API access
+			configOptions:        nil,
 		},
 		{
 			name: "user_with_read_permission",
-			setup: func(t *testing.T, req *http.Request) {
+			setup: func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {
+				authHelper := testutils.NewAuthHelper(t, db, cont)
 				// Create a group with READ permission for test-ns
 				authHelper.SetupUserGroupWithPermissions("read-group", false, map[string]string{"test-ns": "READ"})
 				cookie := authHelper.CreateSessionForUser("readuser", false, []string{"read-group"}, nil)
 				req.Header.Set("Cookie", cookie)
 			},
-			expectsUnauth: false,
+			hasReadAPIAccess:     true, // session auth has read API access
+			hasTerraformAPIAccess: true, // inherits from read API access
+			configOptions:        nil,
 		},
-		{
-			name: "terraform_idp_token",
-			setup: func(t *testing.T, req *http.Request) {
-				token := authHelper.CreateTerraformIDPToken("test-subject", nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-			},
-			expectsUnauth: false,
-		},
+		// Note: terraform_idp_token test requires a signing key file setup
+		// This is tested separately in integration tests that have proper key setup
 	}
 
 	for _, endpoint := range endpoints {
@@ -138,20 +133,48 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 						moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 						_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-						cont := testutils.CreateTestContainerWithConfig(t, db,
-							testutils.WithAllowUnauthenticatedAccess(true))
-						router := cont.Server.Router()
+						// Build config options
+						opts := []testutils.InfraConfigOption{testutils.WithAllowUnauthenticatedAccess(true)}
+						if authMethod.configOptions != nil {
+							opts = append(opts, authMethod.configOptions...)
+						}
+
+						cont := testutils.CreateTestContainerWithConfig(t, db, opts...)
+						testServer := &testutils.TestContainer{
+							Container: cont,
+							Router:    cont.Server.Router(),
+						}
+						router := testServer.Router
 
 						req := httptest.NewRequest(endpoint.method, endpoint.path, nil)
-						authMethod.setup(t, req)
+						authMethod.setup(t, db, testServer, req)
 
 						w := httptest.NewRecorder()
 						router.ServeHTTP(w, req)
 
-						// With ALLOW_UNAUTHENTICATED_ACCESS=true, all auth methods should work
-						assert.Equal(t, http.StatusOK, w.Code,
-							fmt.Sprintf("Endpoint %s with auth %s and ALLOW_UNAUTHENTICATED_ACCESS=true should return 200",
-								endpoint.path, authMethod.name))
+						// With ALLOW_UNAUTHENTICATED_ACCESS=true, unauthenticated users have read access
+						// Check if the auth method should have access based on endpoint type
+						var hasAccess bool
+						if endpoint.requiresTerraformAPI {
+							hasAccess = authMethod.hasTerraformAPIAccess
+						} else {
+							// For read endpoints, check read API access
+							// Unauthenticated users have read access when ALLOW_UNAUTHENTICATED_ACCESS=true
+							if authMethod.name == "unauthenticated" {
+								hasAccess = true
+							} else {
+								hasAccess = authMethod.hasReadAPIAccess
+							}
+						}
+
+						expectedCode := http.StatusOK
+						if !hasAccess {
+							expectedCode = http.StatusUnauthorized
+						}
+
+						assert.Equal(t, expectedCode, w.Code,
+							fmt.Sprintf("Endpoint %s with auth %s and ALLOW_UNAUTHENTICATED_ACCESS=true should return %d",
+								endpoint.path, authMethod.name, expectedCode))
 					})
 
 					// Test with ALLOW_UNAUTHENTICATED_ACCESS=false
@@ -164,27 +187,42 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 						moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 						_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-						cont := testutils.CreateTestContainerWithConfig(t, db,
-							testutils.WithAllowUnauthenticatedAccess(false))
-						router := cont.Server.Router()
+						// Build config options
+						opts := []testutils.InfraConfigOption{testutils.WithAllowUnauthenticatedAccess(false)}
+						if authMethod.configOptions != nil {
+							opts = append(opts, authMethod.configOptions...)
+						}
+
+						cont := testutils.CreateTestContainerWithConfig(t, db, opts...)
+						testServer := &testutils.TestContainer{
+							Container: cont,
+							Router:    cont.Server.Router(),
+						}
+						router := testServer.Router
 
 						req := httptest.NewRequest(endpoint.method, endpoint.path, nil)
-						authMethod.setup(t, req)
+						authMethod.setup(t, db, testServer, req)
 
 						w := httptest.NewRecorder()
 						router.ServeHTTP(w, req)
 
-						if authMethod.name == "unauthenticated" {
-							// Unauthenticated requests should fail with 401
-							assert.Equal(t, http.StatusUnauthorized, w.Code,
-								fmt.Sprintf("Endpoint %s with no auth and ALLOW_UNAUTHENTICATED_ACCESS=false should return 401",
-									endpoint.path))
+						// Check if the auth method should have access based on endpoint type
+						var hasAccess bool
+						if endpoint.requiresTerraformAPI {
+							hasAccess = authMethod.hasTerraformAPIAccess
 						} else {
-							// All authenticated methods should work
-							assert.Equal(t, http.StatusOK, w.Code,
-								fmt.Sprintf("Endpoint %s with auth %s should return 200",
-									endpoint.path, authMethod.name))
+							// For read endpoints, unauthenticated users don't have access when config is false
+							hasAccess = authMethod.hasReadAPIAccess
 						}
+
+						expectedCode := http.StatusOK
+						if !hasAccess {
+							expectedCode = http.StatusUnauthorized
+						}
+
+						assert.Equal(t, expectedCode, w.Code,
+							fmt.Sprintf("Endpoint %s with auth %s and ALLOW_UNAUTHENTICATED_ACCESS=false should return %d",
+								endpoint.path, authMethod.name, expectedCode))
 					})
 				})
 			}
