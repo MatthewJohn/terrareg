@@ -295,17 +295,30 @@ func (h *AuthHelper) CreateTerraformIDPToken(subject string, permissions map[str
 	err = h.db.DB.Create(&authCode).Error
 	require.NoError(t, err, "Failed to create authorization code")
 
-	// Create access token - Note: fields are Key, Data, Expiry
+	// Create access token with proper user_info format
+	// The ValidateToken method expects user_info in the token data
+	userInfo := map[string]interface{}{
+		"Sub":      fmt.Sprintf("terraform-user-%s", subject),
+		"Name":     "Terraform CLI User",
+		"Email":    fmt.Sprintf("terraform-%s@example.com", subject),
+		"Issuer":   "terraform-idp",
+		"Audience": subject,
+	}
+
 	accessTokenData := map[string]interface{}{
-		"subject": subject,
+		"access_token": subject, // Simplified for testing
+		"token_type":   "Bearer",
+		"expires_in":   3600,
+		"scope":        "openid profile",
+		"user_info":    userInfo,
+		"created_at":   time.Now().Unix(),
 	}
-	// FIX: Store namespace_permissions as raw JSON object, not string
+
+	// Add namespace_permissions if provided
 	if len(permissions) > 0 {
-		permissionsJSON, _ := json.Marshal(permissions)
-		var permissionsMap map[string]interface{}
-		json.Unmarshal(permissionsJSON, &permissionsMap)
-		accessTokenData["namespace_permissions"] = permissionsMap
+		accessTokenData["namespace_permissions"] = permissions
 	}
+
 	accessTokenDataJSON, _ := json.Marshal(accessTokenData)
 
 	// Add unique suffix to avoid UNIQUE constraint violations

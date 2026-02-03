@@ -1,8 +1,14 @@
 package testutils
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -112,6 +118,7 @@ func CreateTestInfraConfigWithPublicURL(t *testing.T, publicURL string) *config.
 		SessionCookieName:           "terrareg_session",
 		AdminAuthenticationToken:    "test-admin-api-key",
 		UploadApiKeys:               []string{"test-upload-key"},
+		PublishApiKeys:              []string{"test-publish-key"},
 		AdminSessionExpiryMins:      60, // 1 hour for admin sessions
 		TerraformLockTimeoutSeconds: 1800, // 30 minutes default (required for terraform operations)
 		// Terraform configuration for tests - prevents tfswitch from trying to prompt interactively
@@ -710,4 +717,36 @@ func CreateTestServer(t *testing.T, db *sqldb.Database) *TestContainer {
 		Container: cont,
 		Router:    cont.Server.Router(),
 	}
+}
+
+// CreateTestTerraformOIDCSigningKey creates a temporary RSA signing key for Terraform OIDC testing
+// Returns the path to the key file and a cleanup function
+// The cleanup function should be called in defer to remove the temporary key file
+func CreateTestTerraformOIDCSigningKey(t *testing.T) (keyPath string, cleanup func()) {
+	t.Helper()
+
+	// Generate a 2048-bit RSA private key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err, "Failed to generate RSA private key")
+
+	// Encode the private key to PEM format
+	privateKeyPEM := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
+
+	// Create a temporary file for the signing key
+	tmpDir := t.TempDir()
+	keyPath = filepath.Join(tmpDir, "terraform-oidc-signing-key.pem")
+
+	err = os.WriteFile(keyPath, privateKeyBytes, 0600)
+	require.NoError(t, err, "Failed to write signing key file")
+
+	// Return cleanup function (t.TempDir() handles cleanup automatically)
+	cleanup = func() {
+		os.Remove(keyPath)
+	}
+
+	return keyPath, cleanup
 }

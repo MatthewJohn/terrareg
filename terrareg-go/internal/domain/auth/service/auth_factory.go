@@ -142,8 +142,8 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 
 	// 8. Terraform OIDC auth method
 	if terraformIdpService != nil {
-		// For now, skip Terraform OIDC until we fix the interface issue
-		// TODO: Fix Terraform OIDC auth method interface compatibility
+		terraformOidcAuthMethod := infraAuth.NewTerraformOidcAuthMethod(af.config, terraformIdpService)
+		af.RegisterAuthMethod(terraformOidcAuthMethod)
 	}
 
 	// 9. Terraform Analytics auth key method

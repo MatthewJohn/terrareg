@@ -44,6 +44,7 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 		hasReadAPIAccess     bool // true = has can_access_read_api
 		hasTerraformAPIAccess bool // true = has can_access_terraform_api
 		configOptions        []testutils.InfraConfigOption // config options needed for this auth method
+		requiresSigningKey   bool // true = needs a signing key file to be generated for Terraform OIDC
 	}{
 		{
 			name:                 "unauthenticated",
@@ -51,6 +52,7 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 			hasReadAPIAccess:     false, // controlled by ALLOW_UNAUTHENTICATED_ACCESS config
 			hasTerraformAPIAccess: false,
 			configOptions:        nil,
+			requiresSigningKey:   false,
 		},
 		{
 			name: "admin_api_key",
@@ -64,6 +66,7 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 			hasReadAPIAccess:     true,
 			hasTerraformAPIAccess: true,
 			configOptions:        nil,
+			requiresSigningKey:   false,
 		},
 		{
 			name: "upload_api_key",
@@ -72,11 +75,13 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 				if apiKey == "" {
 					apiKey = "test-upload-key"
 				}
-				req.Header.Set("X-Terrareg-UploadKey", apiKey)
+				// Python uses X-Terrareg-ApiKey for all API key types (admin, upload, publish)
+				req.Header.Set("X-Terrareg-ApiKey", apiKey)
 			},
 			hasReadAPIAccess:     false, // upload API keys don't have read API access (Python: base_api_key_auth_method.py)
 			hasTerraformAPIAccess: false,
 			configOptions:        nil,
+			requiresSigningKey:   false,
 		},
 		{
 			name: "publish_api_key",
@@ -85,11 +90,13 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 				if apiKey == "" {
 					apiKey = "test-publish-key"
 				}
-				req.Header.Set("X-Terrareg-PublishKey", apiKey)
+				// Python uses X-Terrareg-ApiKey for all API key types (admin, upload, publish)
+				req.Header.Set("X-Terrareg-ApiKey", apiKey)
 			},
 			hasReadAPIAccess:     false, // publish API keys don't have read API access (Python: base_api_key_auth_method.py)
 			hasTerraformAPIAccess: false,
 			configOptions:        nil,
+			requiresSigningKey:   false,
 		},
 		{
 			name: "user_session",
@@ -101,6 +108,7 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 			hasReadAPIAccess:     true, // session auth has read API access (Python: base_session_auth_method.py)
 			hasTerraformAPIAccess: true, // inherits from read API access
 			configOptions:        nil,
+			requiresSigningKey:   false,
 		},
 		{
 			name: "user_with_read_permission",
@@ -114,9 +122,20 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 			hasReadAPIAccess:     true, // session auth has read API access
 			hasTerraformAPIAccess: true, // inherits from read API access
 			configOptions:        nil,
+			requiresSigningKey:   false,
 		},
-		// Note: terraform_idp_token test requires a signing key file setup
-		// This is tested separately in integration tests that have proper key setup
+		{
+			name: "terraform_idp_token",
+			setup: func(t *testing.T, db *sqldb.Database, cont *testutils.TestContainer, req *http.Request) {
+				authHelper := testutils.NewAuthHelper(t, db, cont)
+				token := authHelper.CreateTerraformIDPToken("test-subject", nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			},
+			hasReadAPIAccess:     false, // terraform IDP tokens don't have read API access (Python: base_terraform_static_token.py)
+			hasTerraformAPIAccess: true,  // but they do have terraform API access
+			configOptions:        nil,
+			requiresSigningKey:   true, // needs a signing key file to be generated
+		},
 	}
 
 	for _, endpoint := range endpoints {
@@ -139,6 +158,15 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 							opts = append(opts, authMethod.configOptions...)
 						}
 
+						// Generate signing key if needed for Terraform OIDC
+						var keyCleanup func()
+						if authMethod.requiresSigningKey {
+							keyPath, cleanup := testutils.CreateTestTerraformOIDCSigningKey(t)
+							opts = append(opts, testutils.WithTerraformOIDCConfig(keyPath))
+							defer cleanup()
+							keyCleanup = cleanup
+						}
+
 						cont := testutils.CreateTestContainerWithConfig(t, db, opts...)
 						testServer := &testutils.TestContainer{
 							Container: cont,
@@ -148,6 +176,11 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 
 						req := httptest.NewRequest(endpoint.method, endpoint.path, nil)
 						authMethod.setup(t, db, testServer, req)
+
+						// Clean up signing key if it was generated
+						if keyCleanup != nil {
+							keyCleanup()
+						}
 
 						w := httptest.NewRecorder()
 						router.ServeHTTP(w, req)
@@ -193,6 +226,15 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 							opts = append(opts, authMethod.configOptions...)
 						}
 
+						// Generate signing key if needed for Terraform OIDC
+						var keyCleanup func()
+						if authMethod.requiresSigningKey {
+							keyPath, cleanup := testutils.CreateTestTerraformOIDCSigningKey(t)
+							opts = append(opts, testutils.WithTerraformOIDCConfig(keyPath))
+							defer cleanup()
+							keyCleanup = cleanup
+						}
+
 						cont := testutils.CreateTestContainerWithConfig(t, db, opts...)
 						testServer := &testutils.TestContainer{
 							Container: cont,
@@ -202,6 +244,11 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 
 						req := httptest.NewRequest(endpoint.method, endpoint.path, nil)
 						authMethod.setup(t, db, testServer, req)
+
+						// Clean up signing key if it was generated
+						if keyCleanup != nil {
+							keyCleanup()
+						}
 
 						w := httptest.NewRecorder()
 						router.ServeHTTP(w, req)

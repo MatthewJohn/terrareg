@@ -51,8 +51,9 @@ func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, authorizatio
 	// Create TerraformOidcAuthContext with authentication state
 	authContext := auth.NewTerraformOidcAuthContext(ctx, userInfo.Sub)
 
-	// Add Terraform-specific permissions (matches Python - minimal access)
-	authContext.AddPermission("read")
+	// Note: Do NOT add "read" permission - Terraform OIDC tokens do NOT have read API access
+	// Python: can_access_read_api returns False for Terraform OIDC
+	// Terraform OIDC tokens only have terraform API access, not general read API access
 	authContext.AddPermission("download")
 
 	// Set the bearer token for Terraform

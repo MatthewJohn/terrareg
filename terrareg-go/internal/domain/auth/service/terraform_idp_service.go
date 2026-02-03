@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	oidcAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth"
 )
@@ -51,15 +52,6 @@ type AccessTokenResponse struct {
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
 	Scope       string `json:"scope"`
-}
-
-// UserInfo represents the user information returned by the userinfo endpoint
-type UserInfo struct {
-	Sub      string `json:"sub"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Issuer   string `json:"iss"`
-	Audience string `json:"aud"`
 }
 
 // NewTerraformIdpService creates a new Terraform IDP service
@@ -166,7 +158,7 @@ func (s *TerraformIdpService) ExchangeCodeForToken(ctx context.Context, req Acce
 	}
 
 	// Create user info for the token
-	userInfo := &UserInfo{
+	userInfo := &auth.UserInfo{
 		Sub:      fmt.Sprintf("terraform-user-%s", req.ClientID),
 		Name:     "Terraform CLI User",
 		Email:    fmt.Sprintf("terraform-%s@example.com", req.ClientID),
@@ -219,7 +211,7 @@ func (s *TerraformIdpService) ExchangeCodeForToken(ctx context.Context, req Acce
 }
 
 // ValidateToken validates an access token and returns the associated user info
-func (s *TerraformIdpService) ValidateToken(ctx context.Context, token string) (*UserInfo, error) {
+func (s *TerraformIdpService) ValidateToken(ctx context.Context, token string) (*auth.UserInfo, error) {
 	tokenRecord, err := s.accessTokenRepo.FindByKey(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("invalid or expired token: %w", err)
@@ -244,7 +236,7 @@ func (s *TerraformIdpService) ValidateToken(ctx context.Context, token string) (
 		return nil, fmt.Errorf("failed to marshal user info: %w", err)
 	}
 
-	var userInfo UserInfo
+	var userInfo auth.UserInfo
 	err = json.Unmarshal(userInfoBytes, &userInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal user info: %w", err)

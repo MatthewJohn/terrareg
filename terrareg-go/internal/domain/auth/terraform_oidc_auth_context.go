@@ -102,9 +102,10 @@ func (t *TerraformOidcAuthContext) GetUserGroupNames() []string {
 	return []string{}
 }
 
-// CanAccessReadAPI returns true if the service account has read permission
+// CanAccessReadAPI returns false for Terraform OIDC (no read API access)
+// Python: can_access_read_api returns False for Terraform OIDC
 func (t *TerraformOidcAuthContext) CanAccessReadAPI() bool {
-	return t.HasPermission("read")
+	return false
 }
 
 // CanAccessTerraformAPI returns true for Terraform OIDC (this is specifically for Terraform)

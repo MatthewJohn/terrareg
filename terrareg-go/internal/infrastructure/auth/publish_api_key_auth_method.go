@@ -39,7 +39,11 @@ func (p *PublishApiKeyAuthMethod) Authenticate(ctx context.Context, headers, for
 
 	// Extract API key from X-Terrareg-ApiKey header
 	// Note: Python uses the same header for all API key types
+	// Go canonicalizes headers, so check both variants
 	apiKey, exists := headers["X-Terrareg-ApiKey"]
+	if !exists {
+		apiKey, exists = headers["X-Terrareg-Apikey"] // Go's canonical form
+	}
 	if !exists {
 		return nil, nil // Let other auth methods try
 	}
