@@ -18,8 +18,9 @@ func TestProviderSourceOrganizations_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	tests := []struct {
 		name           string
@@ -66,8 +67,9 @@ func TestProviderSourceRepositories_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	tests := []struct {
 		name           string
@@ -114,8 +116,9 @@ func TestProviderSourceRefreshNamespace_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "refresh-namespace", nil)
@@ -170,8 +173,9 @@ func TestProviderSourcePublishProvider_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "publish-provider-namespace", nil)

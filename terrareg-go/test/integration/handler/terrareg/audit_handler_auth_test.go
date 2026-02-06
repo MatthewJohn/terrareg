@@ -15,8 +15,9 @@ func TestAuditHistory_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	tests := []struct {
 		name           string

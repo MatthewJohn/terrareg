@@ -160,7 +160,8 @@ func GetAuthContext(ctx context.Context) auth.AuthContext {
 	}
 	// Return not authenticated context as default with AllowUnauthenticatedAccess=true for safety
 	// This ensures unauthenticated read access works by default
-	return authservice.NewNotAuthenticatedAuthContext(true)
+	// Note: passing nil config will use defaults (AllowUnauthenticatedAccess=true)
+	return auth.NewNotAuthenticatedAuthContext(context.Background(), nil)
 }
 
 // GetAuthMethodFromContext retrieves the auth method from the request context

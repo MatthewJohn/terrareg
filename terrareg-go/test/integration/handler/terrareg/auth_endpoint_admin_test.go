@@ -124,7 +124,8 @@ func TestAdminEndpoints_AllAuthMethods(t *testing.T) {
 			defer testutils.CleanupTestDatabase(t, db)
 
 			// Create TestContainer first to get both container and router
-			cont := testutils.CreateTestServer(t, db)
+			// Enable RBAC so permission checking works properly
+		cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 			authHelper := testutils.NewAuthHelper(t, db, cont)
 			setupFunc := authMethod.setup(t, db, authHelper)
 
@@ -175,7 +176,8 @@ func TestAdminEndpoints_FullPermissionNotSufficient(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user with FULL permission but NOT site admin
@@ -200,7 +202,8 @@ func TestAdminEndpoints_SiteAdminSufficient(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user group with site_admin = true
@@ -275,7 +278,8 @@ func TestAdminEndpoints_CreateUserGroup(t *testing.T) {
 			db := testutils.SetupTestDatabase(t)
 			defer testutils.CleanupTestDatabase(t, db)
 
-			cont := testutils.CreateTestServer(t, db)
+			// Enable RBAC so permission checking works properly
+		cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 			setupFunc := authMethod.setup(t, db, authHelper)
 
@@ -306,7 +310,8 @@ func TestAdminEndpoints_ApiKeysDontGrantAdminAccess(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	router := cont.Router
 
 	apiKeys := []struct {

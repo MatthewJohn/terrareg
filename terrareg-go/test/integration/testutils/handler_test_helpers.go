@@ -234,10 +234,10 @@ func AssertCookieValue(t *testing.T, w *httptest.ResponseRecorder, cookieName, e
 	assert.Equal(t, expectedValue, cookie.Value)
 }
 
-// ServeHTTP is a helper function for serving HTTP requests through a chi router
-// It creates a ResponseRecorder, serves the request through the router, and returns the recorder
-func ServeHTTP(router chi.Router, req *http.Request) *httptest.ResponseRecorder {
+// ServeHTTP is a helper function for serving HTTP requests through an HTTP handler
+// It creates a ResponseRecorder, serves the request through the handler, and returns the recorder
+func ServeHTTP(handler http.Handler, req *http.Request) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	handler.ServeHTTP(w, req)
 	return w
 }

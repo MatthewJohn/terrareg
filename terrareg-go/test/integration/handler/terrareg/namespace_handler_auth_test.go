@@ -17,8 +17,9 @@ func TestNamespaceCreate_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	tests := []struct {
 		name           string
@@ -70,8 +71,9 @@ func TestNamespaceUpdate_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "test-namespace", nil)
@@ -162,8 +164,9 @@ func TestNamespaceDelete_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "delete-test-namespace", nil)
@@ -241,8 +244,9 @@ func TestNamespaceGet_AllAuthMethods(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "get-test-namespace", nil)
@@ -293,8 +297,9 @@ func TestNamespaceList_AllAuthMethods(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	tests := []struct {
 		name           string

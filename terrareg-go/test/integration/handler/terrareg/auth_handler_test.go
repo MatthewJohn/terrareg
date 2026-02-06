@@ -118,9 +118,9 @@ func TestAuthHandler_HandleIsAuthenticated_NonAdminUser(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	// Get the real server router from the container
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create an authenticated request with non-admin session
 	req, cookieValue := testutils.CreateAuthenticatedRequestWithSession(t, db, "GET", "/v1/terrareg/auth/admin/is_authenticated", "regular-user", false)

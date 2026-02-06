@@ -150,14 +150,14 @@ func TestGetCSRFTokenFromRequest(t *testing.T) {
 
 	t.Run("handles URL-encoded token value", func(t *testing.T) {
 		formData := url.Values{}
-		// Token with URL-encoded characters
-		formData.Set("csrf_token", "token%20with%20spaces")
+		// Token with spaces - form encoding will URL-encode this as "token%20with%20spaces"
+		formData.Set("csrf_token", "token with spaces")
 		req := httptest.NewRequest("POST", "/test", strings.NewReader(formData.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		token := middleware.getCSRFTokenFromRequest(req)
 
-		// ParseForm decodes URL encoding
+		// ParseForm decodes URL encoding, so we get back the original value
 		assert.Equal(t, csrf.CSRFToken("token with spaces"), token)
 	})
 }

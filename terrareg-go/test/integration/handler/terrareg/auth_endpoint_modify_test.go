@@ -19,13 +19,14 @@ import (
 func setupModifyTestContainerWithSigningKey(t *testing.T, db *sqldb.Database, authMethodName string) *testutils.TestContainer {
 	if strings.HasPrefix(authMethodName, "terraform_idp") {
 		keyPath, _ := testutils.CreateTestTerraformOIDCSigningKey(t)
-		cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithTerraformOIDCConfig(keyPath))
+		cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithTerraformOIDCConfig(keyPath), testutils.WithEnableAccessControls(true))
 		return &testutils.TestContainer{
 			Container: cont,
 			Router:    cont.Server.Router(),
 		}
 	}
-	return testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	return testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 }
 
 // TestModifyEndpoints_AllAuthMethods tests that MODIFY permission endpoints work correctly
@@ -220,7 +221,8 @@ func TestModifyEndpoints_CrossNamespacePermissions(t *testing.T) {
 	_ = testutils.CreatePublishedModuleVersion(t, db, mp1.ID, "1.0.0")
 	_ = testutils.CreatePublishedModuleVersion(t, db, mp2.ID, "1.0.0")
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user group with MODIFY permission only for ns1
@@ -271,8 +273,9 @@ func TestModifyEndpoints_AdminBypass(t *testing.T) {
 	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Test with admin API key - should work for any namespace
 	body := []byte(`{"description": "Updated by admin"}`)
@@ -341,7 +344,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			setup: func(t *testing.T, req *http.Request) {
 				db := testutils.SetupTestDatabase(t)
 				defer testutils.CleanupTestDatabase(t, db)
-				cont := testutils.CreateTestServer(t, db)
+				// Enable RBAC so permission checking works properly
+				cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 				authHelper := testutils.NewAuthHelper(t, db, cont)
 				authHelper.SetupUserGroupWithPermissions("read-group", false, map[string]string{"test-ns": "READ"})
 				cookie := authHelper.CreateSessionForUser("readuser", false, []string{"read-group"}, nil)
@@ -354,7 +358,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			setup: func(t *testing.T, req *http.Request) {
 				db := testutils.SetupTestDatabase(t)
 				defer testutils.CleanupTestDatabase(t, db)
-				cont := testutils.CreateTestServer(t, db)
+				// Enable RBAC so permission checking works properly
+				cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 				authHelper := testutils.NewAuthHelper(t, db, cont)
 				authHelper.SetupUserGroupWithPermissions("modify-group", false, map[string]string{"test-ns": "MODIFY"})
 				cookie := authHelper.CreateSessionForUser("modifyuser", false, []string{"modify-group"}, nil)
@@ -367,7 +372,8 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			setup: func(t *testing.T, req *http.Request) {
 				db := testutils.SetupTestDatabase(t)
 				defer testutils.CleanupTestDatabase(t, db)
-				cont := testutils.CreateTestServer(t, db)
+				// Enable RBAC so permission checking works properly
+				cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 				authHelper := testutils.NewAuthHelper(t, db, cont)
 				authHelper.SetupUserGroupWithPermissions("full-group", false, map[string]string{"test-ns": "FULL"})
 				cookie := authHelper.CreateSessionForUser("fulluser", false, []string{"full-group"}, nil)
@@ -387,8 +393,9 @@ func TestModifyEndpoints_RequireUploadPermission(t *testing.T) {
 			moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 			_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-			cont := testutils.CreateTestContainer(t, db)
-			router := cont.Server.Router()
+			// Enable RBAC so permission checking works properly
+			cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+			router := cont.Router
 
 			// Test upload endpoint which uses RequireUploadPermission
 			// Note: This will return 400 without proper file upload, but we're testing auth

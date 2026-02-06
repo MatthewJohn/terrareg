@@ -202,7 +202,8 @@ func TestPublicEndpoints_AnalyticsAcceptsAuthenticatedWithReadAccess(t *testing.
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create a user session

@@ -17,8 +17,9 @@ func TestModuleProviderCreate_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "test-namespace", nil)
@@ -93,8 +94,9 @@ func TestModuleProviderDelete_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace and module provider
 	namespace := testutils.CreateNamespace(t, db, "delete-namespace", nil)
@@ -176,8 +178,9 @@ func TestModuleProviderSettingsUpdate_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test namespace and module provider
 	namespace := testutils.CreateNamespace(t, db, "settings-namespace", nil)
@@ -263,8 +266,9 @@ func TestModuleVersionDelete_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test data: namespace -> module provider -> version
 	namespace := testutils.CreateNamespace(t, db, "version-delete-namespace", nil)
@@ -366,8 +370,9 @@ func TestModuleVersionPublish_Authentication(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test data
 	namespace := testutils.CreateNamespace(t, db, "publish-namespace", nil)
@@ -420,8 +425,9 @@ func TestModuleDetails_AllAuthMethods(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestContainer(t, db)
-	router := cont.Server.Router()
+	// Enable RBAC for this test so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
+	router := cont.Router
 
 	// Create test data
 	namespace := testutils.CreateNamespace(t, db, "details-namespace", nil)

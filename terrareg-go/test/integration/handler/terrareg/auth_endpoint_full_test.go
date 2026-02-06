@@ -18,13 +18,14 @@ import (
 func setupTestContainerWithSigningKey(t *testing.T, db *sqldb.Database, authMethodName string) *testutils.TestContainer {
 	if strings.HasPrefix(authMethodName, "terraform_idp") {
 		keyPath, _ := testutils.CreateTestTerraformOIDCSigningKey(t)
-		cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithTerraformOIDCConfig(keyPath))
+		cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithTerraformOIDCConfig(keyPath), testutils.WithEnableAccessControls(true))
 		return &testutils.TestContainer{
 			Container: cont,
 			Router:    cont.Server.Router(),
 		}
 	}
-	return testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	return testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 }
 
 // TestFullEndpoints_AllAuthMethods tests that FULL permission endpoints work correctly
@@ -244,8 +245,8 @@ func TestFullEndpoints_ModifyPermissionDenied(t *testing.T) {
 	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-	// Create test server (which wraps container in TestContainer struct)
-	testServer := testutils.CreateTestServer(t, db)
+	// Create test server (which wraps container in TestContainer struct) - Enable RBAC so permission checking works properly
+	testServer := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, testServer)
 
 	// Create user with MODIFY permission
@@ -275,8 +276,8 @@ func TestFullEndpoints_FullPermissionAllowed(t *testing.T) {
 	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-	// Create test server (which wraps container in TestContainer struct)
-	testServer := testutils.CreateTestServer(t, db)
+	// Create test server (which wraps container in TestContainer struct) - Enable RBAC so permission checking works properly
+	testServer := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, testServer)
 
 	// Create user with FULL permission
@@ -307,7 +308,8 @@ func TestFullEndpoints_AdminBypass(t *testing.T) {
 	moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-	cont := testutils.CreateTestContainer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	router := cont.Server.Router()
 
 	// Test with admin API key - should work for any namespace
@@ -334,7 +336,8 @@ func TestFullEndpoints_UploadApiKeyDenied(t *testing.T) {
 	// Create test namespace
 	_ = testutils.CreateNamespace(t, db, "test-ns", nil)
 
-	cont := testutils.CreateTestContainer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	router := cont.Server.Router()
 
 	// Try to create module provider using upload API key

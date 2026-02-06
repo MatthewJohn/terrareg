@@ -122,6 +122,7 @@ func CreateTestInfraConfigWithPublicURL(t *testing.T, publicURL string) *config.
 		AdminSessionExpiryMins:      60, // 1 hour for admin sessions
 		TerraformLockTimeoutSeconds: 1800, // 30 minutes default (required for terraform operations)
 		AllowUnauthenticatedAccess:  true, // Match Python default of ALLOW_UNAUTHENTICATED_ACCESS=True
+		EnableAccessControls:        false, // Match Python default of ENABLE_ACCESS_CONTROLS=False
 		// Terraform configuration for tests - prevents tfswitch from trying to prompt interactively
 		TerraformDefaultVersion: "1.5.7", // Use a specific version to avoid interactive prompts
 		TerraformProduct:        "terraform",
@@ -677,6 +678,13 @@ func WithAllowUnauthenticatedAccess(allow bool) InfraConfigOption {
 	}
 }
 
+// WithEnableAccessControls sets whether RBAC is enabled for testing
+func WithEnableAccessControls(enable bool) InfraConfigOption {
+	return func(cfg *config.InfrastructureConfig) {
+		cfg.EnableAccessControls = enable
+	}
+}
+
 // WithTerraformOIDCConfig sets Terraform OIDC configuration for testing
 // This enables the Terraform OIDC auth method for tests that need to use terraform_idp_token
 func WithTerraformOIDCConfig(signingKeyPath string) InfraConfigOption {
@@ -714,6 +722,16 @@ type TestContainer struct {
 // This is the preferred way to create a test server for integration tests
 func CreateTestServer(t *testing.T, db *sqldb.Database) *TestContainer {
 	cont := CreateTestContainer(t, db)
+	return &TestContainer{
+		Container: cont,
+		Router:    cont.Server.Router(),
+	}
+}
+
+// CreateTestServerWithConfig creates a TestContainer with custom infrastructure configuration
+// This allows tests to override specific config values (e.g., for RBAC testing)
+func CreateTestServerWithConfig(t *testing.T, db *sqldb.Database, opts ...InfraConfigOption) *TestContainer {
+	cont := CreateTestContainerWithConfig(t, db, opts...)
 	return &TestContainer{
 		Container: cont,
 		Router:    cont.Server.Router(),

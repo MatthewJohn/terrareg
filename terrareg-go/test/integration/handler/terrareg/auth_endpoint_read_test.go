@@ -152,8 +152,11 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 						moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 						_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-						// Build config options
-						opts := []testutils.InfraConfigOption{testutils.WithAllowUnauthenticatedAccess(true)}
+						// Build config options - enable RBAC so permission checking works properly
+						opts := []testutils.InfraConfigOption{
+							testutils.WithAllowUnauthenticatedAccess(true),
+							testutils.WithEnableAccessControls(true),
+						}
 						if authMethod.configOptions != nil {
 							opts = append(opts, authMethod.configOptions...)
 						}
@@ -220,8 +223,11 @@ func TestReadEndpoints_AllAuthMethods(t *testing.T) {
 						moduleProvider := testutils.CreateModuleProvider(t, db, namespace.ID, "test-mod", "test-prov")
 						_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider.ID, "1.0.0")
 
-						// Build config options
-						opts := []testutils.InfraConfigOption{testutils.WithAllowUnauthenticatedAccess(false)}
+						// Build config options - enable RBAC so permission checking works properly
+						opts := []testutils.InfraConfigOption{
+							testutils.WithAllowUnauthenticatedAccess(false),
+							testutils.WithEnableAccessControls(true),
+						}
 						if authMethod.configOptions != nil {
 							opts = append(opts, authMethod.configOptions...)
 						}
@@ -282,7 +288,8 @@ func TestReadEndpoints_IsAuthenticatedResponseStructure(t *testing.T) {
 	db := testutils.SetupTestDatabase(t)
 	defer testutils.CleanupTestDatabase(t, db)
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	tests := []struct {
@@ -339,8 +346,10 @@ func TestReadEndpoints_IsAuthenticatedResponseStructure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Enable RBAC so permission checking works properly
 			cont := testutils.CreateTestContainerWithConfig(t, db,
-				testutils.WithAllowUnauthenticatedAccess(tt.allowUnauthenticated))
+				testutils.WithAllowUnauthenticatedAccess(tt.allowUnauthenticated),
+				testutils.WithEnableAccessControls(true))
 			router := cont.Server.Router()
 
 			req := httptest.NewRequest("GET", "/v1/terrareg/auth/admin/is_authenticated", nil)
@@ -373,7 +382,8 @@ func TestReadEndpoints_NamespacePermissionsInResponse(t *testing.T) {
 	_ = testutils.CreateNamespace(t, db, "ns-modify", nil)
 	_ = testutils.CreateNamespace(t, db, "ns-read", nil)
 
-	cont := testutils.CreateTestServer(t, db)
+	// Enable RBAC so permission checking works properly
+	cont := testutils.CreateTestServerWithConfig(t, db, testutils.WithEnableAccessControls(true))
 	authHelper := testutils.NewAuthHelper(t, db, cont)
 
 	// Create user group with mixed permissions

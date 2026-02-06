@@ -1,10 +1,11 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,8 +17,8 @@ func newTestLogger() *zerolog.Logger {
 }
 
 // Helper function to create a test config
-func newTestConfig() *config.InfrastructureConfig {
-	return &config.InfrastructureConfig{
+func newTestConfig() *infraConfig.InfrastructureConfig {
+	return &infraConfig.InfrastructureConfig{
 		SecretKey:                       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		SessionCookieName:               "terrareg_session",
 		AdminAuthenticationToken:        "test-admin-key",
@@ -54,27 +55,87 @@ func TestNewAuthFactory_ConstructorValidation(t *testing.T) {
 }
 
 // TestNotAuthenticatedAuthContext tests the NotAuthenticated auth context
+// With ENABLE_ACCESS_CONTROLS, unauthenticated users can publish/upload only when:
+// 1. ENABLE_ACCESS_CONTROLS is false (RBAC disabled)
+// 2. Publish/Upload API keys are not enabled
+// 3. ALLOW_UNAUTHENTICATED_ACCESS is true
 func TestNotAuthenticatedAuthContext(t *testing.T) {
 	tests := []struct {
-		name                      string
-		allowUnauthenticatedAccess bool
-		expectCanAccessReadAPI     bool
+		name                          string
+		enableAccessControls          bool
+		allowUnauthenticatedAccess    bool
+		publishApiKeysEnabled         bool
+		uploadApiKeysEnabled          bool
+		expectCanAccessReadAPI        bool
+		expectCanPublishModuleVersion bool
+		expectCanUploadModuleVersion  bool
 	}{
 		{
-			name:                      "unauthenticated access allowed",
-			allowUnauthenticatedAccess: true,
-			expectCanAccessReadAPI:     true,
+			name:                          "unauthenticated access allowed, no API keys, RBAC disabled",
+			enableAccessControls:          false,
+			allowUnauthenticatedAccess:    true,
+			publishApiKeysEnabled:         false,
+			uploadApiKeysEnabled:          false,
+			expectCanAccessReadAPI:        true,
+			expectCanPublishModuleVersion: true,
+			expectCanUploadModuleVersion:  true,
 		},
 		{
-			name:                      "unauthenticated access denied",
-			allowUnauthenticatedAccess: false,
-			expectCanAccessReadAPI:     false,
+			name:                          "unauthenticated access denied",
+			enableAccessControls:          false,
+			allowUnauthenticatedAccess:    false,
+			publishApiKeysEnabled:         false,
+			uploadApiKeysEnabled:          false,
+			expectCanAccessReadAPI:        false,
+			expectCanPublishModuleVersion: false,
+			expectCanUploadModuleVersion:  false,
+		},
+		{
+			name:                          "unauthenticated access allowed, but RBAC enabled",
+			enableAccessControls:          true,
+			allowUnauthenticatedAccess:    true,
+			publishApiKeysEnabled:         false,
+			uploadApiKeysEnabled:          false,
+			expectCanAccessReadAPI:        true,
+			expectCanPublishModuleVersion: false,
+			expectCanUploadModuleVersion:  false,
+		},
+		{
+			name:                          "unauthenticated access allowed, but publish API keys enabled",
+			enableAccessControls:          false,
+			allowUnauthenticatedAccess:    true,
+			publishApiKeysEnabled:         true,
+			uploadApiKeysEnabled:          false,
+			expectCanAccessReadAPI:        true,
+			expectCanPublishModuleVersion: false,
+			expectCanUploadModuleVersion:  true,
+		},
+		{
+			name:                          "unauthenticated access allowed, but upload API keys enabled",
+			enableAccessControls:          false,
+			allowUnauthenticatedAccess:    true,
+			publishApiKeysEnabled:         false,
+			uploadApiKeysEnabled:          true,
+			expectCanAccessReadAPI:        true,
+			expectCanPublishModuleVersion: true,
+			expectCanUploadModuleVersion:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			authCtx := NewNotAuthenticatedAuthContext(tt.allowUnauthenticatedAccess)
+			// Create a test config with the specified values
+			config := &infraConfig.InfrastructureConfig{
+				EnableAccessControls:       tt.enableAccessControls,
+				AllowUnauthenticatedAccess: tt.allowUnauthenticatedAccess,
+			}
+			if tt.publishApiKeysEnabled {
+				config.PublishApiKeys = []string{"test-publish-key"}
+			}
+			if tt.uploadApiKeysEnabled {
+				config.UploadApiKeys = []string{"test-upload-key"}
+			}
+			authCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), config)
 
 			assert.False(t, authCtx.IsAuthenticated())
 			assert.False(t, authCtx.IsAdmin())
@@ -84,12 +145,14 @@ func TestNotAuthenticatedAuthContext(t *testing.T) {
 			assert.Equal(t, "", authCtx.GetUsername())
 			assert.Empty(t, authCtx.GetUserGroupNames())
 			assert.Empty(t, authCtx.GetAllNamespacePermissions())
-			assert.False(t, authCtx.CanPublishModuleVersion("test"))
-			assert.False(t, authCtx.CanUploadModuleVersion("test"))
+			assert.Equal(t, tt.expectCanPublishModuleVersion, authCtx.CanPublishModuleVersion("test"))
+			assert.Equal(t, tt.expectCanUploadModuleVersion, authCtx.CanUploadModuleVersion("test"))
 			assert.False(t, authCtx.CheckNamespaceAccess("test", "READ"))
 			assert.False(t, authCtx.CanAccessTerraformAPI())
 			assert.Equal(t, "", authCtx.GetTerraformAuthToken())
-			assert.Empty(t, authCtx.GetProviderData())
+			// GetProviderData returns auth_method, not empty
+			providerData := authCtx.GetProviderData()
+			assert.Equal(t, "NOT_AUTHENTICATED", providerData["auth_method"])
 			assert.Equal(t, tt.expectCanAccessReadAPI, authCtx.CanAccessReadAPI())
 			assert.Equal(t, auth.AuthMethodNotAuthenticated, authCtx.GetProviderType())
 		})
@@ -130,7 +193,13 @@ func TestNewAuthenticationResponseFromAuthContext(t *testing.T) {
 	})
 
 	t.Run("unauthenticated user", func(t *testing.T) {
-		notAuthCtx := NewNotAuthenticatedAuthContext(true)
+		// With ENABLE_ACCESS_CONTROLS=false, no API keys, ALLOW_UNAUTHENTICATED_ACCESS=true
+		// unauthenticated users CAN publish and upload
+		config := &infraConfig.InfrastructureConfig{
+			EnableAccessControls:       false,
+			AllowUnauthenticatedAccess: true,
+		}
+		notAuthCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), config)
 
 		response := NewAuthenticationResponseFromAuthContext(notAuthCtx)
 
@@ -140,8 +209,8 @@ func TestNewAuthenticationResponseFromAuthContext(t *testing.T) {
 		assert.False(t, response.IsAdmin)
 		assert.Empty(t, response.UserGroups)
 		assert.Empty(t, response.Permissions)
-		assert.False(t, response.CanPublish)
-		assert.False(t, response.CanUpload)
+		assert.True(t, response.CanPublish)  // Can publish because RBAC disabled + no API keys + allowed access
+		assert.True(t, response.CanUpload)   // Can upload because RBAC disabled + no API keys + allowed access
 		assert.True(t, response.CanAccessAPI) // because allowUnauthenticatedAccess=true
 		assert.False(t, response.CanAccessTerraform)
 		assert.Nil(t, response.SessionID)

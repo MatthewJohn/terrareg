@@ -74,7 +74,7 @@ type AuthMethodType string
 
 const (
 	AuthMethodNotAuthenticated                AuthMethodType = "NOT_AUTHENTICATED"
-	AuthMethodAdminSession                    AuthMethodType = "ADMIN_SESSION"
+	AuthMethodSession                        AuthMethodType = "SESSION"
 	AuthMethodAdminApiKey                     AuthMethodType = "ADMIN_API_KEY"
 	AuthMethodSAML                            AuthMethodType = "SAML"
 	AuthMethodOpenIDConnect                   AuthMethodType = "OPENID_CONNECT"

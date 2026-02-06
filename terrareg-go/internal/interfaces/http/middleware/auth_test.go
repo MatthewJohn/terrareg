@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -140,7 +140,8 @@ func TestRequireReadAccess(t *testing.T) {
 	})
 
 	t.Run("allows unauthenticated when ALLOW_UNAUTHENTICATED_ACCESS=true", func(t *testing.T) {
-		notAuthCtx := authservice.NewNotAuthenticatedAuthContext(true) // allowUnauthenticatedAccess=true
+		cfg := &infraConfig.InfrastructureConfig{AllowUnauthenticatedAccess: true}
+		notAuthCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), cfg)
 
 		handlerCalled := false
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +160,8 @@ func TestRequireReadAccess(t *testing.T) {
 	})
 
 	t.Run("blocks unauthenticated when ALLOW_UNAUTHENTICATED_ACCESS=false", func(t *testing.T) {
-		notAuthCtx := authservice.NewNotAuthenticatedAuthContext(false) // allowUnauthenticatedAccess=false
+		cfg := &infraConfig.InfrastructureConfig{AllowUnauthenticatedAccess: false}
+		notAuthCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), cfg)
 
 		handlerCalled := false
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +250,8 @@ func TestRequireTerraformAccess(t *testing.T) {
 	})
 
 	t.Run("blocks unauthenticated requests", func(t *testing.T) {
-		notAuthCtx := authservice.NewNotAuthenticatedAuthContext(true)
+		cfg := &infraConfig.InfrastructureConfig{AllowUnauthenticatedAccess: true}
+		notAuthCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), cfg)
 
 		handlerCalled := false
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -582,7 +585,8 @@ func TestAuthContextImplementation(t *testing.T) {
 	})
 
 	t.Run("not authenticated auth context with ALLOW_UNAUTHENTICATED_ACCESS=true", func(t *testing.T) {
-		authCtx := authservice.NewNotAuthenticatedAuthContext(true)
+		cfg := &infraConfig.InfrastructureConfig{AllowUnauthenticatedAccess: true}
+		authCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), cfg)
 
 		assert.False(t, authCtx.IsAuthenticated())
 		assert.True(t, authCtx.CanAccessReadAPI())
@@ -590,7 +594,8 @@ func TestAuthContextImplementation(t *testing.T) {
 	})
 
 	t.Run("not authenticated auth context with ALLOW_UNAUTHENTICATED_ACCESS=false", func(t *testing.T) {
-		authCtx := authservice.NewNotAuthenticatedAuthContext(false)
+		cfg := &infraConfig.InfrastructureConfig{AllowUnauthenticatedAccess: false}
+		authCtx := auth.NewNotAuthenticatedAuthContext(context.Background(), cfg)
 
 		assert.False(t, authCtx.IsAuthenticated())
 		assert.False(t, authCtx.CanAccessReadAPI())

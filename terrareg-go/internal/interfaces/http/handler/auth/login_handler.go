@@ -71,7 +71,7 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	err := h.sessionManagementService.CreateSessionAndCookie(
 		r.Context(),
 		w,
-		auth.AuthMethodAdminSession,
+		auth.AuthMethodSession,
 		req.Username,
 		true, // TODO: Implement proper admin check
 		nil, // userGroups
