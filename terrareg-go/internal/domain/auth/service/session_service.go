@@ -95,8 +95,8 @@ func (ss *SessionService) CleanupExpiredSessions(ctx context.Context) error {
 // RefreshSession updates the expiry time of a session
 func (ss *SessionService) RefreshSession(ctx context.Context, sessionID string, ttl time.Duration) (*auth.Session, error) {
 	session, err := ss.GetSession(ctx, sessionID)
-	if err != nil {
-		return nil, fmt.Errorf("session not found: %w", err)
+	if err != nil || session == nil {
+		return nil, fmt.Errorf("session not found")
 	}
 
 	newExpiry := time.Now().Add(ss.getEffectiveTTL(&ttl))

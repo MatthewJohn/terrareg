@@ -160,6 +160,8 @@ func (af *AuthFactory) initializeAuthMethods(terraformIdpService *TerraformIdpSe
 }
 
 // RegisterAuthMethod registers an authentication method
+// NOTE: This should only be called during initialization (before any AuthenticateRequest calls)
+// Calling this during request handling may cause race conditions
 func (af *AuthFactory) RegisterAuthMethod(authMethod auth.AuthMethod) {
 	af.mutex.Lock()
 	defer af.mutex.Unlock()
@@ -168,9 +170,10 @@ func (af *AuthFactory) RegisterAuthMethod(authMethod auth.AuthMethod) {
 
 // AuthenticateRequest authenticates an HTTP request using immutable AuthMethods
 // Returns an AuthContext interface with all authentication state and permissions
+// NOTE: No mutex lock needed - authMethods slice is effectively immutable after initialization
+// All RegisterAuthMethod calls happen in initializeAuthMethods during NewAuthFactory construction
 func (af *AuthFactory) AuthenticateRequest(ctx context.Context, headers, formData, queryParams map[string]string) (auth.AuthContext, error) {
-	af.mutex.RLock()
-	defer af.mutex.RUnlock()
+	// No lock needed - authMethods is immutable after construction
 
 	// Extract session ID for auth methods that need it
 	sessionID := af.extractSessionID(headers)
