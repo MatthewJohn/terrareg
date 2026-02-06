@@ -64,10 +64,11 @@ func (u *UploadApiKeyAuthContext) CanUploadModuleVersion(module string) bool {
 	return true
 }
 
-// CheckNamespaceAccess returns true for upload API keys (all namespaces for uploading)
+// CheckNamespaceAccess returns false for upload API keys
+// Upload keys don't have namespace permissions - they only have CanUploadModuleVersion
 func (u *UploadApiKeyAuthContext) CheckNamespaceAccess(namespace, permission string) bool {
-	// Upload keys can access all namespaces for upload operations
-	return true
+	// Python: check_namespace_access returns False for upload API keys
+	return false
 }
 
 // GetAllNamespacePermissions returns upload permissions for all namespaces

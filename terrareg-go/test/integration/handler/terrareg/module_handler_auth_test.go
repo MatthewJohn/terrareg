@@ -330,7 +330,7 @@ func TestModuleVersionDelete_Authentication(t *testing.T) {
 				)
 				return testutils.AddChiContext(t, req, map[string]string{"namespace": "version-delete-namespace", "name": "testmodulename", "provider": "testprovider", "version": "2.4.1"})
 			},
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusOK, // Python returns 200 with {'status': 'Success'}
 		},
 		{
 			name: "admin user can delete any module version",
@@ -348,7 +348,7 @@ func TestModuleVersionDelete_Authentication(t *testing.T) {
 				req, _ := testutils.BuildAdminRequest(t, db, "DELETE", "/v1/terrareg/modules/version-delete-namespace/testmodulename/testprovider/2.4.1/delete")
 				return testutils.AddChiContext(t, req, map[string]string{"namespace": "version-delete-namespace", "name": "testmodulename", "provider": "testprovider", "version": "2.4.1"})
 			},
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusOK, // Python returns 200 with {'status': 'Success'}
 		},
 	}
 

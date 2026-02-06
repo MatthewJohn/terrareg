@@ -1391,6 +1391,138 @@ func TestModulePublishing(t *testing.T) {
 }
 ```
 
+### Container vs TestContainer - Critical Testing Patterns
+
+**⚠️ CRITICAL**: Understanding the difference between `Container` and `TestContainer` is essential for writing correct integration tests, especially for authentication tests.
+
+#### Types
+
+| Type | Location | Purpose |
+|------|----------|---------|
+| `*container.Container` | `internal/infrastructure/container/` | DI container with all services/repositories |
+| `*testutils.TestContainer` | `test/integration/testutils/database.go` | Test helper that wraps `Container` + adds `Router` |
+
+#### Structure
+
+```go
+// internal/infrastructure/container/container.go
+type Container struct {
+    // Configuration
+    DomainConfig  *domainConfig.DomainConfig
+    InfraConfig   *config.InfrastructureConfig
+    ConfigService *configService.ConfigurationService
+    Logger        zerolog.Logger
+    DB            *sqldb.Database
+
+    // Repositories (20+ repositories)
+    NamespaceRepo   ...
+    ModuleProviderRepo ...
+    SessionRepo     ...
+    // ... etc
+
+    // Services
+    Server          *Server
+    AuthFactory     *auth.AuthFactory
+    SessionService  *auth.SessionManagementService
+    // ... etc
+}
+```
+
+```go
+// test/integration/testutils/database.go
+type TestContainer struct {
+    *Container           // Embedded: has ALL dependencies
+    Router    http.Handler // Added: HTTP router for testing
+}
+```
+
+#### Usage Patterns
+
+**❌ WRONG - Creating multiple containers in a test:**
+```go
+func TestAuthBroken(t *testing.T) {
+    db := testutils.SetupTestDatabase(t)
+    defer testutils.CleanupTestDatabase(t, db)
+
+    // Create namespace using one container
+    _ = testutils.CreateNamespace(t, db, "test-ns", nil)
+
+    // Create auth helper with one container
+    cont1 := testutils.CreateTestServer(t, db)
+    authHelper := testutils.NewAuthHelper(t, db, cont1)
+    cookie := authHelper.CreateSessionForUser("user", false, []string{}, nil)
+
+    // ❌ WRONG: Create ANOTHER container for HTTP requests!
+    // This has DIFFERENT services (different signing keys, sessions, etc.)
+    cont2 := testutils.CreateTestContainer(t, db)
+    router := cont2.Server.Router()
+
+    // The cookie was encrypted with cont1's signing key
+    // But router uses cont2's signing key
+    // Result: Authentication fails!
+}
+```
+
+**✅ CORRECT - Using the same container throughout:**
+```go
+func TestAuthCorrect(t *testing.T) {
+    db := testutils.SetupTestDatabase(t)
+    defer testutils.CleanupTestDatabase(t, db)
+
+    // Create namespace using test helpers (they use the db directly)
+    _ = testutils.CreateNamespace(t, db, "test-ns", nil)
+
+    // ✅ Create ONE container and use it throughout
+    cont := testutils.CreateTestServer(t, db)  // Returns *TestContainer
+    authHelper := testutils.NewAuthHelper(t, db, cont)  // Needs *TestContainer
+
+    // Create session using same container's CookieService
+    cookie := authHelper.CreateSessionForUser("user", false, []string{}, nil)
+
+    // ✅ Use same container's router for HTTP requests
+    router := cont.Router
+
+    // Now auth works - same signing keys, same session service
+    req := httptest.NewRequest("GET", "/v1/modules/...", nil)
+    req.Header.Set("Cookie", cookie)
+
+    w := httptest.NewRecorder()
+    router.ServeHTTP(w, req)
+}
+```
+
+#### When to Use Each Helper
+
+| Helper | Returns | Use When |
+|--------|--------|----------|
+| `CreateTestContainer(t, db)` | `*container.Container` | Need services but won't make HTTP requests |
+| `CreateTestServer(t, db)` | `*testutils.TestContainer` | **DEFAULT** - Need HTTP routing + auth |
+| `CreateTestContainerWithConfig(t, db, opts...)` | `*container.Container` | Need custom config (OIDC, etc.) |
+
+**For tests with authentication, ALWAYS use `CreateTestServer()`** (or wrap `CreateTestContainerWithConfig()` in a `TestContainer` struct):
+
+```go
+// For tests with Terraform IDP (needs custom signing key)
+func setupTestContainerWithSigningKey(t *testing.T, db *sqldb.Database, authMethodName string) *testutils.TestContainer {
+    if strings.HasPrefix(authMethodName, "terraform_idp") {
+        keyPath, _ := testutils.CreateTestTerraformOIDCSigningKey(t)
+        cont := testutils.CreateTestContainerWithConfig(t, db, testutils.WithTerraformOIDCConfig(keyPath))
+        return &testutils.TestContainer{
+            Container: cont,
+            Router:    cont.Server.Router(),
+        }
+    }
+    return testutils.CreateTestServer(t, db)
+}
+```
+
+#### Key Rules
+
+1. **Never create multiple containers in one test** - different signing keys, sessions, etc.
+2. **AuthHelper needs `*TestContainer`** - not `*Container`, not empty struct
+3. **Use `TestContainer.Router`** - not `Container.Server.Router()`
+4. **Share the container** - between auth helper setup and HTTP requests
+
 ### Test Utilities
 
 **Database Setup**:

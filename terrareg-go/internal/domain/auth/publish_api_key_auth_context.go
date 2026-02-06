@@ -64,10 +64,11 @@ func (p *PublishApiKeyAuthContext) CanUploadModuleVersion(module string) bool {
 	return true
 }
 
-// CheckNamespaceAccess returns true for publish API keys (all namespaces for publishing)
+// CheckNamespaceAccess returns false for publish API keys
+// Publish keys don't have namespace permissions - they only have CanPublishModuleVersion
 func (p *PublishApiKeyAuthContext) CheckNamespaceAccess(namespace, permission string) bool {
-	// Publish keys can access all namespaces for publish/upload operations
-	return true
+	// Python: check_namespace_access returns False for publish API keys
+	return false
 }
 
 // GetAllNamespacePermissions returns publish permissions for all namespaces

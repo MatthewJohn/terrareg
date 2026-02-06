@@ -878,8 +878,8 @@ func (h *ModuleHandler) HandleModuleProviderDelete(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Return 200 OK with empty JSON object (matching Python behavior)
-	RespondJSON(w, http.StatusOK, map[string]interface{}{})
+	// Return 204 No Content (matching Python behavior)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleModuleVersionUpload handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/upload
@@ -1282,8 +1282,8 @@ func (h *ModuleHandler) HandleModuleVersionDelete(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Send success response - 204 No Content for successful deletion
-	w.WriteHeader(http.StatusNoContent)
+	// Send success response - 200 OK with status:Success (matching Python behavior)
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "Success"})
 }
 
 // HandleModuleVersionReadmeHTML handles GET /modules/{namespace}/{name}/{provider}/{version}/readme_html
