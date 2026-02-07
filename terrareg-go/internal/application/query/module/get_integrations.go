@@ -39,14 +39,15 @@ func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.Name
 
 	// Build integrations list based on module provider
 	var integrations []Integration
-	moduleProviderID := moduleProvider.ID()
+	// Use FrontendID for URL construction (format: "namespace/module/provider")
+	moduleProviderFrontendID := string(moduleProvider.FrontendID())
 
 	// Import integration
 	importMethod := "POST"
 	integrations = append(integrations, Integration{
 		Description: "Trigger module version import",
 		Method:      &importMethod,
-		URL:         fmt.Sprintf("/v1/terrareg/modules/%d/${version}/import", moduleProviderID),
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/${version}/import", moduleProviderFrontendID),
 		Notes:       "",
 	})
 
@@ -55,7 +56,7 @@ func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.Name
 	integrations = append(integrations, Integration{
 		Description: "Create module version using source archive",
 		Method:      &uploadMethod,
-		URL:         fmt.Sprintf("/v1/terrareg/modules/%d/${version}/upload", moduleProviderID),
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/${version}/upload", moduleProviderFrontendID),
 		Notes:       "",
 	})
 
@@ -64,7 +65,7 @@ func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.Name
 	integrations = append(integrations, Integration{
 		Description: "Mark a module version as published",
 		Method:      &publishMethod,
-		URL:         fmt.Sprintf("/v1/terrareg/modules/%d/${version}/publish", moduleProviderID),
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/${version}/publish", moduleProviderFrontendID),
 		Notes:       "",
 	})
 
@@ -73,15 +74,15 @@ func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.Name
 	integrations = append(integrations, Integration{
 		Description: "GitHub hook trigger",
 		Method:      nil, // Webhook endpoint, no method specified
-		URL:         fmt.Sprintf("/v1/terrareg/modules/%d/hooks/github", moduleProviderID),
-		Notes:       "",
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/hooks/github", moduleProviderFrontendID),
+		Notes:       "Releases from the repository trigger analysis of the module version",
 	})
 
 	// Bitbucket hook
 	integrations = append(integrations, Integration{
 		Description: "Bitbucket hook trigger",
 		Method:      nil,
-		URL:         fmt.Sprintf("/v1/terrareg/modules/%d/hooks/bitbucket", moduleProviderID),
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/hooks/bitbucket", moduleProviderFrontendID),
 		Notes:       "",
 	})
 
@@ -90,7 +91,7 @@ func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.Name
 	integrations = append(integrations, Integration{
 		Description: "Gitlab hook trigger",
 		Method:      nil,
-		URL:         fmt.Sprintf("/v1/terrareg/modules/%d/hooks/gitlab", moduleProviderID),
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/hooks/gitlab", moduleProviderFrontendID),
 		Notes:       "",
 		ComingSoon:  &comingSoon,
 	})
