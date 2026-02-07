@@ -8,7 +8,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	analyticsRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
+	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
 	"github.com/stretchr/testify/require"
@@ -114,7 +114,8 @@ func CreateTerraregModuleDetailsHandler(t *testing.T, db *sqldb.Database, opts .
 
 	// Create URLService and versionPresenter for full Terrareg response
 	infraConfig := CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	versionPresenter := presenter.NewModuleVersionPresenter(namespaceSvc, analyticsRepository, urlService)
 
 	// Use the simpler testing constructor that only requires read operation dependencies
@@ -147,7 +148,8 @@ func CreateModuleVersionDetailsHandler(t *testing.T, db *sqldb.Database, opts ..
 
 	// Create URLService and versionPresenter for full Terrareg response
 	infraConfig := CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	versionPresenter := presenter.NewModuleVersionPresenter(namespaceSvc, analyticsRepository, urlService)
 
 	// Create handler with all dependencies - using the specialized constructor

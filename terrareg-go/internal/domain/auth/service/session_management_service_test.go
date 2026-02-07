@@ -104,8 +104,8 @@ func (m *mockSessionRepositoryForManagement) reset() {
 // newTestInfraConfig creates a test infrastructure config for cookie service
 func newTestInfraConfig() *config.InfrastructureConfig {
 	return &config.InfrastructureConfig{
-		SecretKey:          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		SessionCookieName:  "terrareg_session",
+		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		SessionCookieName: "terrareg_session",
 	}
 }
 
@@ -126,7 +126,7 @@ func TestNewSessionManagementService(t *testing.T) {
 
 	t.Run("creates service when cookie service is provided", func(t *testing.T) {
 		sessionService := NewSessionService(nil, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 
 		service := NewSessionManagementService(sessionService, cookieService)
 
@@ -140,7 +140,7 @@ func TestNewSessionManagementService(t *testing.T) {
 // TestSessionManagementService_SetAuditLogger tests setting the audit logger
 func TestSessionManagementService_SetAuditLogger(t *testing.T) {
 	sessionService := NewSessionService(nil, nil)
-	cookieService := NewCookieService(newTestInfraConfig())
+	cookieService := newTestCookieService(t, newTestInfraConfig())
 	service := NewSessionManagementService(sessionService, cookieService)
 
 	auditLogger := &AuditLogger{}
@@ -152,7 +152,7 @@ func TestSessionManagementService_SetAuditLogger(t *testing.T) {
 // TestSessionManagementService_IsAvailable tests availability check
 func TestSessionManagementService_IsAvailable(t *testing.T) {
 	sessionService := NewSessionService(nil, nil)
-	cookieService := NewCookieService(newTestInfraConfig())
+	cookieService := newTestCookieService(t, newTestInfraConfig())
 	service := NewSessionManagementService(sessionService, cookieService)
 
 	assert.True(t, service.IsAvailable())
@@ -163,7 +163,7 @@ func TestSessionManagementService_CreateSessionAndCookie(t *testing.T) {
 	t.Run("successfully creates session and cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -187,7 +187,7 @@ func TestSessionManagementService_CreateSessionAndCookie(t *testing.T) {
 	t.Run("creates session with custom TTL", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		customTTL := 2 * time.Hour
@@ -209,7 +209,7 @@ func TestSessionManagementService_CreateSessionAndCookie(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		mockRepo.createError = assert.AnError
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -227,13 +227,13 @@ func TestSessionManagementService_ValidateSessionCookie(t *testing.T) {
 	t.Run("successfully validates session cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create a valid session first
 		session := &auth.Session{
-			ID:     "test-session-123",
-			Expiry: time.Now().Add(1 * time.Hour),
+			ID:                 "test-session-123",
+			Expiry:             time.Now().Add(1 * time.Hour),
 			ProviderSourceAuth: []byte(`{}`),
 		}
 		mockRepo.sessions[session.ID] = session
@@ -256,7 +256,7 @@ func TestSessionManagementService_ValidateSessionCookie(t *testing.T) {
 	t.Run("handles invalid cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -271,13 +271,13 @@ func TestSessionManagementService_ValidateSessionCookie(t *testing.T) {
 	t.Run("handles expired session", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create an expired session
 		session := &auth.Session{
-			ID:     "expired-session",
-			Expiry: time.Now().Add(-1 * time.Hour),
+			ID:                 "expired-session",
+			Expiry:             time.Now().Add(-1 * time.Hour),
 			ProviderSourceAuth: []byte(`{}`),
 		}
 		mockRepo.sessions[session.ID] = session
@@ -303,13 +303,13 @@ func TestSessionManagementService_ClearSessionAndCookie(t *testing.T) {
 	t.Run("successfully clears session and cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create a valid session
 		session := &auth.Session{
-			ID:     "test-session-123",
-			Expiry: time.Now().Add(1 * time.Hour),
+			ID:                 "test-session-123",
+			Expiry:             time.Now().Add(1 * time.Hour),
 			ProviderSourceAuth: []byte(`{}`),
 		}
 		mockRepo.sessions[session.ID] = session
@@ -343,7 +343,7 @@ func TestSessionManagementService_ClearSessionAndCookie(t *testing.T) {
 	t.Run("handles missing cookie gracefully", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -367,13 +367,13 @@ func TestSessionManagementService_RefreshSessionAndCookie(t *testing.T) {
 	t.Run("successfully refreshes session and cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create a valid session
 		session := &auth.Session{
-			ID:     "test-session-123",
-			Expiry: time.Now().Add(30 * time.Minute), // Will expire soon
+			ID:                 "test-session-123",
+			Expiry:             time.Now().Add(30 * time.Minute), // Will expire soon
 			ProviderSourceAuth: []byte(`{}`),
 		}
 		mockRepo.sessions[session.ID] = session
@@ -404,7 +404,7 @@ func TestSessionManagementService_RefreshSessionAndCookie(t *testing.T) {
 	t.Run("handles missing cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -421,7 +421,7 @@ func TestSessionManagementService_RefreshSessionAndCookie(t *testing.T) {
 	t.Run("handles invalid cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -441,13 +441,13 @@ func TestSessionManagementService_GetSessionFromCookie(t *testing.T) {
 	t.Run("successfully extracts and validates session", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create a valid session
 		session := &auth.Session{
-			ID:     "test-session-123",
-			Expiry: time.Now().Add(1 * time.Hour),
+			ID:                 "test-session-123",
+			Expiry:             time.Now().Add(1 * time.Hour),
 			ProviderSourceAuth: []byte(`{}`),
 		}
 		mockRepo.sessions[session.ID] = session
@@ -455,7 +455,7 @@ func TestSessionManagementService_GetSessionFromCookie(t *testing.T) {
 		// Create encrypted cookie
 		sessionData := &auth.SessionData{
 			SessionID: session.ID,
-			Username: "testuser",
+			Username:  "testuser",
 		}
 		encryptedCookie, _ := cookieService.EncryptSession(sessionData)
 
@@ -473,7 +473,7 @@ func TestSessionManagementService_GetSessionFromCookie(t *testing.T) {
 	t.Run("handles missing cookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -494,13 +494,13 @@ func TestSessionManagementService_SetCookieForExistingSession(t *testing.T) {
 	t.Run("successfully sets cookie for existing session", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create a valid session
 		session := &auth.Session{
-			ID:     "existing-session-123",
-			Expiry: time.Now().Add(1 * time.Hour),
+			ID:                 "existing-session-123",
+			Expiry:             time.Now().Add(1 * time.Hour),
 			ProviderSourceAuth: []byte(`{}`),
 		}
 		mockRepo.sessions[session.ID] = session
@@ -523,7 +523,7 @@ func TestSessionManagementService_SetCookieForExistingSession(t *testing.T) {
 	t.Run("handles non-existent session", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()
@@ -541,7 +541,7 @@ func TestSessionManagementService_EdgeCases(t *testing.T) {
 	t.Run("handles empty session ID in ClearSessionAndCookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		// Create encrypted cookie with empty session ID
@@ -564,7 +564,7 @@ func TestSessionManagementService_EdgeCases(t *testing.T) {
 	t.Run("handles nil provider data in CreateSessionAndCookie", func(t *testing.T) {
 		mockRepo := newMockSessionRepositoryForManagement()
 		sessionService := NewSessionService(mockRepo, nil)
-		cookieService := NewCookieService(newTestInfraConfig())
+		cookieService := newTestCookieService(t, newTestInfraConfig())
 		service := NewSessionManagementService(sessionService, cookieService)
 
 		ctx := context.Background()

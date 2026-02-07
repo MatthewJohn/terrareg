@@ -137,9 +137,10 @@ func TestSubmoduleHandler_HandleSubmoduleDetails(t *testing.T) {
 			mockProviderRepo := &MockModuleProviderRepository{}
 			mockVersionRepo := &MockModuleVersionRepository{}
 			tt.setupMocks(mockProviderRepo, mockVersionRepo)
-			urlService := service.NewURLService(&config.InfrastructureConfig{
+			urlService, err := service.NewURLService(&config.InfrastructureConfig{
 				PublicURL: "http://localhost:5000",
 			})
+			assert.NoError(t, err)
 
 			detailsQuery := module.NewGetSubmoduleDetailsQuery(mockProviderRepo, mockVersionRepo, urlService)
 			readmeQuery := module.NewGetSubmoduleReadmeHTMLQuery(mockProviderRepo, mockVersionRepo)
@@ -219,9 +220,10 @@ func TestSubmoduleHandler_HandleSubmoduleReadmeHTML(t *testing.T) {
 			mockProviderRepo := &MockModuleProviderRepository{}
 			mockVersionRepo := &MockModuleVersionRepository{}
 			tt.setupMocks(mockProviderRepo, mockVersionRepo)
-			urlService := service.NewURLService(&config.InfrastructureConfig{
+			urlService, err := service.NewURLService(&config.InfrastructureConfig{
 				PublicURL: "http://localhost:5000",
 			})
+			assert.NoError(t, err)
 
 			detailsQuery := module.NewGetSubmoduleDetailsQuery(mockProviderRepo, mockVersionRepo, urlService)
 			readmeQuery := module.NewGetSubmoduleReadmeHTMLQuery(mockProviderRepo, mockVersionRepo)

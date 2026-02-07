@@ -39,7 +39,8 @@ func TestExampleHandler_HandleExampleDetails_Success(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getExampleDetailsQuery := moduleQuery.NewGetExampleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewExampleHandler(getExampleDetailsQuery, nil, nil, nil)
 
@@ -82,7 +83,8 @@ func TestExampleHandler_HandleExampleDetails_MissingParameters(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getExampleDetailsQuery := moduleQuery.NewGetExampleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewExampleHandler(getExampleDetailsQuery, nil, nil, nil)
 
@@ -141,7 +143,8 @@ func TestExampleHandler_HandleExampleDetails_NotFound(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getExampleDetailsQuery := moduleQuery.NewGetExampleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewExampleHandler(getExampleDetailsQuery, nil, nil, nil)
 
@@ -495,7 +498,8 @@ func TestExampleHandler_HandleExampleDetails_HTTPSWithNonStandardPort(t *testing
 
 	// Create infra config with HTTPS and non-standard port (5000)
 	infraConfig := testutils.CreateTestInfraConfigWithPublicURL(t, "https://local-dev.dock.studio:5000")
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getExampleDetailsQuery := moduleQuery.NewGetExampleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewExampleHandler(getExampleDetailsQuery, nil, nil, nil)
 

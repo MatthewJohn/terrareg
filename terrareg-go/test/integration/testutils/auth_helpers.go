@@ -12,6 +12,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	urlService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
@@ -148,7 +149,10 @@ func CreateAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, met
 		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		SessionCookieName: "terrareg_session",
 	}
-	cookieService := service.NewCookieService(cfg)
+	urlService, err := urlService.NewURLService(cfg)
+	require.NoError(t, err)
+	cookieService, err := service.NewCookieService(cfg, urlService)
+	require.NoError(t, err)
 
 	// Create encrypted cookie value
 	expiry := time.Now().Add(1 * time.Hour)

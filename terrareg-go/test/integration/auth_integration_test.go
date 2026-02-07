@@ -13,6 +13,7 @@ import (
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	modulemodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
@@ -57,7 +58,10 @@ func TestAuthenticationIntegration(t *testing.T) {
 	}
 
 	// Create cookie service
-	cookieService := authservice.NewCookieService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
+	cookieService, err := authservice.NewCookieService(infraConfig, urlService)
+	require.NoError(t, err)
 
 	// Create session management service (this is what replaced AuthenticationService)
 	sessionManagementService := authservice.NewSessionManagementService(sessionService, cookieService)

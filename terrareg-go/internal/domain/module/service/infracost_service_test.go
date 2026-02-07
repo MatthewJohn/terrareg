@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/service"
+	URLService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
+	InfrastructureConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,22 +40,30 @@ func TestNewInfracostService(t *testing.T) {
 	config := &InfracostConfig{
 		InfracostAPIKey: "test-api-key",
 	}
+	infraConfig := InfrastructureConfig.InfrastructureConfig{}
 	logger := zerolog.Nop()
 	commandService := &MockCommandService{}
+	urlService, err := URLService.NewURLService(&infraConfig)
+	assert.NoError(t, err)
 
-	service := NewInfracostService(config, logger, commandService)
+	service, err := NewInfracostService(config, logger, commandService, urlService)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, service)
 	assert.NotNil(t, service.config)
 	assert.NotNil(t, service.logger)
 	assert.NotNil(t, service.commandService)
+	assert.NotNil(t, service.urlService)
 }
 
 func TestInfracostService_IsAvailable_WithAPIKey(t *testing.T) {
 	config := &InfracostConfig{
 		InfracostAPIKey: "test-api-key",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	assert.True(t, service.IsAvailable())
 }
@@ -62,13 +72,20 @@ func TestInfracostService_IsAvailable_WithoutAPIKey(t *testing.T) {
 	config := &InfracostConfig{
 		InfracostAPIKey: "",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	assert.False(t, service.IsAvailable())
 }
 
 func TestInfracostService_IsAvailable_NilConfig(t *testing.T) {
-	service := NewInfracostService(nil, zerolog.Nop(), &MockCommandService{})
+
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(&InfracostConfig{}, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	assert.False(t, service.IsAvailable())
 }
@@ -77,7 +94,10 @@ func TestInfracostService_AnalyzeExample_NotAvailable(t *testing.T) {
 	config := &InfracostConfig{
 		InfracostAPIKey: "",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	result, err := service.AnalyzeExample(context.Background(), "/some/path")
 
@@ -89,7 +109,10 @@ func TestInfracostService_AnalyzeExample_EmptyPath(t *testing.T) {
 	config := &InfracostConfig{
 		InfracostAPIKey: "test-api-key",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	result, err := service.AnalyzeExample(context.Background(), "")
 
@@ -102,7 +125,10 @@ func TestInfracostService_AnalyzeExample_NonExistentPath(t *testing.T) {
 	config := &InfracostConfig{
 		InfracostAPIKey: "test-api-key",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	result, err := service.AnalyzeExample(context.Background(), "/nonexistent/path/to/example")
 
@@ -123,7 +149,10 @@ func TestInfracostService_AnalyzeExample_ExecutableNotFound(t *testing.T) {
 			}, fmt.Errorf("executable file not found")
 		},
 	}
-	service := NewInfracostService(config, zerolog.Nop(), mockCommand)
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), mockCommand, urlService)
+	assert.NoError(t, err)
 
 	// Create a temp directory for the test
 	tempDir := t.TempDir()
@@ -145,7 +174,10 @@ func TestInfracostService_AnalyzeExample_CommandFailure(t *testing.T) {
 			}, fmt.Errorf("some error occurred")
 		},
 	}
-	service := NewInfracostService(config, zerolog.Nop(), mockCommand)
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), mockCommand, urlService)
+	assert.NoError(t, err)
 
 	tempDir := t.TempDir()
 	result, err := service.AnalyzeExample(context.Background(), tempDir)
@@ -180,7 +212,7 @@ resource "aws_s3_bucket" "example" {
 	infracostOutput := map[string]interface{}{
 		"total_monthly_cost": 12.50,
 		"total_hourly_cost":  0.0173611,
-		"projects": []interface{}{},
+		"projects":           []interface{}{},
 	}
 	outputJSON, _ := json.Marshal(infracostOutput)
 	err = os.WriteFile(tmpOutputPath, outputJSON, 0644)
@@ -213,7 +245,10 @@ resource "aws_s3_bucket" "example" {
 			}, nil
 		},
 	}
-	service := NewInfracostService(config, zerolog.Nop(), mockCommand)
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), mockCommand, urlService)
+	assert.NoError(t, err)
 
 	result, err := service.AnalyzeExample(context.Background(), examplePath)
 
@@ -262,7 +297,10 @@ func TestInfracostService_AnalyzeExample_InvalidJSONOutput(t *testing.T) {
 			}, nil
 		},
 	}
-	service := NewInfracostService(config, zerolog.Nop(), mockCommand)
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), mockCommand, urlService)
+	assert.NoError(t, err)
 
 	result, err := service.AnalyzeExample(context.Background(), examplePath)
 
@@ -273,11 +311,16 @@ func TestInfracostService_AnalyzeExample_InvalidJSONOutput(t *testing.T) {
 
 func TestInfracostService_buildEnvironment_NoConfig(t *testing.T) {
 	config := &InfracostConfig{
-		InfracostAPIKey:                     "test-key",
+		InfracostAPIKey:                  "test-key",
 		InternalExtractionAnalyticsToken: "",
-		PublicURL:                          "",
+		PublicURL:                        "",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{
+		PublicURL: "",
+	})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	env := service.buildEnvironment()
 	assert.NotNil(t, env)
@@ -287,11 +330,15 @@ func TestInfracostService_buildEnvironment_NoConfig(t *testing.T) {
 
 func TestInfracostService_buildEnvironment_WithTerraformCloud(t *testing.T) {
 	config := &InfracostConfig{
-		InfracostAPIKey:                     "test-key",
+		InfracostAPIKey:                  "test-key",
 		InternalExtractionAnalyticsToken: "internal-token-123",
-		PublicURL:                          "https://terrareg.example.com",
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{
+		PublicURL: "https://terrareg.example.com",
+	})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	env := service.buildEnvironment()
 	assert.NotNil(t, env)
@@ -311,11 +358,15 @@ func TestInfracostService_buildEnvironment_WithTerraformCloud(t *testing.T) {
 
 func TestInfracostService_buildEnvironment_InvalidPublicURL(t *testing.T) {
 	config := &InfracostConfig{
-		InfracostAPIKey:                     "test-key",
+		InfracostAPIKey:                  "test-key",
 		InternalExtractionAnalyticsToken: "internal-token-123",
-		PublicURL:                          "://invalid-url", // Invalid URL
 	}
-	service := NewInfracostService(config, zerolog.Nop(), &MockCommandService{})
+	urlService, err := URLService.NewURLService(&InfrastructureConfig.InfrastructureConfig{
+		PublicURL: "://invalid-url",
+	})
+	assert.NoError(t, err)
+	service, err := NewInfracostService(config, zerolog.Nop(), &MockCommandService{}, urlService)
+	assert.NoError(t, err)
 
 	env := service.buildEnvironment()
 	assert.NotNil(t, env)

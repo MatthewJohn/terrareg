@@ -48,29 +48,29 @@ func prepareSecretKey(keyStr string) ([]byte, error) {
 
 // NewCookieService creates a new cookie service
 // Returns nil if SECRET_KEY is not configured (cookie-based auth is not available)
-func NewCookieService(config *infraConfig.InfrastructureConfig) *CookieService {
+func NewCookieService(config *infraConfig.InfrastructureConfig, urlService *urlservice.URLService) (*CookieService, error) {
 	// If SECRET_KEY is empty, cookie-based auth is not available
 	if config.SecretKey == "" {
-		return nil
+		return nil, nil
 	}
 
-	// Determine if cookies should be secure based on the public URL scheme
-	// Use URLService to check the protocol
-	urlService := urlservice.NewURLService(config)
+	if urlService == nil {
+		return nil, fmt.Errorf("NewCookieService urlService cannot be nil")
+	}
 	publicURLDetails := urlService.GetPublicURLDetails(nil)
 	isSecure := publicURLDetails.Protocol == "https"
 
 	// Prepare secret key with explicit validation
 	secretKey, err := prepareSecretKey(config.SecretKey)
 	if err != nil {
-		panic(fmt.Sprintf("Invalid SECRET_KEY: %v. Generate with: python -c 'import secrets; print(secrets.token_hex())'", err))
+		return nil, fmt.Errorf("Invalid SECRET_KEY: %v. Generate with: python -c 'import secrets; print(secrets.token_hex())'", err)
 	}
 
 	return &CookieService{
 		secretKey:     secretKey,
 		sessionCookie: config.SessionCookieName,
 		isSecure:      isSecure,
-	}
+	}, nil
 }
 
 // SessionData is defined in the auth package (domain/auth/session.go)

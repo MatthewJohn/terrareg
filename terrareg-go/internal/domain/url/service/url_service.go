@@ -8,10 +8,18 @@ import (
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
+// URL Protocol
+type Protocol string
+
+const (
+	ProtocolHttp  Protocol = "http"
+	ProtocolHttps Protocol = "https"
+)
+
 // PublicURLDetails represents the details of the public URL
 // Matching Python's get_public_url_details return tuple
 type PublicURLDetails struct {
-	Protocol string
+	Protocol Protocol
 	Domain   string
 	Port     int
 }
@@ -23,10 +31,13 @@ type URLService struct {
 }
 
 // NewURLService creates a new URL service
-func NewURLService(config *infraConfig.InfrastructureConfig) *URLService {
+func NewURLService(config *infraConfig.InfrastructureConfig) (*URLService, error) {
+	if config == nil {
+		return nil, fmt.Errorf("NewURLService cannot be passed nil config")
+	}
 	return &URLService{
 		config: config,
-	}
+	}, nil
 }
 
 // GetPublicURLDetails returns protocol, domain, and port used to access Terrareg
@@ -39,23 +50,22 @@ func (s *URLService) GetPublicURLDetails(fallbackDomain *string) *PublicURLDetai
 	}
 
 	port := 443
-	protocol := "https"
+	protocol := ProtocolHttps
 
 	if s.config.PublicURL != "" {
 		parsedURL, err := url.Parse(s.config.PublicURL)
 		if err == nil && parsedURL.Hostname() != "" {
 			// Only use values from parsed URL if it has a hostname,
 			// otherwise it is invalid (matching Python logic)
-			protocol = parsedURL.Scheme
-			if protocol == "" {
-				protocol = "https"
+			if parsedURL.Scheme == "http" {
+				protocol = ProtocolHttp
 			}
 
 			if parsedURL.Port() != "" {
 				port, _ = strconv.Atoi(parsedURL.Port())
 			} else {
 				// Default port based on protocol
-				if protocol == "http" {
+				if protocol == ProtocolHttp {
 					port = 80
 				} else {
 					port = 443
@@ -87,10 +97,10 @@ func (s *URLService) GetBaseURL(fallbackDomain *string) string {
 	// Handle standard ports - don't include them in the URL
 	if (details.Protocol == "https" && details.Port == 443) ||
 		(details.Protocol == "http" && details.Port == 80) {
-		return details.Protocol + "://" + details.Domain
+		return string(details.Protocol) + "://" + details.Domain
 	}
 
-	return details.Protocol + "://" + details.Domain + ":" + strconv.Itoa(details.Port)
+	return string(details.Protocol) + "://" + details.Domain + ":" + strconv.Itoa(details.Port)
 }
 
 // BuildURL constructs a URL with the given path using the base configuration

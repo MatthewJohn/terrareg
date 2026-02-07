@@ -13,6 +13,7 @@ import (
 
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
+	urlService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -38,7 +39,8 @@ func TestSubmoduleHandler_HandleSubmoduleDetails_Success(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := urlService.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getSubmoduleDetailsQuery := moduleQuery.NewGetSubmoduleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewSubmoduleHandler(getSubmoduleDetailsQuery, nil)
 
@@ -116,7 +118,8 @@ func TestSubmoduleHandler_HandleSubmoduleDetails_MissingParameters(t *testing.T)
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getSubmoduleDetailsQuery := moduleQuery.NewGetSubmoduleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewSubmoduleHandler(getSubmoduleDetailsQuery, nil)
 
@@ -310,7 +313,8 @@ func TestSubmoduleHandler_HandleSubmoduleDetails_HTTPSWithNonStandardPort(t *tes
 
 	// Create infra config with HTTPS and non-standard port (5000)
 	infraConfig := testutils.CreateTestInfraConfigWithPublicURL(t, "https://local-dev.dock.studio:5000")
-	urlService := service.NewURLService(infraConfig)
+	urlService, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getSubmoduleDetailsQuery := moduleQuery.NewGetSubmoduleDetailsQuery(moduleProviderRepository, moduleVersionRepository, urlService)
 	handler := terrareg.NewSubmoduleHandler(getSubmoduleDetailsQuery, nil)
 

@@ -9,6 +9,13 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
+// TestBuildTerraformSourceURL_EdgeCases tests edge cases
+func TestBuildUrlServiceWithoutConfig(t *testing.T) {
+	urlService, err := service.NewURLService(nil)
+	assert.Error(t, err)
+	assert.Nil(t, urlService)
+}
+
 // TestBuildTerraformSourceURL_HTTP tests terraform source URL generation for HTTP
 func TestBuildTerraformSourceURL_HTTP(t *testing.T) {
 	tests := []struct {
@@ -72,7 +79,8 @@ func TestBuildTerraformSourceURL_HTTP(t *testing.T) {
 			infraConfig := &config.InfrastructureConfig{
 				PublicURL: tc.publicURL,
 			}
-			urlService := service.NewURLService(infraConfig)
+			urlService, err := service.NewURLService(infraConfig)
+			assert.NoError(t, err)
 
 			result := urlService.BuildTerraformSourceURL(tc.providerID, tc.version, tc.modulePath, tc.requestDomain)
 
@@ -153,7 +161,8 @@ func TestBuildTerraformSourceURL_HTTPS(t *testing.T) {
 			infraConfig := &config.InfrastructureConfig{
 				PublicURL: tc.publicURL,
 			}
-			urlService := service.NewURLService(infraConfig)
+			urlService, err := service.NewURLService(infraConfig)
+			assert.NoError(t, err)
 
 			result := urlService.BuildTerraformSourceURL(tc.providerID, tc.version, tc.modulePath, tc.requestDomain)
 
@@ -199,7 +208,8 @@ func TestBuildTerraformSourceURL_WithRequestDomain(t *testing.T) {
 			infraConfig := &config.InfrastructureConfig{
 				PublicURL: tc.publicURL,
 			}
-			urlService := service.NewURLService(infraConfig)
+			urlService, err := service.NewURLService(infraConfig)
+			assert.NoError(t, err)
 
 			result := urlService.BuildTerraformSourceURL(tc.providerID, tc.version, tc.modulePath, tc.requestDomain)
 
@@ -253,7 +263,8 @@ func TestBuildTerraformSourceURL_EdgeCases(t *testing.T) {
 			infraConfig := &config.InfrastructureConfig{
 				PublicURL: tc.publicURL,
 			}
-			urlService := service.NewURLService(infraConfig)
+			urlService, err := service.NewURLService(infraConfig)
+			assert.NoError(t, err)
 
 			result := urlService.BuildTerraformSourceURL(tc.providerID, tc.version, tc.modulePath, tc.requestDomain)
 

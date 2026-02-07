@@ -177,10 +177,10 @@ type Container struct {
 	TransactionProcessingOrchestrator   *moduleService.TransactionProcessingOrchestrator
 	SourcePreparationService            *moduleService.SourcePreparationService
 	ArchiveExtractionService            *moduleService.ArchiveExtractionService
-	AuthFactory                *authservice.AuthFactory
-	SessionService             *authservice.SessionService
-	SessionManagementService   *authservice.SessionManagementService
-	SessionCleanupService       *authservice.SessionCleanupService
+	AuthFactory                         *authservice.AuthFactory
+	SessionService                      *authservice.SessionService
+	SessionManagementService            *authservice.SessionManagementService
+	SessionCleanupService               *authservice.SessionCleanupService
 	TerraformIdpService                 *authservice.TerraformIdpService
 	OIDCService                         *authservice.OIDCService
 	SAMLService                         *authservice.SAMLService
@@ -454,7 +454,10 @@ func NewContainer(
 	githubClass := providerSourceImpl.NewGithubProviderSourceClass()
 	c.ProviderSourceFactory.RegisterProviderSourceClass(githubClass)
 
-	c.URLService = urlservice.NewURLService(infraConfig)
+	c.URLService, err = urlservice.NewURLService(infraConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create URLService: %w", err)
+	}
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
@@ -514,11 +517,14 @@ func NewContainer(
 
 	// Create infracost service for cost analysis of examples
 	infracostConfig := &moduleService.InfracostConfig{
-		InfracostAPIKey:                 infraConfig.InfracostAPIKey,
+		InfracostAPIKey:                  infraConfig.InfracostAPIKey,
 		InternalExtractionAnalyticsToken: infraConfig.InternalExtractionAnalyticsToken,
 		PublicURL:                        infraConfig.PublicURL,
 	}
-	c.InfracostService = moduleService.NewInfracostService(infracostConfig, logger, c.SystemCommandService)
+	c.InfracostService, err = moduleService.NewInfracostService(infracostConfig, logger, c.SystemCommandService, c.URLService)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create InfracostService: %w", err)
+	}
 
 	// Create module processor service
 	c.ModuleProcessorService = moduleService.NewModuleProcessorServiceImpl(
@@ -743,7 +749,10 @@ func NewContainer(
 	c.SessionService = sessionService
 
 	// Initialize cookie service (pure cookie operations)
-	cookieService := authservice.NewCookieService(infraConfig) // Uses InfrastructureConfig for auth settings
+	cookieService, err := authservice.NewCookieService(infraConfig, c.URLService) // Uses InfrastructureConfig for auth settings
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cookieService: %w", err)
+	}
 
 	// Initialize session management service (combines session + cookie operations)
 	sessionManagementService := authservice.NewSessionManagementService(sessionService, cookieService)

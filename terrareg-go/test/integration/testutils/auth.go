@@ -13,6 +13,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	urlService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,10 @@ func NewAuthHelper(t *testing.T, db *sqldb.Database, server interface{}) *AuthHe
 		helper.container = tc.Container
 		// Create CookieService using the same config as the container
 		// This uses the test secret key for encryption/decryption
-		helper.cookieService = service.NewCookieService(tc.Container.InfraConfig)
+		urlService, err := urlService.NewURLService(tc.Container.InfraConfig)
+		require.NoError(t, err)
+		helper.cookieService, err = service.NewCookieService(tc.Container.InfraConfig, urlService)
+		require.NoError(t, err)
 	} else if ts, ok := server.(*TestServer); ok {
 		helper.server = ts
 	}

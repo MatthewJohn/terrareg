@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/setup"
-	urlService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
@@ -28,7 +28,8 @@ func TestInitialSetupHandler_HandleInitialSetup_NoNamespaces(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -62,7 +63,8 @@ func TestInitialSetupHandler_HandleInitialSetup_NamespaceOnly(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -97,7 +99,8 @@ func TestInitialSetupHandler_HandleInitialSetup_WithModule(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -136,7 +139,8 @@ func TestInitialSetupHandler_HandleInitialSetup_WithVersion(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -172,7 +176,8 @@ func TestInitialSetupHandler_HandleInitialSetup_PublishedVersion(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -210,7 +215,8 @@ func TestInitialSetupHandler_HandleInitialSetup_WithGit(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -241,7 +247,8 @@ func TestInitialSetupHandler_HandleInitialSetup_MethodNotAllowed(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 
@@ -271,7 +278,8 @@ func TestInitialSetupHandler_HandleInitialSetup_CompleteSetup(t *testing.T) {
 	moduleVersionRepository, err := moduleRepo.NewModuleVersionRepository(db.DB)
 	require.NoError(t, err)
 	infraConfig := testutils.CreateTestInfraConfig(t)
-	urlSvc := urlService.NewURLService(infraConfig)
+	urlSvc, err := service.NewURLService(infraConfig)
+	require.NoError(t, err)
 	getInitialSetupQuery := setup.NewGetInitialSetupQuery(namespaceRepository, moduleProviderRepository, moduleVersionRepository, urlSvc, domainConfig)
 	handler := terrareg.NewInitialSetupHandler(getInitialSetupQuery)
 

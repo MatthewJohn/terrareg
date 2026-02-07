@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	URLService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,26 +17,26 @@ import (
 // newTestInfraConfigForCookie creates a test infrastructure config for cookie service
 func newTestInfraConfigForCookie() *config.InfrastructureConfig {
 	return &config.InfrastructureConfig{
-		SecretKey:          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		SessionCookieName:  "terrareg_session",
+		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		SessionCookieName: "terrareg_session",
 	}
 }
 
 // newTestInfraConfigWithSecure creates a config with HTTPS public URL
 func newTestInfraConfigWithSecure() *config.InfrastructureConfig {
 	return &config.InfrastructureConfig{
-		SecretKey:          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		SessionCookieName:  "terrareg_session",
-		PublicURL:          "https://terrareg.example.com",
+		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		SessionCookieName: "terrareg_session",
+		PublicURL:         "https://terrareg.example.com",
 	}
 }
 
 // newTestInfraConfigWithInsecure creates a config with HTTP public URL
 func newTestInfraConfigWithInsecure() *config.InfrastructureConfig {
 	return &config.InfrastructureConfig{
-		SecretKey:          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		SessionCookieName:  "terrareg_session",
-		PublicURL:          "http://terrareg.example.com",
+		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		SessionCookieName: "terrareg_session",
+		PublicURL:         "http://terrareg.example.com",
 	}
 }
 
@@ -43,9 +44,17 @@ func newTestInfraConfigWithInsecure() *config.InfrastructureConfig {
 func newTestInfraConfigWithHexKey() *config.InfrastructureConfig {
 	// 64-byte hex string (32 bytes when decoded)
 	return &config.InfrastructureConfig{
-		SecretKey:          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		SessionCookieName:  "terrareg_session",
+		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		SessionCookieName: "terrareg_session",
 	}
+}
+
+func newTestCookieService(t *testing.T, cfg *config.InfrastructureConfig) *CookieService {
+	urlService, err := URLService.NewURLService(cfg)
+	require.NoError(t, err)
+	service, err := NewCookieService(cfg, urlService)
+	require.NoError(t, err)
+	return service
 }
 
 // TestNewCookieService tests the constructor
@@ -54,14 +63,17 @@ func TestNewCookieService(t *testing.T) {
 		cfg := &config.InfrastructureConfig{
 			SecretKey: "",
 		}
+		urlService, err := URLService.NewURLService(cfg)
+		require.NoError(t, err)
 
-		service := NewCookieService(cfg)
+		service, err := NewCookieService(cfg, urlService)
+		require.NoError(t, err)
 
 		assert.Nil(t, service, "Service should be nil when SECRET_KEY is empty")
 	})
 
 	t.Run("creates service with hex SECRET_KEY", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithHexKey())
+		service := newTestCookieService(t, newTestInfraConfigWithHexKey())
 
 		assert.NotNil(t, service)
 		assert.Equal(t, "terrareg_session", service.GetSessionCookieName())
@@ -73,52 +85,64 @@ func TestNewCookieService(t *testing.T) {
 			SessionCookieName: "terrareg_session",
 		}
 
-		service := NewCookieService(cfg)
+		service := newTestCookieService(t, cfg)
 
 		assert.NotNil(t, service)
 		assert.Equal(t, "terrareg_session", service.GetSessionCookieName())
 	})
 
-	t.Run("panics with short hex SECRET_KEY", func(t *testing.T) {
+	t.Run("returns error with short hex SECRET_KEY", func(t *testing.T) {
 		cfg := &config.InfrastructureConfig{
 			SecretKey:         "0123456789abcdef", // Only 8 bytes when decoded
 			SessionCookieName: "terrareg_session",
 		}
 
-		assert.Panics(t, func() {
-			NewCookieService(cfg)
-		})
+		urlService, err := URLService.NewURLService(cfg)
+		require.NoError(t, err)
+
+		service, err := NewCookieService(cfg, urlService)
+		assert.Nil(t, service)
+		assert.NotNil(t, err)
+		assert.Equal(t, err.Error(), "Invalid SECRET_KEY: hex-decoded SECRET_KEY is too short: 8 bytes (minimum 32). Generate with: python -c 'import secrets; print(secrets.token_hex())'")
 	})
 
-	t.Run("panics with short raw string SECRET_KEY", func(t *testing.T) {
+	t.Run("returns error with short raw string SECRET_KEY", func(t *testing.T) {
 		cfg := &config.InfrastructureConfig{
 			SecretKey:         "short", // Only 5 bytes
 			SessionCookieName: "terrareg_session",
 		}
+		urlService, err := URLService.NewURLService(cfg)
+		require.NoError(t, err)
 
-		assert.Panics(t, func() {
-			NewCookieService(cfg)
-		})
+		service, err := NewCookieService(cfg, urlService)
+		assert.Nil(t, service)
+		assert.NotNil(t, err)
+		assert.Equal(t, err.Error(), "Invalid SECRET_KEY: SECRET_KEY is too short: 5 characters (minimum 32). Generate with: python -c 'import secrets; print(secrets.token_hex())'")
 	})
 
 	t.Run("determines secure flag from HTTPS URL", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithSecure())
+		service := newTestCookieService(t, newTestInfraConfigWithSecure())
 
-		assert.NotNil(t, service)
+		require.NotNil(t, service)
 		// Service should set Secure=true on cookies when using HTTPS
+		assert.True(t, service.isSecure)
+		assert.True(t, service.getDefaultCookieOptions().Secure)
 	})
 
 	t.Run("determines secure flag from HTTP URL", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithInsecure())
+		service := newTestCookieService(t, newTestInfraConfigWithInsecure())
 
-		assert.NotNil(t, service)
-		// Service should set Secure=false on cookies when using HTTP
+		require.NotNil(t, service)
+		// Service should set Secure=true on cookies when using HTTPS
+		assert.False(t, service.isSecure)
+		assert.False(t, service.getDefaultCookieOptions().Secure)
 	})
 }
 
 // TestCookieService_EncryptDecryptSession tests encryption and decryption round-trip
 func TestCookieService_EncryptDecryptSession(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
+
 	require.NotNil(t, service)
 
 	t.Run("successfully encrypts and decrypts session data", func(t *testing.T) {
@@ -189,8 +213,7 @@ func TestCookieService_EncryptDecryptSession(t *testing.T) {
 
 // TestCookieService_DecryptSession_Errors tests decryption error handling
 func TestCookieService_DecryptSession_Errors(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
-	require.NotNil(t, service)
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 
 	t.Run("fails with invalid base64", func(t *testing.T) {
 		_, err := service.DecryptSession("not-valid-base64!!!")
@@ -226,7 +249,18 @@ func TestCookieService_DecryptSession_Errors(t *testing.T) {
 		require.NoError(t, err)
 
 		// Tamper with the ciphertext
-		tampered := strings.ReplaceAll(encrypted, "A", "B")
+		first := encrypted[0]
+		next := first
+		switch {
+		case first >= 'A' && first <= 'Z':
+			next = 'A' + (first-'A'+1)%26
+		case first >= 'a' && first <= 'z':
+			next = 'a' + (first-'a'+1)%26
+		default:
+			// non-alphabetic: just flip one bit to ensure tampering
+			next = first ^ 1
+		}
+		tampered := strings.ReplaceAll(encrypted, string(first), string(next))
 
 		_, err = service.DecryptSession(tampered)
 		assert.Error(t, err)
@@ -247,7 +281,7 @@ func TestCookieService_DecryptSession_Errors(t *testing.T) {
 // TestCookieService_SetCookie tests cookie setting
 func TestCookieService_SetCookie(t *testing.T) {
 	t.Run("sets secure cookie with default options", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithSecure())
+		service := newTestCookieService(t, newTestInfraConfigWithSecure())
 		require.NotNil(t, service)
 
 		w := httptest.NewRecorder()
@@ -267,8 +301,7 @@ func TestCookieService_SetCookie(t *testing.T) {
 	})
 
 	t.Run("sets insecure cookie with HTTP URL", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithInsecure())
-		require.NotNil(t, service)
+		service := newTestCookieService(t, newTestInfraConfigWithInsecure())
 
 		w := httptest.NewRecorder()
 		service.SetCookie(w, "test_cookie", "test_value", nil)
@@ -281,8 +314,7 @@ func TestCookieService_SetCookie(t *testing.T) {
 	})
 
 	t.Run("sets cookie with custom options", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigForCookie())
-		require.NotNil(t, service)
+		service := newTestCookieService(t, newTestInfraConfigForCookie())
 
 		w := httptest.NewRecorder()
 		customOptions := &CookieOptions{
@@ -306,7 +338,7 @@ func TestCookieService_SetCookie(t *testing.T) {
 	})
 
 	t.Run("sets cookie with empty value", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigForCookie())
+		service := newTestCookieService(t, newTestInfraConfigForCookie())
 		require.NotNil(t, service)
 
 		w := httptest.NewRecorder()
@@ -323,7 +355,7 @@ func TestCookieService_SetCookie(t *testing.T) {
 
 // TestCookieService_ClearCookie tests cookie clearing
 func TestCookieService_ClearCookie(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 	require.NotNil(t, service)
 
 	t.Run("clears cookie by setting MaxAge to -1", func(t *testing.T) {
@@ -344,7 +376,7 @@ func TestCookieService_ClearCookie(t *testing.T) {
 
 // TestCookieService_ValidateSessionCookie tests session cookie validation
 func TestCookieService_ValidateSessionCookie(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 	require.NotNil(t, service)
 
 	t.Run("validates valid session cookie", func(t *testing.T) {
@@ -433,7 +465,7 @@ func TestCookieService_ValidateSessionCookie(t *testing.T) {
 
 // TestCookieService_SetSessionCookie tests setting encrypted session cookies
 func TestCookieService_SetSessionCookie(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 	require.NotNil(t, service)
 
 	t.Run("sets encrypted session cookie", func(t *testing.T) {
@@ -462,7 +494,7 @@ func TestCookieService_SetSessionCookie(t *testing.T) {
 	})
 
 	t.Run("sets secure cookie with HTTPS config", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithSecure())
+		service := newTestCookieService(t, newTestInfraConfigWithSecure())
 		require.NotNil(t, service)
 
 		sessionData := &auth.SessionData{
@@ -482,7 +514,7 @@ func TestCookieService_SetSessionCookie(t *testing.T) {
 	})
 
 	t.Run("sets insecure cookie with HTTP config", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigWithInsecure())
+		service := newTestCookieService(t, newTestInfraConfigWithInsecure())
 		require.NotNil(t, service)
 
 		sessionData := &auth.SessionData{
@@ -504,7 +536,7 @@ func TestCookieService_SetSessionCookie(t *testing.T) {
 
 // TestCookieService_ClearSessionCookie tests clearing session cookies
 func TestCookieService_ClearSessionCookie(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 	require.NotNil(t, service)
 
 	t.Run("clears session cookie", func(t *testing.T) {
@@ -533,14 +565,14 @@ func TestCookieService_GetSessionCookieName(t *testing.T) {
 			SessionCookieName: "custom_session_cookie",
 		}
 
-		service := NewCookieService(cfg)
+		service := newTestCookieService(t, cfg)
 		require.NotNil(t, service)
 
 		assert.Equal(t, "custom_session_cookie", service.GetSessionCookieName())
 	})
 
 	t.Run("returns default session cookie name", func(t *testing.T) {
-		service := NewCookieService(newTestInfraConfigForCookie())
+		service := newTestCookieService(t, newTestInfraConfigForCookie())
 		require.NotNil(t, service)
 
 		assert.Equal(t, "terrareg_session", service.GetSessionCookieName())
@@ -549,7 +581,7 @@ func TestCookieService_GetSessionCookieName(t *testing.T) {
 
 // TestCookieService_EdgeCases tests edge cases
 func TestCookieService_EdgeCases(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 	require.NotNil(t, service)
 
 	t.Run("handles special characters in session data", func(t *testing.T) {
@@ -592,10 +624,10 @@ func TestCookieService_EdgeCases(t *testing.T) {
 
 	t.Run("handles empty slices and maps", func(t *testing.T) {
 		sessionData := &auth.SessionData{
-			SessionID:  "test-session",
-			AuthMethod: "github",
-			Username:   "testuser",
-			UserGroups: []string{},
+			SessionID:   "test-session",
+			AuthMethod:  "github",
+			Username:    "testuser",
+			UserGroups:  []string{},
 			Permissions: map[string]string{},
 		}
 
@@ -630,7 +662,7 @@ func TestCookieService_EdgeCases(t *testing.T) {
 
 // TestCookieService_ConcurrentAccess tests thread safety
 func TestCookieService_ConcurrentAccess(t *testing.T) {
-	service := NewCookieService(newTestInfraConfigForCookie())
+	service := newTestCookieService(t, newTestInfraConfigForCookie())
 	require.NotNil(t, service)
 
 	t.Run("concurrent encrypt/decrypt operations", func(t *testing.T) {

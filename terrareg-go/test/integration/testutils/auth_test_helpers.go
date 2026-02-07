@@ -11,6 +11,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	urlService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
@@ -32,7 +33,10 @@ func BuildAuthenticatedRequestWithSession(t *testing.T, db *sqldb.Database, meth
 		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		SessionCookieName: "terrareg_session",
 	}
-	cookieService := service.NewCookieService(cfg)
+	urlService, err := urlService.NewURLService(cfg)
+	require.NoError(t, err)
+	cookieService, err := service.NewCookieService(cfg, urlService)
+	require.NoError(t, err)
 
 	// Create encrypted cookie value
 	expiry := time.Now().Add(1 * time.Hour)
@@ -114,7 +118,10 @@ func BuildAuthenticatedRequestWithNamespacePermission(
 		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		SessionCookieName: "terrareg_session",
 	}
-	cookieService := service.NewCookieService(cfg)
+	urlService, err := urlService.NewURLService(cfg)
+	require.NoError(t, err)
+	cookieService, err := service.NewCookieService(cfg, urlService)
+	require.NoError(t, err)
 
 	// Create encrypted cookie value with user groups
 	expiry := time.Now().Add(1 * time.Hour)
@@ -189,7 +196,10 @@ func BuildAuthenticatedRequestWithMultipleNamespacePermissions(
 		SecretKey:         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		SessionCookieName: "terrareg_session",
 	}
-	cookieService := service.NewCookieService(cfg)
+	urlService, err := urlService.NewURLService(cfg)
+	require.NoError(t, err)
+	cookieService, err := service.NewCookieService(cfg, urlService)
+	require.NoError(t, err)
 
 	// Create encrypted cookie value with user groups
 	expiry := time.Now().Add(1 * time.Hour)
