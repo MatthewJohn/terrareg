@@ -19,25 +19,37 @@ import (
 
 // SecurityScanningService handles tfsec security scanning of module versions with transaction safety
 type SecurityScanningService struct {
-	moduleFileService *ModuleFileService
-	moduleVersionRepo moduleRepo.ModuleVersionRepository
-	savepointHelper   *transaction.SavepointHelper
-	commandService    service.SystemCommandService
+	moduleFileService  *ModuleFileService
+	moduleVersionRepo  moduleRepo.ModuleVersionRepository
+	moduleDetailsRepo  moduleRepo.ModuleDetailsRepository
+	savepointHelper    *transaction.SavepointHelper
+	commandService     service.SystemCommandService
 }
 
 // NewSecurityScanningService creates a new security scanning service with transaction support
 func NewSecurityScanningService(
 	moduleFileService *ModuleFileService,
 	moduleVersionRepo moduleRepo.ModuleVersionRepository,
+	moduleDetailsRepo moduleRepo.ModuleDetailsRepository,
 	savepointHelper *transaction.SavepointHelper,
 	commandService service.SystemCommandService,
-) *SecurityScanningService {
+) (*SecurityScanningService, error) {
+	// Nil checks for required dependencies
+	if moduleVersionRepo == nil {
+		return nil, fmt.Errorf("moduleVersionRepo cannot be nil")
+	}
+	if moduleDetailsRepo == nil {
+		return nil, fmt.Errorf("moduleDetailsRepo cannot be nil")
+	}
+	// moduleFileService, savepointHelper, and commandService are optional - some operations may not need them
+
 	return &SecurityScanningService{
 		moduleFileService: moduleFileService,
 		moduleVersionRepo: moduleVersionRepo,
+		moduleDetailsRepo: moduleDetailsRepo,
 		savepointHelper:   savepointHelper,
 		commandService:    commandService,
-	}
+	}, nil
 }
 
 // SecurityScanRequest represents a request to scan a module version
@@ -626,19 +638,20 @@ func (s *SecurityScanningService) storeSecurityResultsInTransaction(
 }
 
 // updateModuleVersionDetails updates module version details
-// This is a helper method that would need to be implemented in the ModuleVersion domain model
 func (s *SecurityScanningService) updateModuleVersionDetails(
 	ctx context.Context,
 	moduleVersion *model.ModuleVersion,
 	details *model.ModuleDetails,
 ) error {
-	// This is a placeholder for the actual domain method that would update details
-	// In the current Go implementation, this might be:
-	// moduleVersion.UpdateDetails(details)
-	// or a similar domain method
-
-	// For now, we'll assume the ModuleVersion has a method to update details
-	// This would need to be implemented in the actual domain model
+	// Save the module details and get the database ID
+	detailsID, err := s.moduleDetailsRepo.SaveAndReturnID(ctx, details)
+	if err != nil {
+		return fmt.Errorf("failed to save module details: %w", err)
+	}
+	// Update the module version to reference the module details
+	if err := s.moduleVersionRepo.UpdateModuleDetailsID(ctx, moduleVersion.ID(), detailsID); err != nil {
+		return fmt.Errorf("failed to update module version with details ID: %w", err)
+	}
 	return nil
 }
 

@@ -153,7 +153,6 @@ type Container struct {
 	TempDirManager         storageService.TemporaryDirectoryManager
 	StorageWorkflowService storageService.StorageWorkflowService
 	GitService             gitService.GitService
-	ModuleIndexingService  moduleService.ModuleIndexingService
 	ModuleParser           moduleService.ModuleParser
 	ModuleProcessorService moduleService.ModuleProcessorService
 	InfracostService       moduleService.InfracostService
@@ -503,16 +502,6 @@ func NewContainer(
 	moduleStorageAdapter := storageInfrastructure.NewModuleStorageAdapter(c.DomainStorageService, c.PathBuilder)
 	c.ModuleStorageService = moduleStorageAdapter
 
-	// Initialize module indexing service (pending ModuleProcessorService and ArchiveGenerationService)
-	// TODO: Implement ModuleProcessorService and ArchiveGenerationService
-	// c.ModuleIndexingService = moduleService.NewModuleIndexingServiceImpl(
-	//     c.GitService,
-	//     c.StorageWorkflowService,
-	//     c.ModuleProcessorService, // TODO: Create this service
-	//     c.ArchiveGenerationService, // TODO: Create this service
-	//     c.Logger,
-	// )
-
 	c.ModuleParser = parser.NewModuleParserImpl(c.ModuleStorageService, c.DomainConfig)
 
 	// Create infracost service for cost analysis of examples
@@ -660,12 +649,16 @@ func NewContainer(
 	)
 
 	// Initialize security scanning service now that ModuleFileService is available
-	securityScanningService := moduleService.NewSecurityScanningService(
+	securityScanningService, err := moduleService.NewSecurityScanningService(
 		c.ModuleFileService,
 		c.ModuleVersionRepo,
+		c.ModuleDetailsRepo,
 		savepointHelper,
 		c.SystemCommandService,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create security scanning service: %w", err)
+	}
 	c.SecurityScanningService = securityScanningService
 
 	// Initialize transaction processing orchestrator now that all dependencies are ready
