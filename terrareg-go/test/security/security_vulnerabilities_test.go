@@ -196,9 +196,10 @@ func testPathTraversalPrevention(t *testing.T) {
 			handler(w, req)
 
 			// Should be blocked with 400 or return safe content
-			if w.Code == http.StatusBadRequest {
+			switch w.Code {
+			case http.StatusBadRequest:
 				assert.Contains(t, w.Body.String(), "Invalid file path")
-			} else if w.Code == http.StatusOK {
+			case http.StatusOK:
 				// Should not contain path traversal sequences in response
 				assert.NotContains(t, w.Body.String(), "..")
 				assert.NotContains(t, w.Body.String(), "etc/passwd")

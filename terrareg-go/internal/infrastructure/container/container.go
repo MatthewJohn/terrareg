@@ -515,18 +515,6 @@ func NewContainer(
 		return nil, fmt.Errorf("failed to create InfracostService: %w", err)
 	}
 
-	// Create module processor service
-	c.ModuleProcessorService = moduleService.NewModuleProcessorServiceImpl(
-		c.ModuleParser,
-		c.ModuleDetailsRepo,
-		c.ModuleVersionRepo,
-		c.SubmoduleRepo,
-		c.ExampleFileRepo,
-		c.InfracostService,
-		c.DomainConfig,
-		logger,
-	)
-
 	// Initialize foundation transaction services
 	savepointHelper, err := transaction.NewSavepointHelper(db.DB)
 	if err != nil {
@@ -660,6 +648,19 @@ func NewContainer(
 		return nil, fmt.Errorf("failed to create security scanning service: %w", err)
 	}
 	c.SecurityScanningService = securityScanningService
+
+	// Create module processor service now that SecurityScanningService is available
+	c.ModuleProcessorService = moduleService.NewModuleProcessorServiceImpl(
+		c.ModuleParser,
+		c.ModuleDetailsRepo,
+		c.ModuleVersionRepo,
+		c.SubmoduleRepo,
+		c.ExampleFileRepo,
+		c.InfracostService,
+		securityScanningService,
+		c.DomainConfig,
+		logger,
+	)
 
 	// Initialize transaction processing orchestrator now that all dependencies are ready
 	processingOrchestrator = moduleService.NewTransactionProcessingOrchestrator(

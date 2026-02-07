@@ -62,13 +62,23 @@ type SecurityScanRequest struct {
 }
 
 // SecurityScanResult represents a tfsec scan result
+// Matches Python tfsec format from test_data.py (lines 101-124)
 type SecurityScanResult struct {
-	RuleID      string               `json:"rule_id"`
-	Severity    string               `json:"severity"`
-	Title       string               `json:"title"`
-	Description string               `json:"description"`
-	Location    SecurityScanLocation `json:"location"`
-	Links       []string             `json:"links,omitempty"`
+	RuleID          string               `json:"rule_id"`
+	LongID          string               `json:"long_id"`           // Full rule identifier (e.g., "aws-ssm-secret-use-customer-key")
+	Severity        string               `json:"severity"`
+	Title           string               `json:"title"`             // Deprecated: Use RuleDescription
+	Description     string               `json:"description"`       // Issue description
+	Impact          string               `json:"impact"`            // Impact of the security issue
+	Resolution      string               `json:"resolution"`        // How to fix the issue
+	Resource        string               `json:"resource"`          // Resource name (e.g., "aws_secretsmanager_secret.this")
+	RuleDescription string               `json:"rule_description"`  // Description of the rule
+	RuleProvider    string               `json:"rule_provider"`     // Provider name (e.g., "aws")
+	RuleService     string               `json:"rule_service"`      // Service name (e.g., "ssm")
+	Status          int                  `json:"status"`            // 0=FAIL, 1=PASS, 2=SKIP
+	Warning         bool                 `json:"warning"`           // Whether this is a warning
+	Location        SecurityScanLocation `json:"location"`
+	Links           []string             `json:"links,omitempty"`
 }
 
 // SecurityScanLocation represents the location of a security issue
@@ -97,17 +107,16 @@ type SecurityScanSummary struct {
 
 // ExecuteSecurityScan runs a tfsec security scan on a module version
 func (s *SecurityScanningService) ExecuteSecurityScan(ctx context.Context, req *SecurityScanRequest) (*SecurityScanResponse, error) {
-	// Check if services are properly initialized
-	if s.moduleFileService == nil {
-		return nil, fmt.Errorf("module file service not initialized")
-	}
-
 	// TODO: Add security scanning configuration check when available
 	// For now, always allow security scanning
 
 	// If module path is not provided, extract files temporarily
 	scanPath := req.ModulePath
 	if scanPath == "" {
+		// Check if services are properly initialized for extraction
+		if s.moduleFileService == nil {
+			return nil, fmt.Errorf("module file service not initialized")
+		}
 		tempDir, err := s.extractModuleFiles(ctx, req)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract module files: %w", err)
@@ -291,27 +300,43 @@ func (s *SecurityScanningService) processResults(results map[string]interface{},
 }
 
 // processSingleResult processes a single tfsec result
+// Maps all fields from Python tfsec format (test_data.py lines 101-124)
 func (s *SecurityScanningService) processSingleResult(result map[string]interface{}, modulePath string) *SecurityScanResult {
-	// Extract rule ID
+	// Extract rule ID (required)
 	ruleID, _ := result["rule_id"].(string)
 	if ruleID == "" {
 		return nil
 	}
 
-	// Extract severity
+	// Extract all string fields
+	longID, _ := result["long_id"].(string)
 	severity, _ := result["severity"].(string)
-
-	// Extract title
 	title, _ := result["title"].(string)
-
-	// Extract description
 	description, _ := result["description"].(string)
+	impact, _ := result["impact"].(string)
+	resolution, _ := result["resolution"].(string)
+	resource, _ := result["resource"].(string)
+	ruleDescription, _ := result["rule_description"].(string)
+	ruleProvider, _ := result["rule_provider"].(string)
+	ruleService, _ := result["rule_service"].(string)
+
+	// Extract status (integer: 0=FAIL, 1=PASS, 2=SKIP)
+	var status int
+	if statusFloat, ok := result["status"].(float64); ok {
+		status = int(statusFloat)
+	}
+
+	// Extract warning (boolean)
+	var warning bool
+	if warningBool, ok := result["warning"].(bool); ok {
+		warning = warningBool
+	}
 
 	// Extract location
 	var location SecurityScanLocation
 	if locationMap, ok := result["location"].(map[string]interface{}); ok {
 		if filename, ok := locationMap["filename"].(string); ok {
-			// Clean up path - remove temporary directory prefix
+			// Clean up path - remove temporary directory prefix (matches Python behavior at module_extractor.py:188-193)
 			location.Filename = strings.TrimPrefix(filename, modulePath)
 			location.Filename = strings.TrimPrefix(location.Filename, "/")
 		}
@@ -334,12 +359,21 @@ func (s *SecurityScanningService) processSingleResult(result map[string]interfac
 	}
 
 	return &SecurityScanResult{
-		RuleID:      ruleID,
-		Severity:    severity,
-		Title:       title,
-		Description: description,
-		Location:    location,
-		Links:       links,
+		RuleID:          ruleID,
+		LongID:          longID,
+		Severity:        severity,
+		Title:           title,
+		Description:     description,
+		Impact:          impact,
+		Resolution:      resolution,
+		Resource:        resource,
+		RuleDescription: ruleDescription,
+		RuleProvider:    ruleProvider,
+		RuleService:     ruleService,
+		Status:          status,
+		Warning:         warning,
+		Location:        location,
+		Links:           links,
 	}
 }
 

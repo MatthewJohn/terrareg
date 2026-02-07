@@ -42,14 +42,15 @@ type ProcessedExampleFile struct {
 
 // ModuleProcessorServiceImpl implements the ModuleProcessorService interface
 type ModuleProcessorServiceImpl struct {
-	moduleParser      ModuleParser
-	moduleDetailsRepo repository.ModuleDetailsRepository
-	moduleVersionRepo repository.ModuleVersionRepository
-	submoduleRepo     repository.SubmoduleRepository
-	exampleFileRepo   repository.ExampleFileRepository
-	infracostService  InfracostService
-	config            *configModel.DomainConfig
-	logger            zerolog.Logger
+	moduleParser         ModuleParser
+	moduleDetailsRepo    repository.ModuleDetailsRepository
+	moduleVersionRepo    repository.ModuleVersionRepository
+	submoduleRepo        repository.SubmoduleRepository
+	exampleFileRepo      repository.ExampleFileRepository
+	infracostService     InfracostService
+	securityScanningService *SecurityScanningService
+	config               *configModel.DomainConfig
+	logger               zerolog.Logger
 }
 
 // NewModuleProcessorServiceImpl creates a new ModuleProcessorService implementation
@@ -60,18 +61,20 @@ func NewModuleProcessorServiceImpl(
 	submoduleRepo repository.SubmoduleRepository,
 	exampleFileRepo repository.ExampleFileRepository,
 	infracostService InfracostService,
+	securityScanningService *SecurityScanningService,
 	config *configModel.DomainConfig,
 	logger zerolog.Logger,
 ) ModuleProcessorService {
 	return &ModuleProcessorServiceImpl{
-		moduleParser:      moduleParser,
-		moduleDetailsRepo: moduleDetailsRepo,
-		moduleVersionRepo: moduleVersionRepo,
-		submoduleRepo:     submoduleRepo,
-		exampleFileRepo:   exampleFileRepo,
-		infracostService:  infracostService,
-		config:            config,
-		logger:            logger,
+		moduleParser:         moduleParser,
+		moduleDetailsRepo:    moduleDetailsRepo,
+		moduleVersionRepo:    moduleVersionRepo,
+		submoduleRepo:        submoduleRepo,
+		exampleFileRepo:      exampleFileRepo,
+		infracostService:     infracostService,
+		securityScanningService: securityScanningService,
+		config:               config,
+		logger:               logger,
 	}
 }
 
@@ -101,13 +104,32 @@ func (s *ModuleProcessorServiceImpl) ProcessModule(
 		terraformVersion = ""
 	}
 
+	// 2.5. Run tfsec security scan for main module
+	var tfsecJSON []byte
+	if s.securityScanningService != nil {
+		scanReq := &SecurityScanRequest{
+			ModulePath: moduleDir,
+		}
+		scanResponse, err := s.securityScanningService.ExecuteSecurityScan(ctx, scanReq)
+		if err != nil {
+			s.logger.Warn().Err(err).Str("module_dir", moduleDir).Msg("tfsec scanning failed, continuing without security data")
+		} else if scanResponse != nil {
+			tfsecJSON, err = json.Marshal(scanResponse)
+			if err != nil {
+				s.logger.Warn().Err(err).Msg("failed to marshal tfsec results, continuing without security data")
+			} else {
+				s.logger.Info().Msg("tfsec security scan completed successfully")
+			}
+		}
+	}
+
 	// 3. Create ModuleDetails entity with parsed content
 	details := model.NewCompleteModuleDetails(
 		[]byte(parseResult.ReadmeContent),
 		parseResult.RawTerraformDocs,
-		nil,                                // tfsec - to be implemented later
-		nil,                                // infracost - to be implemented later
-		s.extractTerraformGraph(moduleDir), // terraform graph
+		tfsecJSON,                           // tfsec - now populated
+		nil,                                 // infracost - only for examples
+		s.extractTerraformGraph(moduleDir),  // terraform graph
 		s.extractTerraformModules(parseResult.TerraformRequirements),
 		terraformVersion,
 	)
@@ -420,15 +442,36 @@ func (s *ModuleProcessorServiceImpl) processSubmodules(ctx context.Context, modu
 			continue
 		}
 
+		// Run tfsec security scan for submodule
+		var tfsecJSON []byte
+		if s.securityScanningService != nil {
+			scanReq := &SecurityScanRequest{
+				ModulePath: submodulePath,
+			}
+			scanResponse, err := s.securityScanningService.ExecuteSecurityScan(ctx, scanReq)
+			if err != nil {
+				s.logger.Warn().Err(err).
+					Str("submodule", submoduleName).
+					Msg("tfsec scanning failed, continuing without security data")
+			} else if scanResponse != nil {
+				tfsecJSON, err = json.Marshal(scanResponse)
+				if err != nil {
+					s.logger.Warn().Err(err).
+						Str("submodule", submoduleName).
+						Msg("failed to marshal tfsec results, continuing without security data")
+				}
+			}
+		}
+
 		// Create submodule ModuleDetails
 		submoduleDetails := model.NewCompleteModuleDetails(
 			[]byte(submoduleParseResult.ReadmeContent),
 			submoduleParseResult.RawTerraformDocs,
-			nil, // tfsec - to be implemented later
-			nil, // infracost - to be implemented later
-			nil, // terraform graph - optional for submodules
-			nil, // terraform modules - optional for submodules
-			"",  // terraform version - optional for submodules
+			tfsecJSON, // tfsec - now populated
+			nil,       // infracost - only for examples
+			nil,       // terraform graph - optional for submodules
+			nil,       // terraform modules - optional for submodules
+			"",        // terraform version - optional for submodules
 		)
 
 		// Save submodule details

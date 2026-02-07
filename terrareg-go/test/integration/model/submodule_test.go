@@ -456,3 +456,158 @@ func TestSubmodule_WithModuleDetails(t *testing.T) {
 	assert.NotNil(t, found.ModuleDetails)
 	assert.Equal(t, []byte("# README for submodule"), found.ModuleDetails.ReadmeContent)
 }
+
+// TestSubmodule_UpdateModuleDetailsID_Success tests successfully updating module details ID for a submodule
+func TestSubmodule_UpdateModuleDetailsID_Success(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+	repo, err := module.NewSubmoduleRepository(db.DB)
+	require.NoError(t, err)
+
+	// Create test data: namespace, module provider, module version
+	namespace := testutils.CreateNamespace(t, db, "test-submodule-update-details", nil)
+	provider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+	version := testutils.CreateModuleVersion(t, db, provider.ID, "1.0.0")
+
+	// Create a submodule
+	submoduleType := "module"
+	submoduleName := "Test Submodule"
+	submodule := &sqldb.SubmoduleDB{
+		Type: &submoduleType,
+		Path: "examples/test-example",
+		Name: &submoduleName,
+	}
+	saved, err := repo.Save(ctx, version.ID, submodule)
+	require.NoError(t, err)
+	require.NotNil(t, saved)
+
+	// Create a module details record
+	moduleDetails := sqldb.ModuleDetailsDB{
+		ReadmeContent: []byte("# Test README"),
+	}
+	err = db.DB.Create(&moduleDetails).Error
+	require.NoError(t, err)
+
+	// Update submodule with module details ID
+	err = repo.UpdateModuleDetailsID(ctx, saved.ID, moduleDetails.ID)
+	assert.NoError(t, err, "UpdateModuleDetailsID should succeed")
+
+	// Verify the update
+	var updatedSubmodule sqldb.SubmoduleDB
+	err = db.DB.First(&updatedSubmodule, saved.ID).Error
+	require.NoError(t, err, "Should be able to fetch updated submodule")
+
+	assert.Equal(t, moduleDetails.ID, *updatedSubmodule.ModuleDetailsID, "ModuleDetailsID should be updated")
+}
+
+// TestSubmodule_UpdateModuleDetailsID_ZeroModuleDetailsID tests updating with zero module details ID (clearing)
+func TestSubmodule_UpdateModuleDetailsID_ZeroModuleDetailsID(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+	repo, err := module.NewSubmoduleRepository(db.DB)
+	require.NoError(t, err)
+
+	// Create test data: namespace, module provider, module version
+	namespace := testutils.CreateNamespace(t, db, "test-submodule-clear-details", nil)
+	provider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+	version := testutils.CreateModuleVersion(t, db, provider.ID, "1.0.0")
+
+	// Create module details
+	moduleDetails := sqldb.ModuleDetailsDB{
+		ReadmeContent: []byte("# Test README"),
+	}
+	err = db.DB.Create(&moduleDetails).Error
+	require.NoError(t, err)
+
+	// Create a submodule with module details ID
+	submoduleType := "module"
+	submoduleName := "Test Submodule"
+	submodule := &sqldb.SubmoduleDB{
+		Type:            &submoduleType,
+		Path:            "examples/test-example",
+		Name:            &submoduleName,
+		ModuleDetailsID: &moduleDetails.ID,
+	}
+	saved, err := repo.Save(ctx, version.ID, submodule)
+	require.NoError(t, err)
+	require.NotNil(t, saved)
+
+	// Update submodule with zero module details ID
+	// Note: In GORM, updating to 0 sets the field to a pointer to 0, not nil
+	err = repo.UpdateModuleDetailsID(ctx, saved.ID, 0)
+	assert.NoError(t, err, "UpdateModuleDetailsID should succeed with zero module details ID")
+
+	// Verify the update
+	var updatedSubmodule sqldb.SubmoduleDB
+	err = db.DB.First(&updatedSubmodule, saved.ID).Error
+	require.NoError(t, err, "Should be able to fetch updated submodule")
+
+	// GORM sets to a pointer to 0, not nil
+	assert.NotNil(t, updatedSubmodule.ModuleDetailsID, "ModuleDetailsID is a pointer (not nil)")
+	assert.Equal(t, 0, *updatedSubmodule.ModuleDetailsID, "ModuleDetailsID should be 0")
+}
+
+// TestSubmodule_UpdateModuleDetailsID_MultipleUpdates tests updating the same submodule multiple times
+func TestSubmodule_UpdateModuleDetailsID_MultipleUpdates(t *testing.T) {
+	db := testutils.SetupTestDatabase(t)
+	defer testutils.CleanupTestDatabase(t, db)
+
+	ctx := context.Background()
+	repo, err := module.NewSubmoduleRepository(db.DB)
+	require.NoError(t, err)
+
+	// Create test data: namespace, module provider, module version
+	namespace := testutils.CreateNamespace(t, db, "test-submodule-multiple-updates", nil)
+	provider := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "testprovider")
+	version := testutils.CreateModuleVersion(t, db, provider.ID, "1.0.0")
+
+	// Create a submodule
+	submoduleType := "module"
+	submoduleName := "Test Submodule"
+	submodule := &sqldb.SubmoduleDB{
+		Type: &submoduleType,
+		Path: "examples/test-example",
+		Name: &submoduleName,
+	}
+	saved, err := repo.Save(ctx, version.ID, submodule)
+	require.NoError(t, err)
+	require.NotNil(t, saved)
+
+	// Create multiple module details records
+	moduleDetails1 := sqldb.ModuleDetailsDB{
+		ReadmeContent: []byte("# README 1"),
+	}
+	err = db.DB.Create(&moduleDetails1).Error
+	require.NoError(t, err)
+
+	moduleDetails2 := sqldb.ModuleDetailsDB{
+		ReadmeContent: []byte("# README 2"),
+	}
+	err = db.DB.Create(&moduleDetails2).Error
+	require.NoError(t, err)
+
+	// First update
+	err = repo.UpdateModuleDetailsID(ctx, saved.ID, moduleDetails1.ID)
+	assert.NoError(t, err, "First update should succeed")
+
+	// Verify first update
+	var updated1 sqldb.SubmoduleDB
+	err = db.DB.First(&updated1, saved.ID).Error
+	require.NoError(t, err)
+	assert.Equal(t, moduleDetails1.ID, *updated1.ModuleDetailsID, "First update should set ModuleDetailsID")
+
+	// Second update
+	err = repo.UpdateModuleDetailsID(ctx, saved.ID, moduleDetails2.ID)
+	assert.NoError(t, err, "Second update should succeed")
+
+	// Verify second update
+	var updated2 sqldb.SubmoduleDB
+	err = db.DB.First(&updated2, saved.ID).Error
+	require.NoError(t, err)
+	assert.Equal(t, moduleDetails2.ID, *updated2.ModuleDetailsID, "Second update should change ModuleDetailsID")
+}
+
