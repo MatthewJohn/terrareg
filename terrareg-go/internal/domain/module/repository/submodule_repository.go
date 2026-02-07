@@ -14,6 +14,9 @@ type SubmoduleRepository interface {
 	// SaveWithDetails saves a submodule with module details
 	SaveWithDetails(ctx context.Context, parentModuleVersionID int, submodule *sqldb.SubmoduleDB, moduleDetailsID int) (*sqldb.SubmoduleDB, error)
 
+	// UpdateModuleDetailsID updates the module details ID for a submodule
+	UpdateModuleDetailsID(ctx context.Context, submoduleID int, moduleDetailsID int) error
+
 	// FindByParentModuleVersion finds all submodules for a module version
 	FindByParentModuleVersion(ctx context.Context, moduleVersionID int) ([]sqldb.SubmoduleDB, error)
 

@@ -103,3 +103,17 @@ func (r *SubmoduleRepositoryImpl) DeleteByParentModuleVersion(ctx context.Contex
 
 	return nil
 }
+
+// UpdateModuleDetailsID updates the module details ID for a submodule
+func (r *SubmoduleRepositoryImpl) UpdateModuleDetailsID(ctx context.Context, submoduleID int, moduleDetailsID int) error {
+	db := r.GetDBFromContext(ctx)
+	result := db.Model(&sqldb.SubmoduleDB{}).
+		Where("id = ?", submoduleID).
+		Update("module_details_id", moduleDetailsID)
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update module details ID for submodule %d: %w", submoduleID, result.Error)
+	}
+
+	return nil
+}

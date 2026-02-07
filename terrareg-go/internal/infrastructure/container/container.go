@@ -156,6 +156,7 @@ type Container struct {
 	ModuleIndexingService  moduleService.ModuleIndexingService
 	ModuleParser           moduleService.ModuleParser
 	ModuleProcessorService moduleService.ModuleProcessorService
+	InfracostService       moduleService.InfracostService
 
 	// Domain Services
 	ModuleImporterService *moduleService.ModuleImporterService
@@ -511,6 +512,14 @@ func NewContainer(
 
 	c.ModuleParser = parser.NewModuleParserImpl(c.ModuleStorageService, c.DomainConfig)
 
+	// Create infracost service for cost analysis of examples
+	infracostConfig := &moduleService.InfracostConfig{
+		InfracostAPIKey:                 infraConfig.InfracostAPIKey,
+		InternalExtractionAnalyticsToken: infraConfig.InternalExtractionAnalyticsToken,
+		PublicURL:                        infraConfig.PublicURL,
+	}
+	c.InfracostService = moduleService.NewInfracostService(infracostConfig, logger, c.SystemCommandService)
+
 	// Create module processor service
 	c.ModuleProcessorService = moduleService.NewModuleProcessorServiceImpl(
 		c.ModuleParser,
@@ -518,6 +527,7 @@ func NewContainer(
 		c.ModuleVersionRepo,
 		c.SubmoduleRepo,
 		c.ExampleFileRepo,
+		c.InfracostService,
 		c.DomainConfig,
 		logger,
 	)

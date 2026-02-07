@@ -214,8 +214,8 @@ func (q *GetExampleDetailsQuery) getCostAnalysis(example *model.Example) *CostAn
 		return nil
 	}
 
-	// Extract totalMonthlyCost and calculate yearly cost
-	totalMonthlyCost, ok := infracostData["totalMonthlyCost"].(float64)
+	// Extract total_monthly_cost from infracost JSON (snake_case format)
+	totalMonthlyCost, ok := infracostData["total_monthly_cost"].(float64)
 	if !ok {
 		return nil
 	}

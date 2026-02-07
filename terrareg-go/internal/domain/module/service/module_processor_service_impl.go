@@ -47,6 +47,7 @@ type ModuleProcessorServiceImpl struct {
 	moduleVersionRepo repository.ModuleVersionRepository
 	submoduleRepo     repository.SubmoduleRepository
 	exampleFileRepo   repository.ExampleFileRepository
+	infracostService  InfracostService
 	config            *configModel.DomainConfig
 	logger            zerolog.Logger
 }
@@ -58,6 +59,7 @@ func NewModuleProcessorServiceImpl(
 	moduleVersionRepo repository.ModuleVersionRepository,
 	submoduleRepo repository.SubmoduleRepository,
 	exampleFileRepo repository.ExampleFileRepository,
+	infracostService InfracostService,
 	config *configModel.DomainConfig,
 	logger zerolog.Logger,
 ) ModuleProcessorService {
@@ -67,6 +69,7 @@ func NewModuleProcessorServiceImpl(
 		moduleVersionRepo: moduleVersionRepo,
 		submoduleRepo:     submoduleRepo,
 		exampleFileRepo:   exampleFileRepo,
+		infracostService:  infracostService,
 		config:            config,
 		logger:            logger,
 	}
@@ -535,6 +538,37 @@ func (s *ModuleProcessorServiceImpl) processExamples(ctx context.Context, module
 					Str("example", exampleName).
 					Msg("Failed to save example files, skipping")
 				continue
+			}
+		}
+
+		// Run infracost analysis if configured
+		if s.infracostService != nil && s.infracostService.IsAvailable() {
+			infracostJSON, err := s.infracostService.AnalyzeExample(ctx, examplePath)
+			if err != nil {
+				s.logger.Warn().Err(err).
+					Str("example", exampleName).
+					Msg("infracost analysis failed, continuing without cost data")
+			} else if infracostJSON != nil {
+				// Create ModuleDetails with infracost data and save, getting the database ID
+				details := model.NewModuleDetails(infracostJSON)
+				detailsID, err := s.moduleDetailsRepo.SaveAndReturnID(ctx, details)
+				if err != nil {
+					s.logger.Warn().Err(err).
+						Str("example", exampleName).
+						Msg("failed to save infracost module details, continuing without cost data")
+				} else {
+					// Update submodule to reference the module details
+					if err := s.submoduleRepo.UpdateModuleDetailsID(ctx, savedSubmodule.ID, detailsID); err != nil {
+						s.logger.Warn().Err(err).
+							Str("example", exampleName).
+							Msg("failed to update submodule with module details ID, continuing without cost data")
+					} else {
+						s.logger.Debug().
+							Str("example", exampleName).
+							Int("module_details_id", detailsID).
+							Msg("associated infracost data with example")
+					}
+				}
 			}
 		}
 
