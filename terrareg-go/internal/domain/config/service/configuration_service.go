@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
@@ -44,15 +45,18 @@ func (s *ConfigurationService) LoadConfiguration() (*model.DomainConfig, *config
 		return nil, nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
 
-	// Split into domain and infrastructure configs
-	domainConfig := s.buildDomainConfig(rawConfig)
+	// Build infrastructure config first (needed for auth service checks)
 	infrastructureConfig := s.buildInfrastructureConfig(rawConfig)
+
+	// Build domain config using infrastructure config for auth status
+	domainConfig := s.buildDomainConfig(rawConfig, infrastructureConfig)
 
 	return domainConfig, infrastructureConfig, nil
 }
 
 // buildDomainConfig creates domain configuration from raw environment variables
-func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *model.DomainConfig {
+// It requires infrastructureConfig to determine authentication status via auth services
+func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string, infrastructureConfig *config.InfrastructureConfig) *model.DomainConfig {
 	return &model.DomainConfig{
 		// Feature flags
 		AllowModuleHosting:              s.parseModuleHostingMode(rawConfig["ALLOW_MODULE_HOSTING"]),
@@ -141,9 +145,10 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 		// Additional Infracost Configuration
 		InfracostTlsInsecureSkipVerify: s.parseBool(rawConfig["INFRACOST_TLS_INSECURE_SKIP_VERIFY"], false),
 
-		// Authentication status (derived from infrastructure)
-		OpenIDConnectEnabled: rawConfig["OPENID_CONNECT_CLIENT_ID"] != "" && rawConfig["OPENID_CONNECT_ISSUER"] != "",
-		SAMLEnabled:          rawConfig["SAML2_IDP_METADATA_URL"] != "",
+		// Authentication status (delegated to auth services)
+		// The auth services are the single source of truth for whether they are enabled
+		OpenIDConnectEnabled: authservice.IsOIDCConfigured(infrastructureConfig),
+		SAMLEnabled:          authservice.IsSAMLConfigured(infrastructureConfig),
 		AdminLoginEnabled:    rawConfig["ADMIN_AUTHENTICATION_TOKEN"] != "",
 	}
 }

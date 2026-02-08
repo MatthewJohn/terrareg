@@ -41,7 +41,7 @@ type SAMLUserInfo struct {
 
 // NewSAMLService creates a new SAML service
 func NewSAMLService(config *config.InfrastructureConfig) (*SAMLService, error) {
-	if !isSAMLConfigured(config) {
+	if !IsSAMLConfigured(config) {
 		return nil, fmt.Errorf("SAML is not configured")
 	}
 
@@ -216,11 +216,21 @@ func (s *SAMLService) getACSURLRaw() string {
 
 // Helper functions
 
-func isSAMLConfigured(config *config.InfrastructureConfig) bool {
-	return config != nil &&
-		config.SAML2EntityID != "" &&
+// IsSAMLConfigured checks if SAML authentication is properly configured.
+// This is exported so the configuration service can determine if SAML is enabled.
+// Matches Python's Saml2.is_enabled() behavior - requires all five fields.
+// Note: crewjam library can auto-generate keys/certs if not provided,
+// but Python requires them explicitly. This could be enhanced in the future
+// to allow auto-generation when keys are not provided.
+func IsSAMLConfigured(config *config.InfrastructureConfig) bool {
+	if config == nil {
+		return false
+	}
+	return config.SAML2EntityID != "" &&
 		config.SAML2IDPMetadataURL != "" &&
-		config.PublicURL != ""
+		config.PublicURL != "" &&
+		config.SAML2PublicKey != "" &&
+		config.SAML2PrivateKey != ""
 }
 
 func loadPrivateKey(config *config.InfrastructureConfig) *rsa.PrivateKey {
@@ -480,7 +490,7 @@ func (s *SAMLService) validateSessionConstraints(response *saml.Response) error 
 
 // IsConfigured checks if SAML is properly configured
 func (s *SAMLService) IsConfigured() bool {
-	return isSAMLConfigured(s.config)
+	return IsSAMLConfigured(s.config)
 }
 
 // SAMLAuthRequest represents a SAML authentication request

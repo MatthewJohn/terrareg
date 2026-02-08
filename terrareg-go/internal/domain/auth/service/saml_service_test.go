@@ -727,3 +727,60 @@ C9D0E1F2G3H4I5J6K7L8M9N0O1P2Q3R4S5T6U7V8W9X0Y1Z2A3B4C5D6E7F8G9H
 0I1J2K3L4M5N6O7P8Q9R0S1T2U3V4W5X6Y7Z8A9B0C1D2E3F4G5H6I7J8K9L0M1
 N2O3P4Q5R6S7T8U9V0W1X2Y3Z4A5B6C7D8E9F0G1H2I3J4K5L6M7N8O9P0Q1R2S
 -----END CERTIFICATE-----`
+
+// TestIsSAMLConfigured tests the IsSAMLConfigured function
+// Tests follow the pattern: all of them (true), none of them (false), all except one (false for each)
+func TestIsSAMLConfigured(t *testing.T) {
+	// Base config with all required fields present
+	allConfig := &config.InfrastructureConfig{
+		PublicURL:           "https://sp.example.com",
+		SAML2EntityID:       "https://sp.example.com",
+		SAML2IDPMetadataURL: "https://idp.example.com/metadata",
+		SAML2PublicKey:      testPublicKey,
+		SAML2PrivateKey:     testPrivateKey,
+	}
+
+	// Empty config with no fields set
+	emptyConfig := &config.InfrastructureConfig{}
+
+	t.Run("all of them - returns true", func(t *testing.T) {
+		if !service.IsSAMLConfigured(allConfig) {
+			t.Error("IsSAMLConfigured with all fields = false, want true")
+		}
+	})
+
+	t.Run("none of them - returns false", func(t *testing.T) {
+		if service.IsSAMLConfigured(emptyConfig) {
+			t.Error("IsSAMLConfigured with no fields = true, want false")
+		}
+	})
+
+	t.Run("nil config - returns false", func(t *testing.T) {
+		if service.IsSAMLConfigured(nil) {
+			t.Error("IsSAMLConfigured(nil) = true, want false")
+		}
+	})
+
+	t.Run("all except one - returns false (iterate through each field)", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			empty func(*config.InfrastructureConfig)
+		}{
+			{"PUBLIC_URL", func(c *config.InfrastructureConfig) { c.PublicURL = "" }},
+			{"SAML2EntityID", func(c *config.InfrastructureConfig) { c.SAML2EntityID = "" }},
+			{"SAML2IDPMetadataURL", func(c *config.InfrastructureConfig) { c.SAML2IDPMetadataURL = "" }},
+			{"SAML2PublicKey", func(c *config.InfrastructureConfig) { c.SAML2PublicKey = "" }},
+			{"SAML2PrivateKey", func(c *config.InfrastructureConfig) { c.SAML2PrivateKey = "" }},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				config := *allConfig // Copy base config
+				tt.empty(&config)    // Empty the specific field
+				if service.IsSAMLConfigured(&config) {
+					t.Errorf("IsSAMLConfigured with empty %s = true, want false", tt.name)
+				}
+			})
+		}
+	})
+}

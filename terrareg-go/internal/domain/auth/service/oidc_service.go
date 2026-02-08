@@ -62,7 +62,7 @@ type OIDCSession struct {
 
 // NewOIDCService creates a new OIDC service
 func NewOIDCService(ctx context.Context, config *config.InfrastructureConfig) (*OIDCService, error) {
-	if !isOIDCConfigured(config) {
+	if !IsOIDCConfigured(config) {
 		return nil, fmt.Errorf("OIDC is not configured")
 	}
 
@@ -349,8 +349,9 @@ func (s *OIDCService) mergeUserInfo(base, additional *OIDCUserInfo) *OIDCUserInf
 	return &merged
 }
 
-// isOIDCConfigured checks if OIDC is properly configured
-func isOIDCConfigured(config *config.InfrastructureConfig) bool {
+// IsOIDCConfigured checks if OIDC authentication is properly configured.
+// This is exported so the configuration service can determine if OIDC is enabled.
+func IsOIDCConfigured(config *config.InfrastructureConfig) bool {
 	return config != nil &&
 		config.OpenIDConnectIssuer != "" &&
 		config.OpenIDConnectClientID != "" &&
