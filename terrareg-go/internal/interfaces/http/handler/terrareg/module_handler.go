@@ -637,6 +637,7 @@ func (h *ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r *http.Requ
 }
 
 // HandleModuleVersionPublish handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/publish
+// Python reference: terrareg/server/api/terrareg_module_version_publish.py::ApiTerraregModuleVersionPublish._post()
 func (h *ModuleHandler) HandleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -646,42 +647,17 @@ func (h *ModuleHandler) HandleModuleVersionPublish(w http.ResponseWriter, r *htt
 	provider := chi.URLParam(r, "provider")
 	version := chi.URLParam(r, "version")
 
-	// Parse request body for optional fields
-	var req moduledto.ModuleVersionPublishRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// If no body or invalid JSON, use defaults
-		req = moduledto.ModuleVersionPublishRequest{
-			Version: version, // Use version from URL
-			Beta:    false,
-		}
-	} else {
-		// Override version with URL parameter
-		req.Version = version
-	}
-
-	// Create command request
-	cmdReq := moduleCmd.PublishModuleVersionRequest{
-		Namespace:   namespace,
-		Module:      name,
-		Provider:    provider,
-		Version:     req.Version,
-		Beta:        req.Beta,
-		Description: req.Description,
-		Owner:       req.Owner,
-	}
-
-	// Execute command
-	moduleVersion, err := h.publishModuleVersionCmd.Execute(ctx, cmdReq)
+	// Execute command - no request body, just mark existing version as published
+	// Python: module_version.publish()
+	err := h.publishModuleVersionCmd.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Convert to DTO
-	response := h.versionPresenter.ToDTO(ctx, moduleVersion, namespace, name, provider)
-
-	// Send response
-	RespondJSON(w, http.StatusCreated, response)
+	// Return simple success response (matching Python)
+	// Python: return {'status': 'Success'}
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "Success"})
 }
 
 // HandleModuleVersionDetails handles GET /v1/modules/{namespace}/{name}/{provider}/{version}

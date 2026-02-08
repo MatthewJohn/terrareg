@@ -84,7 +84,12 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 		}
 
 		// Handle based on reindex mode
+		var previousVersionWasPublished bool
 		if existingVersion != nil {
+			// CRITICAL: Cache the published state BEFORE deleting for auto-publish mode
+			// This matches Python's behavior which checks self.published before deletion
+			previousVersionWasPublished = existingVersion.IsPublished()
+
 			switch reindexMode {
 			case configModel.ModuleVersionReindexModeProhibit:
 				return fmt.Errorf("version %s already exists and reindex mode is prohibit", req.Version)
@@ -221,7 +226,7 @@ func (s *ModuleCreationWrapperService) PrepareModule(ctx context.Context, req Pr
 			Msg("CRITICAL SUCCESS: New module version record created in database")
 
 		// Determine if module should be published based on reindex mode and configuration
-		shouldPublish := s.shouldPublishModuleWithReindexMode(savedModuleVersion, reindexMode, existingVersion != nil)
+		shouldPublish := s.shouldPublishModuleWithReindexMode(savedModuleVersion, reindexMode, existingVersion != nil, previousVersionWasPublished)
 
 		result = &PrepareModuleResult{
 			ModuleVersion: savedModuleVersion,
@@ -299,23 +304,25 @@ func (s *ModuleCreationWrapperService) shouldPublishModule(moduleVersion *module
 }
 
 // shouldPublishModuleWithReindexMode determines publishing logic based on reindex mode
+// Python reference: terrareg/models.py::ModuleVersion._create_db_row()
 func (s *ModuleCreationWrapperService) shouldPublishModuleWithReindexMode(
 	moduleVersion *moduleModel.ModuleVersion,
 	reindexMode configModel.ModuleVersionReindexMode,
 	hadExistingVersion bool,
+	previousVersionWasPublished bool,
 ) bool {
 	switch reindexMode {
 	case configModel.ModuleVersionReindexModeLegacy:
 		// In legacy mode, always start unpublished (unless auto-publish is enabled)
+		// Python: Returns AUTO_PUBLISH_MODULE_VERSIONS (ignores previous state)
 		return s.domainConfig.AutoPublishModuleVersions
 	case configModel.ModuleVersionReindexModeAutoPublish:
 		// In auto-publish mode, preserve the published state if there was an existing version
+		// Python: return previous_version_published or AUTO_PUBLISH_MODULE_VERSIONS
 		if hadExistingVersion {
-			// For now, we'll need to check the previous version's published state
-			// This could be improved by caching the previous state before deletion
-			return s.domainConfig.AutoPublishModuleVersions
+			return previousVersionWasPublished
 		}
-		return false
+		return s.domainConfig.AutoPublishModuleVersions
 	case configModel.ModuleVersionReindexModeProhibit:
 		// This mode shouldn't reach here as we would have returned an error earlier
 		return false

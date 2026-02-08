@@ -87,14 +87,15 @@ func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace typ
 	return exists, nil
 }
 
+// TestPublishModuleVersion_Success tests publishing an existing module version
+// Python reference: test/unit/terrareg/server/test_api_terrareg_module_version_publish.py
 func TestPublishModuleVersion_Success(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
 	mockAuditService := new(mocks.MockModuleAuditService)
 
-	// Set up mock expectations - the audit service is called in a goroutine
-	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0")).Return(nil)
+	// Set up mock expectations
 	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0")).Return(nil)
 
 	// Create test data
@@ -104,49 +105,44 @@ func TestPublishModuleVersion_Success(t *testing.T) {
 	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
 	require.NoError(t, err)
 
+	// Create an existing unpublished version (simulating upload/index)
+	existingDetails := modulemodel.NewModuleDetails(nil)
+	existingVersion, err := moduleProvider.PublishVersion("1.0.0", existingDetails, false)
+	require.NoError(t, err)
+
+	// Verify version is not yet published
+	assert.False(t, existingVersion.IsPublished())
+
 	// Save to mock repository
 	err = mockRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create command with proper mock
+	// Create command
 	command, err := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 	require.NoError(t, err)
 
-	// Test data
-	req := module.PublishModuleVersionRequest{
-		Namespace:   "testns",
-		Module:      "testmod",
-		Provider:    "aws",
-		Version:     "1.0.0",
-		Beta:        false,
-		Description: stringPtr("Test version"),
-		Owner:       stringPtr("testowner"),
-	}
-
-	// Execute
-	result, err := command.Execute(ctx, req)
+	// Execute - publish the existing version
+	err = command.Execute(ctx, "testns", "testmod", "aws", "1.0.0")
 
 	// Assert
 	require.NoError(t, err)
-	require.NotNil(t, result)
 
-	assert.Equal(t, "1.0.0", result.Version().String())
-	assert.False(t, result.IsBeta())
-	assert.True(t, result.IsPublished())
-	assert.Equal(t, "testowner", *result.Owner())
-	assert.Equal(t, "Test version", *result.Description())
+	// Verify the version is now published
+	assert.True(t, existingVersion.IsPublished())
 
 	// Verify mock was called
 	mockAuditService.AssertExpectations(t)
 }
 
+// TestPublishModuleVersion_IdempotentRepublish tests that re-publishing is idempotent
+// Python reference: test/unit/terrareg/models/test_module_version.py::test_publish
 func TestPublishModuleVersion_IdempotentRepublish(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
 	mockAuditService := new(mocks.MockModuleAuditService)
 
-	// Create test data with existing version
+	// Create test data with existing published version
 	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
 	require.NoError(t, err)
 
@@ -160,70 +156,87 @@ func TestPublishModuleVersion_IdempotentRepublish(t *testing.T) {
 	err = existingVersion.Publish()
 	require.NoError(t, err)
 
+	// Verify version is already published
+	assert.True(t, existingVersion.IsPublished())
+
 	// Save to mock repository
 	err = mockRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create command with proper mock (no expectations - already published versions return early without audit)
+	// Create command (no audit expectations - already published versions return early)
 	command, err := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 	require.NoError(t, err)
 
-	// Test data - trying to publish same version (idempotent)
-	req := module.PublishModuleVersionRequest{
-		Namespace: "testns",
-		Module:    "testmod",
-		Provider:  "aws",
-		Version:   "1.0.0", // Same as existing
-		Beta:      false,
-	}
+	// Execute - trying to publish same version (idempotent)
+	err = command.Execute(ctx, "testns", "testmod", "aws", "1.0.0")
 
-	// Execute
-	result, err := command.Execute(ctx, req)
-
-	// Assert - operation is idempotent, should succeed without audit logging
+	// Assert - operation is idempotent, should succeed without error
 	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Equal(t, "1.0.0", result.Version().String())
-	assert.True(t, result.IsPublished())
+
+	// Version should still be published
+	assert.True(t, existingVersion.IsPublished())
 }
 
+// TestPublishModuleVersion_ModuleProviderNotFound tests error when module provider doesn't exist
 func TestPublishModuleVersion_ModuleProviderNotFound(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
 	mockAuditService := new(mocks.MockModuleAuditService)
 
-	// Create command with proper mock (no expectations since provider not found)
+	// Create command
 	command, err := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 	require.NoError(t, err)
 
-	// Test data - non-existent module provider
-	req := module.PublishModuleVersionRequest{
-		Namespace: "nonexistent",
-		Module:    "testmod",
-		Provider:  "aws",
-		Version:   "1.0.0",
-		Beta:      false,
-	}
-
-	// Execute
-	result, err := command.Execute(ctx, req)
+	// Execute - non-existent module provider
+	err = command.Execute(ctx, "nonexistent", "testmod", "aws", "1.0.0")
 
 	// Assert
 	assert.Error(t, err)
-	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "module provider nonexistent/testmod/aws not found")
 }
 
-func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
+// TestPublishModuleVersion_VersionNotFound tests error when version doesn't exist
+// Python behavior: Would fail when getting module_version from database
+func TestPublishModuleVersion_VersionNotFound(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	mockRepo := NewMockModuleProviderRepository()
 	mockAuditService := new(mocks.MockModuleAuditService)
 
-	// Set up mock expectations (using valid version format per updated regex)
-	mockAuditService.On("LogModuleVersionIndex", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0-betal")).Return(nil)
-	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0-betal")).Return(nil)
+	// Create test data - module provider exists but no versions
+	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
+	require.NoError(t, err)
+
+	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
+	require.NoError(t, err)
+
+	// Save to mock repository (no versions added)
+	err = mockRepo.Save(ctx, moduleProvider)
+	require.NoError(t, err)
+
+	// Create command
+	command, err := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
+	require.NoError(t, err)
+
+	// Execute - version doesn't exist
+	err = command.Execute(ctx, "testns", "testmod", "aws", "1.0.0")
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "version 1.0.0 not found")
+}
+
+// TestPublishModuleVersion_NonBetaVersionUpdatesLatestVersionId tests that publishing a non-beta version updates latest_version_id
+// Python reference: test/unit/terrareg/models/test_module_provider.py::test_calculate_latest_version
+func TestPublishModuleVersion_NonBetaVersionUpdatesLatestVersionId(t *testing.T) {
+	// Setup
+	ctx := context.Background()
+	mockRepo := NewMockModuleProviderRepository()
+	mockAuditService := new(mocks.MockModuleAuditService)
+
+	// Set up mock expectations
+	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0")).Return(nil)
 
 	// Create test data
 	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
@@ -232,41 +245,67 @@ func TestPublishModuleVersion_WithBetaVersion(t *testing.T) {
 	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
 	require.NoError(t, err)
 
+	// Create an existing unpublished non-beta version
+	existingDetails := modulemodel.NewModuleDetails(nil)
+	existingVersion, err := moduleProvider.PublishVersion("1.0.0", existingDetails, false)
+	require.NoError(t, err)
+
 	// Save to mock repository
 	err = mockRepo.Save(ctx, moduleProvider)
 	require.NoError(t, err)
 
-	// Create command with proper mock
+	// Create command
 	command, err := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
 	require.NoError(t, err)
 
-	// Test data
-	req := module.PublishModuleVersionRequest{
-		Namespace:   "testns",
-		Module:      "testmod",
-		Provider:    "aws",
-		Version:     "1.0.0-betal",
-		Beta:        true,
-		Description: stringPtr("Beta version"),
-		Owner:       stringPtr("testowner"),
-	}
-
 	// Execute
-	result, err := command.Execute(ctx, req)
-
-	// Assert
+	err = command.Execute(ctx, "testns", "testmod", "aws", "1.0.0")
 	require.NoError(t, err)
-	require.NotNil(t, result)
 
-	assert.Equal(t, "1.0.0-betal", result.Version().String())
-	assert.True(t, result.IsBeta())
-	assert.True(t, result.IsPublished())
-
-	// Verify mock was called
-	mockAuditService.AssertExpectations(t)
+	// Assert - version is published and is the latest
+	assert.True(t, existingVersion.IsPublished())
+	latestVersion := moduleProvider.GetLatestVersion()
+	assert.NotNil(t, latestVersion)
+	assert.Equal(t, "1.0.0", latestVersion.Version().String())
 }
 
-// Helper function for string pointers
-func stringPtr(s string) *string {
-	return &s
+// TestPublishModuleVersion_BetaVersionDoesNotBecomeLatest tests that publishing a beta version doesn't update latest_version_id
+// Python reference: test/unit/terrareg/models/test_module_provider.py::test_calculate_latest_version_with_beta
+func TestPublishModuleVersion_BetaVersionDoesNotBecomeLatest(t *testing.T) {
+	// Setup
+	ctx := context.Background()
+	mockRepo := NewMockModuleProviderRepository()
+	mockAuditService := new(mocks.MockModuleAuditService)
+
+	// Set up mock expectations
+	mockAuditService.On("LogModuleVersionPublish", mock.Anything, mock.Anything, types.NamespaceName("testns"), types.ModuleName("testmod"), types.ModuleProviderName("aws"), types.ModuleVersion("1.0.0-beta")).Return(nil)
+
+	// Create test data
+	namespace, err := modulemodel.NewNamespace(types.NamespaceName("testns"), nil, modulemodel.NamespaceTypeNone)
+	require.NoError(t, err)
+
+	moduleProvider, err := modulemodel.NewModuleProvider(namespace, types.ModuleName("testmod"), types.ModuleProviderName("aws"))
+	require.NoError(t, err)
+
+	// Create an existing unpublished beta version
+	existingDetails := modulemodel.NewModuleDetails(nil)
+	existingVersion, err := moduleProvider.PublishVersion("1.0.0-beta", existingDetails, true)
+	require.NoError(t, err)
+
+	// Save to mock repository
+	err = mockRepo.Save(ctx, moduleProvider)
+	require.NoError(t, err)
+
+	// Create command
+	command, err := module.NewPublishModuleVersionCommand(mockRepo, mockAuditService)
+	require.NoError(t, err)
+
+	// Execute
+	err = command.Execute(ctx, "testns", "testmod", "aws", "1.0.0-beta")
+	require.NoError(t, err)
+
+	// Assert - beta version is published but NOT the latest
+	assert.True(t, existingVersion.IsPublished())
+	latestVersion := moduleProvider.GetLatestVersion()
+	assert.Nil(t, latestVersion, "Beta versions should not become the latest version")
 }

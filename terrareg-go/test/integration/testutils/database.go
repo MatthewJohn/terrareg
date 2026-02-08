@@ -90,13 +90,27 @@ func SetupTestDatabase(t *testing.T) *sqldb.Database {
 // CreateTestDomainConfig creates a test domain configuration
 func CreateTestDomainConfig(t *testing.T) *model.DomainConfig {
 	return &model.DomainConfig{
-		TrustedNamespaces:        []string{"test"},
-		VerifiedModuleNamespaces: []string{"verified"},
-		AllowModuleHosting:       model.ModuleHostingModeAllow,
-		SecretKeySet:             true,
-		OpenIDConnectEnabled:     true,
-		SAMLEnabled:              true,
-		AdminLoginEnabled:        true,
+		TrustedNamespaces:         []string{"test"},
+		VerifiedModuleNamespaces:  []string{"verified"},
+		AllowModuleHosting:        model.ModuleHostingModeAllow,
+		SecretKeySet:              true,
+		OpenIDConnectEnabled:      true,
+		SAMLEnabled:               true,
+		AdminLoginEnabled:         true,
+	}
+}
+
+// CreateTestDomainConfigWithReindexMode creates a test domain configuration with custom reindex mode
+func CreateTestDomainConfigWithReindexMode(t *testing.T, reindexMode model.ModuleVersionReindexMode) *model.DomainConfig {
+	return &model.DomainConfig{
+		TrustedNamespaces:         []string{"test"},
+		VerifiedModuleNamespaces:  []string{"verified"},
+		AllowModuleHosting:        model.ModuleHostingModeAllow,
+		SecretKeySet:              true,
+		OpenIDConnectEnabled:      true,
+		SAMLEnabled:               true,
+		AdminLoginEnabled:         true,
+		ModuleVersionReindexMode:  reindexMode,
 	}
 }
 
@@ -732,6 +746,22 @@ func CreateTestServer(t *testing.T, db *sqldb.Database) *TestContainer {
 // This allows tests to override specific config values (e.g., for RBAC testing)
 func CreateTestServerWithConfig(t *testing.T, db *sqldb.Database, opts ...InfraConfigOption) *TestContainer {
 	cont := CreateTestContainerWithConfig(t, db, opts...)
+	return &TestContainer{
+		Container: cont,
+		Router:    cont.Server.Router(),
+	}
+}
+
+// CreateTestServerWithDomainConfig creates a TestContainer with custom domain configuration
+// This allows tests to override specific domain config values (e.g., for reindex mode testing)
+func CreateTestServerWithDomainConfig(t *testing.T, db *sqldb.Database, domainConfig *model.DomainConfig) *TestContainer {
+	infraConfig := CreateTestInfraConfig(t)
+	versionReader := version.NewVersionReader()
+	cfgService := configService.NewConfigurationService(configService.ConfigurationServiceOptions{}, versionReader)
+
+	cont, err := container.NewContainer(domainConfig, infraConfig, cfgService, GetTestLogger(t), db)
+	require.NoError(t, err)
+
 	return &TestContainer{
 		Container: cont,
 		Router:    cont.Server.Router(),

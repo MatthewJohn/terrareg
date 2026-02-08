@@ -398,7 +398,7 @@ func TestModuleVersionPublish_Authentication(t *testing.T) {
 				req, _ := testutils.BuildAuthenticatedRequestWithSession(t, db, "POST", "/v1/terrareg/modules/publish-namespace/testmod/testprovider/1.0.0/publish", "regular-user", false)
 				return testutils.AddChiContext(t, req, map[string]string{"namespace": "publish-namespace", "name": "testmod", "provider": "testprovider", "version": "1.0.0"})
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK, // Python returns 200 with {'status': 'Success'}
 		},
 		{
 			name: "admin user can publish module version",
@@ -406,7 +406,7 @@ func TestModuleVersionPublish_Authentication(t *testing.T) {
 				req, _ := testutils.BuildAdminRequest(t, db, "POST", "/v1/terrareg/modules/publish-namespace/testmod/testprovider/1.0.0/publish")
 				return testutils.AddChiContext(t, req, map[string]string{"namespace": "publish-namespace", "name": "testmod", "provider": "testprovider", "version": "1.0.0"})
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK, // Python returns 200 with {'status': 'Success'}
 		},
 	}
 

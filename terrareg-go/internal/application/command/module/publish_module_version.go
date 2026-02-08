@@ -6,14 +6,14 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
-// PublishModuleVersionCommand handles publishing a new module version
+// PublishModuleVersionCommand handles publishing an existing module version
+// Python reference: terrareg/server/api/terrareg_module_version_publish.py
 type PublishModuleVersionCommand struct {
 	// moduleProviderRepo handles module provider persistence (required)
 	moduleProviderRepo repository.ModuleProviderRepository
@@ -40,96 +40,70 @@ func NewPublishModuleVersionCommand(
 	}, nil
 }
 
-// PublishModuleVersionRequest represents the request to publish a module version
-type PublishModuleVersionRequest struct {
-	Namespace   string
-	Module      string
-	Provider    string
-	Version     string
-	Beta        bool
-	Description *string
-	Owner       *string
-}
-
-// Execute executes the command
-func (c *PublishModuleVersionCommand) Execute(ctx context.Context, req PublishModuleVersionRequest) (*model.ModuleVersion, error) {
+// Execute executes the publish command
+// Python reference: ApiTerraregModuleVersionPublish._post()
+// This matches Python behavior:
+// 1. Gets the existing module version from database
+// 2. Calls publish() which marks it as published and updates latest_version_id
+// 3. Returns {'status': 'Success'}
+func (c *PublishModuleVersionCommand) Execute(ctx context.Context, namespace, module, provider, version string) error {
 	// Find the module provider
-	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, types.NamespaceName(req.Namespace), types.ModuleName(req.Module), types.ModuleProviderName(req.Provider))
+	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(
+		ctx,
+		types.NamespaceName(namespace),
+		types.ModuleName(module),
+		types.ModuleProviderName(provider),
+	)
 	if err != nil {
 		if errors.Is(err, shared.ErrNotFound) {
-			return nil, fmt.Errorf("module provider %s/%s/%s not found", req.Namespace, req.Module, req.Provider)
+			return fmt.Errorf("module provider %s/%s/%s not found", namespace, module, provider)
 		}
-		return nil, fmt.Errorf("failed to find module provider: %w", err)
+		return fmt.Errorf("failed to find module provider: %w", err)
 	}
 
-	// Check if version already exists (e.g., from upload)
-	existingVersion, err := moduleProvider.GetVersion(types.ModuleVersion(req.Version))
-	var version *model.ModuleVersion
-	if err == nil && existingVersion != nil {
-		// Version already exists (likely from upload)
-		version = existingVersion
-		// Check if already published
-		if version.IsPublished() {
-			// Already published, return success (idempotent)
-			return version, nil
-		}
-		// Set optional metadata if not already set
-		if req.Owner != nil || req.Description != nil {
-			version.SetMetadata(req.Owner, req.Description)
-		}
-		// Mark as published
-		if err := version.Publish(); err != nil {
-			return nil, fmt.Errorf("failed to mark version as published: %w", err)
-		}
-	} else {
-		// Version doesn't exist, create it
-		// Create module details (can be expanded later with README, etc.)
-		details := model.NewModuleDetails(nil) // Empty README for now
-
-		// Publish the version using the aggregate root
-		version, err = moduleProvider.PublishVersion(req.Version, details, req.Beta)
-		if err != nil {
-			return nil, fmt.Errorf("failed to publish version: %w", err)
-		}
-
-		// Set optional metadata
-		version.SetMetadata(req.Owner, req.Description)
-
-		// Mark as published
-		if err := version.Publish(); err != nil {
-			return nil, fmt.Errorf("failed to mark version as published: %w", err)
-		}
+	// Get the existing version - it must exist from upload/index
+	// Python: module_version, error = self.get_module_version_by_name(...)
+	existingVersion, err := moduleProvider.GetVersion(types.ModuleVersion(version))
+	if err != nil {
+		return fmt.Errorf("version %s not found", version)
 	}
 
-	// Persist the entire aggregate
+	// Check if already published (idempotent)
+	// Python: No explicit check, but publish() would be a no-op for already published versions
+	if existingVersion.IsPublished() {
+		// Already published, return success (idempotent)
+		return nil
+	}
+
+	// Mark as published
+	// Python: module_version.publish()
+	// This sets published=True and updates module_provider.latest_version_id if this is the latest non-beta version
+	if err := existingVersion.Publish(); err != nil {
+		return fmt.Errorf("failed to mark version as published: %w", err)
+	}
+
+	// Persist the entire aggregate (saves latest_version_id to database)
+	// Python: self.update_attributes(published=True)
+	//         self._module_provider.update_attributes(latest_version_id=self.pk)
 	if err := c.moduleProviderRepo.Save(ctx, moduleProvider); err != nil {
-		return nil, fmt.Errorf("failed to save module provider: %w", err)
+		return fmt.Errorf("failed to save module provider: %w", err)
 	}
 
-	// Log audit event (synchronous)
+	// Log audit event
+	// Python: AuditEvent.create_audit_event(action=AuditAction.MODULE_VERSION_PUBLISH, ...)
 	username := "system"
 	if authCtx := middleware.GetAuthContext(ctx); authCtx.IsAuthenticated() {
 		username = authCtx.GetUsername()
 	}
 
-	// Log the version index and publish
-	_ = c.auditService.LogModuleVersionIndex(
-		ctx,
-		types.NamespaceName(username),
-		types.NamespaceName(req.Namespace),
-		types.ModuleName(req.Module),
-		types.ModuleProviderName(req.Provider),
-		types.ModuleVersion(req.Version),
-	)
-
 	_ = c.auditService.LogModuleVersionPublish(
 		ctx,
 		types.NamespaceName(username),
-		types.NamespaceName(req.Namespace),
-		types.ModuleName(req.Module),
-		types.ModuleProviderName(req.Provider),
-		types.ModuleVersion(req.Version),
+		types.NamespaceName(namespace),
+		types.ModuleName(module),
+		types.ModuleProviderName(provider),
+		types.ModuleVersion(version),
 	)
 
-	return version, nil
+	return nil
 }
