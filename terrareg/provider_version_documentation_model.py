@@ -220,6 +220,14 @@ class ProviderVersionDocumentation:
         """Return subcategory"""
         return self._get_db_row()["subcategory"]
 
+    @property
+    def description(self) -> Union[str, None]:
+        """Return description"""
+        description = self._get_db_row()["description"]
+        if description is not None and isinstance(description, bytes):
+            return terrareg.database.Database.decode_blob(description)
+        return description
+
     def __init__(self, pk):
         """Store member variables"""
         self._pk = pk

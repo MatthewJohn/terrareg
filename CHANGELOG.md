@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.0...v4.3.1) (2026-02-14)
+
+
+### Bug Fixes
+
+* update deps and docker tooling ([b66c6ef](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b66c6ef340d7acdbb7c42f18d9fe9e2f68f4b715)), closes [#000](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/000)
+
 # [4.3.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.2.0...v4.3.0) (2025-12-25)
 
 

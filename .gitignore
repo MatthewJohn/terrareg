@@ -13,3 +13,4 @@ terrareg.env
 certs/*
 node_modules/
 terrareg/version.txt
+.idea
