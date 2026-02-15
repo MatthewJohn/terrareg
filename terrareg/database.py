@@ -65,6 +65,8 @@ class Database():
         self._module_provider = None
         self._module_details = None
         self._module_version = None
+        self._module_provider_tag = None
+        self._module_version_tag = None
         self._sub_module = None
         self._gpg_key = None
         self._provider_category = None
@@ -170,6 +172,20 @@ class Database():
         if self._module_version is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version
+
+    @property
+    def module_provider_tag(self):
+        """Return module_version table."""
+        if self._module_provider_tag is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_provider_tag
+
+    @property
+    def module_version_tag(self):
+        """Return module_version table."""
+        if self._module_version_tag is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_version_tag
 
     @property
     def sub_module(self):
@@ -528,6 +544,38 @@ class Database():
             sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
             sqlalchemy.Column('published', sqlalchemy.Boolean),
             sqlalchemy.Column('extraction_version', sqlalchemy.Integer)
+        )
+
+        self._module_provider_tag = sqlalchemy.Table(
+            'module_provider_tag', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'module_provider_id',
+                sqlalchemy.ForeignKey(
+                    'module_provider.id',
+                    name='fk_module_provider_tag_module_provider_id_module_provider_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('tag_id', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('value', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+        )
+
+        self._module_version_tag = sqlalchemy.Table(
+            'module_version_tag', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column(
+                'module_version_id',
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    name='fk_module_version_tag_tag_module_version_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('tag_id', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('value', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
         )
 
         self._sub_module = sqlalchemy.Table(
