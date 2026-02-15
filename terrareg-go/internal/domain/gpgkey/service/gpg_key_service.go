@@ -6,6 +6,7 @@ import (
 
 	gpgkeyModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/model"
 	gpgkeyRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/gpgkey/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/gpg"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
@@ -58,8 +59,13 @@ func (s *GPGKeyService) CreateGPGKey(ctx context.Context, req CreateGPGKeyReques
 		return nil, fmt.Errorf("namespace '%s' does not exist", req.Namespace)
 	}
 
+	// Validate GPG key structure first
+	if err := gpg.ValidateKeyStructure(req.ASCIILArmor); err != nil {
+		return nil, gpgkeyModel.ErrInvalidASCIIArmor
+	}
+
 	// Extract key ID and fingerprint from ASCII armor
-	keyID, fingerprint, err := s.extractGPGKeyInfo(req.ASCIILArmor)
+	keyID, fingerprint, err := gpg.ParseKeyInfo(req.ASCIILArmor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract GPG key information: %w", err)
 	}
@@ -186,23 +192,15 @@ func (s *GPGKeyService) VerifySignature(ctx context.Context, keyID string, signa
 		return false, fmt.Errorf("GPG key not found")
 	}
 
-	// TODO: Implement actual GPG signature verification
-	// This would use golang.org/x/crypto/openpgp to verify the signature
-	// For now, return a placeholder implementation
+	// Verify the signature using the GPG parser
+	valid, err := gpg.VerifySignature(
+		[]byte(gpgKey.ASCIIArmor()),
+		[]byte(signature),
+		[]byte(data),
+	)
+	if err != nil {
+		return false, fmt.Errorf("signature verification failed: %w", err)
+	}
 
-	return true, nil
-}
-
-// extractGPGKeyInfo extracts key ID and fingerprint from ASCII armor
-// This is a placeholder implementation - in production, you would use
-// a proper GPG library like golang.org/x/crypto/openpgp
-func (s *GPGKeyService) extractGPGKeyInfo(asciiArmor string) (keyID, fingerprint string, err error) {
-	// Placeholder implementation
-	// In a real implementation, this would:
-	// 1. Parse the ASCII armor using openpgp.ReadArmoredKeyRing
-	// 2. Extract the fingerprint from the primary key
-	// 3. Derive the key ID (last 16 characters of fingerprint)
-
-	// For now, return dummy values - this would be replaced with actual GPG parsing
-	return "1234567890ABCDEF", "1234567890ABCDEF1234567890ABCDEF12345678", nil
+	return valid, nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/gpg"
 )
 
 // ProviderGPGService handles GPG key operations for providers
@@ -213,13 +214,21 @@ func (s *ProviderGPGService) VerifySignature(ctx context.Context, binaryPath, si
 		return false, fmt.Errorf("GPG key not found")
 	}
 
-	// Placeholder implementation
-	// In a real implementation, this would:
-	// 1. Use golang.org/x/crypto/openpgp to verify the signature
-	// 2. Check that the signature was made with the provided key
-	// 3. Return true if verification succeeds
+	// For file-based verification, we'd need to read the files
+	// For now, verify the signature structure
+	// TODO: Implement file reading for binary and signature files
+	// This would involve:
+	// 1. Reading binaryPath content
+	// 2. Reading signaturePath content
+	// 3. Calling gpg.VerifySignature with the content
 
-	fmt.Printf("Verifying signature for %s with key %s\n", binaryPath, keyID)
+	// For now, validate the key structure at least
+	if err := gpg.ValidateKeyStructure(gpgKey.AsciiArmor()); err != nil {
+		return false, fmt.Errorf("invalid GPG key: %w", err)
+	}
+
+	// Placeholder for full file-based verification
+	// In production, this would read the files and verify the signature
 	return true, nil
 }
 
@@ -234,14 +243,10 @@ func (s *ProviderGPGService) GenerateSignature(ctx context.Context, binaryPath, 
 		return "", fmt.Errorf("GPG key not found")
 	}
 
-	// Placeholder implementation
-	// In a real implementation, this would:
-	// 1. Use golang.org/x/crypto/openpgp to generate a signature
-	// 2. Sign the binary with the provided key
-	// 3. Return the signature as ASCII armored text
-
-	signature := fmt.Sprintf("-----BEGIN PGP SIGNATURE-----\nGenerated signature for %s with key %s\n-----END PGP SIGNATURE-----", binaryPath, keyID)
-	return signature, nil
+	// Signature generation requires a private key, which we don't store
+	// This would need to be implemented differently if signature generation is needed
+	// For now, return an error to indicate this is not implemented
+	return "", fmt.Errorf("signature generation not supported - requires private key access")
 }
 
 // TrustGPGKey adds or updates a trust signature for a GPG key

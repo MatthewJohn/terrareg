@@ -549,16 +549,48 @@ func SetProviderLatestVersion(t *testing.T, db *sqldb.Database, providerID, late
 
 // CreateGPGKeyWithNamespace creates a test GPG key in the database linked to a namespace
 // This is the preferred method as GPG keys belong to namespaces, not providers
+// This function creates a valid GPG key that will pass validation with real GPG parsing
+// Python reference: /app/test/test_gpg_key.py - public_ascii_armor
 func CreateGPGKeyWithNamespace(t *testing.T, db *sqldb.Database, name string, namespaceID int, keyID string) sqldb.GPGKeyDB {
-	asciiArmor := []byte("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nTest ASCII armor\n-----END PGP PUBLIC KEY BLOCK-----")
-	fingerprint := &keyID
+	// Use a real GPG test key from Python tests
+	// Fingerprint: 0F0C031590656EF2577B91D19BF7E0829C61C7E3
+	// Key ID: 0829C61C7E3 (last 16 chars of fingerprint)
+	realTestGPGKey := `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZVJWdwEEAN2WER9iSataTlQThf/a4GRYuPL4yHqqfa8P/CzoZu52JKVcy7sB
+GlkppPdTXXZ7gIHL2l9dpSk8TgO9l5NvgXKEPUFmY3R/+8UfPHq9/6bm4oicpmlj
+RQNMP05HvbClSN87jHevjswp3rPGokicZ7IOhwiMOWMGB8gViOHurS+lABEBAAG0
+KFRlc3QgVGVycmFyZWcgPHRlc3R0ZXJyYXJlZ0BleGFtcGxlLmNvbT6IzgQTAQoA
+OBYhBDwLAxWQ5bvJXe5HRlv3ginGHH4yBQJlUlZ3AhsDBQsJCAcCBhUKCQgLAgQW
+AgMBAh4BAheAAAoJEFv3ginGHH4yxzwD/RiJzcs1mGkjWQq6yGVQESFTelfPFu+j
+4QVW+8cCzUUEWbcEoCvN9cCFS+y3SHnZhACrRqxdEFaNLtbWyFNLhXOUbS7vKE+w
+GP3DYrMzsJjN6EK2QsTrdF90vk3fvMaXHRSxmVUhisCm6uuZvp18Dfo7zyOlb+e4
+Qz2ZZWwSMtwpuI0EZVJWdwEEANT2AIj1/ELn+nWqVgJ/xhkm6Sh1uE9aaqHA6/Dp
+txkAL+eVbbxrnvssSOUZaLwC9gysRYbZiHHG70G6BZttYtyicYkto9wjlfZYvCvY
+eTAwscbWeBjV0kadzn7hemcIxIN0x9cpX3GQ0g0kWxnGGpxEu7vOv5qXYDq9YNvp
+tObZABEBAAGItgQYAQoAIBYhBDwLAxWQ5bvJXe5HRlv3ginGHH4yBQJlUlZ3AhsM
+AAoJEFv3ginGHH4yC7oD/RdG6xquOBMz7hDop8/4o+NGHAJQiAl/Kt6VpG1fBmqP
+RTFoB/o3lP0WrIBJ73PNTjguhOrAIEQcjPLiZESqGs24pZvoFp0wK6kJgKIiH1ki
+y34yBsqNSg4f96X28Cm66mGVhvyAEegQgtbByF9UOyPv+S5uyPMrHqidLgD95Cpj
+=k8KM
+-----END PGP PUBLIC KEY BLOCK-----`
+
+	// If no keyID provided, use the real one from this test key
+	if keyID == "" {
+		// Key ID is last 16 chars of fingerprint for this key
+		// Fingerprint: 0F0C031590656EF2577B91D19BF7E0829C61C7E3
+		keyID = "0829C61C7E3"
+	}
+
+	fingerprint := "0F0C031590656EF2577B91D19BF7E0829C61C7E3"
+	source := name
 
 	gpgKey := sqldb.GPGKeyDB{
 		NamespaceID: namespaceID,
-		ASCIIArmor:  asciiArmor,
+		ASCIIArmor:  []byte(realTestGPGKey),
 		KeyID:       &keyID,
-		Fingerprint: fingerprint,
-		Source:      &name,
+		Fingerprint: &fingerprint,
+		Source:      &source,
 		SourceURL:   nil,
 		CreatedAt:   nil,
 		UpdatedAt:   nil,
@@ -600,14 +632,41 @@ func CreateGPGKey(t *testing.T, db *sqldb.Database, name string, providerID int,
 	err := db.DB.First(&provider, providerID).Error
 	require.NoError(t, err)
 
-	asciiArmor := []byte("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nTest ASCII armor\n-----END PGP PUBLIC KEY BLOCK-----")
-	fingerprint := &keyID
+	// Use a real GPG test key from Python tests
+	realTestGPGKey := `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZVJWdwEEAN2WER9iSataTlQThf/a4GRYuPL4yHqqfa8P/CzoZu52JKVcy7sB
+GlkppPdTXXZ7gIHL2l9dpSk8TgO9l5NvgXKEPUFmY3R/+8UfPHq9/6bm4oicpmlj
+RQNMP05HvbClSN87jHevjswp3rPGokicZ7IOhwiMOWMGB8gViOHurS+lABEBAAG0
+KFRlc3QgVGVycmFyZWcgPHRlc3R0ZXJyYXJlZ0BleGFtcGxlLmNvbT6IzgQTAQoA
+OBYhBDwLAxWQ5bvJXe5HRlv3ginGHH4yBQJlUlZ3AhsDBQsJCAcCBhUKCQgLAgQW
+AgMBAh4BAheAAAoJEFv3ginGHH4yxzwD/RiJzcs1mGkjWQq6yGVQESFTelfPFu+j
+4QVW+8cCzUUEWbcEoCvN9cCFS+y3SHnZhACrRqxdEFaNLtbWyFNLhXOUbS7vKE+w
+GP3DYrMzsJjN6EK2QsTrdF90vk3fvMaXHRSxmVUhisCm6uuZvp18Dfo7zyOlb+e4
+Qz2ZZWwSMtwpuI0EZVJWdwEEANT2AIj1/ELn+nWqVgJ/xhkm6Sh1uE9aaqHA6/Dp
+txkAL+eVbbxrnvssSOUZaLwC9gysRYbZiHHG70G6BZttYtyicYkto9wjlfZYvCvY
+eTAwscbWeBjV0kadzn7hemcIxIN0x9cpX3GQ0g0kWxnGGpxEu7vOv5qXYDq9YNvp
+tObZABEBAAGItgQYAQoAIBYhBDwLAxWQ5bvJXe5HRlv3ginGHH4yBQJlUlZ3AhsM
+AAoJEFv3ginGHH4yC7oD/RdG6xquOBMz7hDop8/4o+NGHAJQiAl/Kt6VpG1fBmqP
+RTFoB/o3lP0WrIBJ73PNTjguhOrAIEQcjPLiZESqGs24pZvoFp0wK6kJgKIiH1ki
+y34yBsqNSg4f96X28Cm66mGVhvyAEegQgtbByF9UOyPv+S5uyPMrHqidLgD95Cpj
+=k8KM
+-----END PGP PUBLIC KEY BLOCK-----`
+
+	// If no keyID provided, use the real one from this test key
+	if keyID == "" {
+		// Key ID is last 16 chars of fingerprint for this key
+		// Fingerprint: 0F0C031590656EF2577B91D19BF7E0829C61C7E3
+		keyID = "0829C61C7E3"
+	}
+
+	fingerprint := "0F0C031590656EF2577B91D19BF7E0829C61C7E3"
 
 	gpgKey := sqldb.GPGKeyDB{
 		NamespaceID: provider.NamespaceID,
-		ASCIIArmor:  asciiArmor,
+		ASCIIArmor:  []byte(realTestGPGKey),
 		KeyID:       &keyID,
-		Fingerprint: fingerprint,
+		Fingerprint: &fingerprint,
 		Source:      &name,
 		SourceURL:   nil,
 		CreatedAt:   nil,

@@ -28,8 +28,8 @@ func TestTerraformV2GPGHandler_Integration_HandleListGPGKeys_Success(t *testing.
 
 	// Create test data
 	namespace := testutils.CreateNamespace(t, db, "test-namespace", nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "ABCD1234")
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "another-source", namespace.ID, "WXYZ6789")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "0829C61C7E3")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "another-source", namespace.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -77,8 +77,8 @@ func TestTerraformV2GPGHandler_Integration_HandleListGPGKeys_MultipleNamespaces(
 	// Create test data
 	namespace1 := testutils.CreateNamespace(t, db, "ns1", nil)
 	namespace2 := testutils.CreateNamespace(t, db, "ns2", nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source1", namespace1.ID, "KEY1111")
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source2", namespace2.ID, "KEY2222")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source1", namespace1.ID, "0829C61C7E3")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source2", namespace2.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -172,7 +172,7 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_Success(t *testing.T)
 
 	// Create test data
 	namespace := testutils.CreateNamespace(t, db, "test-namespace", nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "ABCD1234")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -192,10 +192,10 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_Success(t *testing.T)
 	)
 
 	// Create request with chi context
-	req := httptest.NewRequest("GET", "/v2/gpg-keys/test-namespace/ABCD1234", nil)
+	req := httptest.NewRequest("GET", "/v2/gpg-keys/test-namespace/0829C61C7E3", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("namespace", "test-namespace")
-	rctx.URLParams.Add("key_id", "ABCD1234")
+	rctx.URLParams.Add("key_id", "0829C61C7E3")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	w := httptest.NewRecorder()
@@ -210,15 +210,42 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_Success(t *testing.T)
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	// Verify response structure
+	// Verify response structure (matches Python's test depth)
 	data := response["data"].(map[string]interface{})
-	assert.Equal(t, "ABCD1234", data["id"])
+	assert.Equal(t, "0829C61C7E3", data["id"])
 	assert.Equal(t, "gpg-keys", data["type"])
 
 	attributes := data["attributes"].(map[string]interface{})
 	assert.Equal(t, "test-namespace", attributes["namespace"])
-	assert.Equal(t, "ABCD1234", attributes["key-id"])
+	assert.Equal(t, "0829C61C7E3", attributes["key-id"])
 	assert.Equal(t, "test-source", attributes["source"])
+
+	// Validate ASCII armor content (Python validates this)
+	asciiArmor := attributes["ascii-armor"].(string)
+	assert.True(t, strings.Contains(asciiArmor, "BEGIN PGP PUBLIC KEY BLOCK"), "ASCII armor should contain BEGIN header")
+	assert.True(t, strings.Contains(asciiArmor, "END PGP PUBLIC KEY BLOCK"), "ASCII armor should contain END header")
+	assert.True(t, strings.Contains(asciiArmor, "mI0EZVJWdwEEAN2WER9iSataTlQThf"), "ASCII armor should contain key data")
+
+	// Validate fingerprint (Python validates exact value)
+	fingerprint := attributes["fingerprint"].(string)
+	assert.Equal(t, "0F0C031590656EF2577B91D19BF7E0829C61C7E3", fingerprint, "Fingerprint should match the test key")
+
+	// Validate source-url is nil (Python validates null handling)
+	sourceURL := attributes["source-url"]
+	assert.Nil(t, sourceURL, "source-url should be nil when not set")
+
+	// Validate timestamp format (Python validates timestamp format)
+	createdAt := attributes["created-at"].(string)
+	assert.NotEmpty(t, createdAt, "created-at should not be empty")
+	assert.Contains(t, createdAt, "T", "created-at should be ISO format timestamp")
+
+	updatedAt := attributes["updated-at"].(string)
+	assert.NotEmpty(t, updatedAt, "updated-at should not be empty")
+	assert.Contains(t, updatedAt, "T", "updated-at should be ISO format timestamp")
+
+	// Validate trust-signature (Python validates this field)
+	trustSignature := attributes["trust-signature"].(string)
+	assert.Empty(t, trustSignature, "trust-signature should be empty when not set")
 }
 
 // TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_NotFound tests GPG key not found
@@ -334,7 +361,7 @@ func TestTerraformV2GPGHandler_Integration_URLParsing(t *testing.T) {
 	// Create test data with special characters in namespace name
 	namespaceName := "test-namespace-with-dashes"
 	namespace := testutils.CreateNamespace(t, db, namespaceName, nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "SPECIAL123")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -382,9 +409,9 @@ func TestTerraformV2GPGHandler_Integration_HandleListGPGKeys_WhitespaceNamespace
 	namespace1 := testutils.CreateNamespace(t, db, "ns1", nil)
 	namespace2 := testutils.CreateNamespace(t, db, "ns2", nil)
 	namespace3 := testutils.CreateNamespace(t, db, "ns3", nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source1", namespace1.ID, "KEY1111")
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source2", namespace2.ID, "KEY2222")
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source3", namespace3.ID, "KEY3333")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source1", namespace1.ID, "0829C61C7E3")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source2", namespace2.ID, "0829C61C7E3")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "source3", namespace3.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -431,7 +458,7 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_KeyIDWithSpecialChars
 
 	// Create test data with special characters in key ID
 	namespace := testutils.CreateNamespace(t, db, "test-namespace", nil)
-	specialKeyID := "ABCD/1234-EFGH.5678" // Key IDs can contain special characters
+	specialKeyID := "0829/C61C-7E3" // Key IDs can contain special characters
 	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, specialKeyID)
 
 	// Create repositories and service
@@ -526,7 +553,7 @@ func TestTerraformV2GPGHandler_Integration_HandleListGPGKeys_JSONContentType(t *
 
 	// Create test data
 	namespace := testutils.CreateNamespace(t, db, "test-namespace", nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "ABCD1234")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -573,7 +600,7 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_ASCIIArmorInResponse(
 
 	// Create test data
 	namespace := testutils.CreateNamespace(t, db, "test-namespace", nil)
-	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "ABCD1234")
+	_ = testutils.CreateGPGKeyWithNamespace(t, db, "test-source", namespace.ID, "0829C61C7E3")
 
 	// Create repositories and service
 	gpgKeyRepository, err := gpgkeyRepo.NewGPGKeyRepository(db.DB)
@@ -593,10 +620,10 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_ASCIIArmorInResponse(
 	)
 
 	// Create request with chi context
-	req := httptest.NewRequest("GET", "/v2/gpg-keys/test-namespace/ABCD1234", nil)
+	req := httptest.NewRequest("GET", "/v2/gpg-keys/test-namespace/0829C61C7E3", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("namespace", "test-namespace")
-	rctx.URLParams.Add("key_id", "ABCD1234")
+	rctx.URLParams.Add("key_id", "0829C61C7E3")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	w := httptest.NewRecorder()
@@ -616,6 +643,6 @@ func TestTerraformV2GPGHandler_Integration_HandleGetGPGKey_ASCIIArmorInResponse(
 	attributes := data["attributes"].(map[string]interface{})
 	asciiArmor := attributes["ascii-armor"].(string)
 	assert.True(t, strings.Contains(asciiArmor, "BEGIN PGP PUBLIC KEY BLOCK"))
-	assert.True(t, strings.Contains(asciiArmor, "Test ASCII armor"))
 	assert.True(t, strings.Contains(asciiArmor, "END PGP PUBLIC KEY BLOCK"))
+	// Note: The real GPG key doesn't contain "Test ASCII armor" - it's a real key
 }
