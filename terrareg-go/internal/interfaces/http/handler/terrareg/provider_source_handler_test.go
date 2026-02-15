@@ -11,9 +11,9 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	provider_source_service "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // mockAuthContext is a mock implementation of auth.AuthContext for testing
@@ -26,22 +26,24 @@ type mockAuthContext struct {
 	permissions     map[string]string
 }
 
-func (m *mockAuthContext) IsBuiltInAdmin() bool                      { return false }
-func (m *mockAuthContext) IsAdmin() bool                            { return m.isAdmin }
-func (m *mockAuthContext) IsAuthenticated() bool                    { return m.isAuthenticated }
-func (m *mockAuthContext) RequiresCSRF() bool                       { return false }
-func (m *mockAuthContext) CheckAuthState() bool                     { return false }
-func (m *mockAuthContext) CanPublishModuleVersion(string) bool      { return true }
-func (m *mockAuthContext) CanUploadModuleVersion(string) bool        { return true }
-func (m *mockAuthContext) CheckNamespaceAccess(_, _ string) bool     { return true }
+func (m *mockAuthContext) IsBuiltInAdmin() bool                          { return false }
+func (m *mockAuthContext) IsAdmin() bool                                 { return m.isAdmin }
+func (m *mockAuthContext) IsAuthenticated() bool                         { return m.isAuthenticated }
+func (m *mockAuthContext) RequiresCSRF() bool                            { return false }
+func (m *mockAuthContext) CheckAuthState() bool                          { return false }
+func (m *mockAuthContext) CanPublishModuleVersion(string) bool           { return true }
+func (m *mockAuthContext) CanUploadModuleVersion(string) bool            { return true }
+func (m *mockAuthContext) CheckNamespaceAccess(_, _ string) bool         { return true }
 func (m *mockAuthContext) GetAllNamespacePermissions() map[string]string { return m.permissions }
-func (m *mockAuthContext) GetUsername() string                       { return m.username }
-func (m *mockAuthContext) GetUserGroupNames() []string              { return m.userGroups }
-func (m *mockAuthContext) CanAccessReadAPI() bool                   { return true }
-func (m *mockAuthContext) CanAccessTerraformAPI() bool               { return true }
-func (m *mockAuthContext) GetTerraformAuthToken() string             { return "" }
-func (m *mockAuthContext) GetProviderType() auth.AuthMethodType      { return auth.AuthMethodType(m.authMethod) }
-func (m *mockAuthContext) GetProviderData() map[string]interface{}  { return nil }
+func (m *mockAuthContext) GetUsername() string                           { return m.username }
+func (m *mockAuthContext) GetUserGroupNames() []string                   { return m.userGroups }
+func (m *mockAuthContext) CanAccessReadAPI() bool                        { return true }
+func (m *mockAuthContext) CanAccessTerraformAPI() bool                   { return true }
+func (m *mockAuthContext) GetTerraformAuthToken() string                 { return "" }
+func (m *mockAuthContext) GetProviderType() auth.AuthMethodType {
+	return auth.AuthMethodType(m.authMethod)
+}
+func (m *mockAuthContext) GetProviderData() map[string]interface{} { return nil }
 
 // MockProviderSourceFactory for testing
 type MockProviderSourceFactory struct {

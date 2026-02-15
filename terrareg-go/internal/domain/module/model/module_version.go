@@ -1,12 +1,15 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
@@ -299,6 +302,231 @@ func (mv *ModuleVersion) RepoCloneURLTemplate() *string {
 
 func (mv *ModuleVersion) RepoBrowseURLTemplate() *string {
 	return mv.repoBrowseURLTemplate
+}
+
+// GetGitCloneURL returns the git clone URL for this module version
+// Returns empty string if no git URL is configured
+// Python reference: models.py get_git_clone_url() (lines 3877-3900)
+func (mv *ModuleVersion) GetGitCloneURL(
+	ctx context.Context,
+	domainConfig *model.DomainConfig,
+	gitURLBuilder *service.GitURLBuilderService,
+) string {
+	// Require module provider to get git URL
+	if mv.moduleProvider == nil {
+		return ""
+	}
+
+	namespace := mv.moduleProvider.Namespace()
+	if namespace == nil {
+		return ""
+	}
+
+	// Determine which template to use based on priority order:
+	// 1. Custom version URL (if AllowCustomGitURLModuleVersion enabled)
+	// 2. Custom provider URL (if AllowCustomGitURLModuleProvider enabled)
+	// 3. Provider source URL from gitProvider
+
+	var template *string
+
+	// Priority 1: Check custom version URL (if allowed)
+	if domainConfig.AllowCustomGitURLModuleVersion && mv.repoCloneURLTemplate != nil {
+		template = mv.repoCloneURLTemplate
+	}
+
+	// Priority 2: Check custom provider URL (if allowed)
+	if template == nil && domainConfig.AllowCustomGitURLModuleProvider {
+		template = mv.moduleProvider.RepoCloneURLTemplate()
+	}
+
+	// Priority 3: Check provider source URL from gitProvider
+	if template == nil && mv.moduleProvider.GitProvider() != nil {
+		gitProvider := mv.moduleProvider.GitProvider()
+		if gitProvider.CloneURLTemplate != "" {
+			template = &gitProvider.CloneURLTemplate
+		}
+	}
+
+	// If no template found, return empty string
+	if template == nil || *template == "" {
+		return ""
+	}
+
+	// Build the clone URL using GitURLBuilderService
+	// Get the source git tag for the version
+	gitTag := mv.getSourceGitTag()
+
+	req := &service.URLBuilderRequest{
+		Template:  *template,
+		Namespace: string(namespace.Name()),
+		Module:    string(mv.moduleProvider.Module()),
+		Provider:  string(mv.moduleProvider.Provider()),
+		GitTag:    &gitTag,
+	}
+
+	renderedURL, err := gitURLBuilder.BuildCloneURL(req)
+	if err != nil {
+		// If template building fails, return empty string
+		return ""
+	}
+
+	return renderedURL
+}
+
+// SourceDownloadResult contains the result of GetSourceDownloadURL
+// Python reference: models.py get_source_download_url() (lines 3902-3985)
+type SourceDownloadResult struct {
+	// URL is the download URL (git URL or built-in hosting URL)
+	URL string
+
+	// IsGitURL indicates if the URL is a git URL (with git:: prefix)
+	IsGitURL bool
+
+	// RequiresAuth indicates if authentication is required for this download
+	RequiresAuth bool
+
+	// Error contains any error that occurred during URL generation
+	Error error
+}
+
+// GetSourceDownloadURL returns the appropriate download URL based on ALLOW_MODULE_HOSTING mode
+// Python reference: models.py get_source_download_url() (lines 3902-3985)
+func (mv *ModuleVersion) GetSourceDownloadURL(
+	ctx context.Context,
+	domainConfig *model.DomainConfig,
+	gitURLBuilder *service.GitURLBuilderService,
+	requestDomain string,
+	directHTTPRequest bool,
+	path string,
+) *SourceDownloadResult {
+	result := &SourceDownloadResult{
+		URL:          "",
+		IsGitURL:     false,
+		RequiresAuth: false,
+		Error:        nil,
+	}
+
+	// Require module provider to get download URL
+	if mv.moduleProvider == nil {
+		result.Error = fmt.Errorf("module provider not set")
+		return result
+	}
+
+	namespace := mv.moduleProvider.Namespace()
+	if namespace == nil {
+		result.Error = fmt.Errorf("namespace not set")
+		return result
+	}
+
+	// Priority 1: If module hosting is not ENFORCE, attempt to get git clone URL
+	if domainConfig.AllowModuleHosting != model.ModuleHostingModeEnforce {
+		gitCloneURL := mv.GetGitCloneURL(ctx, domainConfig, gitURLBuilder)
+		if gitCloneURL != "" {
+			// Build git URL with proper prefix, path, and ref
+			result.URL = mv.buildGitURL(gitCloneURL, path, domainConfig)
+			result.IsGitURL = true
+			return result
+		}
+	}
+
+	// Priority 2: If a git URL is not present, revert to using built-in module hosting
+	// (if not DISALLOW mode)
+	if domainConfig.AllowModuleHosting != model.ModuleHostingModeDisallow {
+		result.URL = mv.buildBuiltInURL(requestDomain, directHTTPRequest, path, domainConfig)
+		result.IsGitURL = false
+		result.RequiresAuth = !domainConfig.AllowUnidentifiedDownloads
+		return result
+	}
+
+	// Priority 3: No valid download method available
+	result.Error = fmt.Errorf("module is not configured with a git URL and direct downloads are disabled")
+	return result
+}
+
+// buildGitURL constructs the git URL with proper prefix, path, and ref
+// Python reference: models.py lines 3914-3945
+func (mv *ModuleVersion) buildGitURL(gitCloneURL string, path string, domainConfig *model.DomainConfig) string {
+	renderedURL := gitCloneURL
+
+	// Check if scheme starts with git::, which is required by Terraform
+	// to acknowledge a git repository, and add if not present
+	if !strings.HasPrefix(renderedURL, "git::") {
+		renderedURL = "git::" + renderedURL
+	}
+
+	// Check if git_path has been set and prepend to path, if set
+	gitPath := ""
+	if mv.gitPath != nil {
+		gitPath = *mv.gitPath
+	}
+	fullPath := strings.Join([]string{gitPath, path}, "/")
+
+	// Check if path is present for module
+	if fullPath != "" {
+		// Remove any trailing slashes from path
+		fullPath = strings.Trim(fullPath, "/")
+
+		renderedURL = fmt.Sprintf("%s//%s", renderedURL, fullPath)
+	}
+
+	// Add git ref - if enabled and available, get git commit SHA.
+	// Otherwise, fallback to git tag ref
+	ref := mv.getSourceGitTag()
+	if domainConfig.ModuleVersionUseGitCommit && mv.gitSHA != nil && *mv.gitSHA != "" {
+		ref = *mv.gitSHA
+	}
+
+	renderedURL = fmt.Sprintf("%s?ref=%s", renderedURL, ref)
+
+	return renderedURL
+}
+
+// buildBuiltInURL constructs the built-in hosting URL
+// Python reference: models.py lines 3948-3980
+func (mv *ModuleVersion) buildBuiltInURL(requestDomain string, directHTTPRequest bool, path string, domainConfig *model.DomainConfig) string {
+	// Build base URL: /v1/terrareg/modules/{id}
+	url := fmt.Sprintf("/v1/terrareg/modules/%d", mv.id)
+
+	// If authentication is required, generate pre-signed URL
+	// (This is a placeholder - actual presigned URL generation would be done elsewhere)
+	if !domainConfig.AllowUnidentifiedDownloads {
+		// Presigned URL would be generated here
+		// For now, just use a placeholder
+		url += "/{presign_key}"
+	}
+
+	// Add archive filename
+	url += "/" + mv.getArchiveName()
+
+	// If archive does not contain just the git_path,
+	// check if git_path has been set and prepend to path, if set
+	if !mv.archiveGitPath {
+		gitPath := ""
+		if mv.gitPath != nil {
+			gitPath = *mv.gitPath
+		}
+		fullPath := strings.Join([]string{gitPath, path}, "/")
+
+		// Check if path is present for module
+		if fullPath != "" {
+			// Remove any trailing slashes from path
+			fullPath = strings.Trim(fullPath, "/")
+
+			url = fmt.Sprintf("%s//%s", url, fullPath)
+		}
+	}
+
+	// If request is a direct HTTP request, provide a full HTTP URL
+	if directHTTPRequest && requestDomain != "" {
+		url = requestDomain + url
+	}
+
+	return url
+}
+
+// getArchiveName returns the archive filename for this module version
+func (mv *ModuleVersion) getArchiveName() string {
+	return fmt.Sprintf("%s.zip", mv.version.String())
 }
 
 func (mv *ModuleVersion) Owner() *string {

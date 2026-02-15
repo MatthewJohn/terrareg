@@ -154,6 +154,7 @@ type Container struct {
 	TempDirManager         storageService.TemporaryDirectoryManager
 	StorageWorkflowService storageService.StorageWorkflowService
 	GitService             gitService.GitService
+	GitURLBuilderService   *gitService.GitURLBuilderService
 	ModuleParser           moduleService.ModuleParser
 	ModuleProcessorService moduleService.ModuleProcessorService
 	InfracostService       moduleService.InfracostService
@@ -225,18 +226,18 @@ type Container struct {
 	GetUserCmd               *terraformCmd.GetUserCommand
 
 	// Provider Commands
-	CreateOrUpdateProviderCmd     *providerCmd.CreateOrUpdateProviderCommand
-	PublishProviderVersionCmd     *providerCmd.PublishProviderVersionCommand
-	ManageGPGKeyCmd               *providerCmd.ManageGPGKeyCommand
-	GetProviderDownloadQuery      *providerCmd.GetProviderDownloadQuery
-	ExtractProviderVersionCmd     *providerCmd.ExtractProviderVersionCommand
+	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
+	PublishProviderVersionCmd *providerCmd.PublishProviderVersionCommand
+	ManageGPGKeyCmd           *providerCmd.ManageGPGKeyCommand
+	GetProviderDownloadQuery  *providerCmd.GetProviderDownloadQuery
+	ExtractProviderVersionCmd *providerCmd.ExtractProviderVersionCommand
 
 	// Provider Extraction Services
-	ProviderExtractionGPGService        *providerService.ProviderExtractionGPGService
-	ProviderSourceExtractionService     *providerService.ProviderSourceExtractionService
-	ProviderBinaryProcessingService     *providerService.ProviderBinaryProcessingService
-	ProviderDocumentationService        *providerService.ProviderDocumentationService
-	ProviderExtractionOrchestrator      *providerService.ProviderExtractionOrchestrator
+	ProviderExtractionGPGService    *providerService.ProviderExtractionGPGService
+	ProviderSourceExtractionService *providerService.ProviderSourceExtractionService
+	ProviderBinaryProcessingService *providerService.ProviderBinaryProcessingService
+	ProviderDocumentationService    *providerService.ProviderDocumentationService
+	ProviderExtractionOrchestrator  *providerService.ProviderExtractionOrchestrator
 
 	// GPG Key Commands
 	ManageGPGKeyCmd2 *gpgkeyCmd.ManageGPGKeyCommand
@@ -469,6 +470,7 @@ func NewContainer(
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
+	c.GitURLBuilderService = gitService.NewGitURLBuilderService()
 	c.SystemCommandService = sharedService.NewRealSystemCommandService()
 
 	// Initialize consolidated storage services
@@ -885,7 +887,7 @@ func NewContainer(
 	}
 	c.GetModuleVersionQuery = getModuleVersionQuery
 	c.ListModuleVersionsQuery = moduleQuery.NewListModuleVersionsQuery(c.ModuleProviderRepo) // New query
-	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
+	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo, c.DomainConfig, c.GitURLBuilderService)
 	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
 	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo) // Uses database instead of filesystem
 	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo)     // Uses database instead of filesystem

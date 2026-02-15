@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -14,12 +17,20 @@ import (
 // GetModuleDownloadQuery handles retrieving download information for a module version
 type GetModuleDownloadQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
+	domainConfig       *configmodel.DomainConfig
+	gitURLBuilder      *service.GitURLBuilderService
 }
 
 // NewGetModuleDownloadQuery creates a new get module download query
-func NewGetModuleDownloadQuery(moduleProviderRepo repository.ModuleProviderRepository) *GetModuleDownloadQuery {
+func NewGetModuleDownloadQuery(
+	moduleProviderRepo repository.ModuleProviderRepository,
+	domainConfig *configmodel.DomainConfig,
+	gitURLBuilder *service.GitURLBuilderService,
+) *GetModuleDownloadQuery {
 	return &GetModuleDownloadQuery{
 		moduleProviderRepo: moduleProviderRepo,
+		domainConfig:       domainConfig,
+		gitURLBuilder:      gitURLBuilder,
 	}
 }
 
@@ -27,6 +38,13 @@ func NewGetModuleDownloadQuery(moduleProviderRepo repository.ModuleProviderRepos
 type DownloadInfo struct {
 	ModuleProvider *model.ModuleProvider
 	Version        *model.ModuleVersion
+
+	// Git URL information
+	GitURL         string // Git clone URL (if available)
+	BuiltInURL     string // Built-in hosting URL (if available)
+	HostingMode    configmodel.ModuleHostingMode
+	GitPath        string // Git path for subdirectory
+	GitRef         string // Git reference (SHA or tag)
 }
 
 // Execute executes the query
@@ -62,8 +80,30 @@ func (q *GetModuleDownloadQuery) Execute(ctx context.Context, namespace types.Na
 		return nil, fmt.Errorf("version %s is not published", moduleVersion.Version().String())
 	}
 
-	return &DownloadInfo{
+	// Build download info with git URL and built-in URL
+	downloadInfo := &DownloadInfo{
 		ModuleProvider: moduleProvider,
 		Version:        moduleVersion,
-	}, nil
+		HostingMode:    q.domainConfig.AllowModuleHosting,
+		GitPath:        "", // Will be populated by GetSourceDownloadURL
+		GitRef:         "", // Will be populated by GetSourceDownloadURL
+	}
+
+	// Get git clone URL (if available)
+	gitCloneURL := moduleVersion.GetGitCloneURL(ctx, q.domainConfig, q.gitURLBuilder)
+	downloadInfo.GitURL = gitCloneURL
+
+	// Get built-in hosting URL (this would typically be generated in the handler)
+	// For now, we'll leave it empty and let the handler build it
+	downloadInfo.BuiltInURL = ""
+
+	// Populate git path and ref if available
+	if moduleVersion.GitPath() != nil {
+		downloadInfo.GitPath = *moduleVersion.GitPath()
+	}
+	if moduleVersion.GitSHA() != nil && *moduleVersion.GitSHA() != "" {
+		downloadInfo.GitRef = *moduleVersion.GitSHA()
+	}
+
+	return downloadInfo, nil
 }

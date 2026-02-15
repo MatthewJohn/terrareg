@@ -693,6 +693,7 @@ func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *htt
 // HandleModuleDownload handles GET /v1/modules/{namespace}/{name}/{provider}/download
 // and GET /v1/modules/{namespace}/{name}/{provider}/{version}/download
 // Returns download location in Terraform Registry API format
+// Python reference: module_version_download.py
 func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -702,28 +703,27 @@ func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Requ
 	provider := types.ModuleProviderName(chi.URLParam(r, "provider"))
 	version := types.ModuleVersion(chi.URLParam(r, "version")) // May be empty for latest
 
-	// Check if module hosting is disallowed
-	// TODO: Implement full logic for ALLOW/ENFORCE modes with git URL handling
-	if h.domainConfig.AllowModuleHosting == model.ModuleHostingModeDisallow {
-		RespondError(w, http.StatusInternalServerError, "Module hosting is disabled")
-		return
-	}
-
-	// Execute query to get download info
+	// Execute query to get download info (includes git URL and built-in URL options)
 	downloadInfo, err := h.getModuleDownloadQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
 		RespondError(w, http.StatusNotFound, err.Error())
 		return
 	}
 
-	// Build download URL
-	// In Terraform Registry API, the X-Terraform-Get header contains the download location
-	// The response body is empty, but we return JSON with version info
-	downloadURL := fmt.Sprintf("/v1/modules/%s/%s/%s/%s/download",
-		string(namespace), string(name), string(provider), downloadInfo.Version.Version().String())
+	// Determine appropriate URL based on hosting mode
+	var downloadURL string
 
-	// Set the X-Terraform-Get header (Terraform will use this to download)
-	w.Header().Set("X-Terraform-Get", downloadURL)
+	// Priority 1: Git URL (if not ENFORCE mode and git URL is available)
+	if downloadInfo.HostingMode != model.ModuleHostingModeEnforce && downloadInfo.GitURL != "" {
+		downloadURL = h.buildGitURL(downloadInfo)
+		w.Header().Set("X-Terraform-Get", downloadURL)
+	} else if downloadInfo.HostingMode != model.ModuleHostingModeDisallow { // Priority 2: Built-in hosting (if not DISALLOW mode)
+		downloadURL = h.buildBuiltInURL(downloadInfo)
+		w.Header().Set("X-Terraform-Get", downloadURL)
+	} else { // Priority 3: Error (no valid download method)
+		RespondError(w, http.StatusInternalServerError, "Module is not configured with a git URL and direct downloads are disabled")
+		return
+	}
 
 	// Return version information in response body
 	response := map[string]interface{}{
@@ -731,6 +731,74 @@ func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Requ
 	}
 
 	RespondJSON(w, http.StatusNoContent, response)
+}
+
+// buildGitURL constructs the git URL with proper prefix, path, and ref
+// Python reference: models.py lines 3914-3945
+func (h *ModuleHandler) buildGitURL(info *moduleQuery.DownloadInfo) string {
+	renderedURL := info.GitURL
+
+	// Check if scheme starts with git::, which is required by Terraform
+	// to acknowledge a git repository, and add if not present
+	if !strings.HasPrefix(renderedURL, "git::") {
+		renderedURL = "git::" + renderedURL
+	}
+
+	// Check if git_path has been set and prepend to path, if set
+	gitPath := info.GitPath
+	fullPath := gitPath
+
+	// Check if path is present for module
+	if fullPath != "" {
+		// Remove any trailing slashes from path
+		fullPath = strings.Trim(fullPath, "/")
+
+		renderedURL = fmt.Sprintf("%s//%s", renderedURL, fullPath)
+	}
+
+	// Add git ref - use git SHA if available, otherwise use version tag
+	ref := info.Version.Version().String()
+	if info.GitRef != "" {
+		ref = info.GitRef
+	}
+
+	renderedURL = fmt.Sprintf("%s?ref=%s", renderedURL, ref)
+
+	return renderedURL
+}
+
+// buildBuiltInURL constructs the built-in hosting URL
+// Python reference: models.py lines 3948-3980
+func (h *ModuleHandler) buildBuiltInURL(info *moduleQuery.DownloadInfo) string {
+	// Build base URL: /v1/terrareg/modules/{id}
+	url := fmt.Sprintf("/v1/terrareg/modules/%d", info.Version.ID())
+
+	// If authentication is required, generate pre-signed URL
+	if !h.domainConfig.AllowUnidentifiedDownloads {
+		// Presigned URL would be generated here
+		// For now, use a placeholder
+		url += "/{presign_key}"
+	}
+
+	// Add archive filename
+	url += fmt.Sprintf("/%s.zip", info.Version.Version().String())
+
+	// If archive does not contain just the git_path,
+	// check if git_path has been set and prepend to path, if set
+	if !info.Version.ArchiveGitPath() {
+		gitPath := info.GitPath
+		fullPath := gitPath
+
+		// Check if path is present for module
+		if fullPath != "" {
+			// Remove any trailing slashes from path
+			fullPath = strings.Trim(fullPath, "/")
+
+			url = fmt.Sprintf("%s//%s", url, fullPath)
+		}
+	}
+
+	return url
 }
 
 // HandleModuleProviderSettingsGet handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/settings
