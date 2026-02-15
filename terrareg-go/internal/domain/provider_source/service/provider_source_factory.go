@@ -10,6 +10,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // ProviderSourceClass defines the interface for provider source implementations
@@ -287,6 +288,18 @@ type ProviderSourceInstance interface {
 	// PublishProviderFromRepository publishes a provider from a repository
 	// Python reference: github_repository_publish_provider.py
 	PublishProviderFromRepository(ctx context.Context, repoID int, categoryID int, namespace string) (*PublishProviderResult, error)
+
+	// Provider extraction methods for downloading release artifacts
+	// NOTE: These methods require repository context and access token for GitHub API calls
+
+	// GetReleaseArtifact downloads a specific release artifact by name
+	// Python reference: provider_extractor.py::ProviderExtractor::_download_artifact
+	GetReleaseArtifact(ctx context.Context, repo *sqldb.RepositoryDB, artifact *model.ReleaseArtifactMetadata, accessToken string) ([]byte, error)
+
+	// GetReleaseArchive downloads the release source archive (.tar.gz)
+	// Returns the archive data and the subdirectory to extract (if any)
+	// Python reference: provider_extractor.py::ProviderExtractor::_obtain_source_code
+	GetReleaseArchive(ctx context.Context, repo *sqldb.RepositoryDB, releaseMetadata *model.RepositoryReleaseMetadata, accessToken string) ([]byte, string, error)
 }
 
 // PublishProviderResult contains the result of publishing a provider from a repository
@@ -385,6 +398,27 @@ func (p *providerSourceInstanceImpl) PublishProviderFromRepository(ctx context.C
 	return impl.PublishProviderFromRepository(ctx, repoID, categoryID, namespace)
 }
 
+// GetReleaseArtifact downloads a specific release artifact by name
+// Python reference: provider_extractor.py::ProviderExtractor::_download_artifact
+func (p *providerSourceInstanceImpl) GetReleaseArtifact(ctx context.Context, repo *sqldb.RepositoryDB, artifact *model.ReleaseArtifactMetadata, accessToken string) ([]byte, error) {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return nil, err
+	}
+	return impl.GetReleaseArtifact(ctx, repo, artifact, accessToken)
+}
+
+// GetReleaseArchive downloads the release source archive (.tar.gz)
+// Returns the archive data and the subdirectory to extract (if any)
+// Python reference: provider_extractor.py::ProviderExtractor::_obtain_source_code
+func (p *providerSourceInstanceImpl) GetReleaseArchive(ctx context.Context, repo *sqldb.RepositoryDB, releaseMetadata *model.RepositoryReleaseMetadata, accessToken string) ([]byte, string, error) {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return nil, "", err
+	}
+	return impl.GetReleaseArchive(ctx, repo, releaseMetadata, accessToken)
+}
+
 // getProviderSourceImplementation gets the actual provider source implementation
 // This creates the concrete implementation (e.g., GithubProviderSource) from the model
 func (f *ProviderSourceFactory) getProviderSourceImplementation(ctx context.Context, source *model.ProviderSource) (ProviderSourceInstance, error) {
@@ -465,4 +499,17 @@ func (a *providerSourceInstanceAdapter) RefreshNamespaceRepositories(ctx context
 // Python reference: github_repository_publish_provider.py
 func (a *providerSourceInstanceAdapter) PublishProviderFromRepository(ctx context.Context, repoID int, categoryID int, namespace string) (*PublishProviderResult, error) {
 	return nil, fmt.Errorf("publish provider from repository not yet implemented")
+}
+
+// GetReleaseArtifact downloads a specific release artifact by name
+// Python reference: provider_extractor.py::ProviderExtractor::_download_artifact
+func (a *providerSourceInstanceAdapter) GetReleaseArtifact(ctx context.Context, releaseMetadata *model.RepositoryReleaseMetadata, artifactName string) ([]byte, error) {
+	return nil, fmt.Errorf("release artifact download requires actual provider source implementation")
+}
+
+// GetReleaseArchive downloads the release source archive (.tar.gz)
+// Returns the archive data and the subdirectory to extract (if any)
+// Python reference: provider_extractor.py::ProviderExtractor::_obtain_source_code
+func (a *providerSourceInstanceAdapter) GetReleaseArchive(ctx context.Context, repo *sqldb.RepositoryDB, releaseMetadata *model.RepositoryReleaseMetadata, accessToken string) ([]byte, string, error) {
+	return nil, "", fmt.Errorf("release archive download requires actual provider source implementation")
 }

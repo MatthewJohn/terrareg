@@ -48,6 +48,7 @@ import (
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	providerService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/service"
 	providerSourceImpl "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source"
 	providerSourceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
 	providerSourceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
@@ -224,10 +225,18 @@ type Container struct {
 	GetUserCmd               *terraformCmd.GetUserCommand
 
 	// Provider Commands
-	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
-	PublishProviderVersionCmd *providerCmd.PublishProviderVersionCommand
-	ManageGPGKeyCmd           *providerCmd.ManageGPGKeyCommand
-	GetProviderDownloadQuery  *providerCmd.GetProviderDownloadQuery
+	CreateOrUpdateProviderCmd     *providerCmd.CreateOrUpdateProviderCommand
+	PublishProviderVersionCmd     *providerCmd.PublishProviderVersionCommand
+	ManageGPGKeyCmd               *providerCmd.ManageGPGKeyCommand
+	GetProviderDownloadQuery      *providerCmd.GetProviderDownloadQuery
+	ExtractProviderVersionCmd     *providerCmd.ExtractProviderVersionCommand
+
+	// Provider Extraction Services
+	ProviderExtractionGPGService        *providerService.ProviderExtractionGPGService
+	ProviderSourceExtractionService     *providerService.ProviderSourceExtractionService
+	ProviderBinaryProcessingService     *providerService.ProviderBinaryProcessingService
+	ProviderDocumentationService        *providerService.ProviderDocumentationService
+	ProviderExtractionOrchestrator      *providerService.ProviderExtractionOrchestrator
 
 	// GPG Key Commands
 	ManageGPGKeyCmd2 *gpgkeyCmd.ManageGPGKeyCommand
@@ -905,6 +914,32 @@ func NewContainer(
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo, providerAuditService)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.GetProviderDownloadQuery = providerCmd.NewGetProviderDownloadQuery(c.ProviderRepo, c.NamespaceRepo, c.AnalyticsRepo, c.GPGKeyRepo)
+
+	// Provider Extraction Services
+	c.ProviderExtractionGPGService = providerService.NewProviderExtractionGPGService()
+	c.ProviderSourceExtractionService = providerService.NewProviderSourceExtractionService()
+	c.ProviderBinaryProcessingService = providerService.NewProviderBinaryProcessingService(c.ProviderExtractionGPGService)
+	c.ProviderDocumentationService = providerService.NewProviderDocumentationService()
+
+	c.ProviderExtractionOrchestrator = providerService.NewProviderExtractionOrchestrator(
+		c.ProviderExtractionGPGService,
+		c.ProviderSourceExtractionService,
+		c.ProviderBinaryProcessingService,
+		c.ProviderDocumentationService,
+		c.ProviderRepo,
+		c.GPGKeyRepo,
+		c.ProviderSourceFactory,
+		c.DomainConfig,
+		c.Logger,
+	)
+
+	c.ExtractProviderVersionCmd = providerCmd.NewExtractProviderVersionCommand(
+		c.ProviderExtractionOrchestrator,
+		c.ProviderRepo,
+		c.ProviderSourceFactory,
+		c.Logger,
+	)
+
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
 	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery()
 	c.GetAuditHistoryQuery = auditQuery.NewGetAuditHistoryQuery(auditService)

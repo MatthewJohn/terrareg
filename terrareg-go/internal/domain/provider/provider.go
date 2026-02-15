@@ -1,8 +1,10 @@
 package provider
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"hash"
 	"regexp"
 	"strings"
 	"time"
@@ -18,6 +20,21 @@ var (
 	ErrGPGKeyAlreadyExists       = errors.New("GPG key already exists")
 	ErrInvalidBinaryPlatform     = errors.New("invalid binary platform")
 	ErrBinaryAlreadyExists       = errors.New("binary already exists for platform")
+
+	// Provider extraction errors
+	ErrMissingSignatureArtifact  = errors.New("signature artifact not found")
+	ErrMissingChecksumArtifact   = errors.New("checksum artifact not found")
+	ErrInvalidSignature          = errors.New("invalid signature")
+	ErrNoMatchingGPGKey          = errors.New("no matching GPG key found")
+	ErrMissingReleaseArtifact    = errors.New("release artifact not found")
+	ErrUnableToDownloadArtifact  = errors.New("unable to download artifact")
+	ErrInvalidChecksumFile       = errors.New("invalid checksum file format")
+	ErrInvalidBinaryChecksum     = errors.New("binary checksum mismatch")
+	ErrInvalidManifestFile       = errors.New("invalid manifest file")
+	ErrInvalidManifestVersion    = errors.New("invalid manifest version: only version 1 is supported")
+	ErrInvalidProtocolVersions   = errors.New("invalid protocol versions in manifest")
+	ErrUnableToObtainSource      = errors.New("unable to obtain source code")
+	ErrInvalidTarArchive         = errors.New("invalid tar archive")
 )
 
 // GPGKey represents a GPG key value object
@@ -795,4 +812,24 @@ func RepositoryNameToProviderName(repositoryName string) string {
 
 	// If it doesn't match the expected format, return empty string
 	return ""
+}
+
+// SHA256Hash provides SHA256 hashing functionality
+type SHA256Hash struct {
+	hash hash.Hash
+}
+
+// NewSHA256Hash creates a new SHA256 hash
+func NewSHA256Hash() SHA256Hash {
+	return SHA256Hash{hash: sha256.New()}
+}
+
+// Write writes data to the hash
+func (h SHA256Hash) Write(data []byte) (int, error) {
+	return h.hash.Write(data)
+}
+
+// Sum returns the hash sum
+func (h SHA256Hash) Sum([]byte) []byte {
+	return h.hash.Sum(nil)
 }
