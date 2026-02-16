@@ -48,16 +48,17 @@ func TestGPGKeyCreate_Authentication(t *testing.T) {
 			name: "admin user can create GPG keys",
 			setupAuth: func(t *testing.T, db *sqldb.Database) *http.Request {
 				req, _ := testutils.BuildAdminRequest(t, db, "POST", "/v2/gpg-keys")
-				// Add request body for GPG key creation
+				// Add request body for GPG key creation with real test key
+				// Fingerprint: 0F0C031590656EF2577B91D19BF7E0829C61C7E3
+				// Key ID: 0829C61C7E3
 				reqBody := `{
 					"data": {
 						"type": "gpg-keys",
 						"attributes": {
 							"namespace": "gpg-namespace",
-							"ascii-armor": "-----BEGIN PGP PUBLIC KEY BLOCK-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PGP PUBLIC KEY BLOCK-----"
+							"ascii-armor": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmI0EZVJWdwEEAN2WER9iSataTlQThf/a4GRYuPL4yHqqfa8P/CzoZu52JKVcy7sB\nGlkppPdTXXZ7gIHL2l9dpSk8TgO9l5NvgXKEPUFmY3R/+8UfPHq9/6bm4oicpmlj\nRQNMP05HvbClSN87jHevjswp3rPGokicZ7IOhwiMOWMGB8gViOHurS+lABEBAAG0\nKFRlc3QgVGVycmFyZWcgPHRlc3R0ZXJyYXJlZ0BleGFtcGxlLmNvbT6IzgQTAQoA\nOBYhBDwLAxWQ5bvJXe5HRlv3ginGHH4yBQJlUlZ3AhsDBQsJCAcCBhUKCQgLAgQW\nAgMBAh4BAheAAAoJEFv3ginGHH4yxzwD/RiJzcs1mGkjWQq6yGVQESFTelfPFu+j\n4QVW+8cCzUUEWbcEoCvN9cCFS+y3SHnZhACrRqxdEFaNLtbWyFNLhXOUbS7vKE+w\nGP3DYrMzsJjN6EK2QsTrdF90vk3fvMaXHRSxmVUhisCm6uuZvp18Dfo7zyOlb+e4\nQz2ZZWwSMtwpuI0EZVJWdwEEANT2AIj1/ELn+nWqVgJ/xhkm6Sh1uE9aaqHA6/Dp\ntxkAL+eVbbxrnvssSOUZaLwC9gysRYbZiHHG70G6BZttYtyicYkto9wjlfZYvCvY\neTAwscbWeBjV0kadzn7hemcIxIN0x9cpX3GQ0g0kWxnGGpxEu7vOv5qXYDq9YNvp\ntObZABEBAAGItgQYAQoAIBYhBDwLAxWQ5bvJXe5HRlv3ginGHH4yBQJlUlZ3AhsM\nAAoJEFv3ginGHH4yC7oD/RdG6xquOBMz7hDop8/4o+NGHAJQiAl/Kt6VpG1fBmqP\nRTFoB/o3lP0WrIBJ73PNTjguhOrAIEQcjPLiZESqGs24pZvoFp0wK6kJgKIiH1ki\ny34yBsqNSg4f96X28Cm66mGVhvyAEegQgtbByF9UOyPv+S5uyPMrHqidLgD95Cpj\n=k8KM\n-----END PGP PUBLIC KEY BLOCK-----"
 						}
-					},
-					"csrf_token": "test-token"
+					}
 				}`
 				req.Body = io.NopCloser(strings.NewReader(reqBody))
 				req.Header.Set("Content-Type", "application/json")
@@ -72,6 +73,9 @@ func TestGPGKeyCreate_Authentication(t *testing.T) {
 			req := tt.setupAuth(t, db)
 			w := testutils.ServeHTTP(router, req)
 			assert.Equal(t, tt.expectedStatus, w.Code)
+			if w.Code != tt.expectedStatus {
+				t.Logf("Response body: %s", w.Body.String())
+			}
 		})
 	}
 }

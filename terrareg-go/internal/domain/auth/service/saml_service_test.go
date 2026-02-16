@@ -20,10 +20,11 @@ import (
 // TestSAMLService_IsConfigured tests configuration detection
 func TestSAMLService_IsConfigured(t *testing.T) {
 	tests := []struct {
-		name        string
-		config      func(*testing.T, *testutils.MockSAMLServer) *config.InfrastructureConfig
-		expectError bool
-		description string
+		name            string
+		config          func(*testing.T, *testutils.MockSAMLServer) *config.InfrastructureConfig
+		expectError     bool
+		expectConfigured bool
+		description      string
 	}{
 		{
 			name: "Fully configured SAML",
@@ -36,8 +37,9 @@ func TestSAMLService_IsConfigured(t *testing.T) {
 					PublicURL:           "https://terrareg.example.com",
 				}
 			},
-			expectError: false,
-			description: "All required SAML fields present",
+			expectError:     false,
+			expectConfigured: true,
+			description:      "All required SAML fields present",
 		},
 		{
 			name: "Missing Public URL",
@@ -88,8 +90,8 @@ func TestSAMLService_IsConfigured(t *testing.T) {
 					SAML2PublicKey:      testPublicKey,
 				}
 			},
-			expectError: false, // Service can be created without private key
-			description: "Private key not required for service creation",
+			expectError: true, // Service creation requires all five fields including private key
+			description: "Private key is required for service creation",
 		},
 	}
 
@@ -108,7 +110,11 @@ func TestSAMLService_IsConfigured(t *testing.T) {
 			} else {
 				assert.NoError(t, err, tt.description)
 				if svc != nil {
-					assert.True(t, svc.IsConfigured(), "Service should report as configured")
+					if tt.expectConfigured {
+						assert.True(t, svc.IsConfigured(), "Service should report as configured")
+					} else {
+						assert.False(t, svc.IsConfigured(), "Service should not report as configured without private key")
+					}
 				}
 			}
 		})

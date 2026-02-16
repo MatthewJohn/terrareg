@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
@@ -36,15 +35,15 @@ func NewGetModuleDownloadQuery(
 
 // DownloadInfo represents the download information for a module version
 type DownloadInfo struct {
-	ModuleProvider *model.ModuleProvider
-	Version        *model.ModuleVersion
+	ModuleProvider *moduleModel.ModuleProvider
+	Version        *moduleModel.ModuleVersion
 
 	// Git URL information
-	GitURL         string // Git clone URL (if available)
-	BuiltInURL     string // Built-in hosting URL (if available)
-	HostingMode    configmodel.ModuleHostingMode
-	GitPath        string // Git path for subdirectory
-	GitRef         string // Git reference (SHA or tag)
+	GitURL      string // Git clone URL (if available)
+	BuiltInURL  string // Built-in hosting URL (if available)
+	HostingMode configmodel.ModuleHostingMode
+	GitPath     string // Git path for subdirectory
+	GitRef      string // Git reference (SHA or tag)
 }
 
 // Execute executes the query
@@ -59,7 +58,7 @@ func (q *GetModuleDownloadQuery) Execute(ctx context.Context, namespace types.Na
 		return nil, fmt.Errorf("failed to get module provider: %w", err)
 	}
 
-	var moduleVersion *model.ModuleVersion
+	var moduleVersion *moduleModel.ModuleVersion
 
 	// If version is specified, get that specific version
 	if string(version) != "" {

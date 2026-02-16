@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 // mockAuditHistoryRepository is a mock for testing
 type mockAuditHistoryRepository struct {
+	mu          sync.Mutex
 	createCalled bool
 	createCount  int
 	createError  error
@@ -32,6 +34,8 @@ func (m *mockAuditHistoryRepository) GetFilteredCount(ctx context.Context, searc
 }
 
 func (m *mockAuditHistoryRepository) Create(ctx context.Context, audit *model.AuditHistory) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.createCalled = true
 	m.createCount++
 	m.lastAudit = audit

@@ -13,6 +13,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	provider_source_model "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/model"
 	provider_source_service "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
@@ -141,6 +142,14 @@ func (m *MockProviderSourceInstance) RefreshNamespaceRepositories(ctx context.Co
 }
 
 func (m *MockProviderSourceInstance) PublishProviderFromRepository(ctx context.Context, repoID int, categoryID int, namespace string) (*provider_source_service.PublishProviderResult, error) {
+	return nil, nil
+}
+
+func (m *MockProviderSourceInstance) GetReleaseArchive(ctx context.Context, repo *sqldb.RepositoryDB, releaseMetadata *provider_source_model.RepositoryReleaseMetadata, accessToken string) ([]byte, string, error) {
+	return nil, "", nil
+}
+
+func (m *MockProviderSourceInstance) GetReleaseArtifact(ctx context.Context, repo *sqldb.RepositoryDB, releaseMetadata *provider_source_model.ReleaseArtifactMetadata, accessToken string) ([]byte, error) {
 	return nil, nil
 }
 
