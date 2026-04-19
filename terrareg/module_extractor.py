@@ -16,6 +16,8 @@ import glob
 import pathlib
 import urllib.parse
 
+from datetime import datetime, timezone, timedelta
+from github import Auth, GithubIntegration
 from werkzeug.utils import secure_filename
 import magic
 from bs4 import BeautifulSoup
@@ -825,8 +827,36 @@ class ApiUploadModuleExtractor(ModuleExtractor):
         super(ApiUploadModuleExtractor, self).process_upload()
 
 
+class GitHubAppManager:
+    def __init__(self, app_id, private_key, installation_id):
+        self.app_id = app_id
+        self.private_key = private_key
+        self.installation_id = int(installation_id)
+        self.token = None
+        self.expiry = None
+
+    def get_valid_token(self):
+        if not self.token or not self.expiry or self.expiry < datetime.now(timezone.utc) + timedelta(minutes=5):
+            self._refresh_token()
+
+        return self.token
+
+    def _refresh_token(self):
+        auth = Auth.AppAuth(self.app_id, self.private_key)
+        g = GithubIntegration(auth=auth)
+
+        token_auth = g.get_access_token(int(self.installation_id))
+
+        self.token = Auth.Token(token_auth.token)
+        # PyGithub returns expires_at as a datetime object
+        self.expiry = token_auth.expires_at.replace(tzinfo=timezone.utc)
+        if Config().DEBUG:
+            print("Successfully requested a new GitHub App token.")
+
 class GitModuleExtractor(ModuleExtractor):
     """Extraction of module via git."""
+
+    INSTALLATION_AUTH = {}
 
     def __init__(self, *args, **kwargs):
         """Store member variables."""
@@ -835,6 +865,63 @@ class GitModuleExtractor(ModuleExtractor):
         # self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
         # self._tag_name = urllib.parse.quote(tag_name, safe='/')
 
+    def _get_authenticated_git_url(self, original_git_url: str) -> str:
+        """
+        Attempts to authenticate the git URL using GitHub App or basic credentials
+        and returns the authenticated URL.
+        """
+        config = Config()
+        parsed_url = urllib.parse.urlparse(original_git_url)
+
+        if parsed_url.scheme.lower() not in ['http', 'https']:
+            return original_git_url # Only modify http/https URLs
+
+        authenticated_netloc = None
+
+        # 1. Try Github App Authentication
+        if config.MODULE_CHECKOUT_GITHUB_APP_ID and \
+           (config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY or config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH) and \
+           config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID:
+            try:
+                private_key = config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY
+                if not private_key:
+                    with open(config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
+                        private_key = f.read()
+                github_module = GitHubAppManager(config.MODULE_CHECKOUT_GITHUB_APP_ID, private_key, config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID)
+                access_token = github_module.get_valid_token()
+
+                if access_token:
+                    authenticated_netloc = f'x-access-token:{access_token.token}'
+                else:
+                    raise Exception("No token returned from Github API for App installation.")
+
+            except Exception as exc:
+                if config.DEBUG:
+                    print(f'An error occurred while generating Github App installation token: {str(exc)}')
+
+        # 2. Fallback to Upstream Git Credentials (using PyGithub Auth objects)
+        if not authenticated_netloc and \
+           (config.UPSTREAM_GIT_CREDENTIALS_USERNAME or config.UPSTREAM_GIT_CREDENTIALS_PASSWORD):
+            if config.UPSTREAM_GIT_CREDENTIALS_PASSWORD:
+                if config.UPSTREAM_GIT_CREDENTIALS_USERNAME:
+                    # Use Auth.Login to get username and password
+                    auth = Auth.Login(config.UPSTREAM_GIT_CREDENTIALS_USERNAME, config.UPSTREAM_GIT_CREDENTIALS_PASSWORD)
+                    authenticated_netloc = f"{auth.login}:{auth.password}"
+                else:
+                    # Use Auth.Token for a personal access token
+                    auth = Auth.Token(config.UPSTREAM_GIT_CREDENTIALS_PASSWORD)
+                    authenticated_netloc = f":{auth.token}"
+            else:
+                # Only username provided, no password
+                authenticated_netloc = f"{config.UPSTREAM_GIT_CREDENTIALS_USERNAME}:"
+
+        if authenticated_netloc:
+            domain_and_port = parsed_url.netloc.split('@')[-1]
+            parsed_url = parsed_url._replace(netloc=f'{authenticated_netloc}@{domain_and_port}')
+            return urllib.parse.urlunparse(parsed_url)
+        else:
+            return original_git_url
+
     def _clone_repository(self):
         """Extract uploaded archive into extract directory."""
         # Copy current environment variables to add GIT SSH option
@@ -842,38 +929,27 @@ class GitModuleExtractor(ModuleExtractor):
         # Set SSH to auto-accept new host keys
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
-        git_url = self._module_version._module_provider.get_git_clone_url()
+        original_git_url = self._module_version._module_provider.get_git_clone_url()
+        git_url_to_clone = self._get_authenticated_git_url(original_git_url)
 
-        # Add credentials to URL, if using http(s) and configured in
-        # config
         config = Config()
-        if config.UPSTREAM_GIT_CREDENTIALS_USERNAME or config.UPSTREAM_GIT_CREDENTIALS_PASSWORD:
-            parsed_url = urllib.parse.urlparse(git_url)
-            # Only inject credentials if the protocol is http or https
-            if parsed_url.scheme.lower() in ['http', 'https']:
-                # Obtain previous domain from netloc, stripping out any credentials
-                domain = parsed_url.netloc.split('@')[-1]
-                # Replace netloc with username/password prepended authentication
-                parsed_url = parsed_url._replace(netloc=f'{config.UPSTREAM_GIT_CREDENTIALS_USERNAME or ""}:{config.UPSTREAM_GIT_CREDENTIALS_PASSWORD or ""}@' + domain)
-                git_url = urllib.parse.urlunparse(parsed_url)
-
         try:
             subprocess.check_output([
                     'git', 'clone', '--single-branch',
                     '--branch', self._module_version.source_git_tag,
-                    git_url,
+                    git_url_to_clone,
                     self.extract_directory
                 ],
                 stderr=subprocess.STDOUT,
                 env=env,
-                timeout=Config().GIT_CLONE_TIMEOUT
+                timeout=config.GIT_CLONE_TIMEOUT
             )
         except subprocess.CalledProcessError as exc:
             error = 'Unknown error occurred during git clone'
             for line in exc.output.decode('utf-8').split('\n'):
                 if line.startswith('fatal:'):
                     error = 'Error occurred during git clone: {}'.format(line)
-            if Config().DEBUG:
+            if config.DEBUG:
                 error += f'\n{str(exc)}\n{exc.output.decode("utf-8")}'
             raise GitCloneError(error)
 
