@@ -108,9 +108,9 @@ class TestGitModuleExtractor(TerraregUnitTest):
         mock_open = unittest.mock.mock_open(read_data="my_private_key")
         
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH', '/tmp/priv.pem'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID', '456'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH', '/tmp/priv.pem'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
                 unittest.mock.patch('terrareg.config.Config.GITHUB_API_URL', 'https://api.github.com'), \
                 unittest.mock.patch('github.Auth.AppAuth') as mock_app_auth, \
                 unittest.mock.patch('github.Auth.AppInstallationAuth') as mock_app_installation_auth, \
@@ -155,9 +155,9 @@ class TestGitModuleExtractor(TerraregUnitTest):
         module_extractor = GitModuleExtractor(module_version=module_version)
         
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY', 'my_direct_private_key'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID', '456'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY', 'my_direct_private_key'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
                 unittest.mock.patch('terrareg.config.Config.GITHUB_API_URL', 'https://api.github.com'), \
                 unittest.mock.patch('github.Auth.AppAuth') as mock_app_auth, \
                 unittest.mock.patch('github.Auth.AppInstallationAuth') as mock_app_installation_auth, \
@@ -204,9 +204,9 @@ class TestGitModuleExtractor(TerraregUnitTest):
         mock_auth_login.password = 'fallback_pass'
         
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH', '/tmp/priv.pem'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID', 'inst_456'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH', '/tmp/priv.pem'), \
+                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', 'inst_456'), \
                 unittest.mock.patch('terrareg.config.Config.GITHUB_API_URL', 'https://api.github.com'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'fallback_user'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_pass'), \

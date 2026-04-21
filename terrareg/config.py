@@ -220,7 +220,7 @@ class Config:
         return os.environ.get("UPSTREAM_GIT_CREDENTIALS_PASSWORD")
 
     @property
-    def MODULE_CHECKOUT_GITHUB_APP_ID(self) -> Optional[str]:
+    def MODULE_CLONE_GITHUB_APP_ID(self) -> Optional[str]:
         """
         Github App ID for checking out modules.
         This is used to authenticate as a Github App to clone repositories.
@@ -229,40 +229,40 @@ class Config:
         the system will automatically fall back to using basic authentication if
         UPSTREAM_GIT_CREDENTIALS_USERNAME and UPSTREAM_GIT_CREDENTIALS_PASSWORD are provided.
         """
-        return os.environ.get("MODULE_CHECKOUT_GITHUB_APP_ID")
+        return os.environ.get("MODULE_CLONE_GITHUB_APP_ID")
 
     @property
-    def MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH(self) -> Optional[str]:
+    def MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH(self) -> Optional[str]:
         """
         Path to the private key for the Github App used for checking out modules.
 
-        This variable and MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY serve the same purpose.
-        If both are provided, MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY will take precedence.
+        This variable and MODULE_CLONE_GITHUB_APP_PRIVATE_KEY serve the same purpose.
+        If both are provided, MODULE_CLONE_GITHUB_APP_PRIVATE_KEY will take precedence.
 
         If GitHub App authentication fails, basic authentication will be used as a fallback.
         """
-        return os.environ.get("MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH")
+        return os.environ.get("MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH")
 
     @property
-    def MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY(self) -> Optional[str]:
+    def MODULE_CLONE_GITHUB_APP_PRIVATE_KEY(self) -> Optional[str]:
         """
         Private key for the Github App used for checking out modules.
 
-        This variable and MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH serve the same purpose.
-        If both are provided, MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY will take precedence.
+        This variable and MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH serve the same purpose.
+        If both are provided, MODULE_CLONE_GITHUB_APP_PRIVATE_KEY will take precedence.
 
         If GitHub App authentication fails, basic authentication will be used as a fallback.
         """
-        return os.environ.get("MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY")
+        return os.environ.get("MODULE_CLONE_GITHUB_APP_PRIVATE_KEY")
 
     @property
-    def MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID(self) -> Optional[int]:
+    def MODULE_CLONE_GITHUB_APP_INSTALLATION_ID(self) -> Optional[int]:
         """
         Installation ID of the Github App for checking out modules.
 
         If GitHub App authentication fails, basic authentication will be used as a fallback.
         """
-        return os.environ.get("MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID")
+        return os.environ.get("MODULE_CLONE_GITHUB_APP_INSTALLATION_ID")
 
     @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):

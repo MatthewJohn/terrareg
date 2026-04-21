@@ -865,29 +865,29 @@ class GitModuleExtractor(ModuleExtractor):
         # self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
         # self._tag_name = urllib.parse.quote(tag_name, safe='/')
 
-    def _get_authenticated_git_url(self, original_git_url: str) -> str:
+    def _get_authenticated_git_url(self, git_url: str) -> str:
         """
         Attempts to authenticate the git URL using GitHub App or basic credentials
         and returns the authenticated URL.
         """
         config = Config()
-        parsed_url = urllib.parse.urlparse(original_git_url)
+        parsed_url = urllib.parse.urlparse(git_url)
 
         if parsed_url.scheme.lower() not in ['http', 'https']:
-            return original_git_url # Only modify http/https URLs
+            return git_url # Only modify http/https URLs
 
         authenticated_netloc = None
 
         # 1. Try Github App Authentication
-        if config.MODULE_CHECKOUT_GITHUB_APP_ID and \
-           (config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY or config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH) and \
-           config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID:
+        if config.MODULE_CLONE_GITHUB_APP_ID and \
+           (config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY or config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH) and \
+           config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID:
             try:
-                private_key = config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY
+                private_key = config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY
                 if not private_key:
-                    with open(config.MODULE_CHECKOUT_GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
+                    with open(config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
                         private_key = f.read()
-                github_module = GitHubAppManager(config.MODULE_CHECKOUT_GITHUB_APP_ID, private_key, config.MODULE_CHECKOUT_GITHUB_APP_INSTALLATION_ID)
+                github_module = GitHubAppManager(config.MODULE_CLONE_GITHUB_APP_ID, private_key, config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID)
                 access_token = github_module.get_valid_token()
 
                 if access_token:
@@ -918,9 +918,9 @@ class GitModuleExtractor(ModuleExtractor):
         if authenticated_netloc:
             domain_and_port = parsed_url.netloc.split('@')[-1]
             parsed_url = parsed_url._replace(netloc=f'{authenticated_netloc}@{domain_and_port}')
-            return urllib.parse.urlunparse(parsed_url)
-        else:
-            return original_git_url
+            git_url = urllib.parse.urlunparse(parsed_url)
+
+        return git_url
 
     def _clone_repository(self):
         """Extract uploaded archive into extract directory."""
@@ -930,14 +930,14 @@ class GitModuleExtractor(ModuleExtractor):
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
         original_git_url = self._module_version._module_provider.get_git_clone_url()
-        git_url_to_clone = self._get_authenticated_git_url(original_git_url)
+        git_url_with_auth = self._get_authenticated_git_url(original_git_url)
 
         config = Config()
         try:
             subprocess.check_output([
                     'git', 'clone', '--single-branch',
                     '--branch', self._module_version.source_git_tag,
-                    git_url_to_clone,
+                    git_url_with_auth,
                     self.extract_directory
                 ],
                 stderr=subprocess.STDOUT,
