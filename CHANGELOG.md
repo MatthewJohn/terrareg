@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.1.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.1.0...v4.1.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* **build:** Bump tfswitch version due to Hashicorp key expiry ([59ccbad](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/59ccbad64e17ca549ddecb41f466bd7596291cfe)), closes [#581](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/581)
+* **build:** Remove software-properties-common which is no longer available ([53db08f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/53db08faf7c2737328f1e99383789bad02cfe07b))
+* **build:** Update CI pipline to releaes "release/*" branches ([8b13971](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b139714963785697605465b4c7b5e40f3d60497)), closes [#581](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/581)
+* **ci:** Update semantic release to handle release branches ([2167349](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2167349d61105ca389232543001545d4ad66fe40))
+
 # [4.1.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.0.0...v4.1.0) (2025-05-06)
 
 
