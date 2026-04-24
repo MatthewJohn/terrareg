@@ -334,7 +334,7 @@ release:
   script:
     - semantic-release
   rules:
-    - if: '$CI_COMMIT_REF_NAME != "main"'
+    - if: '$CI_COMMIT_REF_NAME !~ /^main$/ && $CI_COMMIT_REF_NAME !~ /^release\/.*$/'
       when: never
     - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
       when: never
