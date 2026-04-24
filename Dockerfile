@@ -9,7 +9,7 @@ ARG TFSEC_VERSION=v1.28.14
 # renovate: datasource=github-releases depName=infracost/infracost
 ARG INFRACOST_VERSION=v0.10.43
 # renovate: datasource=github-releases depName=warrensbox/terraform-switcher
-ARG TERRAFORM_SWITCHER_VERSION=1.13.0
+ARG TERRAFORM_SWITCHER_VERSION=1.17.1
 # renovate: datasource=github-releases depName=hashicorp/terraform-plugin-docs
 ARG TFPLUGINDOCS_VERSION=0.24.0
 # renovate: datasource=golang-version depName=golang
