@@ -70,13 +70,19 @@ class TestApiProviderVersionDownload(TerraregIntegrationTest):
         provider = terrareg.provider_model.Provider.get(namespace=namespace, name='multiple-versions')
         provider_version = terrareg.provider_version_model.ProviderVersion.get(provider=provider, version='1.5.0')
 
-        mock_record_provider_version_download.assert_called_once_with(
-            namespace_name='initial-providers',
-            provider_name='multiple-versions',
-            provider_version=provider_version,
-            terraform_version=None,
-            user_agent=f"werkzeug/{__import__('importlib.metadata').metadata.version('werkzeug')}"
-        )
+         # Werkzeug changed the default User-Agent header capitalization in
+        # version 3.x (werkzeug -> Werkzeug), so compare case-insensitively
+        # to remain compatible with both older and newer versions.
+        assert mock_record_provider_version_download.call_count == 1
+        call_kwargs = mock_record_provider_version_download.call_args.kwargs
+        expected_user_agent = f"werkzeug/{__import__('importlib.metadata').metadata.version('werkzeug')}"
+        assert call_kwargs.pop('user_agent', '').lower() == expected_user_agent.lower()
+        assert call_kwargs == {
+            'namespace_name': 'initial-providers',
+            'provider_name': 'multiple-versions',
+            'provider_version': provider_version,
+            'terraform_version': None,
+        }
 
     def test_endpoint_with_provider_invalid_architecture(self, client):
         """Test endpoint with invalid architecture"""
