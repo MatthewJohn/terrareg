@@ -75,7 +75,7 @@ class TestApiProviderVersionDownload(TerraregIntegrationTest):
             provider_name='multiple-versions',
             provider_version=provider_version,
             terraform_version=None,
-            user_agent=f"Werkzeug/{__import__('importlib.metadata').metadata.version('werkzeug')}"
+            user_agent=f"werkzeug/{__import__('importlib.metadata').metadata.version('werkzeug')}"
         )
 
     def test_endpoint_with_provider_invalid_architecture(self, client):
