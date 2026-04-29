@@ -91,56 +91,37 @@ class TestGitModuleExtractor(TerraregUnitTest):
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
 
     @setup_test_data()
-    def test__clone_repository_github_app(self, mock_models):
-        """Test _clone_repository with Github App configuration using private key file path"""
+    def test__clone_repository_provider_source_github_app(self, mock_models):
+        """Test _clone_repository with provider source GitHub App authentication"""
         namespace = terrareg.models.Namespace(name='moduleextraction')
         module = terrareg.models.Module(namespace=namespace, name='gitextraction')
         module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
         module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
         check_call_mock = unittest.mock.MagicMock()
-        # Simulate token object returned by g.get_access_token()
-        mock_token_auth = unittest.mock.MagicMock()
-        mock_token_auth.token = 'v1.1234567890'
-        import datetime as dt
-        mock_token_auth.expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)
-
         module_extractor = GitModuleExtractor(module_version=module_version)
 
-        mock_open = unittest.mock.mock_open(read_data="my_private_key")
+        # Mock provider source
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.get_github_app_installation_id.return_value = '12345'
+        mock_provider_source.generate_app_installation_token.return_value = 'ghp_test_token_1234567890'
 
-        # Patch Auth.AppAuth and GithubIntegration where they are looked up in module_extractor
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH', '/tmp/priv.pem'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY', None), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
-                unittest.mock.patch('terrareg.module_extractor.Auth.AppAuth') as mock_app_auth, \
-                unittest.mock.patch('terrareg.module_extractor.GithubIntegration') as mock_github_integration, \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Token') as mock_auth_token, \
-                unittest.mock.patch('builtins.open', mock_open):
-
-            # get_access_token() returns the mock_token_auth object
-            mock_github_integration.return_value.get_access_token.return_value = mock_token_auth
-            # Auth.Token wraps the raw token string
-            mock_auth_token.return_value.token = 'v1.1234567890'
-
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = mock_provider_source
             with module_extractor as me:
                 me._clone_repository()
 
-        # Code calls Auth.AppAuth with positional args
-        mock_app_auth.assert_called_once_with('app_123', 'my_private_key')
-        # GithubIntegration is constructed with the AppAuth result
-        mock_github_integration.assert_called_once_with(auth=mock_app_auth.return_value)
-        # get_access_token is called with the integer installation id
-        mock_github_integration.return_value.get_access_token.assert_called_once_with(456)
+        # Verify provider source methods were called
+        mock_provider_source.get_github_app_installation_id.assert_called_once_with(namespace)
+        mock_provider_source.generate_app_installation_token.assert_called_once_with('12345')
 
         check_call_mock.assert_called_with(
             [
                 'git', 'clone',
                 '--single-branch',
                 '--branch', 'v4.3.2',
-                'https://x-access-token:v1.1234567890@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
+                'https://x-access-token:ghp_test_token_1234567890@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
                 module_extractor.extract_directory
             ],
             stderr=subprocess.STDOUT,
@@ -150,89 +131,28 @@ class TestGitModuleExtractor(TerraregUnitTest):
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
 
     @setup_test_data()
-    def test__clone_repository_github_app_direct_key(self, mock_models):
-        """Test _clone_repository with Github App configuration using direct private key string"""
+    def test__clone_repository_provider_source_github_app_fallback(self, mock_models):
+        """Test _clone_repository fallback to basic auth if provider source GitHub App auth fails"""
         namespace = terrareg.models.Namespace(name='moduleextraction')
         module = terrareg.models.Module(namespace=namespace, name='gitextraction')
         module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
         module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
         check_call_mock = unittest.mock.MagicMock()
-        # Simulate token object returned by g.get_access_token()
-        mock_token_auth = unittest.mock.MagicMock()
-        mock_token_auth.token = 'v1.1234567890'
-        import datetime as dt
-        mock_token_auth.expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)
-
         module_extractor = GitModuleExtractor(module_version=module_version)
 
-        # Patch Auth.AppAuth and GithubIntegration where they are looked up in module_extractor
+        # Mock provider source that raises exception
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.get_github_app_installation_id.side_effect = Exception("GitHub API Error")
+
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY', 'my_direct_private_key'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
-                unittest.mock.patch('terrareg.module_extractor.Auth.AppAuth') as mock_app_auth, \
-                unittest.mock.patch('terrareg.module_extractor.GithubIntegration') as mock_github_integration, \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Token') as mock_auth_token:
-
-            mock_github_integration.return_value.get_access_token.return_value = mock_token_auth
-            mock_auth_token.return_value.token = 'v1.1234567890'
-
-            with module_extractor as me:
-                me._clone_repository()
-
-        # Code calls Auth.AppAuth with positional args (no file open since key is provided directly)
-        mock_app_auth.assert_called_once_with('app_123', 'my_direct_private_key')
-        mock_github_integration.assert_called_once_with(auth=mock_app_auth.return_value)
-        mock_github_integration.return_value.get_access_token.assert_called_once_with(456)
-
-        check_call_mock.assert_called_with(
-            [
-                'git', 'clone',
-                '--single-branch',
-                '--branch', 'v4.3.2',
-                'https://x-access-token:v1.1234567890@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
-                module_extractor.extract_directory
-            ],
-            stderr=subprocess.STDOUT,
-            env=unittest.mock.ANY,
-            timeout=300
-        )
-        assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
-
-    @setup_test_data()
-    def test__clone_repository_github_app_fallback(self, mock_models):
-        """Test _clone_repository fallback to basic auth if Github App auth fails"""
-        namespace = terrareg.models.Namespace(name='moduleextraction')
-        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
-        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
-        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
-
-        check_call_mock = unittest.mock.MagicMock()
-
-        module_extractor = GitModuleExtractor(module_version=module_version)
-
-        mock_open = unittest.mock.mock_open(read_data="my_private_key")
-        mock_auth_login = unittest.mock.MagicMock()
-        mock_auth_login.login = 'fallback_user'
-        mock_auth_login.password = 'fallback_pass'
-
-        # Patch Auth.AppAuth at the lookup location and make it raise to trigger fallback.
-        # Also patch Auth.Login at its lookup location.
-        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH', '/tmp/priv.pem'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY', None), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'fallback_user'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_pass'), \
-                unittest.mock.patch('terrareg.module_extractor.Auth.AppAuth', side_effect=Exception("Github API Error")), \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Login', return_value=mock_auth_login) as mock_login, \
-                unittest.mock.patch('builtins.open', mock_open):
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = mock_provider_source
             with module_extractor as me:
                 me._clone_repository()
 
-        mock_login.assert_called_with('fallback_user', 'fallback_pass')
         check_call_mock.assert_called_with(
             [
                 'git', 'clone',
@@ -247,29 +167,25 @@ class TestGitModuleExtractor(TerraregUnitTest):
         )
 
     @setup_test_data()
-    def test__clone_repository_github_app_fallback_token(self, mock_models):
-        """Test _clone_repository uses Auth.Token (PAT) when only password is provided (no username)"""
+    def test__clone_repository_fallback_token(self, mock_models):
+        """Test _clone_repository uses token when only password is provided (no username)"""
         namespace = terrareg.models.Namespace(name='moduleextraction')
         module = terrareg.models.Module(namespace=namespace, name='gitextraction')
         module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
         module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
         check_call_mock = unittest.mock.MagicMock()
-
         module_extractor = GitModuleExtractor(module_version=module_version)
 
-        mock_auth_token = unittest.mock.MagicMock()
-        mock_auth_token.token = 'fallback_token'
-
-        # Patch Auth.Token at its lookup location in module_extractor
+        # Mock provider source as None (no provider source configured)
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', ''), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_token'), \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Token', return_value=mock_auth_token) as mock_token:
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = None
             with module_extractor as me:
                 me._clone_repository()
 
-        mock_token.assert_called_with('fallback_token')
         check_call_mock.assert_called_with(
             [
                 'git', 'clone',
@@ -296,9 +212,6 @@ class TestGitModuleExtractor(TerraregUnitTest):
         module_extractor = GitModuleExtractor(module_version=module_version)
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY', 'some_key'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'user'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'pass'):
             with module_extractor as me:
@@ -319,8 +232,8 @@ class TestGitModuleExtractor(TerraregUnitTest):
         )
 
     @setup_test_data()
-    def test__clone_repository_github_app_no_token_falls_back(self, mock_models):
-        """Test _clone_repository fallback when GitHub App get_valid_token returns falsy (no token)"""
+    def test__clone_repository_provider_source_no_installation_falls_back(self, mock_models):
+        """Test _clone_repository fallback when provider source has no installation ID"""
         namespace = terrareg.models.Namespace(name='moduleextraction')
         module = terrareg.models.Module(namespace=namespace, name='gitextraction')
         module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
@@ -329,29 +242,19 @@ class TestGitModuleExtractor(TerraregUnitTest):
         check_call_mock = unittest.mock.MagicMock()
         module_extractor = GitModuleExtractor(module_version=module_version)
 
-        mock_auth_login = unittest.mock.MagicMock()
-        mock_auth_login.login = 'fallback_user'
-        mock_auth_login.password = 'fallback_pass'
-
-        # Mock GitHubAppManager so get_valid_token returns None (falsy), triggering the
-        # "No token returned" exception → outer except → fallback to basic auth
-        mock_github_app_manager = unittest.mock.MagicMock()
-        mock_github_app_manager.return_value.get_valid_token.return_value = None
+        # Mock provider source that returns None for installation ID
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.get_github_app_installation_id.return_value = None
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_ID', 'app_123'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY', 'some_key'), \
-                unittest.mock.patch('terrareg.config.Config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID', '456'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'fallback_user'), \
                 unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_pass'), \
-                unittest.mock.patch('terrareg.module_extractor.GitHubAppManager', mock_github_app_manager), \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Login', return_value=mock_auth_login) as mock_login:
-
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = mock_provider_source
             with module_extractor as me:
                 me._clone_repository()
 
-        # Should fall back to basic auth because no token was returned
-        mock_login.assert_called_with('fallback_user', 'fallback_pass')
+        # Should fall back to basic auth because no installation ID was found
         check_call_mock.assert_called_with(
             [
                 'git', 'clone',
@@ -366,109 +269,18 @@ class TestGitModuleExtractor(TerraregUnitTest):
         )
 
 
-class TestGitHubAppManager(TerraregUnitTest):
-    """Test GitHubAppManager class"""
+class TestProviderSourceAuthentication(TerraregUnitTest):
+    """Test provider source authentication integration with module extraction"""
 
-    def _make_manager(self, app_id='app_123', private_key='pk', installation_id='456'):
-        from terrareg.module_extractor import GitHubAppManager
-        return GitHubAppManager(app_id=app_id, private_key=private_key, installation_id=installation_id)
+    @setup_test_data()
+    def test_module_provider_provider_source_property(self, mock_models):
+        """Test that ModuleProvider has a provider_source property"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
 
-    def test_init_converts_installation_id_to_int(self):
-        """Test that installation_id is coerced to int on init"""
-        from terrareg.module_extractor import GitHubAppManager
-        manager = GitHubAppManager(app_id='app', private_key='key', installation_id='789')
-        assert manager.installation_id == 789
-        assert isinstance(manager.installation_id, int)
-
-    def test_get_valid_token_calls_refresh_when_no_token(self):
-        """Test that get_valid_token triggers _refresh_token when token is None"""
-        import datetime as dt
-        manager = self._make_manager()
-
-        mock_token_auth = unittest.mock.MagicMock()
-        mock_token_auth.token = 'new_token'
-        mock_token_auth.expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)
-
-        with unittest.mock.patch('terrareg.module_extractor.Auth.AppAuth'), \
-                unittest.mock.patch('terrareg.module_extractor.GithubIntegration') as mock_gi, \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Token') as mock_auth_token:
-
-            mock_gi.return_value.get_access_token.return_value = mock_token_auth
-            mock_auth_token.return_value.token = 'new_token'
-
-            token = manager.get_valid_token()
-
-        assert token is mock_auth_token.return_value
-
-    def test_get_valid_token_reuses_cached_token_when_valid(self):
-        """Test that get_valid_token reuses cached token when not expired"""
-        import datetime as dt
-        from terrareg.module_extractor import GitHubAppManager
-        manager = self._make_manager()
-
-        mock_cached_token = unittest.mock.MagicMock()
-        mock_cached_token.token = 'cached_token'
-        manager.token = mock_cached_token
-        manager.expiry = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)
-
-        with unittest.mock.patch.object(manager, '_refresh_token') as mock_refresh:
-            result = manager.get_valid_token()
-
-        # _refresh_token should NOT have been called because token is still valid
-        mock_refresh.assert_not_called()
-        assert result is mock_cached_token
-
-    def test_get_valid_token_refreshes_when_near_expiry(self):
-        """Test that get_valid_token refreshes token when within 5-minute expiry window"""
-        import datetime as dt
-        from terrareg.module_extractor import GitHubAppManager
-        manager = self._make_manager()
-
-        mock_old_token = unittest.mock.MagicMock()
-        manager.token = mock_old_token
-        # Set expiry to 3 minutes from now (within the 5-minute refresh window)
-        manager.expiry = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=3)
-
-        mock_new_token_auth = unittest.mock.MagicMock()
-        mock_new_token_auth.token = 'refreshed_token'
-        mock_new_token_auth.expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)
-
-        with unittest.mock.patch('terrareg.module_extractor.Auth.AppAuth'), \
-                unittest.mock.patch('terrareg.module_extractor.GithubIntegration') as mock_gi, \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Token') as mock_auth_token:
-
-            mock_gi.return_value.get_access_token.return_value = mock_new_token_auth
-            mock_auth_token.return_value.token = 'refreshed_token'
-
-            result = manager.get_valid_token()
-
-        # Token should have been refreshed
-        assert result is mock_auth_token.return_value
-
-    def test_refresh_token_calls_correct_apis(self):
-        """Test that _refresh_token calls Auth.AppAuth, GithubIntegration, and Auth.Token correctly"""
-        import datetime as dt
-        manager = self._make_manager(app_id='myapp', private_key='my_pem', installation_id='999')
-
-        mock_token_auth = unittest.mock.MagicMock()
-        mock_token_auth.token = 'raw_token_string'
-        mock_token_auth.expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)
-
-        with unittest.mock.patch('terrareg.module_extractor.Auth.AppAuth') as mock_app_auth, \
-                unittest.mock.patch('terrareg.module_extractor.GithubIntegration') as mock_gi, \
-                unittest.mock.patch('terrareg.module_extractor.Auth.Token') as mock_auth_token:
-
-            mock_gi.return_value.get_access_token.return_value = mock_token_auth
-            mock_auth_token.return_value.token = 'raw_token_string'
-
-            manager._refresh_token()
-
-
-        mock_app_auth.assert_called_once_with('myapp', 'my_pem')
-        mock_gi.assert_called_once_with(auth=mock_app_auth.return_value)
-        mock_gi.return_value.get_access_token.assert_called_once_with(999)
-        mock_auth_token.assert_called_once_with('raw_token_string')
-        assert manager.token is mock_auth_token.return_value
+        # Initially, provider_source should be None
+        assert module_provider.provider_source is None
 
 
 class TestGitModuleExtractorMethods(TerraregUnitTest):
@@ -533,6 +345,9 @@ class TestGitModuleExtractorMethods(TerraregUnitTest):
 
             # Create git repo and commit file
             subprocess.check_output(["git", "init"], cwd=temp_dir)
+            # Configure git user for this repository
+            subprocess.check_output(["git", "config", "user.email", "test@example.com"], cwd=temp_dir)
+            subprocess.check_output(["git", "config", "user.name", "Test User"], cwd=temp_dir)
             with open(os.path.join(temp_dir, "test_file"), "w") as fh:
                 pass
             subprocess.check_output(["git", "add", "test_file"], cwd=temp_dir)

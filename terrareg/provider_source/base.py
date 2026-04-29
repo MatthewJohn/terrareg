@@ -98,6 +98,20 @@ class BaseProviderSource:
         """Return public URL for source"""
         raise NotImplementedError
 
+    def get_github_app_installation_id(self, namespace: 'terrareg.models.Namespace') -> Optional[int]:
+        """
+        Obtain GitHub App installation ID for the namespace.
+        Returns None for non-GitHub provider sources.
+        """
+        return None
+
+    def generate_app_installation_token(self, installation_id: str) -> Optional[str]:
+        """
+        Generate GitHub App installation access token.
+        Returns None for non-GitHub provider sources.
+        """
+        return None
+
     def get_public_artifact_download_url(self,
                                          provider_version: 'terrareg.provider_version_model.ProviderVersion',
                                          artifact_name: str):

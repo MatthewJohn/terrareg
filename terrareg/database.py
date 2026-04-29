@@ -466,6 +466,16 @@ class Database():
                 nullable=True
             ),
             sqlalchemy.Column(
+                'provider_source_name',
+                sqlalchemy.ForeignKey(
+                    'provider_source.name',
+                    name='fk_module_provider_provider_source_name_provider_source_name',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL'
+                ),
+                nullable=True
+            ),
+            sqlalchemy.Column(
                 'latest_version_id',
                 sqlalchemy.ForeignKey(
                     'module_version.id',

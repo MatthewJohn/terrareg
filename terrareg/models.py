@@ -1,7 +1,7 @@
 
 import contextlib
 import datetime
-from typing import Optional
+from typing import Optional, Union
 from enum import Enum
 import os
 import json
@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 import tempfile
 import urllib.parse
 import gnupg
-from typing import List, Union
+from typing import List
 
 import sqlalchemy
 import semantic_version
@@ -49,6 +49,8 @@ import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.registry_resource_type
 import terrareg.file_storage
+import terrareg.provider_source.factory
+import terrareg.provider_source.base
 
 
 class Session:
@@ -2609,6 +2611,16 @@ class ModuleProvider(object):
         """Return the git provider associated with this module provider."""
         if self._get_db_row()['git_provider_id']:
             return GitProvider.get(id=self._get_db_row()['git_provider_id'])
+        return None
+
+    @property
+    def provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
+        """Return the provider source associated with this module provider."""
+        row = self._get_db_row()
+        if row.get('provider_source_name'):
+            return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+                row['provider_source_name']
+            )
         return None
 
     def update_archive_git_path(self, archive_git_path):
