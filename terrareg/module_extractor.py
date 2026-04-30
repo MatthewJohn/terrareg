@@ -10,7 +10,6 @@ import zipfile
 import tarfile
 import subprocess
 import json
-import datetime
 import re
 import glob
 import pathlib
@@ -491,7 +490,7 @@ terraform {{
         self._module_version.update_attributes(
             module_details_id=module_details.pk,
 
-            published_at=datetime.datetime.now(),
+            published_at=datetime.now(),
 
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
@@ -852,7 +851,7 @@ class GitModuleExtractor(ModuleExtractor):
         module_provider = self._module_version.module_provider
         namespace = module_provider.module.namespace
 
-        if provider_source := module_provider.provider_source:
+        if provider_source := module_provider.get_effective_provider_source():
             try:
                 installation_id = provider_source.get_github_app_installation_id(namespace)
                 if installation_id:
@@ -864,17 +863,11 @@ class GitModuleExtractor(ModuleExtractor):
                     print(f'Provider source GitHub App auth failed: {exc}')
 
         # 2. Fallback to basic credentials
-        if not authenticated_netloc and \
-           (config.UPSTREAM_GIT_CREDENTIALS_USERNAME or config.UPSTREAM_GIT_CREDENTIALS_PASSWORD):
-            if config.UPSTREAM_GIT_CREDENTIALS_PASSWORD:
-                if config.UPSTREAM_GIT_CREDENTIALS_USERNAME:
-                    authenticated_netloc = f"{config.UPSTREAM_GIT_CREDENTIALS_USERNAME}:{config.UPSTREAM_GIT_CREDENTIALS_PASSWORD}"
-                else:
-                    # Use as personal access token
-                    authenticated_netloc = f":{config.UPSTREAM_GIT_CREDENTIALS_PASSWORD}"
-            else:
-                # Only username provided, no password
-                authenticated_netloc = f"{config.UPSTREAM_GIT_CREDENTIALS_USERNAME}:"
+        if not authenticated_netloc:
+            username = config.UPSTREAM_GIT_CREDENTIALS_USERNAME or ""
+            password = config.UPSTREAM_GIT_CREDENTIALS_PASSWORD or ""
+            if username or password:
+                authenticated_netloc = f"{username}:{password}"
 
         if authenticated_netloc:
             domain_and_port = parsed_url.netloc.split('@')[-1]

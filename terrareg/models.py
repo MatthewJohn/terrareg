@@ -1026,6 +1026,21 @@ class Namespace(object):
         return self._get_db_row()['namespace_type']
 
     @property
+    def default_provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
+        """Return the default provider source for this namespace."""
+        try:
+            row = self._get_db_row()
+            provider_source_name = row['default_provider_source_name']
+            if provider_source_name:
+                return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+                    provider_source_name
+                )
+        except (KeyError, TypeError):
+            # Column doesn't exist yet (migration not applied) or row is None
+            pass
+        return None
+
+    @property
     def can_publish_providers(self):
         """Determine whether the namespace can publish providers"""
         # Ensure at least one GPG key is assigned with the namespace
@@ -2617,10 +2632,28 @@ class ModuleProvider(object):
     def provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
         """Return the provider source associated with this module provider."""
         row = self._get_db_row()
-        if row.get('provider_source_name'):
+        if row['provider_source_name']:
             return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
                 row['provider_source_name']
             )
+        return None
+
+    def get_effective_provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
+        """
+        Get the effective provider source using hierarchical lookup:
+        1. ModuleProvider level (provider_source_name)
+        2. Namespace level (default_provider_source_name)
+        3. None (fallback to basic credentials)
+        """
+        # Level 1: Check module provider level
+        if provider_source := self.provider_source:
+            return provider_source
+
+        # Level 2: Check namespace level
+        if namespace_provider_source := self._module.namespace.default_provider_source:
+            return namespace_provider_source
+
+        # Level 3: No provider source found
         return None
 
     def update_archive_git_path(self, archive_git_path):

@@ -784,7 +784,8 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
             assert module_version.description == 'Test unittest description'
             assert module_version.owner == 'Test unittest owner'
 
-            with mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', terrareg.config.ModuleHostingMode.ENFORCE):
+            with mock.patch('terrareg.config.Config.PUBLIC_URL', 'https://localhost'), \
+                    mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', terrareg.config.ModuleHostingMode.ENFORCE):
                 if archive_git_path:
                     assert module_version.get_source_download_url(request_domain='localhost', direct_http_request=True) == 'https://localhost:443/v1/terrareg/modules/testprocessupload/git-path/test/1.1.0/source.zip'
                 else:

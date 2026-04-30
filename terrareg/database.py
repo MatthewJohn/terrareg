@@ -389,7 +389,18 @@ class Database():
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('namespace_type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE)
+            sqlalchemy.Column('namespace_type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE),
+            sqlalchemy.Column(
+                'default_provider_source_name',
+                sqlalchemy.String(255),
+                sqlalchemy.ForeignKey(
+                    'provider_source.name',
+                    name='fk_namespace_default_provider_source_name_provider_source_name',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL'
+                ),
+                nullable=True
+            )
         )
 
         self._namespace_redirect = sqlalchemy.Table(
