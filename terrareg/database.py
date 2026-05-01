@@ -487,6 +487,12 @@ class Database():
                 nullable=True
             ),
             sqlalchemy.Column(
+                'provider_source_inheritance_disabled',
+                sqlalchemy.Boolean,
+                default=False,
+                nullable=False
+            ),
+            sqlalchemy.Column(
                 'latest_version_id',
                 sqlalchemy.ForeignKey(
                     'module_version.id',

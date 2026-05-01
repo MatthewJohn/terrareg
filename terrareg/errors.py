@@ -288,6 +288,12 @@ class InvalidProviderSourceConfigError(TerraregError):
     pass
 
 
+class InvalidProviderSourceNameError(TerraregError):
+    """Exception raised when an invalid provider source name is provided"""
+
+    pass
+
+
 class InvalidProviderCategoryConfigError(TerraregError):
     """An invalid provider category config is present"""
 
