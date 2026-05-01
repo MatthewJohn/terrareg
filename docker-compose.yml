@@ -11,7 +11,7 @@ services:
       CONTAINERS: 1
     networks:
       - dockerProxy
-      
+
   traefik:
     image: traefik:v2.8
     restart: always
@@ -71,6 +71,7 @@ services:
       - ./.env
     volumes:
       - ./:/app
+      - /app/.venv
       # - ~/.ssh/:/root/.ssh/:ro
     networks:
       web:
@@ -90,7 +91,7 @@ services:
     env_file:
       - ./.env
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       start_period: 10s
       interval: 10s
       timeout: 5s
@@ -98,20 +99,21 @@ services:
     networks:
       web:
 
+
   minio:
     image: minio/minio
     ports:
-     - 9000:9000
-     - 9001:9001
+      - 9000:9000
+      - 9001:9001
     restart: always
     env_file:
-     - .env
+      - .env
     environment:
       MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
       MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
     command: server /data --console-address ":9001"
     volumes:
-     - 'minio:/data'
+      - 'minio:/data'
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${DOCKER_NAME}_minio.tls=true"
@@ -131,7 +133,7 @@ services:
     depends_on:
       - minio
     env_file:
-     - .env
+      - .env
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc config host add terrareg $AWS_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY;
@@ -153,7 +155,7 @@ volumes:
     name: "${DOCKER_NAME}_s3"
 
 networks:
-  web: 
+  web:
     name: "${DOCKER_NAME}_web"
   dockerProxy:
     name: "${DOCKER_NAME}_docker-proxy"

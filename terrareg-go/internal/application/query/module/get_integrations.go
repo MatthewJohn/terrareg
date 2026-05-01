@@ -1,0 +1,100 @@
+package module
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
+)
+
+// GetIntegrationsQuery retrieves integrations for a module provider
+type GetIntegrationsQuery struct {
+	moduleProviderRepo repository.ModuleProviderRepository
+}
+
+// NewGetIntegrationsQuery creates a new query
+func NewGetIntegrationsQuery(moduleProviderRepo repository.ModuleProviderRepository) *GetIntegrationsQuery {
+	return &GetIntegrationsQuery{
+		moduleProviderRepo: moduleProviderRepo,
+	}
+}
+
+// Integration represents an available integration for a module provider
+type Integration struct {
+	Description string  `json:"description"`
+	Method      *string `json:"method"`
+	URL         string  `json:"url"`
+	Notes       string  `json:"notes"`
+	ComingSoon  *bool   `json:"coming_soon,omitempty"`
+}
+
+// Execute retrieves integrations for a module provider
+func (q *GetIntegrationsQuery) Execute(ctx context.Context, namespace types.NamespaceName, name types.ModuleName, provider types.ModuleProviderName) ([]Integration, error) {
+	// Find the module provider to get its ID
+	moduleProvider, err := q.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, namespace, name, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build integrations list based on module provider
+	var integrations []Integration
+	// Use FrontendID for URL construction (format: "namespace/module/provider")
+	moduleProviderFrontendID := string(moduleProvider.FrontendID())
+
+	// Import integration
+	importMethod := "POST"
+	integrations = append(integrations, Integration{
+		Description: "Trigger module version import",
+		Method:      &importMethod,
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/${version}/import", moduleProviderFrontendID),
+		Notes:       "",
+	})
+
+	// Upload integration (if module hosting is allowed)
+	uploadMethod := "POST"
+	integrations = append(integrations, Integration{
+		Description: "Create module version using source archive",
+		Method:      &uploadMethod,
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/${version}/upload", moduleProviderFrontendID),
+		Notes:       "",
+	})
+
+	// Publish integration
+	publishMethod := "POST"
+	integrations = append(integrations, Integration{
+		Description: "Mark a module version as published",
+		Method:      &publishMethod,
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/${version}/publish", moduleProviderFrontendID),
+		Notes:       "",
+	})
+
+	// Webhooks
+	// GitHub hook
+	integrations = append(integrations, Integration{
+		Description: "GitHub hook trigger",
+		Method:      nil, // Webhook endpoint, no method specified
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/hooks/github", moduleProviderFrontendID),
+		Notes:       "Releases from the repository trigger analysis of the module version",
+	})
+
+	// Bitbucket hook
+	integrations = append(integrations, Integration{
+		Description: "Bitbucket hook trigger",
+		Method:      nil,
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/hooks/bitbucket", moduleProviderFrontendID),
+		Notes:       "",
+	})
+
+	// GitLab hook (coming soon)
+	comingSoon := true
+	integrations = append(integrations, Integration{
+		Description: "Gitlab hook trigger",
+		Method:      nil,
+		URL:         fmt.Sprintf("/v1/terrareg/modules/%s/hooks/gitlab", moduleProviderFrontendID),
+		Notes:       "",
+		ComingSoon:  &comingSoon,
+	})
+
+	return integrations, nil
+}

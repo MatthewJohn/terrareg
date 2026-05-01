@@ -1,0 +1,77 @@
+{{ define "title" }}Create Module{{ end }}
+
+{{ define "header" }}
+<script>
+    function createNamespace() {
+        if (! $('#create-namespace-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: '/v1/terrareg/namespaces',
+            data: JSON.stringify({
+                name: $('#namespace-name').val(),
+                display_name: $('#namespace-display-name').val(),
+                csrf_token: '{{ .csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            // Obtain get parameters from URL
+            const urlParams = getUrlParams();
+            // If parameter from initial setup page is present,
+            // redirect user back to initial setup
+            if (urlParams.initial_setup) {
+                window.location.href = '/initial-setup';
+            } else {
+                window.location.href = res.view_href;
+            }
+        }).fail((res) => {
+            $('#create-error').html(failedResponseToErrorString(res));
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
+
+</script>
+{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-namespace">Create Namespace</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+
+        <div class="field is-vertical">
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form id="create-namespace-form" onsubmit="event.preventDefault(); createNamespace();">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                    <input required id="namespace-name" class="input" type="text" placeholder="my-team">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Display Name</label>
+                    <div class="control">
+                    <input id="namespace-display-name" class="input" type="text" placeholder="My Team">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create Namespace</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{{ end }}
+
+{{ template "template.html" . }}

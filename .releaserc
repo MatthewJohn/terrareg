@@ -1,5 +1,13 @@
 {
-  "branches": ["main", "+([0-9])?(.{+([0-9]),x}).x"],
+  "branches": [
+    "main",
+    { name: 'release/3.12', range: '3.12.x' },
+    { name: 'release/3.13', range: '3.13.x' },
+    { name: 'release/4.0', range: '4.0.x' },
+    { name: 'release/4.1', range: '4.1.x' },
+    { name: 'release/4.2', range: '4.2.x' },
+    { name: 'release/4.3', range: '4.3.x' }
+  ],
   "gitPushOptions": ["ci.skip"],
   "plugins": [
     "@semantic-release/commit-analyzer",

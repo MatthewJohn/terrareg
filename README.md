@@ -139,6 +139,14 @@ PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLO
 ```
 
 
+## Golang
+
+An experimental Golang migration of the project is in progress.
+Whilst it is in quite early stages, it exists in `terrareg-go` directory.
+This should not be used for any purpose other than development/experimentation.
+
+It is, however, merged into main to allow it to be kept up-to-date with changes that happen in the python codebase.
+
 ## Committing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
