@@ -169,6 +169,8 @@ class ProviderExtractor:
             # Setup fake git user to avoid errors when committing
             subprocess.check_output(["git", "config", "user.email", "terrareg@localhost"], cwd=source_dir, env=git_env)
             subprocess.check_output(["git", "config", "user.name", "Terrareg"], cwd=source_dir, env=git_env)
+            # Disable GPG signing to avoid timeouts/signing failures
+            subprocess.check_output(["git", "config", "commit.gpgsign", "false"], cwd=source_dir, env=git_env)
             subprocess.check_output(["git", "add", "*"], cwd=source_dir, env=git_env)
             subprocess.check_output(["git", "commit", "-m", "Initial commit"], cwd=source_dir, env=git_env)
             clone_url = self._provider_version.provider.repository.clone_url

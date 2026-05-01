@@ -1,0 +1,138 @@
+
+{{ define "title" }}Namespaces{{ end }}
+
+{{ define "header" }}
+<script>
+    let currentSearchMeta = undefined;
+
+    const router = new Navigo("/");
+
+    function prevResults(type) {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            getResults(type, currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults(type) {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            getResults(type, currentSearchMeta.next_offset);
+        }
+    }
+    function getResults(type, offset) {
+        // Obtain whether unpublished should be shown
+        let onlyPublished = !$('#show-unpublished').is(':checked');
+        $.get(`/v1/terrareg/namespaces?type=${type}&only_published=${onlyPublished}&offset=${offset}&limit=10`, function(data) {
+
+            // Update current meta data
+            currentSearchMeta = data.meta;
+
+            // Clear any existing namespaces
+            $('#namespaces-table-data').html('');
+
+            // Disable/activate next/previous buttons
+            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+
+            // Add each of the modules to the page
+            $.each(data.namespaces, (itx, namespace) => {
+                $('#namespaces-table-data').append(
+                    `<tr><td><a href="${namespace.view_href}">${namespace.display_name || namespace.name}</a><td></tr>`
+                );
+            });
+        }).fail(() => {
+            // Check for non-existent namespace
+            $('#result-list').addClass('default-hidden')
+            $('#namespace-does-not-exist').removeClass('default-hidden');
+
+            $('#prevButton').hide();
+            $('#nextButton').hide();
+        });
+    }
+
+    async function loadNamespaces(type) {
+        let namespaces = await getNamespaces();
+
+        // If no namespaces exist, display message
+        if (namespaces.length == 0) {
+            checkInitialSetup();
+        }
+
+        // If there is only 1 namespace, redirect to it
+        if (namespaces.length == 1) {
+            window.location.href = `/${type}s/${namespaces[0].name}`;
+        }
+
+        getResults(type, 0);
+    }
+
+    // Setup breadcrumbs using context of page route
+    function configureBreadcrumbs(type) {
+        let name = '';
+        let url = '';
+        if (type == "module") {
+            name = 'Modules';
+            url = 'modules';
+        } else {
+            name = 'Providers';
+            url = 'providers';
+        }
+        let breadcrumb = $('#root-breadcrumb');
+        breadcrumb.text(name);
+        breadcrumb.attr('href', `/${url}`);
+    }
+
+    // Bind buttons on page to callbacks using namespace type
+    function bindButtons(type) {
+        $('#show-unpublished').bind('change', () => {getResults(type, 0)});
+        $('#prevButton').bind('click', () => {prevResults(type)});
+        $('#nextButton').bind('click', () => {nextResults(type)});
+    }
+
+    function configurePage(type) {
+        configureBreadcrumbs(type);
+        bindButtons(type);
+        loadNamespaces(type);
+    }
+
+    router.on('/modules', function ({ data }) {
+        configurePage('module');
+    });
+    router.on('/providers', function ({ data }) {
+        configurePage('provider');
+    });
+
+    $(document).ready(function() {
+        router.resolve();
+    });
+</script>
+{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a id="root-breadcrumb" href="#"></a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div id="namespace-list-content" class="column is-three-fifths is-offset-one-fifth">
+
+        <h1 class="title">Namespaces</h1>
+
+        <table class="table is-hoverable">
+            <tbody id="namespaces-table-data">
+
+            </tbody>
+        </table>
+        <section>
+            <button class="button" id="prevButton">Prev</button>
+            <button class="button" id="nextButton">Next</button>
+            <br /><br />
+            <input class="checkbox" id="show-unpublished" type="checkbox"> Show empty namespaces</input>
+        </section>
+    </div>
+</div>
+
+{{ end }}
+
+{{ template "template.html" . }}

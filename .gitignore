@@ -14,3 +14,6 @@ certs/*
 node_modules/
 terrareg/version.txt
 .idea
+terrareg-go/test/integration/module.tar.gz
+terrareg-go/test/integration/module.zip
+**/*.zip

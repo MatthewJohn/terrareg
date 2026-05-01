@@ -128,7 +128,8 @@ class TestSaml(TerraregUnitTest):
                 self.form = form
         test_request = TestRequest(path, args, form)
 
-        with mock.patch('terrareg.config.Config.DOMAIN_NAME', domain_name):
+        with mock.patch('terrareg.config.Config.PUBLIC_URL', None), \
+                mock.patch('terrareg.config.Config.DOMAIN_NAME', domain_name):
             request_data = Saml2.get_request_data(test_request)
 
         assert request_data == expected_result

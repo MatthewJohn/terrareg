@@ -1,0 +1,274 @@
+{{ define "title" }}Provider Search{{ end }}
+
+{{ define "header" }}
+
+<script>
+
+    let currentSearchMeta = undefined;
+
+    function toggleChildCheckbox(event)
+    {
+        let checkbox = $(event.target).find("input")[0];
+        checkbox.checked = !checkbox.checked;
+        performSearch();
+    }
+
+    function prevResults() {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            performSearch(currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults() {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            performSearch(currentSearchMeta.next_offset);
+        }
+    }
+
+    function getFilterCategories() {
+        let providers = [];
+        // Iterate over provider filter checkboxes and generate
+        // query string
+        $('#category-filters').find('input').each((index, element) => {
+            let j_element = $(element);
+            if (j_element.is(':checked')) {
+                providers.push(j_element.data('categorySlug'));
+            }
+        });
+        return providers;
+    }
+    function getFilterNamespaces() {
+        let namespaces = [];
+        // Iterate over namespace filter checkboxes and generate
+        // query string
+        $('#namespace-filters').find('input').each((index, element) => {
+            let j_element = $(element);
+            if (j_element.is(':checked')) {
+                namespaces.push(j_element.data('namespaceName'));
+            }
+        });
+        return namespaces;
+    }
+
+    let previousSearchString = undefined;
+    function performSearch(new_offset) {
+
+        let searchQuery = $('#search-query-string')[0].value;
+
+        // Mark search query breadcrumb as active
+        document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+        document.getElementById('searchBreadcrumb').className = "";
+
+        // Display search breadcrumb
+        $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
+
+        // Update link and text in search query breadcrumb
+        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/search/providers?q=' + encodeURIComponent(searchQuery));
+        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+
+        if (new_offset === undefined) {
+            new_offset = 0;
+        }
+
+        // Clear any existing provider logo TOS
+        // Check if element exists - on initial page load,
+        // the element will not be present
+        // on the page at this point.
+        if ($('#provider-tos')[0] !== undefined) {
+            $('#provider-tos')[0].innerHTML = '';
+        }
+
+        let query_string = '';
+        getFilterCategories().forEach((provider) => {
+            query_string += `&category=${provider}`;
+        });
+
+        getFilterNamespaces().forEach((namespace) => {
+            query_string += `&namespace=${namespace}`;
+        });
+
+        // Perform AJAX query to obtain results
+        $.get(`/v1/providers/search?` +
+                `q=${encodeURIComponent(searchQuery)}&` +
+                `offset=${new_offset}&` +
+                `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
+                `contributed=${$('#search-contributed').is(':checked')}&` +
+                'include_count=true' +
+                query_string,
+                function(data, status) {
+
+            // Update result count
+            $('#result-count').text(`Showing results ${Math.min(data.meta.current_offset + 1, data.count)} - ${Math.min(data.meta.current_offset + data.meta.limit, data.count)} of ${data.count}`);
+
+            if (data.providers.length == 0) {
+                $('#results').html(`
+                    No providers match your search criteria.
+                    <br />
+                    Please check for spelling errors and try again.
+                `);
+
+                // Disable prev/next buttons
+                $('#prevButton').prop('disabled', true);
+                $('#nextButton').prop('disabled', true);
+                currentSearchMeta = undefined;
+            } else {
+                // Clear reuslts panel before adding results
+                $('#results').html('');
+
+                $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+                $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+                currentSearchMeta = data.meta;
+
+                // Iterate through modules
+                data.providers.forEach((provider) => {
+                    createSearchResultCard('results', 'provider', provider);
+                });
+            }
+        });
+
+        if (searchQuery != previousSearchString) {
+
+            // Update list of search filters
+            $.get(`/v1/terrareg/providers/search/filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
+                $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
+                $('#search-contributed-count').html(data.contributed);
+
+                let current_filtered_provider = getFilterCategories();
+
+                // Clear all providers
+                $('#category-filters').find('a').remove();
+                Object.keys(data.provider_categories).forEach((provider_category_slug) => {
+
+                    // Check if provider already exists and is checked
+                    let checked = current_filtered_provider.indexOf(provider_category_slug) !== -1;
+
+                    // Add providers to provider filter
+                    $('#category-filters').append(`
+                    <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                        <input data-category-slug="${provider_category_slug}" id="category-filter-${provider_category_slug}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                            ${provider_category_slug}
+                        <span class="tag">${data.provider_categories[provider_category_slug]}</span>
+                    </a>
+                    `);
+                });
+
+
+                let current_filtered_namespaces = getFilterNamespaces();
+                // Clear all namespaces
+                $('#namespace-filters').find('a').remove();
+                Object.keys(data.namespaces).forEach(async (namespaceName) => {
+
+                    let namespaceDisplayName = namespaceName;
+                    let namespaceDetails = await getNamespaceDetails(namespaceName);
+                    if (namespaceDetails.display_name) {
+                        namespaceDisplayName = namespaceDetails.display_name;
+                    }
+
+                    // Check if provider already exists and is checked
+                    let checked = current_filtered_namespaces.indexOf(namespaceName) !== -1;
+
+                    // Add providers to provider filter
+                    $('#namespace-filters').append(`
+                    <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                        <input data-namespace-name="${namespaceName}" id="namespace-filter-${namespaceName}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                            ${namespaceDisplayName}
+                        <span class="tag">${data.namespaces[namespaceName]}</span>
+                    </a>
+                    `);
+                });
+            });
+
+            previousSearchString = searchQuery;
+        }
+    }
+
+    $(document).ready(function () {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const searchQuery = urlParams.get('q');
+
+        if (searchQuery) {
+            $('#search-query-string').val(searchQuery);
+        }
+        performSearch();
+    });
+</script>
+{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li id="searchBreadcrumb"><a href="/search/providers">Provider Search</a></li>
+        <li id="searchQueryBreadcrumbParent"><a id="searchQueryBreadcrumb" href=""></a></li>
+    </ul>
+</nav>
+
+
+<div class="columns">
+    <div class="column is-one-fifth">
+        <nav id="query-filters" class="panel">
+            <p class="panel-heading">
+                Search Query
+            </p>
+            <span class="panel-block">
+                <p class="control has-icons-left">
+                    <input class="input" type="text" id="search-query-string" placeholder="Query">
+                    <span class="icon is-left">
+                        <i class="fas fa-filter" aria-hidden="true"></i>
+                    </span>
+                </p>
+            </span>
+            <span class="panel-block">
+                <button id="query-search-button" class="button" onclick="performSearch();">Search</button>
+            </span>
+        </nav>
+
+        <nav class="panel">
+            <p class="panel-heading">
+              Filters
+            </p>
+
+            <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
+                <input id="search-trusted-namespaces" onchange="performSearch();" type="checkbox" checked="checked" />
+                <span class="panel-icon">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                </span>
+                {{ .TRUSTED_NAMESPACE_LABEL }}
+                <span id="search-trusted-namespaces-count" class="tag"></span>
+            </a>
+            <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                <input id="search-contributed" onchange="performSearch();" type="checkbox" />
+                {{ .CONTRIBUTED_NAMESPACE_LABEL }}
+                <span id="search-contributed-count" class="tag"></span>
+            </a>
+        </nav>
+
+        <nav id="namespace-filters" class="panel">
+            <p class="panel-heading">
+              Namespaces
+            </p>
+        </nav>
+
+        <nav id="category-filters" class="panel">
+            <p class="panel-heading">
+              Categories
+            </p>
+        </nav>
+    </div>
+    <div class="column is-three-fifths">
+        <section id="search-results-header">
+            <span id="result-count"></span>
+        </section>
+        <section id="results">
+        </section>
+        <section>
+            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
+            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+        </section>
+
+    </div>
+</div>
+
+{{ end }}
+
+{{ template "template.html" . }}

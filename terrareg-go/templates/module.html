@@ -1,0 +1,50 @@
+{{ define "title" }}{{ .namespace.name }}/{{ .module.name }}{{ end }}
+
+{{ define "header" }}
+<script>
+    async function loadProviders() {
+        // Perform request to obtain the config
+        $.get("/v1/terrareg/modules/{{ .namespace.name }}/{{ .module.name }}").then((data) => {
+            $.each(data.modules, (itx, module_data) => {
+                createSearchResultCard('module-list-table', 'module', module_data);
+            });
+            if (data.modules.length === 0) {
+                $('#no-results').removeClass('default-hidden');
+            }
+        }).fail(() => {
+            $('#module-does-not-exist').removeClass('default-hidden');
+        });
+    }
+    $(document).ready(function() {
+        loadProviders();
+    });
+</script>
+{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/modules">Modules</a></li>
+        <li><a href="/modules/{{ .namespace.name }}">{{ .namespace.name }}</a></li>
+        <li class="is-active"><a href="/modules/{{ .namespace.name }}/{{ .module.name }}">{{ .module.name }}</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div id="module-does-not-exist" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        This namespace/module does not exist
+    </div>
+    <div id="no-results" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        There are no providers for this module
+    </div>
+    <div id="result-list" class="column is-three-fifths is-offset-one-fifth">
+
+        <section id="module-list-table">
+        </section>
+    </div>
+</div>
+
+{{ end }}
+
+{{ template "template.html" . }}

@@ -9,7 +9,7 @@ ARG TFSEC_VERSION=v1.28.14
 # renovate: datasource=github-releases depName=infracost/infracost
 ARG INFRACOST_VERSION=v0.10.43
 # renovate: datasource=github-releases depName=warrensbox/terraform-switcher
-ARG TERRAFORM_SWITCHER_VERSION=1.13.0
+ARG TERRAFORM_SWITCHER_VERSION=1.17.1
 # renovate: datasource=github-releases depName=hashicorp/terraform-plugin-docs
 ARG TFPLUGINDOCS_VERSION=0.24.0
 # renovate: datasource=golang-version depName=golang
@@ -84,7 +84,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock .
+COPY pyproject.toml poetry.lock ./
 ARG PYPI_PROXY
 RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
   http_proxy= https_proxy="" pip install poetry $pip_args

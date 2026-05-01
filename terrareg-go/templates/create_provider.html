@@ -1,0 +1,249 @@
+{{ define "title" }}Create Module{{ end }}
+
+{{ define "header" }}
+<script>
+    let repositories = [];
+
+    function createProvider() {
+        if (! $('#create-provider-form')[0].reportValidity()) {
+            return;
+        }
+        let createStatus = $('#create-status');
+        let createError = $('#create-error');
+        createStatus.html("Provider creation in progress");
+        createStatus.removeClass("default-hidden");
+        createError.addClass("default-hidden");
+        $.post({
+            url: `/${$('#create-provider-provider-source').val()}/repositories/${$('#create-provider-repo').val()}/publish-provider`,
+            data: {
+                category_id: parseInt($('#create-provider-category').val()),
+                csrf_token: '{{ .csrf_token }}'
+            },
+        }).done((res) => {
+            // Obtain get parameters from URL
+            const urlParams = getUrlParams();
+            // If parameter from initial setup page is present,
+            // redirect user back to initial setup
+            if (urlParams.initial_setup) {
+                window.location.href = '/initial-setup';
+            } else {
+                window.location.href = `/providers/${res.namespace}/${res.name}`;
+            }
+        }).fail((res) => {
+            createStatus.addClass("default-hidden");
+            let errorString = failedResponseToErrorString(res);
+
+            if (errorString == 'no-app-installed') {
+                $('#create-installation-message-link').attr('href', res.responseJSON.link);
+                $('#create-installation-message-link').text(res.responseJSON.link);
+                $('#create-installation-message').removeClass('default-hidden');
+            } else {
+                createError.html(errorString);
+                createError.removeClass("default-hidden");
+                $(window).scrollTop(createError.offset().top);
+            }
+        });
+    }
+
+    /* Obtain list of repositories for provider source */
+    async function handleProviderSourceSelect(providerSourceApiName) {
+        $.get(`/${providerSourceApiName}/repositories`).then((data) => {
+            repositories = data;
+            onNamespaceOrRepositoryLoad();
+        });
+
+        let auth = await isLoggedIn();
+        let refreshNamespaceDiv = $('#refresh-namespace');
+        if (auth.site_admin) {
+            // Display refresh button
+            refreshNamespaceDiv.removeClass('default-hidden');
+        } else {
+            // Otherwise, ensure it's hidden
+            refreshNamespaceDiv.addClass('default-hidden');
+        }
+    }
+
+    /* Filter list of repositories and display in input */
+    function onNamespaceOrRepositoryLoad() {
+        let repositorySelect = $('#create-provider-repo');
+        repositorySelect.html('');
+
+        // Ensure namespace has been selected
+        let namespaceInput = $('#create-provider-namespace')[0];
+        if (! namespaceInput.value) {
+            return;
+        }
+
+        // Filter repositories and add to list
+        repositories.filter(
+            (repository) => (
+                repository.kind == "provider" &&
+                repository.owner_login.toLowerCase() == namespaceInput.value.toLowerCase()
+        
+            )
+        ).sort((a, b) => a.full_name > b.full_name).forEach((repository) => {
+            repositorySelect.append(`<option value="${repository.id}">${repository.full_name}</option>`);
+        })
+    }
+
+    /* Load list of provider sources */
+    async function loadProviderSources() {
+        let config = await getConfig();
+        let globalAuth = await isLoggedIn();
+        let providerSourceSelect = $('#create-provider-provider-source');
+        config.PROVIDER_SOURCES.forEach((providerSource) => {
+            // Check if user is authenticated to the provider source
+            $.get(`/${providerSource.api_name}/auth/status`).then((authStatus) => {
+                let disabled = authStatus.auth == false && globalAuth.site_admin == false;
+
+                providerSourceSelect.append(`
+                    <option data-is-authenticated="${authStatus.auth}" value="${providerSource.api_name}" ${disabled ? 'disabled' : ''}>
+                        ${providerSource.name}${disabled ? ' (Not Authenticated)' : ''}
+                    </option>
+                `);
+            })
+        });
+        // Handle warning about no provider sources
+        if (config.PROVIDER_SOURCES.length == 0) {
+            $('#create-errror').html("There are no provider sources configured. This must be performed before a provider can be created.")
+            return;
+        }
+        handleProviderSourceSelect(config.PROVIDER_SOURCES[0].api_name);
+    }
+
+    /* Populate categories from API */
+    function loadCategories() {
+        $.get('/v2/categories').then((data) => {
+            let categorySelect = $('#create-provider-category');
+
+            data.data.sort((a, b) => a.attributes.name > b.attributes.name).forEach((category) => {
+                categorySelect.append(`<option value="${category.id}">${category.attributes.name}</option>`)
+            });
+        })
+    }
+
+    function refreshNamespace() {
+        let providerSource = $('#create-provider-provider-source')[0].value;
+        let namespaceName = $('#create-provider-namespace')[0].value;
+
+        let createStatus = $('#create-status');
+        let createError = $('#create-error');
+
+        if (providerSource && namespaceName) {
+            createError.addClass("default-hidden");
+            createStatus.html("Refreshing namespace");
+            createStatus.removeClass("default-hidden");
+            $.post({
+                url: `/${providerSource}/refresh-namespace`,
+                data: JSON.stringify({
+                    namespace: namespaceName,
+                    csrf_token: '{{ .csrf_token }}'
+                }),
+                contentType: 'application/json'
+            }).done((res) => {
+                handleProviderSourceSelect(providerSource);
+                createStatus.addClass("default-hidden");
+            }).fail((res) => {
+                createError.html(failedResponseToErrorString(res));
+                createError.removeClass("default-hidden");
+                $(window).scrollTop($('#create-error').offset().top);
+                createStatus.addClass("default-hidden");
+            });
+        }
+    }
+
+    loadProviderSources();
+
+    loadCategories();
+
+    // Obtain list of module providers
+    isLoggedIn().then((auth) => {
+        $.get('/v1/terrareg/namespaces').then((data) => {
+            data.forEach((namespace) => {
+                if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                    $('#create-provider-namespace').append($(`<option value="${namespace.name}">${namespace.display_name || namespace.name}</option>`))
+                }
+            });
+            if (data.length) {
+                onNamespaceOrRepositoryLoad();
+            }
+        });
+    });
+</script>
+{{ end }}
+
+{{ define "content" }}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-provider">Create Provider</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+
+        <div class="field is-vertical">
+            <div id="create-error" class="notification is-danger default-hidden">
+            </div>
+            <div id="create-status" class="notification is-info default-hidden">
+            </div>
+            <form id="create-provider-form" onsubmit="event.preventDefault(); createProvider();">
+                <div class="field">
+                    <label class="label">Provider Source</label>
+                    <div class="control select">
+                        <select id="create-provider-provider-source" onchange="handleProviderSourceSelect(event.target.value);">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Namespace</label>
+                    <div class="control select">
+                        <select id="create-provider-namespace" onchange="onNamespaceOrRepositoryLoad();">
+                        </select>
+                    </div>
+                </div>
+
+                <div id="refresh-namespace" class="field default-hidden">
+                    Refresh the selected namespace's repositories from the provider source
+                    <div class="control">
+                        <button id="refresh-namespace-button" class="button" onclick="event.preventDefault(); refreshNamespace();">Refresh Namespace</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Provider</label>
+                    <div class="control select">
+                        <select id="create-provider-repo">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Category</label>
+                    <div class="control select">
+                        <select id="create-provider-category">
+                        </select>
+                    </div>
+                </div>
+
+                <div id="create-installation-message" class="notification is-link default-hidden">
+                    The Terrareg Github app has not yet been installed in the repositories owner.<br />
+                    Please install the app using by following: <a href="#" target="blank" id="create-installation-message-link"></a>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{{ end }}
+
+{{ template "template.html" . }}
