@@ -8,7 +8,6 @@ from selenium.webdriver.common.by import By
 import selenium
 
 from test import mock_create_audit_event
-from terrareg.database import Database
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 import terrareg.models
@@ -197,3 +196,115 @@ n9wkhjrvcVuqfzvFSX6JA+BmRuQdXmDll3gPSzfXUtrIEcIy8S40liVXsnQaoJ6C
         error = self.wait_for_element(By.ID, "create-gpg-key-error")
         assert error.is_displayed() is True
         assert error.text == "GPG key provided is invalid or could not be read"
+
+    def test_default_provider_source_field_displayed(self, mock_create_audit_event):
+        """Test that default provider source field is displayed"""
+        self.perform_admin_authentication(password="unittest-password")
+        self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+
+        # Ensure the default provider source field is displayed
+        default_provider_source_select = self.selenium_instance.find_element(By.ID, "namespace-default-provider-source")
+        assert default_provider_source_select.is_displayed() is True
+
+    def test_default_provider_source_shows_current_value(self, mock_create_audit_event):
+        """Test that current default provider source value is displayed"""
+        # Use existing provider source from test setup
+        provider_source_name = "Test Github Autogenerate"
+
+        # Set default provider source on namespace
+        with mock_create_audit_event:
+            namespace = Namespace.get("moduledetails")
+            namespace.update_default_provider_source(provider_source_name)
+
+        try:
+            self.perform_admin_authentication(password="unittest-password")
+            self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+
+            # Wait for the select element to be present and populated
+            default_provider_source_select = self.wait_for_element(By.ID, "namespace-default-provider-source")
+
+            # Wait for the provider source options to load and the value to be set
+            # The JavaScript populates the select asynchronously
+            # Check that at least one option exists (meaning provider sources have loaded)
+            self.assert_equals(lambda: len(default_provider_source_select.find_elements(By.TAG_NAME, "option")) > 1, True)
+
+            # Verify that the provider source is in the available options
+            options = default_provider_source_select.find_elements(By.TAG_NAME, "option")
+            option_values = [opt.get_attribute("value") for opt in options]
+            assert provider_source_name in option_values, f"Provider source '{provider_source_name}' not found in available options: {option_values}"
+
+            # Verify the value is set correctly using the Select class
+            from selenium.webdriver.support.select import Select
+            select = Select(default_provider_source_select)
+            selected_value = select.first_selected_option.get_attribute("value")
+            assert selected_value == provider_source_name, f"Expected '{provider_source_name}', but got '{selected_value}'"
+
+        finally:
+            # Clean up
+            with mock_create_audit_event:
+                namespace = Namespace.get("moduledetails")
+                namespace.update_default_provider_source("")
+
+    def test_set_default_provider_source(self, mock_create_audit_event):
+        """Test setting default provider source on namespace"""
+        # Use existing provider source from test setup
+        provider_source_name = "Test Github Autogenerate"
+
+        self.perform_admin_authentication(password="unittest-password")
+        self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+
+        # Select the provider source
+        from selenium.webdriver.support.select import Select
+        default_provider_source_select = self.selenium_instance.find_element(By.ID, "namespace-default-provider-source")
+        select = Select(default_provider_source_select)
+        select.select_by_value(provider_source_name)
+
+        # Click save button (uses CSS selector to find button by text)
+        save_button = self.selenium_instance.find_element(By.XPATH, "//button[text()='Edit Namespace']")
+        save_button.click()
+
+        # Verify the value was set
+        with mock_create_audit_event:
+            namespace = Namespace.get("moduledetails")
+            self.assert_equals(lambda: namespace.default_provider_source.name if namespace.default_provider_source else None, provider_source_name)
+
+        # Clean up
+        with mock_create_audit_event:
+            namespace = Namespace.get("moduledetails")
+            namespace.update_default_provider_source("")
+
+    def test_unset_default_provider_source(self, mock_create_audit_event):
+        """Test unsetting default provider source on namespace"""
+        # Use existing provider source from test setup
+        provider_source_name = "Test Github Autogenerate"
+
+        # Set provider source as default
+        with mock_create_audit_event:
+            namespace = Namespace.get("moduledetails")
+            namespace.update_default_provider_source(provider_source_name)
+
+        self.perform_admin_authentication(password="unittest-password")
+        self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+
+        # Verify current value is set
+        default_provider_source_select = self.selenium_instance.find_element(By.ID, "namespace-default-provider-source")
+        self.assert_equals(lambda: default_provider_source_select.get_attribute("value"), provider_source_name)
+
+        # Select empty option to unset
+        from selenium.webdriver.support.select import Select
+        select = Select(default_provider_source_select)
+        select.select_by_value("")
+
+        # Click save button - this will redirect to namespace page
+        save_button = self.selenium_instance.find_element(By.XPATH, "//button[text()='Edit Namespace']")
+        save_button.click()
+
+        # Wait for redirect to namespace page
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails"))
+
+        # Go back to edit page to verify the change
+        self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+        default_provider_select = self.wait_for_element(By.ID, "namespace-default-provider-source")
+
+        # Verify the value is now empty (null/empty)
+        self.assert_equals(lambda: default_provider_source_select.get_attribute("value"), "")
