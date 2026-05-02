@@ -49,6 +49,8 @@ class TestModuleProvider(SeleniumTest):
         cls._config_allow_forceful_module_provider_redirect_deletion = mock.patch('terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION', True)
         cls._config_default_ui_details_view = mock.patch('terrareg.config.Config.DEFAULT_UI_DETAILS_VIEW', terrareg.config.DefaultUiInputOutputView.TABLE)
         cls._config_example_analytics_token = mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', 'example-analytics-token')
+        cls._config_public_url = mock.patch('terrareg.config.Config.PUBLIC_URL', 'https://localhost')
+        cls._config_domain_name = mock.patch('terrareg.config.Config.DOMAIN_NAME', 'localhost')
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -64,6 +66,8 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_allow_forceful_module_provider_redirect_deletion)
         cls.register_patch(cls._config_default_ui_details_view)
         cls.register_patch(cls._config_example_analytics_token)
+        cls.register_patch(cls._config_public_url)
+        cls.register_patch(cls._config_domain_name)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -1814,8 +1818,7 @@ EOF
         settings_input.send_keys('test/sub/directory')
         self._click_save_settings()
 
-        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        assert module_provider.git_path == 'test/sub/directory'
+        self.assert_equals(lambda: ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider').git_path, 'test/sub/directory')
 
         self.selenium_instance.refresh()
         self.wait_for_element(By.ID, 'module-tab-link-settings')
@@ -1824,8 +1827,7 @@ EOF
         settings_input.clear()
 
         self._click_save_settings()
-        module_provider._cache_db_row = None
-        assert module_provider.git_path == None
+        self.assert_equals(lambda: ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider').git_path, None)
 
     def test_archive_git_path_setting(self):
         """Test setting archive git path in module provider settings."""
@@ -1842,8 +1844,7 @@ EOF
         settings_input.click()
         self._click_save_settings()
 
-        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        assert module_provider.archive_git_path is True
+        self.assert_equals(lambda: ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider').archive_git_path, True)
 
         self.selenium_instance.refresh()
         self.wait_for_element(By.ID, 'module-tab-link-settings')
@@ -1852,8 +1853,7 @@ EOF
         settings_input.click()
 
         self._click_save_settings()
-        module_provider._cache_db_row = None
-        assert module_provider.archive_git_path is False
+        self.assert_equals(lambda: ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider').archive_git_path, False)
 
     def test_updating_module_name(self):
         """Test changing module name in module provider settings"""

@@ -1,0 +1,53 @@
+
+{{ define "title" }}Create Module{{ end }}
+
+{{ define "footer" }}{{ end }}
+
+{{ define "header" }}
+
+<script src="/static/js/cytoscape/layout-base.js"></script>
+<script src="/static/js/cytoscape/cytoscape.min-3.26.0.js"></script>
+<script src="/static/js/cytoscape/cose-base.js"></script>
+<script src="/static/js/cytoscape/cytoscape-fcose.js"></script>
+<script src="/static/js/terrareg/graph.js"></script>
+
+<style>
+    #cy {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+    #graphOptions {
+        width: 300px;
+    }
+</style>
+
+{{ end }}
+
+
+{{ define "content" }}
+
+<div id="graphOptions">
+    <label class="checkbox">
+        <input onchange="updateGraphData()" id="graphOptionsShowFullModuleNames" type="checkbox">
+        Show full module addresses
+    </label>
+    <label class="checkbox">
+        <input onchange="updateGraphData()" id="graphOptionsShowFullResourceNames" type="checkbox">
+        Show full resource addresses
+    </label>
+</div>
+
+<div id="cy">
+</div>
+
+<div id="noGraphError">
+</div>
+
+<script>
+    renderPage();
+</script>
+
+{{ end }}
+
+{{ template "template.html" . }}

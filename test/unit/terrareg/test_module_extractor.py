@@ -149,6 +149,11 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
             # Create git repo and commit file
             subprocess.check_output(["git", "init"], cwd=temp_dir)
+            # Setup fake git user to avoid errors when committing (matching production code)
+            subprocess.check_output(["git", "config", "user.email", "terrareg@localhost"], cwd=temp_dir)
+            subprocess.check_output(["git", "config", "user.name", "Terrareg"], cwd=temp_dir)
+            # Disable GPG signing for tests to avoid timeout/signing failures
+            subprocess.check_output(["git", "config", "commit.gpgsign", "false"], cwd=temp_dir)
             with open(os.path.join(temp_dir, "test_file"), "w") as fh:
                 pass
             subprocess.check_output(["git", "add", "test_file"], cwd=temp_dir)

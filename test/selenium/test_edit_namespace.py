@@ -22,7 +22,13 @@ class TestEditNamespace(SeleniumTest):
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
+        cls._config_debug = mock.patch('terrareg.config.Config.DEBUG', False)
+        cls._config_public_url = mock.patch('terrareg.config.Config.PUBLIC_URL', 'https://localhost')
+        cls._config_domain_name = mock.patch('terrareg.config.Config.DOMAIN_NAME', 'localhost')
         cls.register_patch(mock.patch("terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN", "unittest-password"))
+        cls.register_patch(cls._config_debug)
+        cls.register_patch(cls._config_public_url)
+        cls.register_patch(cls._config_domain_name)
 
         super(TestEditNamespace, cls).setup_class()
 
@@ -174,8 +180,9 @@ n9wkhjrvcVuqfzvFSX6JA+BmRuQdXmDll3gPSzfXUtrIEcIy8S40liVXsnQaoJ6C
         # 47F4EC3E116B29893AFD7B80BB5A8B38930DCAEF
         self.assert_equals(lambda: terrareg.models.GpgKey.get_by_fingerprint("47F4EC3E116B29893AFD7B80BB5A8B38930DCAEF") is not None, True)
 
-        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "gpg-key-table-data").find_element(By.XPATH, ".//td[text()='BB5A8B38930DCAEF']").is_displayed(), True)
-        gpg_key_row = self.selenium_instance.find_element(By.ID, "gpg-key-table-data").find_element(By.XPATH, ".//td[text()='BB5A8B38930DCAEF']/..")
+        # Use ID selector directly since gpg-key-table-data is the tbody element's ID
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.XPATH, '//tbody[@id="gpg-key-table-data"]//td[text()="BB5A8B38930DCAEF"]').is_displayed(), True)
+        gpg_key_row = self.selenium_instance.find_element(By.XPATH, '//tbody[@id="gpg-key-table-data"]//td[text()="BB5A8B38930DCAEF"]/..')
         gpg_key_row.find_element(By.XPATH, ".//button[text()='Delete']").click()
 
         self.assert_equals(lambda: terrareg.models.GpgKey.get_by_fingerprint("47F4EC3E116B29893AFD7B80BB5A8B38930DCAEF") is None, True)

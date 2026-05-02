@@ -866,7 +866,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'rule_service': 's3',
                 'impact': 'PUT calls with public ACLs specified can make objects public',
                 'resolution': 'Enable blocking any PUT calls with a public ACL specified',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/block-public-acls/',
+                'links': ['https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/block-public-acls/',
                 'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#block_public_acls'],
                 'description': '',
                 'severity': 'HIGH',
@@ -883,7 +883,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'rule_service': 's3',
                 'impact': 'Users could put a policy that allows public access',
                 'resolution': 'Prevent policies that allow public access being PUT',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/block-public-policy/',
+                'links': ['https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/block-public-policy/',
                 'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#block_public_policy'],
                 'description': '',
                 'severity': 'HIGH',
@@ -901,7 +901,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'The bucket objects could be read if compromised',
                 'resolution': 'Configure bucket encryption',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-encryption/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/enable-bucket-encryption/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
                 ],
                 'description': 'Bucket does not have encryption enabled',
@@ -920,7 +920,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'There is no way to determine the access to this bucket',
                 'resolution': 'Add a logging block to the resource to enable access logging',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-logging/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/enable-bucket-logging/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'
                 ],
                 'description': 'Bucket does not have logging enabled',
@@ -939,7 +939,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'Deleted or modified data would not be recoverable',
                 'resolution': 'Enable versioning to protect against accidental/malicious removal or modification',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-versioning/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/enable-versioning/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#versioning'
                 ],
                 'description': '',
@@ -957,7 +957,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'Using AWS managed keys does not allow for fine grained control',
                 'resolution': 'Enable encryption using customer managed keys',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/encryption-customer-key/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/encryption-customer-key/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
                 ],
                 'description': 'Bucket does not encrypt data with a customer managed key.',
@@ -975,7 +975,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'rule_service': 's3',
                 'impact': 'PUT calls with public ACLs specified can make objects public',
                 'resolution': 'Enable ignoring the application of public ACLs in PUT calls',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/ignore-public-acls/',
+                'links': ['https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/ignore-public-acls/',
                 'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#ignore_public_acls'],
                 'description': '',
                 'severity': 'HIGH',
@@ -993,7 +993,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'Public access to the bucket can lead to data leakage',
                 'resolution': "Don't use canned ACLs or switch to private acl",
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/no-public-access-with-acl/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/no-public-access-with-acl/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'
                 ],
                 'description': '',
@@ -1012,7 +1012,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'Public buckets can be accessed by anyone',
                 'resolution': 'Limit the access to public buckets to only the owner or AWS Services (eg; CloudFront)',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/no-public-buckets/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/no-public-buckets/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#restrict_public_buckets¡'
                 ],
                 'description': '',
@@ -1031,7 +1031,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'Public access policies may be applied to sensitive data buckets',
                 'resolution': 'Define a aws_s3_bucket_public_access_block for the given bucket to control public access policies',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/specify-public-access-block/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/specify-public-access-block/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#bucket'
                 ],
                 'description': '',
@@ -1055,7 +1055,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'The bucket objects could be read if compromised',
                 'resolution': 'Configure bucket encryption',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-encryption/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/enable-bucket-encryption/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
                 ],
                 'description': 'Bucket does not have encryption enabled',
@@ -1074,7 +1074,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'There is no way to determine the access to this bucket',
                 'resolution': 'Add a logging block to the resource to enable access logging',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-logging/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/enable-bucket-logging/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'
                 ],
                 'description': 'Bucket does not have logging enabled',
@@ -1093,7 +1093,7 @@ subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_igno
                 'impact': 'Using AWS managed keys does not allow for fine grained control',
                 'resolution': 'Enable encryption using customer managed keys',
                 'links': [
-                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/encryption-customer-key/',
+                    'https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/s3/encryption-customer-key/',
                     'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
                 ],
                 'description': 'Bucket does not encrypt data with a customer managed key.',

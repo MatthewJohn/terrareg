@@ -75,7 +75,8 @@ class TestOpenidConnect(TerraregUnitTest):
 
     def test_get_redirect_url_domain_name(self):
         """test get_redirect_url with fallback to domain name"""
-        with mock.patch('terrareg.config.Config.DOMAIN_NAME', 'unittest.domainfallback'):
+        with mock.patch('terrareg.config.Config.PUBLIC_URL', None), \
+                mock.patch('terrareg.config.Config.DOMAIN_NAME', 'unittest.domainfallback'):
             assert OpenidConnect.get_redirect_url() == 'https://unittest.domainfallback/openid/callback'
 
     def test_obtain_issuer_metadata(self):
