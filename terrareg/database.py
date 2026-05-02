@@ -298,7 +298,8 @@ class Database():
                 terrareg.config.Config().DATABASE_URL,
                 echo=terrareg.config.Config().DEBUG,
                 pool_pre_ping=True,
-                pool_recycle=300
+                pool_recycle=300,
+		        connect_args={'autocommit': False} if 'mysql' in terrareg.config.Config().DATABASE_URL else {},
             )
         return cls._ENGINE
 
