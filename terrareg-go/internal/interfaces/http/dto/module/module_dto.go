@@ -99,19 +99,27 @@ type ModuleProviderSettingsRequest struct {
 	GitPath               *string `json:"git_path"`
 	ArchiveGitPath        *bool   `json:"archive_git_path"`
 	Verified              *bool   `json:"verified"`
+
+	// Provider source settings
+	ProviderSource                      *string `json:"provider_source"`
+	ProviderSourceInheritanceDisabled   *bool   `json:"provider_source_inheritance_disabled"`
 }
 
 // ModuleProviderSettingsResponse represents module provider settings in API responses
 type ModuleProviderSettingsResponse struct {
-	Namespace             string  `json:"namespace"`
-	Module                string  `json:"module"`
-	Provider              string  `json:"provider"`
-	GitProviderID         *int    `json:"git_provider_id"`
-	RepoBaseURLTemplate   *string `json:"repo_base_url_template"`
-	RepoCloneURLTemplate  *string `json:"repo_clone_url_template"`
-	RepoBrowseURLTemplate *string `json:"repo_browse_url_template"`
-	GitTagFormat          *string `json:"git_tag_format"`
-	GitPath               *string `json:"git_path"`
-	ArchiveGitPath        bool    `json:"archive_git_path"`
-	Verified              bool    `json:"verified"`
+	Namespace                          string  `json:"namespace"`
+	Module                             string  `json:"module"`
+	Provider                           string  `json:"provider"`
+	GitProviderID                      *int    `json:"git_provider_id"`
+	RepoBaseURLTemplate                *string `json:"repo_base_url_template"`
+	RepoCloneURLTemplate               *string `json:"repo_clone_url_template"`
+	RepoBrowseURLTemplate              *string `json:"repo_browse_url_template"`
+	GitTagFormat                        *string `json:"git_tag_format"`
+	GitPath                             *string `json:"git_path"`
+	ArchiveGitPath                      bool    `json:"archive_git_path"`
+	Verified                            bool    `json:"verified"`
+
+	// Provider source fields
+	ProviderSource                      *string `json:"provider_source"`
+	ProviderSourceInheritanceDisabled   bool    `json:"provider_source_inheritance_disabled"`
 }

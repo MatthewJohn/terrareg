@@ -6,13 +6,20 @@
         if (! $('#edit-namespace-form')[0].reportValidity()) {
             return;
         }
+
+        // Build request object - only include display_name and default_provider_source
+        // Note: name changes are not yet supported in Go implementation
+        let requestData = {
+            display_name: $('#namespace-display-name').val(),
+            default_provider_source: $('#namespace-default-provider-source').val() || "",
+            csrf_token: '{{ .csrf_token }}'
+        };
+
+        console.log("editNamespace: Sending request data:", requestData);
+
         $.post({
             url: `/v1/terrareg/namespaces/${namespace}`,
-            data: JSON.stringify({
-                name: $('#namespace-name').val(),
-                display_name: $('#namespace-display-name').val(),
-                csrf_token: '{{ .csrf_token }}'
-            }),
+            data: JSON.stringify(requestData),
             contentType: 'application/json'
         }).done((res) => {
             // Redirect to namespace page
@@ -50,6 +57,29 @@
         // Populate namespace name
         $('#namespace-name').val(namespace);
         $('#namespace-display-name').val(namespaceDetails.display_name);
+        // Don't set default_provider_source here - it will be set after provider sources are loaded
+        return namespaceDetails;
+    }
+
+    /* Load provider sources for dropdown */
+    async function loadProviderSources(namespaceDetails) {
+        try {
+            const response = await $.get('/v1/terrareg/config');
+            if (response && response.PROVIDER_SOURCES) {
+                const select = $('#namespace-default-provider-source');
+                select.empty();
+                select.append('<option value="">None</option>');
+                response.PROVIDER_SOURCES.forEach(ps => {
+                    select.append(`<option value="${ps.name}">${ps.name}</option>`);
+                });
+                // Set the value after options are loaded
+                if (namespaceDetails && namespaceDetails.default_provider_source) {
+                    select.val(namespaceDetails.default_provider_source);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load provider sources:', error);
+        }
     }
 
     /*
@@ -166,14 +196,15 @@
         const baseRoute = "/edit-namespace/:namespace";
 
         // Handle namespace route
-        router.on(baseRoute, function ({ data }) {
+        router.on(baseRoute, async function ({ data }) {
             let namespace = data.namespace;
             bindFormSubmit(namespace);
-            loadDefaultValues(namespace);
+            const namespaceDetails = await loadDefaultValues(namespace);
             bindDeleteButton(namespace);
 
             obtainGpgKeys(namespace);
             bindCreateGpgKeyForm(namespace);
+            await loadProviderSources(namespaceDetails);
         });
 
         router.resolve();
@@ -215,6 +246,15 @@
                     <div class="control">
                     <input id="namespace-display-name" class="input" type="text" placeholder="My Team">
                     </div>
+                </div>
+                <div class="field">
+                    <label class="label">Default Provider Source</label>
+                    <div class="control select">
+                        <select id="namespace-default-provider-source" class="select">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                    <small class="form-text text-muted">Default provider source for git authentication in this namespace</small>
                 </div>
                 <div class="field">
                     <div class="control">

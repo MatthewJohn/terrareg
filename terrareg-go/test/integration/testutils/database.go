@@ -24,6 +24,10 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/webhook"
 )
 
+// Type aliases for database models to use in tests
+type ModuleProviderDB = sqldb.ModuleProviderDB
+type NamespaceDB = sqldb.NamespaceDB
+
 // GetTestLogger returns a logger that only shows output on test failure
 // or when running with go test -v
 func GetTestLogger(t *testing.T) logging.Logger {

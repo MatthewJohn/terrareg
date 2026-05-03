@@ -23,15 +23,19 @@ func NewGetModuleProviderSettingsQuery(moduleProviderRepo repository.ModuleProvi
 
 // ModuleProviderSettings represents detailed module provider settings
 type ModuleProviderSettings struct {
-	ModuleProvider        *model.ModuleProvider
-	GitProviderID         *int
-	RepoBaseURLTemplate   *string
-	RepoCloneURLTemplate  *string
-	RepoBrowseURLTemplate *string
-	GitTagFormat          *string
-	GitPath               *string
-	ArchiveGitPath        bool
-	Verified              bool
+	ModuleProvider                        *model.ModuleProvider
+	GitProviderID                           *int
+	RepoBaseURLTemplate                     *string
+	RepoCloneURLTemplate                    *string
+	RepoBrowseURLTemplate                   *string
+	GitTagFormat                             *string
+	GitPath                                  *string
+	ArchiveGitPath                           bool
+	Verified                                 bool
+
+	// Provider source fields
+	ProviderSource                          *string
+	ProviderSourceInheritanceDisabled         bool
 }
 
 // Execute retrieves the module provider settings
@@ -42,14 +46,18 @@ func (q *GetModuleProviderSettingsQuery) Execute(ctx context.Context, namespace 
 	}
 
 	return &ModuleProviderSettings{
-		ModuleProvider:        moduleProvider,
-		GitProviderID:         moduleProvider.GitProviderID(),
-		RepoBaseURLTemplate:   moduleProvider.RepoBaseURLTemplate(),
-		RepoCloneURLTemplate:  moduleProvider.RepoCloneURLTemplate(),
-		RepoBrowseURLTemplate: moduleProvider.RepoBrowseURLTemplate(),
-		GitTagFormat:          moduleProvider.GitTagFormat(),
-		GitPath:               moduleProvider.GitPath(),
-		ArchiveGitPath:        moduleProvider.ArchiveGitPath(),
-		Verified:              moduleProvider.IsVerified(),
+		ModuleProvider:                        moduleProvider,
+		GitProviderID:                           moduleProvider.GitProviderID(),
+		RepoBaseURLTemplate:                     moduleProvider.RepoBaseURLTemplate(),
+		RepoCloneURLTemplate:                    moduleProvider.RepoCloneURLTemplate(),
+		RepoBrowseURLTemplate:                   moduleProvider.RepoBrowseURLTemplate(),
+		GitTagFormat:                             moduleProvider.GitTagFormat(),
+		GitPath:                                  moduleProvider.GitPath(),
+		ArchiveGitPath:                           moduleProvider.ArchiveGitPath(),
+		Verified:                                 moduleProvider.IsVerified(),
+
+		// Provider source fields
+		ProviderSource:                          moduleProvider.ProviderSourceName(),
+		ProviderSourceInheritanceDisabled:        moduleProvider.ProviderSourceInheritanceDisabled(),
 	}, nil
 }

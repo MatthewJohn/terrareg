@@ -262,6 +262,7 @@ type ProviderSourceInstance interface {
 	Name() string
 	ApiName(ctx context.Context) (string, error)
 	Type() model.ProviderSourceType
+	LoginButtonText(ctx context.Context) (string, error)
 
 	// OAuth methods for GitHub provider sources
 	// These methods are only available for certain provider source types
@@ -324,6 +325,15 @@ func (p *providerSourceInstanceImpl) ApiName(ctx context.Context) (string, error
 
 func (p *providerSourceInstanceImpl) Type() model.ProviderSourceType {
 	return p.source.Type()
+}
+
+// LoginButtonText returns the text for the login button
+func (p *providerSourceInstanceImpl) LoginButtonText(ctx context.Context) (string, error) {
+	impl, err := p.factory.getProviderSourceImplementation(ctx, p.source)
+	if err != nil {
+		return "", err
+	}
+	return impl.LoginButtonText(ctx)
 }
 
 // GetLoginRedirectURL returns the OAuth login redirect URL

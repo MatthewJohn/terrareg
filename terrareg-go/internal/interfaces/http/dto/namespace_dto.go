@@ -2,10 +2,11 @@ package dto
 
 // NamespaceResponse represents a namespace in API responses
 type NamespaceResponse struct {
-	Name        string  `json:"name"`
-	DisplayName *string `json:"display_name"`
-	Type        string  `json:"type,omitempty"`
-	ViewHref    string  `json:"view_href"`
+	Name                   string  `json:"name"`
+	DisplayName            *string `json:"display_name"`
+	Type                   string  `json:"type,omitempty"`
+	ViewHref               string  `json:"view_href"`
+	DefaultProviderSource  *string `json:"default_provider_source"`
 }
 
 // NamespaceListResponse represents a list of namespaces
@@ -22,7 +23,8 @@ type NamespaceCreateRequest struct {
 
 // NamespaceUpdateRequest represents a request to update a namespace
 type NamespaceUpdateRequest struct {
-	Name        *string `json:"name,omitempty"`
-	DisplayName *string `json:"display_name,omitempty"`
-	CsrfToken   string  `json:"csrf_token"`
+	Name                    *string `json:"name,omitempty"`
+	DisplayName             *string `json:"display_name,omitempty"`
+	DefaultProviderSource    *string `json:"default_provider_source,omitempty"`
+	CsrfToken               string  `json:"csrf_token"`
 }

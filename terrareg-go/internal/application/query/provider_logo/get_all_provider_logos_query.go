@@ -7,6 +7,10 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_logo/repository"
 )
 
+type GetAllProviderLogosQueryInterface interface {
+	Execute(ctx context.Context) map[string]*model.ProviderLogo
+}
+
 // GetAllProviderLogosQuery retrieves all provider logos
 type GetAllProviderLogosQuery struct {
 	repo repository.ProviderLogoRepository

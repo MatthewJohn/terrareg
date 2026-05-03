@@ -7,21 +7,25 @@ import "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto
 // This matches Python's ModuleVersion.get_terrareg_api_details() exactly.
 type TerraregModuleProviderDetailsResponse struct {
 	// Base provider info (from ModuleProvider.get_terrareg_api_details)
-	ID                    string   `json:"id"`
-	Namespace             string   `json:"namespace"`
-	Name                  string   `json:"name"` // Python uses "name" not "module"
-	Provider              string   `json:"provider"`
-	Verified              bool     `json:"verified"`
-	Trusted               bool     `json:"trusted"`
-	ModuleProviderID      string   `json:"module_provider_id"`
-	GitProviderID         *int     `json:"git_provider_id"`
-	GitTagFormat          *string  `json:"git_tag_format"`
-	GitPath               *string  `json:"git_path"`
-	ArchiveGitPath        bool     `json:"archive_git_path"`
-	RepoBaseURLTemplate   *string  `json:"repo_base_url_template"`
-	RepoCloneURLTemplate  *string  `json:"repo_clone_url_template"`
-	RepoBrowseURLTemplate *string  `json:"repo_browse_url_template"`
-	Versions              []string `json:"versions"` // Limited versions list
+	ID                              string   `json:"id"`
+	Namespace                       string   `json:"namespace"`
+	Name                            string   `json:"name"` // Python uses "name" not "module"
+	Provider                        string   `json:"provider"`
+	Verified                        bool     `json:"verified"`
+	Trusted                         bool     `json:"trusted"`
+	ModuleProviderID               string   `json:"module_provider_id"`
+	GitProviderID                   *int     `json:"git_provider_id"`
+	GitTagFormat                    *string  `json:"git_tag_format"`
+	GitPath                         *string  `json:"git_path"`
+	ArchiveGitPath                  bool     `json:"archive_git_path"`
+	RepoBaseURLTemplate             *string  `json:"repo_base_url_template"`
+	RepoCloneURLTemplate            *string  `json:"repo_clone_url_template"`
+	RepoBrowseURLTemplate           *string  `json:"repo_browse_url_template"`
+	Versions                        []string `json:"versions"` // Limited versions list
+
+	// Provider source fields
+	ProviderSource                  *string `json:"provider_source,omitempty"`
+	ProviderSourceInheritanceDisabled bool    `json:"provider_source_inheritance_disabled,omitempty"`
 
 	// Module version details (from ModuleVersion.get_api_details)
 	Owner       *string `json:"owner"`

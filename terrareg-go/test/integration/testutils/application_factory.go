@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	namespaceCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/namespace"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	auditQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/audit"
@@ -11,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/namespace"
 	auditService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	providerSourceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	auditRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/audit"
 	"github.com/stretchr/testify/require"
@@ -29,6 +31,9 @@ type TestApplicationServices struct {
 	CreateNamespace *namespaceCmd.CreateNamespaceCommand
 	UpdateNamespace *namespaceCmd.UpdateNamespaceCommand
 	DeleteNamespace *namespaceCmd.DeleteNamespaceCommand
+
+	// Module Provider Commands
+	UpdateModuleProviderSettings *moduleCmd.UpdateModuleProviderSettingsCommand
 
 	// Analytics Queries
 	GlobalStats               *analytics.GlobalStatsQuery
@@ -76,10 +81,19 @@ func CreateTestApplicationServices(t *testing.T, db *sqldb.Database, repos *Test
 	// Create namespace audit service
 	namespaceAuditService := auditService.NewNamespaceAuditService(auditHistoryRepo)
 
+	// Create module audit service
+	moduleAuditService := auditService.NewModuleAuditService(auditHistoryRepo)
+
+	// Create provider source factory
+	providerSourceFactory := providerSourceService.NewProviderSourceFactory(repos.ProviderSource)
+
 	// Create namespace commands
 	createNamespaceCmd := namespaceCmd.NewCreateNamespaceCommand(repos.Namespace, namespaceAuditService)
-	updateNamespaceCmd := namespaceCmd.NewUpdateNamespaceCommand(repos.Namespace, namespaceAuditService)
+	updateNamespaceCmd := namespaceCmd.NewUpdateNamespaceCommand(repos.Namespace, namespaceAuditService, providerSourceFactory)
 	deleteNamespaceCmd := namespaceCmd.NewDeleteNamespaceCommand(repos.Namespace, repos.ModuleProvider, repos.Provider, namespaceAuditService)
+
+	// Create module provider commands
+	updateModuleProviderSettingsCmd := moduleCmd.NewUpdateModuleProviderSettingsCommand(repos.ModuleProvider, providerSourceFactory, moduleAuditService)
 
 	return &TestApplicationServices{
 		// Module Queries
@@ -91,6 +105,9 @@ func CreateTestApplicationServices(t *testing.T, db *sqldb.Database, repos *Test
 		CreateNamespace: createNamespaceCmd,
 		UpdateNamespace: updateNamespaceCmd,
 		DeleteNamespace: deleteNamespaceCmd,
+
+		// Module Provider Commands
+		UpdateModuleProviderSettings: updateModuleProviderSettingsCmd,
 
 		// Analytics Queries
 		GlobalStats:               globalStatsQuery,
