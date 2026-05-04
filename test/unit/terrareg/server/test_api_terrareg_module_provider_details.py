@@ -15,6 +15,19 @@ import terrareg.version_constraint
 class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
     """Test ApiTerraregModuleProviderDetails resource."""
 
+    @classmethod
+    def setup_class(cls):
+        """Setup mocks."""
+        cls._config_public_url = mock.patch('terrareg.config.Config.PUBLIC_URL', 'https://localhost')
+        cls._config_public_url.start()
+        super(TestApiTerraregModuleProviderDetails, cls).setup_class()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown mocks."""
+        cls._config_public_url.stop()
+        super(TestApiTerraregModuleProviderDetails, cls).teardown_class()
+
     @setup_test_data()
     def test_existing_module_provider_no_custom_urls(self, client, mock_models):
         res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider')
