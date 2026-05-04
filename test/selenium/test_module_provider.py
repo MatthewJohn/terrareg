@@ -25,6 +25,7 @@ from terrareg.models import (
     ModuleProvider, ProviderLogo,
     UserGroup, UserGroupNamespacePermission
 )
+from terrareg.database import Database
 import terrareg.analytics
 
 

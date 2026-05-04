@@ -311,7 +311,8 @@ n9wkhjrvcVuqfzvFSX6JA+BmRuQdXmDll3gPSzfXUtrIEcIy8S40liVXsnQaoJ6C
 
         # Go back to edit page to verify the change
         self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+        # Re-fetch the element after navigation to avoid stale reference
         default_provider_select = self.wait_for_element(By.ID, "namespace-default-provider-source")
 
         # Verify the value is now empty (null/empty)
-        self.assert_equals(lambda: default_provider_source_select.get_attribute("value"), "")
+        self.assert_equals(lambda: default_provider_select.get_attribute("value"), "")

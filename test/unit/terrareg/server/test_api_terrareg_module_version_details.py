@@ -64,7 +64,10 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 '\n'
                 '  # Provide variables here\n'
                 '}'
-            )
+            ),
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -226,6 +229,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             "terraform_version_constraint": ">= 1.0, < 2.0.0",
             "module_extraction_up_to_date": True,
             "usage_example": 'module "fullypopulated" {\n  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = "1.5.0"\n\n  # Provide variables here\n}',
+            "namespace_default_provider_source": None,
+            "provider_source": None,
+            "provider_source_inheritance_disabled": False
         }
 
 
@@ -388,6 +394,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             "terraform_version_constraint": ">= 1.0, < 2.0.0",
             "module_extraction_up_to_date": True,
             "usage_example": 'module "fullypopulated" {\n  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = "1.5.0"\n\n  # Provide variables here\n}',
+            "namespace_default_provider_source": None,
+            "provider_source": None,
+            "provider_source_inheritance_disabled": False
         }
 
 
@@ -477,7 +486,10 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 '\n'
                 '  # Provide variables here\n'
                 '}'
-            )
+            ),
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -553,7 +565,10 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 '\n'
                 '  # Provide variables here\n'
                 '}'
-            )
+            ),
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -630,6 +645,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 '  # Provide variables here\n'
                 '}'
             ),
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
 
         }
 

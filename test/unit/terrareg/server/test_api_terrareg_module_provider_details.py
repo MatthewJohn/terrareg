@@ -62,7 +62,10 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 '\n'
                 '  # Provide variables here\n'
                 '}'
-            )
+            ),
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -189,6 +192,10 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                     '  # Provide variables here\n'
                     '}'
                 )
+,
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
             }
 
             assert res.status_code == 200
@@ -227,6 +234,9 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'versions': [],
             'git_path': None,
             'archive_git_path': False,
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -255,6 +265,9 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'versions': [],
             'git_path': None,
             'archive_git_path': False,
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -284,6 +297,9 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'versions': [],
             'git_path': None,
             'archive_git_path': False,
+            'namespace_default_provider_source': None,
+            'provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200

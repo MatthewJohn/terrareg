@@ -969,7 +969,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
             # Cleanup
             module_provider.delete()
-            module.delete()
+            # Note: Module class has no delete method - provider deletion handles cleanup
             namespace.delete()
         finally:
             # Delete provider source
@@ -989,7 +989,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
             # Cleanup
             module_provider.delete()
-            module.delete()
+            # Note: Module class has no delete method - provider deletion handles cleanup
             namespace.delete()
         finally:
             pass
@@ -1017,7 +1017,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
             # Cleanup
             module_provider.delete()
-            module.delete()
+            # Note: Module class has no delete method - provider deletion handles cleanup
             namespace.delete()
         finally:
             pass
