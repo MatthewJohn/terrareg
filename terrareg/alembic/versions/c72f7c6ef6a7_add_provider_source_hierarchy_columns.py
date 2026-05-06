@@ -48,7 +48,7 @@ def upgrade():
     op.add_column('module_provider', sa.Column('provider_source_name', sa.String(length=128), nullable=True))
 
     # Add provider_source_inheritance_disabled column to module_provider
-    op.add_column('module_provider', sa.Column('provider_source_inheritance_disabled', sa.Boolean(), nullable=False, server_default='false'))
+    op.add_column('module_provider', sa.Column('provider_source_inheritance_disabled', sa.Boolean(), nullable=False, server_default='0'))
 
     # Add foreign key for provider_source_name (PostgreSQL only, SQLite handles in batch)
     if op.get_bind().engine.name == "postgresql":
