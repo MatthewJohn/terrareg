@@ -13,7 +13,7 @@
             data: JSON.stringify({
                 name: $('#namespace-name').val(),
                 display_name: $('#namespace-display-name').val(),
-                default_provider_source: $('#namespace-default-provider-source').val() || null,
+                default_provider_source: $('#namespace-default-provider-source').val(),
                 csrf_token: '{{ csrf_token }}'
             }),
             contentType: 'application/json'

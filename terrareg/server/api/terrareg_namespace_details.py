@@ -49,7 +49,8 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
             namespace.update_name(namespace_name)
         if display_name is not None and display_name != namespace.display_name:
             namespace.update_display_name(display_name)
-        if default_provider_source is not None:
+        # Handle default_provider_source - empty string means unset
+        if default_provider_source or default_provider_source == "":
             try:
                 namespace.update_default_provider_source(default_provider_source)
             except terrareg.errors.InvalidProviderSourceNameError as exc:

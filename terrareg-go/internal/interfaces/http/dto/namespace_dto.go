@@ -25,6 +25,6 @@ type NamespaceCreateRequest struct {
 type NamespaceUpdateRequest struct {
 	Name                    *string `json:"name,omitempty"`
 	DisplayName             *string `json:"display_name,omitempty"`
-	DefaultProviderSource    *string `json:"default_provider_source,omitempty"`
+	DefaultProviderSource    *string `json:"default_provider_source"`
 	CsrfToken               string  `json:"csrf_token"`
 }
