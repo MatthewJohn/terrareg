@@ -49,6 +49,7 @@ import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.registry_resource_type
 import terrareg.file_storage
+import terrareg.module_security_results
 
 
 class Session:
@@ -1602,7 +1603,9 @@ class ModuleDetails:
         if (terrareg.config.Config().ENABLE_SECURITY_SCANNING and
                 self._get_db_row() is not None and
                 self._get_db_row()['tfsec']):
-            return json.loads(self._get_db_row()['tfsec'])
+            results = terrareg.module_security_results.ModuleSecurityResults.from_json(self._get_db_row()['tfsec'])
+            if results is not None:
+                return results.to_dict()
         return {'results': None}
 
     @property

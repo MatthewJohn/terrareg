@@ -171,9 +171,11 @@ class ModuleExtractor:
         """Run tfsec and return output."""
         try:
             raw_output = subprocess.check_output([
-                'tfsec',
-                '--ignore-hcl-errors', '--format', 'json', '--no-module-downloads', '--soft-fail',
-                '--no-colour', '--include-ignored', '--include-passed', '--disable-grouping',
+                'trivy', 'config',
+                '--format', 'json',
+                '--include-non-failures',
+                '--tf-exclude-downloaded-modules',
+                '--exit-code', '0',
                 module_path
             ])
         except subprocess.CalledProcessError as exc:
@@ -182,15 +184,14 @@ class ModuleExtractor:
                 (f": {str(exc)}: {exc.output.decode('utf-8')}" if Config().DEBUG else "")
             )
 
-        tfsec_results = json.loads(raw_output)
-
-        # Strip the extraction directory from all paths in results
-        if tfsec_results['results']:
-            for result in tfsec_results['results']:
-                result['location']['filename'] = result['location']['filename'].replace(self._extract_directory.name, '')
-                # Replace leading slash if it exists in filename
-                if result['location']['filename'].startswith('/'):
-                    result['location']['filename'] = result['location']['filename'][1:]
+        # Validate json
+        try:
+            tfsec_results = json.loads(raw_output)
+        except json.JSONDecodeError as exc:
+            raise UnableToProcessTerraformError(
+                'An error occurred whilst interpretting results of security scan.' +
+                (f": {str(exc)}: {exc.output.decode('utf-8')}" if Config().DEBUG else "")
+            )
 
         return tfsec_results
 

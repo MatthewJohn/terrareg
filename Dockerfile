@@ -4,8 +4,8 @@ ARG VERSION
 
 # renovate: datasource=github-releases depName=terraform-docs/terraform-docs
 ARG TERRAFORM_DOCS_VERSION=v0.21.0
-# renovate: datasource=github-releases depName=aquasecurity/tfsec
-ARG TFSEC_VERSION=v1.28.14
+# renovate: datasource=github-releases depName=aquasecurity/trivy
+ARG TRIVY_VERSION=v0.70.0
 # renovate: datasource=github-releases depName=infracost/infracost
 ARG INFRACOST_VERSION=v0.10.43
 # renovate: datasource=github-releases depName=warrensbox/terraform-switcher
@@ -34,12 +34,14 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
   then \
-  arch=arm64; \
+  arch=ARM64; \
   else \
-  arch=amd64; \
+  arch=AMD64; \
   fi; \
-  wget https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
-  chmod +x /usr/local/bin/tfsec'
+  wget https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-${arch}.tar.gz -O /tmp/trivy.tar.gz && \
+  tar -C /usr/local/bin/ -zxvf /tmp/trivy.tar.gz trivy && \
+  chmod +x /usr/local/bin/tfsec && \
+  rm /tmp/trivy.tar.gz'
 
 # Download Infracost
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
