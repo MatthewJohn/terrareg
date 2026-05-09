@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.3...v4.3.4) (2026-05-09)
+
+
+### Bug Fixes
+
+* Bump tfswitch to fix installation of OpenTofu where invalid versions were being presented as available ([e0f103c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e0f103c7a1ea5b51c55af37eb88d55c93e5fcbfe)), closes [#580](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/580)
+
 ## [4.3.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.2...v4.3.3) (2026-04-25)
 
 
