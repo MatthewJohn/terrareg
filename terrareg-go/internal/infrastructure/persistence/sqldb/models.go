@@ -123,6 +123,7 @@ const (
 	AuditActionNamespaceCreate                        AuditAction = "namespace_create"
 	AuditActionNamespaceModifyName                    AuditAction = "namespace_modify_name"
 	AuditActionNamespaceModifyDisplayName             AuditAction = "namespace_modify_display_name"
+	AuditActionNamespaceModifyDefaultProviderSource   AuditAction = "namespace_modify_default_provider_source"
 	AuditActionNamespaceDelete                        AuditAction = "namespace_delete"
 	AuditActionModuleProviderCreate                   AuditAction = "module_provider_create"
 	AuditActionModuleProviderDelete                   AuditAction = "module_provider_delete"
@@ -137,6 +138,8 @@ const (
 	AuditActionModuleProviderUpdateNamespace          AuditAction = "module_provider_update_namespace"
 	AuditActionModuleProviderUpdateModuleName         AuditAction = "module_provider_update_module_name"
 	AuditActionModuleProviderUpdateProviderName       AuditAction = "module_provider_update_provider_name"
+	AuditActionModuleProviderUpdateProviderSource     AuditAction = "module_provider_update_provider_source"
+	AuditActionModuleProviderUpdateProviderSourceInheritanceDisabled AuditAction = "module_provider_update_provider_source_inheritance_disabled"
 	AuditActionModuleProviderRedirectDelete           AuditAction = "module_provider_redirect_delete"
 	AuditActionModuleVersionIndex                     AuditAction = "module_version_index"
 	AuditActionModuleVersionPublish                   AuditAction = "module_version_publish"
@@ -248,10 +251,11 @@ func (GitProviderDB) TableName() string {
 
 // NamespaceDB represents namespaces
 type NamespaceDB struct {
-	ID            int           `gorm:"primaryKey;autoIncrement"`
-	Namespace     string        `gorm:"type:varchar(128);not null"`
-	DisplayName   *string       `gorm:"type:varchar(128)"`
-	NamespaceType NamespaceType `gorm:"type:varchar(50);not null;default:'NONE'"`
+	ID                         int           `gorm:"primaryKey;autoIncrement"`
+	Namespace                  string        `gorm:"type:varchar(128);not null"`
+	DisplayName                *string       `gorm:"type:varchar(128)"`
+	NamespaceType              NamespaceType `gorm:"type:varchar(50);not null;default:'NONE'"`
+	DefaultProviderSourceName  *string       `gorm:"type:varchar(255)"`
 }
 
 func (NamespaceDB) TableName() string {
@@ -273,19 +277,21 @@ func (NamespaceRedirectDB) TableName() string {
 
 // ModuleProviderDB represents module providers
 type ModuleProviderDB struct {
-	ID                    int     `gorm:"primaryKey;autoIncrement"`
-	NamespaceID           int     `gorm:"not null"`
-	Module                string  `gorm:"type:varchar(128)"`
-	Provider              string  `gorm:"type:varchar(128)"`
-	RepoBaseURLTemplate   *string `gorm:"type:varchar(1024)"`
-	RepoCloneURLTemplate  *string `gorm:"type:varchar(1024)"`
-	RepoBrowseURLTemplate *string `gorm:"type:varchar(1024)"`
-	GitTagFormat          *string `gorm:"type:varchar(128)"`
-	GitPath               *string `gorm:"type:varchar(1024)"`
-	ArchiveGitPath        bool    `gorm:"default:false"`
-	Verified              *bool   `gorm:"default:null"`
-	GitProviderID         *int    `gorm:"default:null"`
-	LatestVersionID       *int    `gorm:"default:null"`
+	ID                               int     `gorm:"primaryKey;autoIncrement"`
+	NamespaceID                      int     `gorm:"not null"`
+	Module                           string  `gorm:"type:varchar(128)"`
+	Provider                         string  `gorm:"type:varchar(128)"`
+	RepoBaseURLTemplate              *string `gorm:"type:varchar(1024)"`
+	RepoCloneURLTemplate             *string `gorm:"type:varchar(1024)"`
+	RepoBrowseURLTemplate            *string `gorm:"type:varchar(1024)"`
+	GitTagFormat                     *string `gorm:"type:varchar(128)"`
+	GitPath                          *string `gorm:"type:varchar(1024)"`
+	ArchiveGitPath                   bool    `gorm:"default:false"`
+	Verified                         *bool   `gorm:"default:null"`
+	GitProviderID                    *int    `gorm:"default:null"`
+	LatestVersionID                  *int    `gorm:"default:null"`
+	ProviderSourceName               *string `gorm:"type:varchar(128)"`
+	ProviderSourceInheritanceDisabled bool    `gorm:"default:false"`
 
 	Namespace     NamespaceDB      `gorm:"foreignKey:NamespaceID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	GitProvider   *GitProviderDB   `gorm:"foreignKey:GitProviderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`

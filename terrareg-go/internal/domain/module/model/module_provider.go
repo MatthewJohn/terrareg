@@ -1,12 +1,14 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
@@ -29,6 +31,11 @@ type ModuleProvider struct {
 	gitTagFormat          *string
 	gitPath               *string
 	archiveGitPath        bool
+
+	// Provider source configuration
+	providerSourceName              *string
+	providerSourceInheritanceDisabled bool
+	providerSourceFactory            ProviderSourceFactory
 
 	// Versions (entities within aggregate)
 	versions      []*ModuleVersion
@@ -81,24 +88,30 @@ func ReconstructModuleProvider(
 	repoBaseURLTemplate, repoCloneURLTemplate, repoBrowseURLTemplate *string,
 	gitTagFormat, gitPath *string,
 	archiveGitPath bool,
+	providerSourceName *string,
+	providerSourceInheritanceDisabled bool,
+	providerSourceFactory ProviderSourceFactory,
 	createdAt, updatedAt time.Time,
 ) *ModuleProvider {
 	return &ModuleProvider{
-		id:                    id,
-		namespace:             namespace,
-		module:                moduleName,
-		provider:              providerName,
-		verified:              verified,
-		gitProviderID:         gitProviderID,
-		repoBaseURLTemplate:   repoBaseURLTemplate,
-		repoCloneURLTemplate:  repoCloneURLTemplate,
-		repoBrowseURLTemplate: repoBrowseURLTemplate,
-		gitTagFormat:          gitTagFormat,
-		gitPath:               gitPath,
-		archiveGitPath:        archiveGitPath,
-		versions:              make([]*ModuleVersion, 0),
-		createdAt:             createdAt,
-		updatedAt:             updatedAt,
+		id:                               id,
+		namespace:                        namespace,
+		module:                           moduleName,
+		provider:                         providerName,
+		verified:                         verified,
+		gitProviderID:                    gitProviderID,
+		repoBaseURLTemplate:              repoBaseURLTemplate,
+		repoCloneURLTemplate:             repoCloneURLTemplate,
+		repoBrowseURLTemplate:            repoBrowseURLTemplate,
+		gitTagFormat:                     gitTagFormat,
+		gitPath:                          gitPath,
+		archiveGitPath:                   archiveGitPath,
+		providerSourceName:               providerSourceName,
+		providerSourceInheritanceDisabled: providerSourceInheritanceDisabled,
+		providerSourceFactory:            providerSourceFactory,
+		versions:                         make([]*ModuleVersion, 0),
+		createdAt:                        createdAt,
+		updatedAt:                        updatedAt,
 	}
 }
 
@@ -412,4 +425,110 @@ func (mp *ModuleProvider) SetRelevanceScore(score *int) {
 // RelevanceScore returns the relevance score for search results
 func (mp *ModuleProvider) RelevanceScore() *int {
 	return mp.relevanceScore
+}
+
+// Provider Source Methods
+
+// ProviderSourceName returns the provider source name
+func (mp *ModuleProvider) ProviderSourceName() *string {
+	return mp.providerSourceName
+}
+
+// SetProviderSourceName sets the provider source name
+func (mp *ModuleProvider) SetProviderSourceName(name *string) {
+	mp.providerSourceName = name
+}
+
+// ProviderSourceInheritanceDisabled returns whether provider source inheritance is disabled
+func (mp *ModuleProvider) ProviderSourceInheritanceDisabled() bool {
+	return mp.providerSourceInheritanceDisabled
+}
+
+// SetProviderSourceInheritanceDisabled sets whether provider source inheritance is disabled
+func (mp *ModuleProvider) SetProviderSourceInheritanceDisabled(disabled bool) {
+	mp.providerSourceInheritanceDisabled = disabled
+}
+
+// ProviderSource returns the provider source associated with this module provider
+// Python reference: /app/terrareg/models.py lines 2673-2684
+func (mp *ModuleProvider) ProviderSource(ctx context.Context) (service.ProviderSourceInstance, error) {
+	if mp.providerSourceName == nil || mp.providerSourceFactory == nil {
+		return nil, nil
+	}
+	return mp.providerSourceFactory.GetProviderSourceByName(ctx, *mp.providerSourceName)
+}
+
+// GetEffectiveProviderSource returns the effective provider source using hierarchical lookup:
+// 1. ModuleProvider level (provider_source_name)
+// 2. Namespace level (default_provider_source_name) - only if inheritance not disabled
+// 3. None (fallback to basic credentials)
+// Python reference: /app/terrareg/models.py lines 2686-2697
+func (mp *ModuleProvider) GetEffectiveProviderSource(ctx context.Context) (service.ProviderSourceInstance, error) {
+	// Level 1: Check module provider level
+	if providerSource, err := mp.ProviderSource(ctx); err != nil {
+		return nil, err
+	} else if providerSource != nil {
+		return providerSource, nil
+	}
+
+	// Level 2: Check namespace level (only if inheritance is not disabled)
+	if !mp.providerSourceInheritanceDisabled {
+		if namespaceProviderSource, err := mp.namespace.DefaultProviderSource(ctx); err != nil {
+			return nil, err
+		} else if namespaceProviderSource != nil {
+			return namespaceProviderSource, nil
+		}
+	}
+
+	// Level 3: No provider source found
+	return nil, nil
+}
+
+// UpdateProviderSource updates the provider source for this module provider
+// Python reference: /app/terrareg/models.py lines 2730-2769
+func (mp *ModuleProvider) UpdateProviderSource(ctx context.Context, providerSourceName *string) error {
+	// If nil, no change requested
+	if providerSourceName == nil {
+		return nil
+	}
+
+	// If empty string, unset (set to nil)
+	var newValue *string
+	if *providerSourceName == "" {
+		newValue = nil
+	} else {
+		// Validate provider source exists
+		if mp.providerSourceFactory != nil {
+			providerSource, err := mp.providerSourceFactory.GetProviderSourceByName(ctx, *providerSourceName)
+			if err != nil {
+				return err
+			}
+			if providerSource == nil {
+				return &InvalidProviderSourceNameError{Name: *providerSourceName}
+			}
+		}
+		newValue = providerSourceName
+	}
+
+	// Update the field
+	mp.providerSourceName = newValue
+	return nil
+}
+
+// UpdateProviderSourceInheritanceDisabled updates whether provider source inheritance is disabled
+// Python reference: /app/terrareg/models.py lines 2771-2792
+func (mp *ModuleProvider) UpdateProviderSourceInheritanceDisabled(_ context.Context, disabled *bool) error {
+	// If nil, no change requested
+	if disabled == nil {
+		return nil
+	}
+
+	// Update the field
+	mp.providerSourceInheritanceDisabled = *disabled
+	return nil
+}
+
+// SetProviderSourceFactory sets the provider source factory
+func (mp *ModuleProvider) SetProviderSourceFactory(factory ProviderSourceFactory) {
+	mp.providerSourceFactory = factory
 }

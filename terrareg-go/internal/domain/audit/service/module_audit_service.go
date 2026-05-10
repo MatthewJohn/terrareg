@@ -400,3 +400,45 @@ func (s *ModuleAuditService) LogModuleVersionDelete(
 	)
 	return s.auditRepo.Create(ctx, audit)
 }
+
+// LogModuleProviderUpdateProviderSource logs when module provider provider source is updated
+// Python reference: /app/terrareg/models.py lines 2730-2769
+func (s *ModuleAuditService) LogModuleProviderUpdateProviderSource(
+	ctx context.Context,
+	username types.NamespaceName,
+	moduleProviderID int,
+	oldValue, newValue *string,
+) error {
+	objectID := fmt.Sprintf("%d", moduleProviderID)
+	audit := model.NewAuditHistory(
+		string(username),
+		model.AuditActionModuleProviderUpdateProviderSource,
+		"ModuleProvider",
+		objectID,
+		oldValue,
+		newValue,
+	)
+	return s.auditRepo.Create(ctx, audit)
+}
+
+// LogModuleProviderUpdateProviderSourceInheritanceDisabled logs when provider source inheritance is disabled
+// Python reference: /app/terrareg/models.py lines 2771-2792
+func (s *ModuleAuditService) LogModuleProviderUpdateProviderSourceInheritanceDisabled(
+	ctx context.Context,
+	username types.NamespaceName,
+	moduleProviderID int,
+	oldValue, newValue bool,
+) error {
+	objectID := fmt.Sprintf("%d", moduleProviderID)
+	oldStr := fmt.Sprintf("%t", oldValue)
+	newStr := fmt.Sprintf("%t", newValue)
+	audit := model.NewAuditHistory(
+		string(username),
+		model.AuditActionModuleProviderUpdateProviderSourceInheritanceDisabled,
+		"ModuleProvider",
+		objectID,
+		&oldStr,
+		&newStr,
+	)
+	return s.auditRepo.Create(ctx, audit)
+}

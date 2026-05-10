@@ -29,6 +29,10 @@ type TerraregProviderDetails struct {
 	RepoBaseURLTemplate   *string `json:"repo_base_url_template"`
 	RepoCloneURLTemplate  *string `json:"repo_clone_url_template"`
 	RepoBrowseURLTemplate *string `json:"repo_browse_url_template"`
+
+	// Provider source fields
+	ProviderSource                      *string `json:"provider_source"`
+	ProviderSourceInheritanceDisabled   bool    `json:"provider_source_inheritance_disabled"`
 }
 
 // TerraregProviderFields contains UI-specific ModuleProvider fields as a pure mixin

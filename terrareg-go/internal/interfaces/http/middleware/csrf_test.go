@@ -111,7 +111,7 @@ func TestGetCSRFTokenFromRequest(t *testing.T) {
 		token := middleware.getCSRFTokenFromRequest(req)
 
 		// Currently returns empty as JSON body parsing is not implemented
-		assert.True(t, token.IsEmpty())
+		assert.True(t, token.Equals("json-token"))
 	})
 
 	t.Run("handles multiple form values", func(t *testing.T) {

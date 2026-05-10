@@ -10,11 +10,11 @@ import (
 
 // ProviderLogosHandler handles provider logos requests
 type ProviderLogosHandler struct {
-	getAllProviderLogosQuery *provider_logo.GetAllProviderLogosQuery
+	getAllProviderLogosQuery provider_logo.GetAllProviderLogosQueryInterface
 }
 
 // NewProviderLogosHandler creates a new ProviderLogosHandler
-func NewProviderLogosHandler(getAllProviderLogosQuery *provider_logo.GetAllProviderLogosQuery) *ProviderLogosHandler {
+func NewProviderLogosHandler(getAllProviderLogosQuery provider_logo.GetAllProviderLogosQueryInterface) *ProviderLogosHandler {
 	return &ProviderLogosHandler{
 		getAllProviderLogosQuery: getAllProviderLogosQuery,
 	}

@@ -486,6 +486,24 @@
                             </div>
 
                             <div class="field">
+                                <label class="label">Provider Source</label>
+                                <div class="control select">
+                                    <select id="settings-provider-source">
+                                        <option value="">None</option>
+                                    </select>
+                                </div>
+                                <small class="form-text text-muted">Git authentication source for this module provider</small>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Disable Provider Source Inheritance</label>
+                                <div class="control">
+                                    <input class="checkbox" type="checkbox" value="true" id="settings-provider-source-inheritance-disabled" />
+                                </div>
+                                <small class="form-text text-muted">When enabled, this module provider will not use the namespace's default provider source</small>
+                            </div>
+
+                            <div class="field">
                                 <label class="label">Git Repository Provider</label>
                                 <div class="control select">
                                     <select id="settings-git-provider">

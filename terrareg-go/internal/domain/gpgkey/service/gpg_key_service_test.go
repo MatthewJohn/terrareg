@@ -17,6 +17,7 @@ import (
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	types "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
 // Test constants
@@ -176,19 +177,19 @@ func (m *mockNamespaceRepository) Save(ctx context.Context, namespace *moduleMod
 }
 
 func (m *mockNamespaceRepository) FindByID(ctx context.Context, id int) (*moduleModel.Namespace, error) {
-	return moduleModel.ReconstructNamespace(id, types.NamespaceName(testNamespace), nil, moduleModel.NamespaceTypeNone), nil
+	return moduleModel.ReconstructNamespace(id, types.NamespaceName(testNamespace), nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 }
 
 func (m *mockNamespaceRepository) FindByName(ctx context.Context, name types.NamespaceName) (*moduleModel.Namespace, error) {
 	if m.findByNameFunc != nil {
 		return m.findByNameFunc(ctx, name)
 	}
-	return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone), nil
+	return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 }
 
 func (m *mockNamespaceRepository) List(ctx context.Context, opts *query.ListOptions) ([]*moduleModel.Namespace, int, error) {
 	return []*moduleModel.Namespace{
-		moduleModel.ReconstructNamespace(1, types.NamespaceName(testNamespace), nil, moduleModel.NamespaceTypeNone),
+		moduleModel.ReconstructNamespace(1, types.NamespaceName(testNamespace), nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)),
 	}, 1, nil
 }
 
@@ -240,7 +241,7 @@ func TestGPGKeyService_CreateGPGKey(t *testing.T) {
 			asciiArmor: testValidGPGKey,
 			setupNs: func(ns *mockNamespaceRepository) {
 				ns.findByNameFunc = func(ctx context.Context, name types.NamespaceName) (*moduleModel.Namespace, error) {
-					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone), nil
+					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 				}
 			},
 			setupRepo: func(repo *mockGPGKeyRepository) {
@@ -267,7 +268,7 @@ func TestGPGKeyService_CreateGPGKey(t *testing.T) {
 			asciiArmor: "not a valid gpg key",
 			setupNs: func(ns *mockNamespaceRepository) {
 				ns.findByNameFunc = func(ctx context.Context, name types.NamespaceName) (*moduleModel.Namespace, error) {
-					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone), nil
+					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 				}
 			},
 			wantErr: gpgkeyModel.ErrInvalidASCIIArmor,
@@ -278,7 +279,7 @@ func TestGPGKeyService_CreateGPGKey(t *testing.T) {
 			asciiArmor: testValidGPGKey,
 			setupNs: func(ns *mockNamespaceRepository) {
 				ns.findByNameFunc = func(ctx context.Context, name types.NamespaceName) (*moduleModel.Namespace, error) {
-					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone), nil
+					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 				}
 			},
 			setupRepo: func(repo *mockGPGKeyRepository) {
@@ -297,7 +298,7 @@ func TestGPGKeyService_CreateGPGKey(t *testing.T) {
 			sourceURL:  stringPtr("https://example.com/key"),
 			setupNs: func(ns *mockNamespaceRepository) {
 				ns.findByNameFunc = func(ctx context.Context, name types.NamespaceName) (*moduleModel.Namespace, error) {
-					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone), nil
+					return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 				}
 			},
 			setupRepo: func(repo *mockGPGKeyRepository) {
@@ -369,7 +370,7 @@ func TestGPGKeyService_GetNamespaceGPGKeys(t *testing.T) {
 	}
 	nsRepo := &mockNamespaceRepository{
 		findByNameFunc: func(ctx context.Context, name types.NamespaceName) (*moduleModel.Namespace, error) {
-			return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone), nil
+			return moduleModel.ReconstructNamespace(1, name, nil, moduleModel.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory)), nil
 		},
 	}
 	service := NewGPGKeyService(gpgRepo, nsRepo)
@@ -397,10 +398,10 @@ func TestGPGKeyService_GetNamespaceGPGKeys_NamespaceNotFound(t *testing.T) {
 
 func TestGPGKeyService_GetGPGKey(t *testing.T) {
 	tests := []struct {
-		name     string
-		keyID    string
-		setup    func(*mockGPGKeyRepository)
-		wantErr  error
+		name    string
+		keyID   string
+		setup   func(*mockGPGKeyRepository)
+		wantErr error
 	}{
 		{
 			name:  "gets key successfully",
@@ -515,12 +516,12 @@ func TestGPGKeyService_DeleteGPGKey(t *testing.T) {
 
 func TestGPGKeyService_VerifySignature(t *testing.T) {
 	tests := []struct {
-		name   string
-		keyID  string
-		sig    string
-		data   string
-		setup  func(*mockGPGKeyRepository)
-		valid  bool
+		name    string
+		keyID   string
+		sig     string
+		data    string
+		setup   func(*mockGPGKeyRepository)
+		valid   bool
 		wantErr bool
 	}{
 		{

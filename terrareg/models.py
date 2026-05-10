@@ -1,7 +1,7 @@
 
 import contextlib
 import datetime
-from typing import Optional
+from typing import Optional, Union
 from enum import Enum
 import os
 import json
@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 import tempfile
 import urllib.parse
 import gnupg
-from typing import List, Union
+from typing import List
 
 import sqlalchemy
 import semantic_version
@@ -49,6 +49,8 @@ import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.registry_resource_type
 import terrareg.file_storage
+import terrareg.provider_source.factory
+import terrareg.provider_source.base
 
 
 class Session:
@@ -1024,6 +1026,21 @@ class Namespace(object):
         return self._get_db_row()['namespace_type']
 
     @property
+    def default_provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
+        """Return the default provider source for this namespace."""
+        try:
+            row = self._get_db_row()
+            provider_source_name = row['default_provider_source_name']
+            if provider_source_name:
+                return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+                    provider_source_name
+                )
+        except (KeyError, TypeError):
+            # Column doesn't exist yet (migration not applied) or row is None
+            pass
+        return None
+
+    @property
     def can_publish_providers(self):
         """Determine whether the namespace can publish providers"""
         # Ensure at least one GPG key is assigned with the namespace
@@ -1154,6 +1171,47 @@ class Namespace(object):
         # Update member variable for name to new name
         self._name = new_name
 
+    def update_default_provider_source(self, provider_source_name):
+        """Update the default provider source for this namespace.
+
+        Args:
+            provider_source_name: Name of provider source to set as default,
+                               empty string to unset, None to leave unchanged
+        """
+        # If None, no change requested
+        if provider_source_name is None:
+            return
+
+        # If empty string, unset (set to None in DB)
+        if provider_source_name == "":
+            new_value = None
+        else:
+            # Validate provider source exists
+            provider_source = terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+                provider_source_name
+            )
+            if provider_source is None:
+                raise terrareg.errors.InvalidProviderSourceNameError(
+                    f"Provider source '{provider_source_name}' does not exist"
+                )
+            new_value = provider_source_name
+
+        # Get old value
+        try:
+            old_value = self._get_db_row()['default_provider_source_name']
+        except (KeyError, TypeError):
+            old_value = None
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DEFAULT_PROVIDER_SOURCE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=old_value,
+            new_value=new_value
+        )
+
+        self.update_attributes(default_provider_source_name=new_value)
+
     def update_attributes(self, **kwargs):
         """Update DB row."""
         db = Database.get()
@@ -1180,7 +1238,8 @@ class Namespace(object):
         return {
             'is_auto_verified': self.is_auto_verified,
             'trusted': self.trusted,
-            'display_name': self.display_name
+            'display_name': self.display_name,
+            'default_provider_source': self.default_provider_source.name if self.default_provider_source else None
         }
 
     def get_all_providers(self) -> List['terrareg.provider_model.Provider']:
@@ -2611,6 +2670,50 @@ class ModuleProvider(object):
             return GitProvider.get(id=self._get_db_row()['git_provider_id'])
         return None
 
+    @property
+    def provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
+        """Return the provider source associated with this module provider."""
+        try:
+            row = self._get_db_row()
+            provider_source_name = row['provider_source_name']
+            if provider_source_name:
+                return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+                    provider_source_name
+                )
+        except (KeyError, TypeError):
+            # Column doesn't exist yet (migration not applied) or row is None
+            pass
+        return None
+
+    @property
+    def provider_source_inheritance_disabled(self) -> bool:
+        """Whether provider source inheritance from namespace is disabled."""
+        try:
+            row = self._get_db_row()
+            return row['provider_source_inheritance_disabled']
+        except (KeyError, TypeError):
+            # Column doesn't exist yet (migration not applied) or row is None
+            return False
+
+    def get_effective_provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
+        """
+        Get the effective provider source using hierarchical lookup:
+        1. ModuleProvider level (provider_source_name)
+        2. Namespace level (default_provider_source_name)
+        3. None (fallback to basic credentials)
+        """
+        # Level 1: Check module provider level
+        if provider_source := self.provider_source:
+            return provider_source
+
+        # Level 2: Check namespace level (only if inheritance is not disabled)
+        if not self.provider_source_inheritance_disabled:
+            if namespace_provider_source := self._module.namespace.default_provider_source:
+                return namespace_provider_source
+
+        # Level 3: No provider source found
+        return None
+
     def update_archive_git_path(self, archive_git_path):
         """Set archive_git_path value"""
         original_value = self._get_db_row()['archive_git_path']
@@ -2623,6 +2726,70 @@ class ModuleProvider(object):
                 new_value=archive_git_path
             )
         self.update_attributes(archive_git_path=archive_git_path)
+
+    def update_provider_source(self, provider_source_name):
+        """Update the provider source for this module provider.
+
+        Args:
+            provider_source_name: Name of provider source to set,
+                               empty string to unset, None to leave unchanged
+        """
+        # If None, no change requested
+        if provider_source_name is None:
+            return
+
+        # If empty string, unset (set to None in DB)
+        if provider_source_name == "":
+            new_value = None
+        else:
+            # Validate provider source exists
+            provider_source = terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+                provider_source_name
+            )
+            if provider_source is None:
+                raise terrareg.errors.InvalidProviderSourceNameError(
+                    f"Provider source '{provider_source_name}' does not exist"
+                )
+            new_value = provider_source_name
+
+        # Get old value
+        try:
+            old_value = self._get_db_row()['provider_source_name']
+        except (KeyError, TypeError):
+            old_value = None
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=old_value,
+            new_value=new_value
+        )
+
+        self.update_attributes(provider_source_name=new_value)
+
+    def update_provider_source_inheritance_disabled(self, disabled):
+        """Update whether provider source inheritance is disabled.
+
+        Args:
+            disabled: True to disable inheritance, False to enable
+        """
+        # If None, no change requested
+        if disabled is None:
+            return
+
+        old_value = self.provider_source_inheritance_disabled
+
+        if old_value != disabled:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE_INHERITANCE_DISABLED,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=old_value,
+                new_value=disabled
+            )
+
+            self.update_attributes(provider_source_inheritance_disabled=disabled)
 
     def get_git_clone_url(self):
         """Return URL to perform git clone"""
@@ -3016,14 +3183,39 @@ class ModuleProvider(object):
 
     def get_api_outline(self):
         """Return dict of basic provider details for API response."""
-        return {
+        try:
+            row = self._get_db_row()
+        except (KeyError, TypeError):
+            row = None
+
+        namespace = self._module._namespace
+        result = {
             "id": self.id,
-            "namespace": self._module._namespace.name,
+            "namespace": namespace.name,
             "name": self._module.name,
             "provider": self.name,
             "verified": self.verified,
-            "trusted": self._module._namespace.trusted
+            "trusted": namespace.trusted
         }
+
+        # Add new fields with proper error handling for missing columns
+        if row is not None:
+            try:
+                result["provider_source"] = row['provider_source_name']
+            except KeyError:
+                result["provider_source"] = None
+
+            try:
+                result["provider_source_inheritance_disabled"] = row['provider_source_inheritance_disabled']
+            except KeyError:
+                result["provider_source_inheritance_disabled"] = False
+        else:
+            result["provider_source"] = None
+            result["provider_source_inheritance_disabled"] = False
+
+        result["namespace_default_provider_source"] = namespace.default_provider_source.name if namespace.default_provider_source else None
+
+        return result
 
     def get_api_details(self, include_beta=True):
         """Return dict of provider details for API response."""

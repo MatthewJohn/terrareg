@@ -11,10 +11,11 @@ type AuditAction string
 
 const (
 	// Namespace actions (matching Python audit_action.py snake_case format)
-	AuditActionNamespaceCreate            AuditAction = "namespace_create"
-	AuditActionNamespaceModifyName        AuditAction = "namespace_modify_name"
-	AuditActionNamespaceModifyDisplayName AuditAction = "namespace_modify_display_name"
-	AuditActionNamespaceDelete            AuditAction = "namespace_delete"
+	AuditActionNamespaceCreate                        AuditAction = "namespace_create"
+	AuditActionNamespaceModifyName                    AuditAction = "namespace_modify_name"
+	AuditActionNamespaceModifyDisplayName             AuditAction = "namespace_modify_display_name"
+	AuditActionNamespaceDelete                        AuditAction = "namespace_delete"
+	AuditActionNamespaceModifyDefaultProviderSource   AuditAction = "namespace_modify_default_provider_source"
 
 	// Module provider actions
 	AuditActionModuleProviderCreate                   AuditAction = "module_provider_create"
@@ -31,6 +32,8 @@ const (
 	AuditActionModuleProviderUpdateModuleName         AuditAction = "module_provider_update_module_name"
 	AuditActionModuleProviderUpdateProviderName       AuditAction = "module_provider_update_provider_name"
 	AuditActionModuleProviderRedirectDelete           AuditAction = "module_provider_redirect_delete"
+	AuditActionModuleProviderUpdateProviderSource             AuditAction = "module_provider_update_provider_source"
+	AuditActionModuleProviderUpdateProviderSourceInheritanceDisabled AuditAction = "module_provider_update_provider_source_inheritance_disabled"
 
 	// Module version actions
 	AuditActionModuleVersionIndex   AuditAction = "module_version_index"

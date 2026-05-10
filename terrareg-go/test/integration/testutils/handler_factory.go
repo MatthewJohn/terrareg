@@ -160,3 +160,20 @@ func CreateModuleVersionDetailsHandler(t *testing.T, db *sqldb.Database, opts ..
 		versionPresenter,
 	)
 }
+
+// CreateModuleSettingsHandler creates a fully configured ModuleHandler for testing module provider settings endpoint
+// Python reference: /app/test/unit/terrareg/server/test_api_terrareg_module_provider_settings.py
+func CreateModuleSettingsHandler(t *testing.T, db *sqldb.Database, opts ...ConfigOption) *terrareg.ModuleHandler {
+	t.Helper()
+
+	// For now, return a basic handler for settings operations
+	// TODO: Add full support once module provider settings commands are fully implemented
+	return terrareg.NewModuleReadHandlerForTesting(
+		nil, // listModulesQuery
+		nil, // searchModulesQuery
+		nil, // getModuleProviderQuery
+		nil, // listModuleProvidersQuery
+		nil, // analyticsRepo
+		nil, // versionPresenter
+	)
+}

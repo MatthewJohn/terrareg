@@ -15,14 +15,15 @@ import (
 	"time"
 
 	configmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
-	storageModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
-	domainStorageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
+	storageModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/model"
+	domainStorageService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/storage/service"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/logging"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,8 +183,8 @@ func (m *mockDomainStorageService) GetFileSize(ctx context.Context, path string)
 // mockStorageFactory is a mock implementation of domain StorageFactory
 type mockStorageFactory struct {
 	domainStorageService *mockDomainStorageService
-	moduleStorageService  *mockStorageService
-	createTempErr         error
+	moduleStorageService *mockStorageService
+	createTempErr        error
 }
 
 func (m *mockStorageFactory) CreateStorageService(config *storageModel.StorageConfig) (domainStorageService.StorageService, error) {
@@ -265,6 +266,9 @@ func createTestModuleProviderWithGit(t *testing.T) *model.ModuleProvider {
 		&tagFormat,
 		&gitPath,
 		false,
+		nil,
+		false,
+		new(mocks.MockProviderSourceFactory),
 		time.Now(),
 		time.Now(),
 	)
@@ -352,7 +356,7 @@ func createTestSourcePreparationService(t *testing.T, moduleProvider *model.Modu
 
 	storageFactory := &mockStorageFactory{
 		domainStorageService: domainStorageService,
-		moduleStorageService:  storageService,
+		moduleStorageService: storageService,
 	}
 
 	archiveProcessor := &mockArchiveProcessor{
@@ -709,6 +713,9 @@ func TestBuildCloneURL(t *testing.T) {
 		nil, // gitTagFormat
 		nil, // gitPath
 		false,
+		nil,                                  // Default provider source
+		false,                                // Inherit default provider source
+		new(mocks.MockProviderSourceFactory), // Provider source factory
 		time.Now(),
 		time.Now(),
 	)
@@ -729,6 +736,9 @@ func TestBuildCloneURL(t *testing.T) {
 		nil,               // gitTagFormat
 		nil,               // gitPath
 		false,
+		nil,
+		false,
+		new(mocks.MockProviderSourceFactory),
 		time.Now(),
 		time.Now(),
 	)
@@ -796,6 +806,9 @@ func TestFormatGitTag(t *testing.T) {
 				&tt.tagFormat,
 				nil,
 				false,
+				nil,
+				false,
+				new(mocks.MockProviderSourceFactory),
 				time.Now(),
 				time.Now(),
 			)

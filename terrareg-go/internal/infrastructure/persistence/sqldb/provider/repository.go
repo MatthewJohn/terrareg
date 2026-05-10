@@ -50,7 +50,7 @@ func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]
 			namespace.id as namespace_id,
 			namespace.namespace as namespace_namespace,
 			namespace.display_name as namespace_display_name,
-			namespace.namespace_type as namespace_type,
+			namespace.namespace_type as namespace_type,\n\t\t\tnamespace.default_provider_source_name as namespace_default_provider_source_name,
 			provider_version.id as version_id,
 			provider_version.version as version_version,
 			provider_version.git_tag as version_git_tag,
@@ -122,6 +122,7 @@ func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]
 		NamespaceName             string  `gorm:"column:namespace_namespace"`
 		NamespaceDisplayName      *string `gorm:"column:namespace_display_name"`
 		NamespaceType             string  `gorm:"column:namespace_type"`
+		DefaultProviderSourceName *string `gorm:"column:namespace_default_provider_source_name"`
 		VersionID                 *int    `gorm:"column:version_id"`
 		Version                   *string `gorm:"column:version_version"`
 		GitTag                    *string `gorm:"column:version_git_tag"`
@@ -192,6 +193,8 @@ func (r *ProviderRepository) FindAll(ctx context.Context, offset, limit int) ([]
 			types.NamespaceName(result.NamespaceName),
 			result.NamespaceDisplayName,
 			modulemodel.NamespaceType(result.NamespaceType),
+			result.DefaultProviderSourceName,
+			nil, // providerSourceFactory - can be nil for this use case
 		)
 		prov.SetNamespace(namespace)
 
@@ -402,6 +405,7 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 		NamespaceName             string  `gorm:"column:namespace_namespace"`
 		NamespaceDisplayName      *string `gorm:"column:namespace_display_name"`
 		NamespaceType             string  `gorm:"column:namespace_type"`
+		DefaultProviderSourceName *string `gorm:"column:namespace_default_provider_source_name"`
 		VersionID                 *int    `gorm:"column:version_id"`
 		Version                   *string `gorm:"column:version_version"`
 		GitTag                    *string `gorm:"column:version_git_tag"`
@@ -471,6 +475,8 @@ func (r *ProviderRepository) Search(ctx context.Context, params repository.Provi
 			types.NamespaceName(result.NamespaceName),
 			result.NamespaceDisplayName,
 			modulemodel.NamespaceType(result.NamespaceType),
+			result.DefaultProviderSourceName,
+			nil, // providerSourceFactory - can be nil for this use case
 		)
 		prov.SetNamespace(namespace)
 

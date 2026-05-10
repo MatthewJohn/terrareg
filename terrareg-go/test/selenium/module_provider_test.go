@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // TestModuleProvider tests the module provider page functionality.
@@ -1711,6 +1714,307 @@ func testDeleteModuleProviderRedirect(t *testing.T) {
 
 	// Verify redirect deletion functionality exists
 	st.AssertElementVisible("#delete-redirect-button")
+}
+
+// TestModuleProviderSettingsProviderSource tests provider source settings in module provider settings tab.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource class
+func TestModuleProviderSettingsProviderSource(t *testing.T) {
+	t.Run("test_provider_source_field_displayed_in_settings", testProviderSourceFieldDisplayedInSettings)
+	t.Run("test_inheritance_disabled_checkbox_displayed", testInheritanceDisabledCheckboxDisplayed)
+	t.Run("test_provider_source_shows_current_values", testProviderSourceShowsCurrentValues)
+	t.Run("test_set_provider_source", testSetProviderSource)
+	t.Run("test_unset_provider_source", testUnsetProviderSource)
+	t.Run("test_enable_inheritance", testEnableInheritance)
+}
+
+// newProviderSourceSettingsTest creates a new SeleniumTest for provider source settings tests.
+func newProviderSourceSettingsTest(t *testing.T) *SeleniumTest {
+	config := ConfigForAdminTokenTests()
+	return NewSeleniumTestWithConfig(t, config, WithProviderSourceHierarchyTestData)
+}
+
+// testProviderSourceFieldDisplayedInSettings tests that provider source field is displayed in settings tab.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource.test_provider_source_field_displayed_in_settings
+func testProviderSourceFieldDisplayedInSettings(t *testing.T) {
+	st := newProviderSourceSettingsTest(t)
+	defer st.TearDown()
+
+	// Python: self.perform_admin_authentication(password='unittest-password')
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+
+	// Python: settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	settingsTabButton := st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: provider_source_select = self.wait_for_element(By.ID, 'settings-provider-source')
+	//         assert provider_source_select.is_displayed() is True
+	providerSourceSelect := st.WaitForElement("#settings-provider-source")
+	assert.True(t, providerSourceSelect.IsDisplayed(), "Provider source field should be displayed")
+}
+
+// testInheritanceDisabledCheckboxDisplayed tests that inheritance disabled checkbox is displayed in settings tab.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource.test_inheritance_disabled_checkbox_displayed
+func testInheritanceDisabledCheckboxDisplayed(t *testing.T) {
+	st := newProviderSourceSettingsTest(t)
+	defer st.TearDown()
+
+	// Python: self.perform_admin_authentication(password='unittest-password')
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+
+	// Python: settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	settingsTabButton := st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: inheritance_disabled_checkbox = self.wait_for_element(By.ID, 'settings-provider-source-inheritance-disabled')
+	//         assert inheritance_disabled_checkbox.is_displayed() is True
+	inheritanceDisabledCheckbox := st.WaitForElement("#settings-provider-source-inheritance-disabled")
+	assert.True(t, inheritanceDisabledCheckbox.IsDisplayed(), "Inheritance disabled checkbox should be displayed")
+}
+
+// testProviderSourceShowsCurrentValues tests that current provider source values are displayed in settings.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource.test_provider_source_shows_current_values
+func testProviderSourceShowsCurrentValues(t *testing.T) {
+	st := newProviderSourceSettingsTest(t)
+	defer st.TearDown()
+
+	providerSourceName := "Test Github Autogenerate"
+
+	// Set provider source on module provider (using direct DB manipulation)
+	// Python: with mock_create_audit_event:
+	//             module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+	//             module_provider.update_provider_source(provider_source_name)
+	//             module_provider.update_provider_source_inheritance_disabled(True)
+	db := st.server.db
+	var moduleProvider sqldb.ModuleProviderDB
+	err := db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", "moduledetails", "fullypopulated", "testprovider").
+		First(&moduleProvider).Error
+	require.NoError(t, err)
+
+	err = db.DB.Model(&moduleProvider).Updates(map[string]interface{}{
+		"provider_source_name":                providerSourceName,
+		"provider_source_inheritance_disabled": true,
+	}).Error
+	require.NoError(t, err)
+
+	// Python: self.perform_admin_authentication(password='unittest-password')
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+
+	// Python: settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	settingsTabButton := st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: provider_source_select = self.wait_for_element(By.ID, 'settings-provider-source')
+	//         self.assert_equals(lambda: provider_source_select.get_attribute("value"), provider_source_name)
+	// Ensure the current values are displayed
+	_ = st.WaitForElement("#settings-provider-source")
+	selectedValue := st.GetValue("#settings-provider-source")
+	assert.Equal(t, providerSourceName, selectedValue, "Provider source should be selected")
+
+	// Python: inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
+	//         self.assert_equals(lambda: inheritance_disabled_checkbox.get_attribute("checked"), 'true')
+	// Note: chromedp GetAttribute can return "true" or "checked" for boolean attributes
+	inheritanceDisabledChecked := st.GetAttribute("#settings-provider-source-inheritance-disabled", "checked")
+	assert.Contains(t, []string{"true", "checked"}, inheritanceDisabledChecked, "Inheritance disabled should be checked")
+
+	// Clean up
+	err = db.DB.Model(&moduleProvider).Updates(map[string]interface{}{
+		"provider_source_name":                nil,
+		"provider_source_inheritance_disabled": false,
+	}).Error
+	require.NoError(t, err)
+}
+
+// testSetProviderSource tests setting provider source on module provider.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource.test_set_provider_source
+func testSetProviderSource(t *testing.T) {
+	st := newProviderSourceSettingsTest(t)
+	defer st.TearDown()
+
+	providerSourceName := "Test Github Autogenerate"
+
+	// Python: self.perform_admin_authentication(password='unittest-password')
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+
+	// Python: settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	settingsTabButton := st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: provider_source_select = self.wait_for_element(By.ID, 'settings-provider-source')
+	//         select = Select(provider_source_select)
+	//         select.select_by_value(provider_source_name)
+	st.SelectOption("#settings-provider-source", providerSourceName)
+
+	// Python: self._click_save_settings()
+	clickSaveSettings(st)
+
+	// Python: with mock_create_audit_event:
+	//             module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+	//             self.assert_equals(lambda: module_provider.provider_source.name if module_provider.provider_source else None, provider_source_name)
+	// Verify the value was set by checking the database
+	db := st.server.db
+	var moduleProvider sqldb.ModuleProviderDB
+	err := db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", "moduledetails", "fullypopulated", "testprovider").
+		First(&moduleProvider).Error
+	require.NoError(t, err)
+	require.NotNil(t, moduleProvider.ProviderSourceName, "Provider source should not be nil")
+	assert.Equal(t, providerSourceName, *moduleProvider.ProviderSourceName, "Provider source should be set")
+
+	// Clean up
+	err = db.DB.Model(&moduleProvider).Update("provider_source_name", nil).Error
+	require.NoError(t, err)
+}
+
+// testUnsetProviderSource tests unsetting provider source on module provider.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource.test_unset_provider_source
+func testUnsetProviderSource(t *testing.T) {
+	st := newProviderSourceSettingsTest(t)
+	defer st.TearDown()
+
+	providerSourceName := "Test Github Autogenerate"
+
+	// Set provider source on module provider (using direct DB manipulation)
+	// Python: with mock_create_audit_event:
+	//             module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+	//             module_provider.update_provider_source(provider_source_name)
+	db := st.server.db
+	var moduleProvider sqldb.ModuleProviderDB
+	err := db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", "moduledetails", "fullypopulated", "testprovider").
+		First(&moduleProvider).Error
+	require.NoError(t, err)
+
+	err = db.DB.Model(&moduleProvider).Update("provider_source_name", providerSourceName).Error
+	require.NoError(t, err)
+
+	// Python: self.perform_admin_authentication(password='unittest-password')
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+
+	// Python: settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	settingsTabButton := st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: provider_source_select = self.wait_for_element(By.ID, 'settings-provider-source')
+	//         self.assert_equals(lambda: provider_source_select.get_attribute("value"), provider_source_name)
+	// Verify current value is set
+	selectedValue := st.GetValue("#settings-provider-source")
+	assert.Equal(t, providerSourceName, selectedValue, "Provider source should be initially set")
+
+	// Python: select = Select(provider_source_select)
+	//         select.select_by_value("")
+	// Select empty option to unset
+	st.SelectOption("#settings-provider-source", "")
+
+	// Python: self._click_save_settings()
+	clickSaveSettings(st)
+
+	// Python: with mock_create_audit_event:
+	//             module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+	//             self.assert_equals(lambda: module_provider.provider_source, None)
+	// Verify the value was unset
+	err = db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", "moduledetails", "fullypopulated", "testprovider").
+		First(&moduleProvider).Error
+	require.NoError(t, err)
+	assert.Nil(t, moduleProvider.ProviderSourceName, "Provider source should be unset")
+}
+
+// testEnableInheritance tests enabling provider source inheritance (unchecking the disabled box).
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProviderSettingsProviderSource.test_enable_inheritance
+func testEnableInheritance(t *testing.T) {
+	st := newProviderSourceSettingsTest(t)
+	defer st.TearDown()
+
+	// Python: self.perform_admin_authentication(password='unittest-password')
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+
+	// Python: settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	settingsTabButton := st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
+	//         assert inheritance_disabled_checkbox.get_attribute("checked") is None
+	// Verify inheritance is not disabled (checkbox not checked) initially
+	inheritanceDisabledChecked := st.GetAttribute("#settings-provider-source-inheritance-disabled", "checked")
+	assert.Equal(t, "", inheritanceDisabledChecked, "Inheritance disabled should not be checked initially")
+
+	// Python: inheritance_disabled_checkbox.click()
+	//         self._click_save_settings()
+	// Check the box to disable inheritance
+	inheritanceDisabledCheckbox := st.WaitForElement("#settings-provider-source-inheritance-disabled")
+	inheritanceDisabledCheckbox.Click()
+	clickSaveSettings(st)
+
+	// Python: module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+	//         self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, True)
+	// Verify the value was set
+	db := st.server.db
+	var moduleProvider sqldb.ModuleProviderDB
+	err := db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", "moduledetails", "fullypopulated", "testprovider").
+		First(&moduleProvider).Error
+	require.NoError(t, err)
+	assert.True(t, moduleProvider.ProviderSourceInheritanceDisabled, "Inheritance disabled should be True")
+
+	// Uncheck to re-enable inheritance
+	// Python: self.selenium_instance.refresh()
+	//         settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+	//         settings_tab_button.click()
+	st.NavigateTo("/modules/moduledetails/fullypopulated/testprovider#settings")
+	settingsTabButton = st.WaitForElement("#module-tab-link-settings")
+	settingsTabButton.Click()
+
+	// Python: inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
+	//         inheritance_disabled_checkbox.click()
+	//         self._click_save_settings()
+	inheritanceDisabledCheckbox = st.WaitForElement("#settings-provider-source-inheritance-disabled")
+	inheritanceDisabledCheckbox.Click()
+	clickSaveSettings(st)
+
+	// Verify the value was unset
+	err = db.DB.Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
+		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", "moduledetails", "fullypopulated", "testprovider").
+		First(&moduleProvider).Error
+	require.NoError(t, err)
+	assert.False(t, moduleProvider.ProviderSourceInheritanceDisabled, "Inheritance disabled should be False")
+}
+
+// clickSaveSettings clicks the save button on the settings tab.
+// Python reference: /app/test/selenium/test_module_provider.py - TestModuleProvider._click_save_settings
+func clickSaveSettings(st *SeleniumTest) {
+	// Python: save_button = self.selenium_instance.find_element(By.ID, "module-provider-settings-update")
+	//         save_button.click()
+	saveButton := st.WaitForElement("#module-provider-settings-update")
+	saveButton.Click()
+
+	// Wait for success message
+	// Python: self.wait_for_element(By.ID, "settings-status-success").is_displayed() is True
+	st.AssertElementVisible("#settings-status-success")
 }
 
 // Helper functions

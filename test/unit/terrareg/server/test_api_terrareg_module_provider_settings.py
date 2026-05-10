@@ -437,3 +437,173 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             mock_update_name.assert_not_called()
             mock_update_attributes.assert_not_called()
             mock_create_audit_event.assert_not_called()
+
+    @setup_test_data()
+    def test_post_set_provider_source(self, app_context, test_request_context, mock_models, client):
+        """Test setting provider_source on module provider"""
+        # Mock provider source factory to return a mock provider source
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.name = 'test-provider-source'
+        mock_factory = unittest.mock.MagicMock()
+        mock_factory.get_provider_source_by_name.return_value = mock_provider_source
+
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                unittest.mock.patch('terrareg.provider_source.factory.ProviderSourceFactory.get', return_value=mock_factory), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes'), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name'):
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'provider_source': 'test-provider-source',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE,
+                object_type='ModuleProvider',
+                object_id='testnamespace/testmodulename/testprovider',
+                old_value=None, new_value='test-provider-source'
+            )
+
+    @setup_test_data()
+    def test_post_unset_provider_source(self, app_context, test_request_context, mock_models, client):
+        """Test unsetting provider_source with empty string"""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes'), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name'):
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'provider_source': '',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE,
+                object_type='ModuleProvider',
+                object_id='testnamespace/testmodulename/testprovider',
+                old_value=None, new_value=None
+            )
+
+    @setup_test_data()
+    def test_post_invalid_provider_source(self, app_context, test_request_context, mock_models, client):
+        """Test POST with invalid provider source returns 400"""
+        # Mock provider source factory to return None (invalid provider)
+        mock_factory = unittest.mock.MagicMock()
+        mock_factory.get_provider_source_by_name.return_value = None
+
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                unittest.mock.patch('terrareg.provider_source.factory.ProviderSourceFactory.get', return_value=mock_factory), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes'), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name'):
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'provider_source': 'invalid-source',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.status_code == 400
+            assert 'Provider source' in res.json['message']
+
+    @setup_test_data()
+    def test_post_set_provider_source_inheritance_disabled(self, app_context, test_request_context, mock_models, client):
+        """Test setting provider_source_inheritance_disabled to true"""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes'), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name'):
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'provider_source_inheritance_disabled': True,
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE_INHERITANCE_DISABLED,
+                object_type='ModuleProvider',
+                object_id='testnamespace/testmodulename/testprovider',
+                old_value=False, new_value=True
+            )
+
+    @setup_test_data()
+    def test_post_unset_provider_source_inheritance_disabled(self, app_context, test_request_context, mock_models, client):
+        """Test setting provider_source_inheritance_disabled to false (enabling inheritance)"""
+        # Mock the provider_source_inheritance_disabled property to return True
+        # so the update method sees it as the old value
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name'), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.provider_source_inheritance_disabled', new_callable=unittest.mock.PropertyMock, return_value=True):
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'provider_source_inheritance_disabled': False,
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE_INHERITANCE_DISABLED,
+                object_type='ModuleProvider',
+                object_id='testnamespace/testmodulename/testprovider',
+                old_value=True, new_value=False
+            )
+
+    @setup_test_data()
+    def test_post_omit_provider_source_fields_no_change(self, app_context, test_request_context, mock_models, client):
+        """Test omitting provider_source fields doesn't call update methods"""
+        # Mock the verified property to return False so the update method sees it as the old value
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name'), \
+                unittest.mock.patch('terrareg.models.ModuleProvider.verified', new_callable=unittest.mock.PropertyMock, return_value=False):
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'verified': True,
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            # Verify audit for verified was called, but no audit for provider_source fields
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_VERIFIED,
+                object_type='ModuleProvider',
+                object_id='testnamespace/testmodulename/testprovider',
+                old_value=False, new_value=True
+            )

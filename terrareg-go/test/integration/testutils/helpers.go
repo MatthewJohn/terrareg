@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -215,4 +216,76 @@ func AssertPaginatedResponse(t *testing.T, w *httptest.ResponseRecorder, expecte
 // Now returns a fixed time for consistent test results
 func Now() time.Time {
 	return time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// GetTestContext returns a context for testing
+func GetTestContext(t *testing.T) context.Context {
+	t.Helper()
+	return context.Background()
+}
+
+// IntToString converts an int to string
+func IntToString(i int) string {
+	if i == 0 {
+		return "0"
+	}
+	var result string
+	for i > 0 {
+		digit := i % 10
+		result = string(rune('0'+digit)) + result
+		i = i / 10
+	}
+	return result
+}
+
+// AuditHistoryEntry represents an audit history entry for testing
+type AuditHistoryEntry struct {
+	ID         uint   `gorm:"primaryKey"`
+	Timestamp  string `gorm:"type:datetime"`
+	Username   string `gorm:"type:varchar(128);not null"`
+	Action     string `gorm:"type:varchar(128);not null;index"`
+	ObjectType string `gorm:"type:varchar(128);not null;index"`
+	ObjectID   string `gorm:"type:varchar(256);not null;index"`
+	OldValue   *string `gorm:"type:varchar(128)"`
+	NewValue   *string `gorm:"type:varchar(128)"`
+}
+
+// TableName specifies the table name for AuditHistoryEntry
+func (AuditHistoryEntry) TableName() string {
+	return "audit_history"
+}
+
+// GetAuditEntriesForObject retrieves audit entries for a specific object
+func GetAuditEntriesForObject(t *testing.T, db *sqldb.Database, objectType, objectID string) []AuditHistoryEntry {
+	t.Helper()
+
+	var entries []AuditHistoryEntry
+	err := db.DB.Where("object_type = ? AND object_id = ?", objectType, objectID).Find(&entries).Error
+	require.NoError(t, err)
+	return entries
+}
+
+
+// TestProviderSource is a simple struct for test provider sources
+type TestProviderSource struct {
+	Name string
+}
+
+// CreateTestProviderSource creates a test provider source for use in tests
+func CreateTestProviderSource(t *testing.T, db *sqldb.Database, name string) *TestProviderSource {
+	t.Helper()
+
+	ps := &TestProviderSource{Name: name}
+
+	// Create provider source in database
+	providerSourceDB := sqldb.ProviderSourceDB{
+		Name:               name,
+		APIName:            &name,
+		ProviderSourceType: sqldb.ProviderSourceTypeGithub,
+		Config:             []byte(`{"base_url":"https://github.com","api_url":"https://api.github.com"}`),
+	}
+	err := db.DB.Create(&providerSourceDB).Error
+	require.NoError(t, err, "Failed to create test provider source")
+
+	return ps
 }

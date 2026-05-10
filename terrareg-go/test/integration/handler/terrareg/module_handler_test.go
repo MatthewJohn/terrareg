@@ -956,7 +956,7 @@ func TestModuleHandler_HandleTerraregModuleProviders_Success(t *testing.T) {
 	moduleProvider2 := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "azure")
 	_ = testutils.CreatePublishedModuleVersion(t, db, moduleProvider2.ID, "2.0.0")
 	// Module provider without versions
-	moduleProvider3 := testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "gcp")
+	_ = testutils.CreateModuleProvider(t, db, namespace.ID, "testmodule", "gcp")
 
 	// Create handler
 	namespaceRepository := moduleRepo.NewNamespaceRepository(db.DB)

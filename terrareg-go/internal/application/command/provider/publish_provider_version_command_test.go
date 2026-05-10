@@ -20,7 +20,7 @@ func setupTestNamespaceForPublish(t *testing.T, name string) *model.Namespace {
 	namespace, err := model.NewNamespace(types.NamespaceName(name), nil, model.NamespaceTypeNone)
 	require.NoError(t, err)
 	// Use ReconstructNamespace to set ID (ID is private, no SetID method)
-	namespace = model.ReconstructNamespace(1, types.NamespaceName(name), nil, model.NamespaceTypeNone)
+	namespace = model.ReconstructNamespace(1, types.NamespaceName(name), nil, model.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory))
 	return namespace
 }
 

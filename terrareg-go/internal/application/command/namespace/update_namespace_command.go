@@ -6,6 +6,7 @@ import (
 
 	auditservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	providerSourceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
@@ -13,26 +14,34 @@ import (
 type UpdateNamespaceCommand struct {
 	namespaceRepo         repository.NamespaceRepository
 	namespaceAuditService *auditservice.NamespaceAuditService
+	providerSourceFactory  *providerSourceService.ProviderSourceFactory
 }
 
 // UpdateNamespaceRequest represents a request to update a namespace
 type UpdateNamespaceRequest struct {
-	Name        *string `json:"name,omitempty"`
-	DisplayName *string `json:"display_name,omitempty"`
+	Name                    *string `json:"name,omitempty"`
+	DisplayName             *string `json:"display_name,omitempty"`
+	DefaultProviderSource   *string `json:"default_provider_source,omitempty"`
 }
 
 // UpdateNamespaceResponse represents the response after updating a namespace
 type UpdateNamespaceResponse struct {
-	Name        string  `json:"name"`
-	DisplayName *string `json:"display_name,omitempty"`
-	ViewURL     string  `json:"view_href,omitempty"`
+	Name                   string  `json:"name"`
+	DisplayName            *string `json:"display_name,omitempty"`
+	DefaultProviderSource  *string `json:"default_provider_source"`
+	ViewURL                string  `json:"view_href,omitempty"`
 }
 
 // NewUpdateNamespaceCommand creates a new update namespace command
-func NewUpdateNamespaceCommand(namespaceRepo repository.NamespaceRepository, namespaceAuditService *auditservice.NamespaceAuditService) *UpdateNamespaceCommand {
+func NewUpdateNamespaceCommand(
+	namespaceRepo repository.NamespaceRepository,
+	namespaceAuditService *auditservice.NamespaceAuditService,
+	providerSourceFactory *providerSourceService.ProviderSourceFactory,
+) *UpdateNamespaceCommand {
 	return &UpdateNamespaceCommand{
 		namespaceRepo:         namespaceRepo,
 		namespaceAuditService: namespaceAuditService,
+		providerSourceFactory:  providerSourceFactory,
 	}
 }
 
@@ -46,6 +55,11 @@ func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName type
 
 	if namespace == nil {
 		return nil, fmt.Errorf("namespace '%s' not found", namespaceName)
+	}
+
+	// Inject provider source factory if available (required for validation)
+	if c.providerSourceFactory != nil {
+		namespace.SetProviderSourceFactory(c.providerSourceFactory)
 	}
 
 	// TODO: Implement name change with redirect logic
@@ -64,7 +78,32 @@ func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName type
 		// Log audit event for display name change (synchronous)
 		// Python reference: /app/terrareg/models.py:1118 - AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
 		if c.namespaceAuditService != nil {
-			c.namespaceAuditService.LogNamespaceModifyDisplayName(ctx, namespaceName, oldDisplayName, req.DisplayName)
+			if err := c.namespaceAuditService.LogNamespaceModifyDisplayName(ctx, namespaceName, oldDisplayName, req.DisplayName); err != nil {
+				return nil, fmt.Errorf("failed to log display name audit: %w", err)
+			}
+		}
+	}
+
+	// Update default provider source if provided
+	// Python reference: /app/terrareg/models.py lines 1174-1213
+	if req.DefaultProviderSource != nil {
+		oldValue := namespace.DefaultProviderSourceName()
+
+		// Update the provider source
+		if err := namespace.UpdateDefaultProviderSource(ctx, req.DefaultProviderSource); err != nil {
+			return nil, err
+		}
+
+		// Log audit event for default provider source change (synchronous)
+		if c.namespaceAuditService != nil {
+			// Convert empty string to nil for audit (unset operation)
+			auditNewValue := req.DefaultProviderSource
+			if auditNewValue != nil && *auditNewValue == "" {
+				auditNewValue = nil
+			}
+			if err := c.namespaceAuditService.LogNamespaceModifyDefaultProviderSource(ctx, namespaceName, oldValue, auditNewValue); err != nil {
+				return nil, fmt.Errorf("failed to log provider source audit: %w", err)
+			}
 		}
 	}
 
@@ -75,10 +114,10 @@ func (c *UpdateNamespaceCommand) Execute(ctx context.Context, namespaceName type
 
 	// Return response
 	response := &UpdateNamespaceResponse{
-		Name:        string(namespace.Name()),
-		DisplayName: namespace.DisplayName(),
-		// TODO: Generate view URL when URL service is available
-		// ViewURL: namespace.GetViewURL(),
+		Name:                   string(namespace.Name()),
+		DisplayName:            namespace.DisplayName(),
+		DefaultProviderSource:   namespace.DefaultProviderSourceName(),
+		ViewURL:                fmt.Sprintf("/modules/%s", string(namespace.Name())),
 	}
 
 	return response, nil

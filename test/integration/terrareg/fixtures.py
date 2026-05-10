@@ -277,3 +277,76 @@ def test_provider_version(test_provider, test_gpg_key):
             conn.execute(db.provider_version_binary.delete(db.provider_version_binary.c.provider_version_id==provider_version_id))
             conn.execute(db.provider_version_documentation.delete(db.provider_version_documentation.c.provider_version_id==provider_version_id))
             conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+
+
+@pytest.fixture
+def test_github_provider_source_for_modules():
+    """
+    Create a test GitHub provider source for use in module extraction tests.
+    This is configured with GitHub App authentication settings.
+    """
+    db = terrareg.database.Database.get()
+    name = "test-module-github-provider-source"
+    with terrareg.database.Database.get_connection() as conn:
+        conn.execute(db.provider_source.insert().values(
+            name=name,
+            api_name="test-module-github-provider-source",
+            provider_source_type=terrareg.provider_source_type.ProviderSourceType.GITHUB,
+            config=db.encode_blob(json.dumps({
+                "base_url": "https://github.example.com",
+                "api_url": "https://api.github.example.com",
+                "client_id": "test-client-id",
+                "client_secret": "test-client-secret",
+                "login_button_text": "Test Login",
+                "private_key_path": "./test_key.pem",
+                "app_id": "test-app-id",
+                "default_installation_id": "test-default-installation-id",
+                "auto_generate_github_organisation_namespaces": False
+            }))
+        ))
+
+    yield terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(name)
+
+    # Delete provider source
+    db = terrareg.database.Database.get()
+    with terrareg.database.Database.get_connection() as conn:
+        conn.execute(db.provider_source.delete(db.provider_source.c.name==name))
+
+
+@pytest.fixture
+def test_module_provider_with_provider_source(test_namespace, test_github_provider_source_for_modules):
+    """Create test module provider linked to provider source"""
+    module = terrareg.models.Module(namespace=test_namespace, name="test-module")
+    module_provider = terrareg.models.ModuleProvider.get(module=module, name="aws", create=True)
+    module_provider.update_attributes(provider_source_name=test_github_provider_source_for_modules.name)
+
+    yield module_provider
+
+    # Cleanup
+    module_provider.delete()
+
+
+@pytest.fixture
+def test_github_organization_namespace():
+    """Create a test GitHub organization namespace"""
+    import terrareg.namespace_type
+    namespace = terrareg.models.Namespace.create(
+        name="test-github-org",
+        display_name="Test GitHub Organization",
+        type_=terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION
+    )
+    yield namespace
+    namespace.delete()
+
+
+@pytest.fixture
+def test_github_user_namespace():
+    """Create a test GitHub user namespace"""
+    import terrareg.namespace_type
+    namespace = terrareg.models.Namespace.create(
+        name="test-github-user",
+        display_name="Test GitHub User",
+        type_=terrareg.namespace_type.NamespaceType.GITHUB_USER
+    )
+    yield namespace
+    namespace.delete()

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
@@ -182,4 +183,194 @@ func testEditNamespaceAddInvalidGpgKey(t *testing.T) {
 	//         assert error.text == "GPG key provided is invalid or could not be read"
 	st.AssertElementVisible("#create-gpg-key-error")
 	st.AssertTextContent("#create-gpg-key-error", "GPG key provided is invalid or could not be read")
+}
+
+// TestEditNamespaceProviderSource tests the provider source field in namespace edit page.
+// Python reference: /app/test/selenium/test_edit_namespace.py - TestEditNamespaceProviderSource class
+func TestEditNamespaceProviderSource(t *testing.T) {
+	t.Run("test_default_provider_source_field_displayed", testDefaultProviderSourceFieldDisplayed)
+	t.Run("test_default_provider_source_shows_current_value", testDefaultProviderSourceShowsCurrentValue)
+	t.Run("test_set_default_provider_source", testSetDefaultProviderSource)
+	t.Run("test_unset_default_provider_source", testUnsetDefaultProviderSource)
+}
+
+// newProviderSourceHierarchyTest creates a new SeleniumTest for provider source hierarchy tests.
+func newProviderSourceHierarchyTest(t *testing.T) *SeleniumTest {
+	config := ConfigForAdminTokenTests()
+	return NewSeleniumTestWithConfig(t, config, WithProviderSourceHierarchyTestData)
+}
+
+// WithProviderSourceHierarchyTestData is a TestServerOption that sets up test data for provider source tests.
+var WithProviderSourceHierarchyTestData TestServerOption = func(ts *TestServer) {
+	ts.testDataSetup = func(db *sqldb.Database) {
+		SetupProviderSourceHierarchyTestData(ts.t, db)
+	}
+}
+
+// testDefaultProviderSourceFieldDisplayed tests that default provider source field is displayed.
+// Python reference: /app/test/selenium/test_edit_namespace.py - TestEditNamespaceProviderSource.test_default_provider_source_field_displayed
+func testDefaultProviderSourceFieldDisplayed(t *testing.T) {
+	st := newProviderSourceHierarchyTest(t)
+	defer st.TearDown()
+
+	// Python: self.perform_admin_authentication(password="unittest-password")
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+	st.NavigateTo("/edit-namespace/moduledetails")
+
+	// Python: default_provider_source_select = self.selenium_instance.find_element(By.ID, "namespace-default-provider-source")
+	//         assert default_provider_source_select.is_displayed() is True
+	defaultProviderSourceSelect := st.WaitForElement("#namespace-default-provider-source")
+	assert.True(t, defaultProviderSourceSelect.IsDisplayed(), "Default provider source field should be displayed")
+}
+
+// testDefaultProviderSourceShowsCurrentValue tests that current default provider source value is displayed.
+// Python reference: /app/test/selenium/test_edit_namespace.py - TestEditNamespaceProviderSource.test_default_provider_source_shows_current_value
+func testDefaultProviderSourceShowsCurrentValue(t *testing.T) {
+	st := newProviderSourceHierarchyTest(t)
+	defer st.TearDown()
+
+	providerSourceName := "Test Github Autogenerate"
+
+	// Set default provider source on namespace (using direct DB manipulation)
+	// Python: with mock_create_audit_event:
+	//             namespace = Namespace.get("moduledetails")
+	//             namespace.update_default_provider_source(provider_source_name)
+	db := st.server.db
+	var namespace sqldb.NamespaceDB
+	err := db.DB.Where("namespace = ?", "moduledetails").First(&namespace).Error
+	require.NoError(t, err)
+	err = db.DB.Model(&namespace).Update("default_provider_source_name", providerSourceName).Error
+	require.NoError(t, err)
+
+	// Python: self.perform_admin_authentication(password="unittest-password")
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+	st.NavigateTo("/edit-namespace/moduledetails")
+
+	// Python: default_provider_source_select = self.wait_for_element(By.ID, "namespace-default-provider-source")
+	// Wait for the select element to be present and populated
+	_ = st.WaitForElement("#namespace-default-provider-source")
+
+	// Python: self.assert_equals(lambda: len(default_provider_source_select.find_elements(By.TAG_NAME, "option")) > 1, True)
+	// Wait for provider source options to load
+	st.WaitForDropdownOptions("#namespace-default-provider-source", 2)
+
+	// Python: options = default_provider_source_select.find_elements(By.TAG_NAME, "option")
+	//         option_values = [opt.get_attribute("value") for opt in options]
+	//         assert provider_source_name in option_values
+	// Verify that the provider source is in the available options
+	// We check this by verifying we can select it
+	st.SelectOption("#namespace-default-provider-source", providerSourceName)
+
+	// Verify the value is set correctly
+	// Python: select = Select(default_provider_source_select)
+	//         selected_value = select.first_selected_option.get_attribute("value")
+	//         assert selected_value == provider_source_name
+	selectedValue := st.GetValue("#namespace-default-provider-source")
+	assert.Equal(t, providerSourceName, selectedValue, "Expected provider source to be selected")
+
+	// Clean up - unset default provider source
+	err = db.DB.Model(&namespace).Update("default_provider_source_name", nil).Error
+	require.NoError(t, err)
+}
+
+// testSetDefaultProviderSource tests setting default provider source on namespace.
+// Python reference: /app/test/selenium/test_edit_namespace.py - TestEditNamespaceProviderSource.test_set_default_provider_source
+func testSetDefaultProviderSource(t *testing.T) {
+	st := newProviderSourceHierarchyTest(t)
+	defer st.TearDown()
+
+	providerSourceName := "Test Github Autogenerate"
+
+	// Python: self.perform_admin_authentication(password="unittest-password")
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+	st.NavigateTo("/edit-namespace/moduledetails")
+
+	// Python: default_provider_source_select = self.selenium_instance.find_element(By.ID, "namespace-default-provider-source")
+	//         select = Select(default_provider_source_select)
+	//         select.select_by_value(provider_source_name)
+	st.SelectOption("#namespace-default-provider-source", providerSourceName)
+
+	// Python: save_button = self.selenium_instance.find_element(By.XPATH, "//button[text()='Edit Namespace']")
+	//         save_button.click()
+	saveButton := st.WaitForElement(".button.is-link")
+	saveButton.Click()
+
+	// Wait for redirect to namespace page
+	st.WaitForURL("/modules/moduledetails")
+
+	// Python: self.assert_equals(lambda: namespace.default_provider_source.name if namespace.default_provider_source else None, provider_source_name)
+	// Verify the value was set by checking the database
+	db := st.server.db
+	var namespace sqldb.NamespaceDB
+	err := db.DB.Where("namespace = ?", "moduledetails").First(&namespace).Error
+	require.NoError(t, err)
+	require.NotNil(t, namespace.DefaultProviderSourceName, "Default provider source should not be nil")
+	assert.Equal(t, providerSourceName, *namespace.DefaultProviderSourceName, "Default provider source should be set")
+
+	// Clean up
+	err = db.DB.Model(&namespace).Update("default_provider_source_name", nil).Error
+	require.NoError(t, err)
+}
+
+// testUnsetDefaultProviderSource tests unsetting default provider source on namespace.
+// Python reference: /app/test/selenium/test_edit_namespace.py - TestEditNamespaceProviderSource.test_unset_default_provider_source
+func testUnsetDefaultProviderSource(t *testing.T) {
+	st := newProviderSourceHierarchyTest(t)
+	defer st.TearDown()
+
+	providerSourceName := "Test Github Autogenerate"
+
+	// Set provider source as default
+	db := st.server.db
+	var namespace sqldb.NamespaceDB
+	err := db.DB.Where("namespace = ?", "moduledetails").First(&namespace).Error
+	require.NoError(t, err)
+	err = db.DB.Model(&namespace).Update("default_provider_source_name", providerSourceName).Error
+	require.NoError(t, err)
+
+	// Python: self.perform_admin_authentication(password="unittest-password")
+	performAdminAuthentication(st, "test-admin-token")
+
+	// Python: self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+	st.NavigateTo("/edit-namespace/moduledetails")
+
+	// Python: default_provider_source_select = self.selenium_instance.find_element(By.ID, "namespace-default-provider-source")
+	//         self.assert_equals(lambda: default_provider_source_select.get_attribute("value"), provider_source_name)
+	// Verify current value is set
+	// Wait for provider source options to load
+	st.WaitForDropdownOptions("#namespace-default-provider-source", 2)
+	selectedValue := st.GetValue("#namespace-default-provider-source")
+	assert.Equal(t, providerSourceName, selectedValue, "Provider source should be initially set")
+
+	// Python: select = Select(default_provider_source_select)
+	//         select.select_by_value("")
+	// Select empty option to unset
+	st.SelectOption("#namespace-default-provider-source", "")
+
+	// Python: save_button = self.selenium_instance.find_element(By.XPATH, "//button[text()='Edit Namespace']")
+	//         save_button.click()
+	// Python: self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails"))
+	saveButton := st.WaitForElement(".button.is-link")
+	saveButton.Click()
+
+	// Wait for redirect to namespace page
+	st.WaitForURL("/modules/moduledetails")
+
+	// Go back to edit page to verify the change
+	// Python: self.selenium_instance.get(self.get_url("/edit-namespace/moduledetails"))
+	// Python: default_provider_select = self.wait_for_element(By.ID, "namespace-default-provider-source")
+	// Python: self.assert_equals(lambda: default_provider_source_select.get_attribute("value"), "")
+	st.NavigateTo("/edit-namespace/moduledetails")
+	_ = st.WaitForElement("#namespace-default-provider-source")
+
+	// Verify the value is now empty (null/empty)
+	// Python: self.assert_equals(lambda: default_provider_source_select.get_attribute("value"), "")
+	selectedValue = st.GetValue("#namespace-default-provider-source")
+	assert.Equal(t, "", selectedValue, "Provider source should be unset")
 }

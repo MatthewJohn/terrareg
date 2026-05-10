@@ -3,7 +3,6 @@ import os
 import shutil
 import subprocess
 import tempfile
-from unittest.main import MODULE_EXAMPLES
 import unittest.mock
 
 import pytest
@@ -92,7 +91,204 @@ class TestGitModuleExtractor(TerraregUnitTest):
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
 
     @setup_test_data()
+    def test__clone_repository_provider_source_github_app(self, mock_models):
+        """Test _clone_repository with provider source GitHub App authentication"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock()
+        module_extractor = GitModuleExtractor(module_version=module_version)
+
+        # Mock provider source
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.get_github_app_installation_id.return_value = '12345'
+        mock_provider_source.generate_app_installation_token.return_value = 'ghp_test_token_1234567890'
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = mock_provider_source
+            with module_extractor as me:
+                me._clone_repository()
+
+        # Verify provider source methods were called
+        mock_provider_source.get_github_app_installation_id.assert_called_once_with(namespace)
+        mock_provider_source.generate_app_installation_token.assert_called_once_with('12345')
+
+        check_call_mock.assert_called_with(
+            [
+                'git', 'clone',
+                '--single-branch',
+                '--branch', 'v4.3.2',
+                'https://x-access-token:ghp_test_token_1234567890@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
+                module_extractor.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            env=unittest.mock.ANY,
+            timeout=300
+        )
+        assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
+
+    @setup_test_data()
+    def test__clone_repository_provider_source_github_app_fallback(self, mock_models):
+        """Test _clone_repository fallback to basic auth if provider source GitHub App auth fails"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock()
+        module_extractor = GitModuleExtractor(module_version=module_version)
+
+        # Mock provider source that raises exception
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.get_github_app_installation_id.side_effect = Exception("GitHub API Error")
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'fallback_user'), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_pass'), \
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = mock_provider_source
+            with module_extractor as me:
+                me._clone_repository()
+
+        check_call_mock.assert_called_with(
+            [
+                'git', 'clone',
+                '--single-branch',
+                '--branch', 'v4.3.2',
+                'https://fallback_user:fallback_pass@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
+                module_extractor.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            env=unittest.mock.ANY,
+            timeout=300
+        )
+
+    @setup_test_data()
+    def test__clone_repository_fallback_token(self, mock_models):
+        """Test _clone_repository uses token when only password is provided (no username)"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock()
+        module_extractor = GitModuleExtractor(module_version=module_version)
+
+        # Mock provider source as None (no provider source configured)
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', ''), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_token'), \
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = None
+            with module_extractor as me:
+                me._clone_repository()
+
+        check_call_mock.assert_called_with(
+            [
+                'git', 'clone',
+                '--single-branch',
+                '--branch', 'v4.3.2',
+                'https://:fallback_token@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
+                module_extractor.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            env=unittest.mock.ANY,
+            timeout=300
+        )
+
+
+    @setup_test_data()
+    def test__clone_repository_ssh_url_no_credentials_injected(self, mock_models):
+        """Test that SSH URLs are cloned as-is without credential injection"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='staticrepourl')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock()
+        module_extractor = GitModuleExtractor(module_version=module_version)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'user'), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'pass'):
+            with module_extractor as me:
+                me._clone_repository()
+
+        # SSH URL should be passed through unchanged — no credentials injected
+        check_call_mock.assert_called_with(
+            [
+                'git', 'clone',
+                '--single-branch',
+                '--branch', 'v4.3.2',
+                'ssh://git@localhost:7999/bla/test-module.git',
+                module_extractor.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            env=unittest.mock.ANY,
+            timeout=300
+        )
+
+    @setup_test_data()
+    def test__clone_repository_provider_source_no_installation_falls_back(self, mock_models):
+        """Test _clone_repository fallback when provider source has no installation ID"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock()
+        module_extractor = GitModuleExtractor(module_version=module_version)
+
+        # Mock provider source that returns None for installation ID
+        mock_provider_source = unittest.mock.MagicMock()
+        mock_provider_source.get_github_app_installation_id.return_value = None
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', 'fallback_user'), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', 'fallback_pass'), \
+                unittest.mock.patch.object(type(module_provider), 'provider_source', new_callable=unittest.mock.PropertyMock) as mock_ps:
+            mock_ps.return_value = mock_provider_source
+            with module_extractor as me:
+                me._clone_repository()
+
+        # Should fall back to basic auth because no installation ID was found
+        check_call_mock.assert_called_with(
+            [
+                'git', 'clone',
+                '--single-branch',
+                '--branch', 'v4.3.2',
+                'https://fallback_user:fallback_pass@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider',
+                module_extractor.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            env=unittest.mock.ANY,
+            timeout=300
+        )
+
+
+class TestProviderSourceAuthentication(TerraregUnitTest):
+    """Test provider source authentication integration with module extraction"""
+
+    @setup_test_data()
+    def test_module_provider_provider_source_property(self, mock_models):
+        """Test that ModuleProvider has a provider_source property"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
+
+        # Initially, provider_source should be None
+        assert module_provider.provider_source is None
+
+
+class TestGitModuleExtractorMethods(TerraregUnitTest):
+    """Test remaining GitModuleExtractor methods (error handling, commit sha, description, etc.)"""
+
+    @setup_test_data()
     def test_known_git_error(self, mock_models):
+
         """Test error thrown by git with expected format of error."""
         namespace = terrareg.models.Namespace(name='moduleextraction')
         module = terrareg.models.Module(namespace=namespace, name='gitextraction')
@@ -149,11 +345,13 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
             # Create git repo and commit file
             subprocess.check_output(["git", "init"], cwd=temp_dir)
+
             # Setup fake git user to avoid errors when committing (matching production code)
             subprocess.check_output(["git", "config", "user.email", "terrareg@localhost"], cwd=temp_dir)
             subprocess.check_output(["git", "config", "user.name", "Terrareg"], cwd=temp_dir)
             # Disable GPG signing for tests to avoid timeout/signing failures
             subprocess.check_output(["git", "config", "commit.gpgsign", "false"], cwd=temp_dir)
+
             with open(os.path.join(temp_dir, "test_file"), "w") as fh:
                 pass
             subprocess.check_output(["git", "add", "test_file"], cwd=temp_dir)

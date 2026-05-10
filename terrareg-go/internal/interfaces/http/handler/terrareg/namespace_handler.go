@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -228,12 +229,19 @@ func (h *NamespaceHandler) HandleNamespaceUpdate(w http.ResponseWriter, r *http.
 
 	// Execute update command
 	cmdReq := namespace.UpdateNamespaceRequest{
-		Name:        req.Name,
-		DisplayName: req.DisplayName,
+		Name:                   req.Name,
+		DisplayName:            req.DisplayName,
+		DefaultProviderSource:   req.DefaultProviderSource,
 	}
 
 	response, err := h.updateNamespaceCmd.Execute(ctx, namespaceName, cmdReq)
 	if err != nil {
+		// Check for provider source validation errors
+		if strings.Contains(err.Error(), "Provider source") {
+			RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		// Internal error - don't expose details
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
