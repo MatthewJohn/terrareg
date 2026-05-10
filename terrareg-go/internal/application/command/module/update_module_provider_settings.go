@@ -4,20 +4,30 @@ import (
 	"context"
 	"fmt"
 
+	auditService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/audit/service"
 	gitModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	providerSourceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
 
 // UpdateModuleProviderSettingsCommand handles updating module provider settings
 type UpdateModuleProviderSettingsCommand struct {
-	moduleProviderRepo repository.ModuleProviderRepository
+	moduleProviderRepo      repository.ModuleProviderRepository
+	providerSourceFactory   *providerSourceService.ProviderSourceFactory
+	moduleAuditService      *auditService.ModuleAuditService
 }
 
 // NewUpdateModuleProviderSettingsCommand creates a new command
-func NewUpdateModuleProviderSettingsCommand(moduleProviderRepo repository.ModuleProviderRepository) *UpdateModuleProviderSettingsCommand {
+func NewUpdateModuleProviderSettingsCommand(
+	moduleProviderRepo repository.ModuleProviderRepository,
+	providerSourceFactory *providerSourceService.ProviderSourceFactory,
+	moduleAuditService *auditService.ModuleAuditService,
+) *UpdateModuleProviderSettingsCommand {
 	return &UpdateModuleProviderSettingsCommand{
-		moduleProviderRepo: moduleProviderRepo,
+		moduleProviderRepo:    moduleProviderRepo,
+		providerSourceFactory: providerSourceFactory,
+		moduleAuditService:    moduleAuditService,
 	}
 }
 
@@ -38,6 +48,10 @@ type UpdateModuleProviderSettingsRequest struct {
 
 	// Module settings
 	Verified *bool
+
+	// Provider source settings
+	ProviderSource                    *string
+	ProviderSourceInheritanceDisabled   *bool
 }
 
 // Execute updates the module provider settings
@@ -46,6 +60,11 @@ func (c *UpdateModuleProviderSettingsCommand) Execute(ctx context.Context, req U
 	moduleProvider, err := c.moduleProviderRepo.FindByNamespaceModuleProvider(ctx, types.NamespaceName(req.Namespace), types.ModuleName(req.Module), types.ModuleProviderName(req.Provider))
 	if err != nil {
 		return fmt.Errorf("module provider not found: %w", err)
+	}
+
+	// Inject provider source factory if available (required for validation)
+	if c.providerSourceFactory != nil {
+		moduleProvider.SetProviderSourceFactory(c.providerSourceFactory)
 	}
 
 	// Validate git_tag_format if provided
@@ -83,6 +102,41 @@ func (c *UpdateModuleProviderSettingsCommand) Execute(ctx context.Context, req U
 			moduleProvider.Verify()
 		} else {
 			moduleProvider.Unverify()
+		}
+	}
+
+	// Update provider source settings if provided
+	if req.ProviderSource != nil {
+		oldValue := moduleProvider.ProviderSourceName()
+
+		// Empty string means "clear/unset" the provider source
+		// Non-empty string means set to that value
+		if err := moduleProvider.UpdateProviderSource(ctx, req.ProviderSource); err != nil {
+			return err
+		}
+
+		// Log audit event for provider source change
+		if c.moduleAuditService != nil {
+			// Convert empty string to nil for audit (unset operation)
+			newValue := req.ProviderSource
+			if newValue != nil && *newValue == "" {
+				newValue = nil
+			}
+
+			c.moduleAuditService.LogModuleProviderUpdateProviderSource(ctx, types.NamespaceName("anonymous"), moduleProvider.ID(), oldValue, newValue)
+		}
+	}
+
+	if req.ProviderSourceInheritanceDisabled != nil {
+		oldValue := moduleProvider.ProviderSourceInheritanceDisabled()
+
+		if err := moduleProvider.UpdateProviderSourceInheritanceDisabled(ctx, req.ProviderSourceInheritanceDisabled); err != nil {
+			return err
+		}
+
+		// Log audit event for inheritance disabled change (only if value actually changed)
+		if c.moduleAuditService != nil && oldValue != *req.ProviderSourceInheritanceDisabled {
+			c.moduleAuditService.LogModuleProviderUpdateProviderSourceInheritanceDisabled(ctx, types.NamespaceName("anonymous"), moduleProvider.ID(), oldValue, *req.ProviderSourceInheritanceDisabled)
 		}
 	}
 

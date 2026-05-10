@@ -39,10 +39,11 @@ func (p *NamespacePresenter) ToDTOWithResourceType(namespace *model.Namespace, r
 	viewHref := fmt.Sprintf("/%s/%s", urlPart, string(namespace.Name()))
 
 	return dto.NamespaceResponse{
-		Name:        string(namespace.Name()),
-		DisplayName: namespace.DisplayName(),
-		Type:        string(namespace.Type()),
-		ViewHref:    viewHref,
+		Name:                  string(namespace.Name()),
+		DisplayName:           namespace.DisplayName(),
+		Type:                  string(namespace.Type()),
+		ViewHref:              viewHref,
+		DefaultProviderSource: namespace.DefaultProviderSourceName(),
 	}
 }
 

@@ -64,7 +64,10 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                 ]
             },
             'submodules': [],
-            'providers': ['testprovider']
+            'providers': ['testprovider'],
+            'provider_source': None,
+            'namespace_default_provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -86,7 +89,10 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.2.3']
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.2.3'],
+            'provider_source': None,
+            'namespace_default_provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200
@@ -108,7 +114,10 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'providers': ['testprovider'], 'versions': ['5.2.0']
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['5.2.0'],
+            'provider_source': None,
+            'namespace_default_provider_source': None,
+            'provider_source_inheritance_disabled': False
         }
 
         assert res.status_code == 200

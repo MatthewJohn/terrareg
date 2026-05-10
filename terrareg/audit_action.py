@@ -8,6 +8,7 @@ class AuditAction(Enum):
     NAMESPACE_CREATE = "namespace_create"
     NAMESPACE_MODIFY_NAME = "namespace_modify_name"
     NAMESPACE_MODIFY_DISPLAY_NAME = "namespace_modify_display_name"
+    NAMESPACE_MODIFY_DEFAULT_PROVIDER_SOURCE = "namespace_modify_default_provider_source"
     NAMESPACE_DELETE = "namespace_delete"
 
     MODULE_PROVIDER_CREATE = "module_provider_create"
@@ -24,6 +25,8 @@ class AuditAction(Enum):
     MODULE_PROVIDER_UPDATE_NAMESPACE = "module_provider_update_namespace"
     MODULE_PROVIDER_UPDATE_MODULE_NAME = "module_provider_update_module_name"
     MODULE_PROVIDER_UPDATE_PROVIDER_NAME = "module_provider_update_provider_name"
+    MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE = "module_provider_update_provider_source"
+    MODULE_PROVIDER_UPDATE_PROVIDER_SOURCE_INHERITANCE_DISABLED = "module_provider_update_provider_source_inheritance_disabled"
 
     MODULE_PROVIDER_REDIRECT_DELETE = "module_provider_redirect_delete"
 

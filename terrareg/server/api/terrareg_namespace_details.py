@@ -8,6 +8,7 @@ import terrareg.csrf
 import terrareg.models
 import terrareg.auth_wrapper
 import terrareg.registry_resource_type
+import terrareg.errors
 
 
 class ApiTerraregNamespaceDetails(ErrorCatchingResource):
@@ -36,9 +37,10 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
         namespace = terrareg.models.Namespace.get(namespace)
         if namespace is None:
             return self._get_404_response()
-        
+
         namespace_name = request.json.get('name')
         display_name = request.json.get('display_name')
+        default_provider_source = request.json.get('default_provider_source')
         csrf_token = request.json.get('csrf_token')
 
         terrareg.csrf.check_csrf_token(csrf_token)
@@ -47,11 +49,18 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
             namespace.update_name(namespace_name)
         if display_name is not None and display_name != namespace.display_name:
             namespace.update_display_name(display_name)
+        # Handle default_provider_source - empty string means unset
+        if default_provider_source or default_provider_source == "":
+            try:
+                namespace.update_default_provider_source(default_provider_source)
+            except terrareg.errors.InvalidProviderSourceNameError as exc:
+                return {'message': str(exc)}, 400
 
         return {
             "name": namespace.name,
             "view_href": namespace.get_view_url(resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE),
-            "display_name": namespace.display_name
+            "display_name": namespace.display_name,
+            "default_provider_source": namespace.default_provider_source.name if namespace.default_provider_source else None
         }
 
     def _delete(self, namespace):

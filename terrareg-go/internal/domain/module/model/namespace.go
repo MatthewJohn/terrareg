@@ -1,10 +1,12 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 )
@@ -18,12 +20,20 @@ const (
 	NamespaceTypeGithubOrg  NamespaceType = "GITHUB_ORGANISATION"
 )
 
+// ProviderSourceFactory defines the interface for getting provider sources
+// This is a minimal interface that the ProviderSourceFactory service must implement
+type ProviderSourceFactory interface {
+	GetProviderSourceByName(ctx context.Context, name string) (service.ProviderSourceInstance, error)
+}
+
 // Namespace represents a namespace for modules and providers
 type Namespace struct {
-	id          int
-	name        types.NamespaceName
-	displayName *string
-	nsType      NamespaceType
+	id                           int
+	name                         types.NamespaceName
+	displayName                  *string
+	nsType                       NamespaceType
+	defaultProviderSourceName    *string
+	providerSourceFactory        ProviderSourceFactory
 }
 
 var namespaceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$`)
@@ -42,12 +52,14 @@ func NewNamespace(name types.NamespaceName, displayName *string, nsType Namespac
 }
 
 // ReconstructNamespace reconstructs a namespace from persistence (used by repository)
-func ReconstructNamespace(id int, name types.NamespaceName, displayName *string, nsType NamespaceType) *Namespace {
+func ReconstructNamespace(id int, name types.NamespaceName, displayName *string, nsType NamespaceType, defaultProviderSourceName *string, providerSourceFactory ProviderSourceFactory) *Namespace {
 	return &Namespace{
-		id:          id,
-		name:        name,
-		displayName: displayName,
-		nsType:      nsType,
+		id:                        id,
+		name:                      name,
+		displayName:               displayName,
+		nsType:                    nsType,
+		defaultProviderSourceName: defaultProviderSourceName,
+		providerSourceFactory:     providerSourceFactory,
 	}
 }
 
@@ -128,4 +140,69 @@ func (n *Namespace) IsGithub() bool {
 // String returns the string representation
 func (n *Namespace) String() string {
 	return string(n.name)
+}
+
+// DefaultProviderSourceName returns the default provider source name
+func (n *Namespace) DefaultProviderSourceName() *string {
+	return n.defaultProviderSourceName
+}
+
+// SetDefaultProviderSourceName sets the default provider source name
+func (n *Namespace) SetDefaultProviderSourceName(name *string) {
+	n.defaultProviderSourceName = name
+}
+
+// DefaultProviderSource returns the default provider source for this namespace
+// Python reference: /app/terrareg/models.py lines 1028-1037
+func (n *Namespace) DefaultProviderSource(ctx context.Context) (service.ProviderSourceInstance, error) {
+	if n.defaultProviderSourceName == nil || n.providerSourceFactory == nil {
+		return nil, nil
+	}
+	return n.providerSourceFactory.GetProviderSourceByName(ctx, *n.defaultProviderSourceName)
+}
+
+// UpdateDefaultProviderSource updates the default provider source for this namespace
+// Python reference: /app/terrareg/models.py lines 1174-1213
+func (n *Namespace) UpdateDefaultProviderSource(ctx context.Context, providerSourceName *string) error {
+	// If nil, no change requested
+	if providerSourceName == nil {
+		return nil
+	}
+
+	// If empty string, unset (set to nil)
+	var newValue *string
+	if *providerSourceName == "" {
+		newValue = nil
+	} else {
+		// Validate provider source exists
+		if n.providerSourceFactory != nil {
+			providerSource, err := n.providerSourceFactory.GetProviderSourceByName(ctx, *providerSourceName)
+			if err != nil {
+				return err
+			}
+			if providerSource == nil {
+				return &InvalidProviderSourceNameError{Name: *providerSourceName}
+			}
+		}
+		newValue = providerSourceName
+	}
+
+	// Update the field
+	n.defaultProviderSourceName = newValue
+	return nil
+}
+
+// SetProviderSourceFactory sets the provider source factory
+func (n *Namespace) SetProviderSourceFactory(factory ProviderSourceFactory) {
+	n.providerSourceFactory = factory
+}
+
+// InvalidProviderSourceNameError represents an error when an invalid provider source name is provided
+// Python reference: /app/terrareg/errors.py
+type InvalidProviderSourceNameError struct {
+	Name string
+}
+
+func (e *InvalidProviderSourceNameError) Error() string {
+	return fmt.Sprintf("Provider source '%s' does not exist", e.Name)
 }

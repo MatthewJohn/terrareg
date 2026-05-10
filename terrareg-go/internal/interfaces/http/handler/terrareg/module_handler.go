@@ -250,6 +250,18 @@ func NewModuleVersionDetailsHandlerForTesting(
 	}
 }
 
+// NewModuleSettingsHandlerForTesting creates a handler with module provider settings commands for testing settings endpoints
+func NewModuleSettingsHandlerForTesting(
+	updateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand,
+	getModuleProviderSettingsQuery *moduleQuery.GetModuleProviderSettingsQuery,
+) *ModuleHandler {
+	return &ModuleHandler{
+		updateModuleProviderSettingsCmd: updateModuleProviderSettingsCmd,
+		getModuleProviderSettingsQuery:  getModuleProviderSettingsQuery,
+		// All other fields remain nil - not used by settings operations
+	}
+}
+
 // HandleModuleList handles GET /v1/modules
 // Python reference: /app/test/unit/terrareg/server/test_api_module_list.py
 func (h *ModuleHandler) HandleModuleList(w http.ResponseWriter, r *http.Request) {
@@ -882,6 +894,8 @@ func (h *ModuleHandler) HandleModuleProviderSettingsGet(w http.ResponseWriter, r
 		GitPath:               settings.GitPath,
 		ArchiveGitPath:        settings.ArchiveGitPath,
 		Verified:              settings.Verified,
+		ProviderSource:                     settings.ProviderSource,
+		ProviderSourceInheritanceDisabled:  settings.ProviderSourceInheritanceDisabled,
 	}
 
 	RespondJSON(w, http.StatusOK, response)
@@ -908,22 +922,29 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 
 	// Execute command
 	cmdReq := moduleCmd.UpdateModuleProviderSettingsRequest{
-		Namespace:             namespaceStr,
-		Module:                nameStr,
-		Provider:              providerStr,
-		GitProviderID:         req.GitProviderID,
-		RepoBaseURLTemplate:   req.RepoBaseURLTemplate,
-		RepoCloneURLTemplate:  req.RepoCloneURLTemplate,
-		RepoBrowseURLTemplate: req.RepoBrowseURLTemplate,
-		GitTagFormat:          req.GitTagFormat,
-		GitPath:               req.GitPath,
-		ArchiveGitPath:        req.ArchiveGitPath,
-		Verified:              req.Verified,
+		Namespace:                          namespaceStr,
+		Module:                             nameStr,
+		Provider:                           providerStr,
+		GitProviderID:                      req.GitProviderID,
+		RepoBaseURLTemplate:                req.RepoBaseURLTemplate,
+		RepoCloneURLTemplate:               req.RepoCloneURLTemplate,
+		RepoBrowseURLTemplate:              req.RepoBrowseURLTemplate,
+		GitTagFormat:                       req.GitTagFormat,
+		GitPath:                            req.GitPath,
+		ArchiveGitPath:                     req.ArchiveGitPath,
+		Verified:                           req.Verified,
+		ProviderSource:                     req.ProviderSource,
+		ProviderSourceInheritanceDisabled:  req.ProviderSourceInheritanceDisabled,
 	}
 
 	if err := h.updateModuleProviderSettingsCmd.Execute(ctx, cmdReq); err != nil {
 		// Check for git model errors (InvalidGitTagFormatError)
 		if strings.Contains(err.Error(), "Invalid git tag format") {
+			RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		// Check for provider source errors (InvalidProviderSourceNameError)
+		if strings.Contains(err.Error(), "Provider source") {
 			RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -951,6 +972,8 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 		GitPath:               settings.GitPath,
 		ArchiveGitPath:        settings.ArchiveGitPath,
 		Verified:              settings.Verified,
+		ProviderSource:                     settings.ProviderSource,
+		ProviderSourceInheritanceDisabled:  settings.ProviderSourceInheritanceDisabled,
 	}
 
 	RespondJSON(w, http.StatusOK, response)

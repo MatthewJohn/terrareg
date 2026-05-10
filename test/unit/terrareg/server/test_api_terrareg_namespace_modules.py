@@ -36,7 +36,10 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
                     'source': None,
                     'trusted': False,
                     'verified': False,
-                    'version': '2.1.1'
+                    'version': '2.1.1',
+                    'provider_source': None,
+                    'namespace_default_provider_source': None,
+                    'provider_source_inheritance_disabled': False
                 },
                 {
                     # Second published module provider in same module
@@ -52,7 +55,10 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
                     'source': None,
                     'trusted': False,
                     'verified': False,
-                    'version': '2.2.2'
+                    'version': '2.2.2',
+                    'provider_source': None,
+                    'namespace_default_provider_source': None,
+                    'provider_source_inheritance_disabled': False
                 },
                 {
                     # Ensure module provider with no versions is returned correctly
@@ -61,7 +67,10 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
                     'namespace': 'smallernamespacelist',
                     'provider': 'testprovider',
                     'trusted': False,
-                    'verified': False
+                    'verified': False,
+                    'provider_source': None,
+                    'namespace_default_provider_source': None,
+                    'provider_source_inheritance_disabled': False
                 },
                 {
                     # Ensure published module provider that contains only a beta version is shown
@@ -70,7 +79,10 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
                     'namespace': 'smallernamespacelist',
                     'provider': 'testprovider',
                     'trusted': False,
-                    'verified': False
+                    'verified': False,
+                    'provider_source': None,
+                    'namespace_default_provider_source': None,
+                    'provider_source_inheritance_disabled': False
                 },
                 {
                     # Ensure published module provider that contains only an unpublished version is shown
@@ -79,7 +91,10 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
                     'namespace': 'smallernamespacelist',
                     'provider': 'testprovider',
                     'trusted': False,
-                    'verified': False
+                    'verified': False,
+                    'provider_source': None,
+                    'namespace_default_provider_source': None,
+                    'provider_source_inheritance_disabled': False
                 }
             ]
         }

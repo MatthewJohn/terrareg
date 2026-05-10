@@ -153,6 +153,10 @@ func (m *MockProviderSourceInstance) GetReleaseArtifact(ctx context.Context, rep
 	return nil, nil
 }
 
+func (m *MockProviderSourceInstance) LoginButtonText(ctx context.Context) (string, error) {
+	return "", nil
+}
+
 // MockAuthenticationService for testing
 type MockAuthenticationService struct {
 	createSessionFunc func(ctx context.Context, w http.ResponseWriter, authCtx auth.AuthContext, ttl *time.Duration) error

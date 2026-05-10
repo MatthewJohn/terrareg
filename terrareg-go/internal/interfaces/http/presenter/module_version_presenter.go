@@ -131,6 +131,10 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 
 		// Get versions list from module provider
 		Versions: moduleProvider.GetVersionsList(),
+
+		// Provider source fields
+		ProviderSource:                    moduleProvider.ProviderSourceName(),
+		ProviderSourceInheritanceDisabled: moduleProvider.ProviderSourceInheritanceDisabled(),
 	}
 
 	// Set default git tag format if not configured (matching Python behavior: {version})

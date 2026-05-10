@@ -7,5 +7,5 @@ import (
 
 // Helper to create a mock namespace for testing
 func createMockNamespace(id int, name types.NamespaceName) *modulemodel.Namespace {
-	return modulemodel.ReconstructNamespace(id, name, nil, modulemodel.NamespaceTypeNone)
+	return modulemodel.ReconstructNamespace(id, name, nil, modulemodel.NamespaceTypeNone, nil, nil)
 }
