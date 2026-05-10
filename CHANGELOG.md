@@ -1,5 +1,19 @@
 # Changelog
 
+# [4.4.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.4...v4.4.0) (2026-05-10)
+
+
+### Bug Fixes
+
+* **test:** Patch public URL to improve local testing compatibility ([35244a2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/35244a2e6739724900207f1353e05718d6356e3d))
+
+
+### Features
+
+* Allow provider sources to be assigned to namespaces or module providers for Git authentication ([bc79a3f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bc79a3f85cb9d935c3af826f6bbf640460ea010a))
+* **go:** Add support for provider source in namespaces/module ([85985ba](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/85985ba92d37ac7d28a3f0b0665d2747421167b2))
+* **module-extraction:** implement GitHub App authentication for git checkout ([7fb7bba](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7fb7bbae671beaf774a00c7130f0940b9b28eb1d))
+
 ## [4.3.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.3...v4.3.4) (2026-05-09)
 
 
