@@ -464,3 +464,54 @@ func SetupEditNamespaceTestData(t *testing.T, db *sqldb.Database) {
 	_ = integrationTestUtils.CreateGPGKey(t, db, "test-gpg-key-2", provider2.ID,
 		"7F3B2A3E2F9E04AF389D1D67E42600BAB40EE715")
 }
+
+// SetupProviderSourceHierarchyTestData creates test data for provider source hierarchy tests.
+// Creates provider sources and test namespaces/modules.
+// Python reference: /app/test/selenium/test_data.py - selenium_provider_sources
+func SetupProviderSourceHierarchyTestData(t *testing.T, db *sqldb.Database) {
+	// Create test provider sources
+	createTestProviderSource(t, db, "Test Github Autogenerate", true)
+	createTestProviderSource(t, db, "Test Github No Autogenerate", false)
+
+	// Create moduledetails namespace with module provider for testing
+	moduledetailsNs := integrationTestUtils.CreateNamespace(t, db, "moduledetails", nil)
+	mp := integrationTestUtils.CreateModuleProvider(t, db, moduledetailsNs.ID, "fullypopulated", "testprovider")
+	_ = integrationTestUtils.CreatePublishedModuleVersion(t, db, mp.ID, "1.0.0")
+}
+
+// createTestProviderSource creates a test provider source.
+// Python reference: /app/test/selenium/test_data.py - selenium_provider_sources
+func createTestProviderSource(t *testing.T, db *sqldb.Database, name string, autoGenerate bool) {
+	baseURL := "https://github.example.com"
+	apiURL := "https://api.github.example.com"
+	clientID := "unittest-client-id"
+	clientSecret := "unittest-client-secret"
+	loginButtonText := "Login via Github using this unit test"
+	privateKeyPath := "./path/to/key.pem"
+	appID := "1234appid"
+	defaultAccessToken := "pa-test-personal-access-token"
+	defaultInstallationID := "ut-default-installation-id-here"
+
+	configJSON := fmt.Sprintf(`{
+		"base_url": "%s",
+		"api_url": "%s",
+		"client_id": "%s",
+		"client_secret": "%s",
+		"login_button_text": "%s",
+		"private_key_path": "%s",
+		"app_id": "%s",
+		"default_access_token": "%s",
+		"default_installation_id": "%s",
+		"auto_generate_github_organisation_namespaces": %t
+	}`, baseURL, apiURL, clientID, clientSecret, loginButtonText, privateKeyPath, appID, defaultAccessToken, defaultInstallationID, autoGenerate)
+
+	providerSource := &sqldb.ProviderSourceDB{
+		Name:               name,
+		APIName:            &name,
+		ProviderSourceType: sqldb.ProviderSourceTypeGithub,
+		Config:             []byte(configJSON),
+	}
+
+	err := db.DB.Create(providerSource).Error
+	require.NoError(t, err, "Failed to create test provider source")
+}

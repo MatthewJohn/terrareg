@@ -13,10 +13,11 @@ import (
 // toDBNamespace converts domain Namespace to database model
 func toDBNamespace(ns *model.Namespace) sqldb.NamespaceDB {
 	return sqldb.NamespaceDB{
-		ID:            ns.ID(),
-		Namespace:     string(ns.Name()),
-		DisplayName:   ns.DisplayName(),
-		NamespaceType: sqldb.NamespaceType(ns.Type()),
+		ID:                        ns.ID(),
+		Namespace:                 string(ns.Name()),
+		DisplayName:               ns.DisplayName(),
+		NamespaceType:             sqldb.NamespaceType(ns.Type()),
+		DefaultProviderSourceName: ns.DefaultProviderSourceName(),
 	}
 }
 
@@ -27,6 +28,8 @@ func fromDBNamespace(db *sqldb.NamespaceDB) *model.Namespace {
 		types.NamespaceName(db.Namespace),
 		db.DisplayName,
 		model.NamespaceType(db.NamespaceType),
+		db.DefaultProviderSourceName,
+		nil, // providerSourceFactory will be set by the container
 	)
 }
 
@@ -50,19 +53,21 @@ func toDBModuleProvider(mp *model.ModuleProvider) sqldb.ModuleProviderDB {
 	}
 
 	return sqldb.ModuleProviderDB{
-		ID:                    mp.ID(),
-		NamespaceID:           mp.Namespace().ID(),
-		Module:                string(mp.Module()),
-		Provider:              string(mp.Provider()),
-		Verified:              verified,
-		GitProviderID:         mp.GitProviderID(),
-		RepoBaseURLTemplate:   mp.RepoBaseURLTemplate(),
-		RepoCloneURLTemplate:  mp.RepoCloneURLTemplate(),
-		RepoBrowseURLTemplate: mp.RepoBrowseURLTemplate(),
-		GitTagFormat:          mp.GitTagFormat(),
-		GitPath:               mp.GitPath(),
-		ArchiveGitPath:        mp.ArchiveGitPath(),
-		LatestVersionID:       latestVersionID,
+		ID:                               mp.ID(),
+		NamespaceID:                      mp.Namespace().ID(),
+		Module:                           string(mp.Module()),
+		Provider:                         string(mp.Provider()),
+		Verified:                         verified,
+		GitProviderID:                    mp.GitProviderID(),
+		RepoBaseURLTemplate:              mp.RepoBaseURLTemplate(),
+		RepoCloneURLTemplate:             mp.RepoCloneURLTemplate(),
+		RepoBrowseURLTemplate:            mp.RepoBrowseURLTemplate(),
+		GitTagFormat:                     mp.GitTagFormat(),
+		GitPath:                          mp.GitPath(),
+		ArchiveGitPath:                   mp.ArchiveGitPath(),
+		LatestVersionID:                  latestVersionID,
+		ProviderSourceName:               mp.ProviderSourceName(),
+		ProviderSourceInheritanceDisabled: mp.ProviderSourceInheritanceDisabled(),
 	}
 }
 
@@ -88,6 +93,9 @@ func fromDBModuleProvider(db *sqldb.ModuleProviderDB, namespace *model.Namespace
 		db.GitTagFormat,
 		db.GitPath,
 		db.ArchiveGitPath,
+		db.ProviderSourceName,
+		db.ProviderSourceInheritanceDisabled,
+		nil, // providerSourceFactory will be set by the container
 		now,
 		now,
 	)

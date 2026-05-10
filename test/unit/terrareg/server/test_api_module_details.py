@@ -42,7 +42,10 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': False,
-                'internal': False}
+                'internal': False,
+                'provider_source': None,
+                'namespace_default_provider_source': None,
+                'provider_source_inheritance_disabled': False}
             ]
         }
         assert res.status_code == 200
@@ -77,7 +80,10 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False, 'trusted': False,
-                'internal': False}
+                'internal': False,
+                'provider_source': None,
+                'namespace_default_provider_source': None,
+                'provider_source_inheritance_disabled': False}
             ]
         }
         assert res.status_code == 200
@@ -143,7 +149,10 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': True,
-                'internal': False}
+                'internal': False,
+                'provider_source': None,
+                'namespace_default_provider_source': None,
+                'provider_source_inheritance_disabled': False}
             ]
         }
         assert res.status_code == 200

@@ -924,3 +924,102 @@ class TestModuleProvider(TerraregIntegrationTest):
             if module_provider:
                 module_provider.delete()
 
+    def test_module_provider_provider_source_returns_provider_source(self):
+        """Test that ModuleProvider.provider_source returns the correct provider_source"""
+        import json
+        import terrareg.provider_source.factory
+        import terrareg.provider_source_type
+
+        # Create provider_source in database
+        provider_source_name = "test-provider-source-ps-props"
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.provider_source.insert().values(
+                name=provider_source_name,
+                api_name="test-provider-source-ps-props",
+                provider_source_type=terrareg.provider_source_type.ProviderSourceType.GITHUB,
+                config=db.encode_blob(json.dumps({
+                    "base_url": "https://github.example.com",
+                    "api_url": "https://api.github.example.com",
+                    "client_id": "test-client-id",
+                    "client_secret": "test-client-secret",
+                    "login_button_text": "Test Login",
+                    "private_key_path": "./test_key.pem",
+                    "app_id": "test-app-id",
+                    "default_installation_id": "test-default-installation-id",
+                    "auto_generate_github_organisation_namespaces": False
+                }))
+            ))
+
+        try:
+            provider_source = terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(provider_source_name)
+
+            # Create module and module_provider
+            namespace = Namespace.create("test-namespace-ps-props")
+            module = Module(namespace=namespace, name="test-module")
+            module_provider = ModuleProvider.get(module=module, name="testprovider", create=True)
+
+            # Link provider_source to module_provider
+            module_provider.update_attributes(provider_source_name=provider_source_name)
+
+            # Verify provider_source property returns the provider_source
+            assert module_provider.provider_source is not None
+            assert module_provider.provider_source.name == provider_source_name
+            assert module_provider.provider_source.api_name == "test-provider-source-ps-props"
+
+            # Cleanup
+            module_provider.delete()
+            # Note: Module class has no delete method - provider deletion handles cleanup
+            namespace.delete()
+        finally:
+            # Delete provider source
+            with db.get_connection() as conn:
+                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+
+    def test_module_provider_provider_source_none_when_not_linked(self):
+        """Test that ModuleProvider.provider_source returns None when not linked"""
+        # Create module and module_provider WITHOUT provider_source
+        namespace = Namespace.create("test-namespace-ps-none")
+        module = Module(namespace=namespace, name="test-module")
+        module_provider = ModuleProvider.get(module=module, name="testprovider", create=True)
+
+        try:
+            # Verify provider_source property returns None
+            assert module_provider.provider_source is None
+
+            # Cleanup
+            module_provider.delete()
+            # Note: Module class has no delete method - provider deletion handles cleanup
+            namespace.delete()
+        finally:
+            pass
+
+    def test_module_provider_provider_source_none_when_empty_string(self):
+        """Test that ModuleProvider.provider_source returns None when provider_source_name is empty string"""
+        # Create module and module_provider with empty provider_source_name
+        namespace = Namespace.create("test-namespace-ps-empty")
+        module = Module(namespace=namespace, name="test-module")
+        module_provider = ModuleProvider.get(module=module, name="testprovider", create=True)
+
+        try:
+            # Update attributes to set empty provider_source_name
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.module_provider.update().where(
+                    db.module_provider.c.id == module_provider.pk
+                ).values(provider_source_name=None))
+
+            # Clear cache
+            module_provider._cache_db_row = None
+
+            # Verify provider_source property returns None
+            assert module_provider.provider_source is None
+
+            # Cleanup
+            module_provider.delete()
+            # Note: Module class has no delete method - provider deletion handles cleanup
+            namespace.delete()
+        finally:
+            pass
+
+

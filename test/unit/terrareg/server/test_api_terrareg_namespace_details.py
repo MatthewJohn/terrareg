@@ -37,7 +37,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
         res = client.get('/v1/terrareg/namespaces/testnamespace')
 
         assert res.status_code == 200
-        assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': None}
+        assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': None, 'default_provider_source': None}
 
     @setup_test_data()
     def test_with_trusted_namespace(self, client, mock_models):
@@ -46,7 +46,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.get('/v1/terrareg/namespaces/testnamespace')
 
             assert res.status_code == 200
-            assert res.json == {'is_auto_verified': False, 'trusted': True, 'display_name': None}
+            assert res.json == {'is_auto_verified': False, 'trusted': True, 'display_name': None, 'default_provider_source': None}
 
     @setup_test_data()
     def test_with_auto_verified_namespace(self, client, mock_models):
@@ -55,7 +55,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.get('/v1/terrareg/namespaces/testnamespace')
 
             assert res.status_code == 200
-            assert res.json == {'is_auto_verified': True, 'trusted': False, 'display_name': None}
+            assert res.json == {'is_auto_verified': True, 'trusted': False, 'display_name': None, 'default_provider_source': None}
 
     @setup_test_data()
     def test_with_display_name(self, client, mock_models):
@@ -64,7 +64,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.get('/v1/terrareg/namespaces/testnamespace')
 
             assert res.status_code == 200
-            assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': 'Unit test display Name'}
+            assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': 'Unit test display Name', 'default_provider_source': None}
 
     @setup_test_data()
     def test_update_no_changes(self, client, mock_models):
@@ -79,7 +79,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.post('/v1/terrareg/namespaces/testnamespace', json={'csrf_token': 'test'})
 
             assert res.status_code == 200
-            assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': None}
+            assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': None, 'default_provider_source': None}
 
             mock_update_display_name.assert_not_called()
             mock_update_name.assert_not_called()
@@ -98,7 +98,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.post('/v1/terrareg/namespaces/testnamespace', json={'display_name': 'New display Name'})
 
             assert res.status_code == 200
-            assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': 'New display Name'}
+            assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': 'New display Name', 'default_provider_source': None}
 
             mock_update_name.assert_not_called()
             mock_create_audit_event.assert_called_once_with(
@@ -120,7 +120,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.post('/v1/terrareg/namespaces/testnamespace', json={'name': 'newname'})
 
             assert res.status_code == 200
-            assert res.json == {'name': 'newname', 'view_href': '/modules/newname', 'display_name': None}
+            assert res.json == {'name': 'newname', 'view_href': '/modules/newname', 'display_name': None, 'default_provider_source': None}
 
             mock_update_display_name.assert_not_called()
             mock_create_audit_event.assert_called_once_with(
@@ -233,3 +233,106 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             return client.get('/v1/terrareg/namespaces/moduledetails')
 
         self._test_unauthenticated_read_api_endpoint_test(call_endpoint)
+
+    @setup_test_data()
+    def test_get_returns_default_provider_source(self, client, mock_models):
+        """Test GET returns default_provider_source field"""
+        res = client.get('/v1/terrareg/namespaces/testnamespace')
+
+        assert res.status_code == 200
+        assert 'default_provider_source' in res.json
+        assert res.json['default_provider_source'] is None
+
+    @setup_test_data()
+    def test_post_set_default_provider_source(self, client, mock_models):
+        """Test setting default_provider_source on namespace"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        # Mock provider source factory to return a mock provider source
+        mock_provider_source = mock.MagicMock()
+        mock_provider_source.name = 'test-provider-source'
+        mock_factory = mock.MagicMock()
+        mock_factory.get_provider_source_by_name.return_value = mock_provider_source
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                mock.patch('terrareg.provider_source.factory.ProviderSourceFactory.get', return_value=mock_factory), \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'default_provider_source': 'test-provider-source'})
+
+            assert res.status_code == 200
+            assert res.json['default_provider_source'] is None
+
+            mock_update_name.assert_not_called()
+            mock_update_display_name.assert_not_called()
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DEFAULT_PROVIDER_SOURCE,
+                object_type='Namespace', object_id='testnamespace',
+                old_value=None, new_value='test-provider-source'
+            )
+
+    @setup_test_data()
+    def test_post_unset_default_provider_source(self, client, mock_models):
+        """Test unsetting default_provider_source with empty string"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'default_provider_source': ''})
+
+            assert res.status_code == 200
+
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DEFAULT_PROVIDER_SOURCE,
+                object_type='Namespace', object_id='testnamespace',
+                old_value=None, new_value=None
+            )
+
+    @setup_test_data()
+    def test_post_invalid_provider_source(self, client, mock_models):
+        """Test POST with invalid provider source returns error"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        # Mock provider source factory to return None (invalid provider)
+        mock_factory = mock.MagicMock()
+        mock_factory.get_provider_source_by_name.return_value = None
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.provider_source.factory.ProviderSourceFactory.get', return_value=mock_factory), \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'default_provider_source': 'invalid-source'})
+
+            assert res.status_code == 400
+            assert 'Provider source' in res.json['message']
+
+    @setup_test_data()
+    def test_post_omit_default_provider_source_no_change(self, client, mock_models):
+        """Test omitting default_provider_source field doesn't call update method"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'display_name': 'New Name'})
+
+            assert res.status_code == 200
+
+            # Verify update_display_name was called (audit event), but update_name was not
+            mock_update_name.assert_not_called()
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME,
+                object_type='Namespace', object_id='testnamespace',
+                old_value=None, new_value='New Name'
+            )

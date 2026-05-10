@@ -5,23 +5,30 @@ import (
 	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	providerSourceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 )
 
 // ConfigRepositoryImpl implements the ConfigRepository interface
 type ConfigRepositoryImpl struct {
-	versionReader *version.VersionReader
-	domainConfig  *model.DomainConfig
+	versionReader      *version.VersionReader
+	domainConfig       *model.DomainConfig
+	providerSourceFactory *providerSourceService.ProviderSourceFactory
 }
 
-// NewConfigRepositoryImpl creates a new ConfigRepositoryImpl with injected domain config
-func NewConfigRepositoryImpl(versionReader *version.VersionReader, domainConfig *model.DomainConfig) *ConfigRepositoryImpl {
+// NewConfigRepositoryImpl creates a new ConfigRepositoryImpl with injected dependencies
+func NewConfigRepositoryImpl(
+	versionReader *version.VersionReader,
+	domainConfig *model.DomainConfig,
+	providerSourceFactory *providerSourceService.ProviderSourceFactory,
+) *ConfigRepositoryImpl {
 	if domainConfig == nil {
 		panic("ConfigRepositoryImpl requires domain config to be injected")
 	}
 	return &ConfigRepositoryImpl{
-		versionReader: versionReader,
-		domainConfig:  domainConfig,
+		versionReader:      versionReader,
+		domainConfig:       domainConfig,
+		providerSourceFactory: providerSourceFactory,
 	}
 }
 
@@ -104,10 +111,29 @@ func (r *ConfigRepositoryImpl) GetProviderSources(ctx context.Context) ([]model.
 	return r.getProviderSources()
 }
 
-// getProviderSources parses provider source configuration from environment variables
+// getProviderSources loads provider sources from the database via ProviderSourceFactory
 func (r *ConfigRepositoryImpl) getProviderSources() ([]model.ProviderSource, error) {
-	// For now, return empty provider sources
-	// This would need to be implemented based on the provider source factory pattern
-	// from the Python version
-	return []model.ProviderSource{}, nil
+	// If factory is not injected, fall back to empty list
+	if r.providerSourceFactory == nil {
+		return []model.ProviderSource{}, nil
+	}
+
+	ctx := context.Background()
+	sources, err := r.providerSourceFactory.GetAllProviderSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert domain provider sources to UI model
+	providerSources := make([]model.ProviderSource, 0, len(sources))
+	for _, source := range sources {
+		name := source.Name()
+		loginButtonText, _ := source.LoginButtonText(ctx)
+		providerSources = append(providerSources, model.ProviderSource{
+			Name:            name,
+			APIName:         name,
+			LoginButtonText: loginButtonText,
+		})
+	}
+	return providerSources, nil
 }

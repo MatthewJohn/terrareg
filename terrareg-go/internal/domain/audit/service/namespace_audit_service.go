@@ -80,3 +80,18 @@ func (s *NamespaceAuditService) LogNamespaceDelete(ctx context.Context, namespac
 	)
 	return s.auditRepo.Create(ctx, audit)
 }
+
+// LogNamespaceModifyDefaultProviderSource logs namespace default provider source modification audit event
+// Python reference: /app/terrareg/models.py lines 1174-1213
+func (s *NamespaceAuditService) LogNamespaceModifyDefaultProviderSource(ctx context.Context, namespace types.NamespaceName, oldValue, newValue *string) error {
+	username := getUsernameFromContext(ctx)
+	audit := model.NewAuditHistory(
+		username,
+		model.AuditActionNamespaceModifyDefaultProviderSource,
+		"Namespace",
+		string(namespace),
+		oldValue,
+		newValue,
+	)
+	return s.auditRepo.Create(ctx, audit)
+}

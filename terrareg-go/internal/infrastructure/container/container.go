@@ -855,7 +855,7 @@ func NewContainer(
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo, namespaceAuditService)
-	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo, namespaceAuditService)
+	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo, namespaceAuditService, c.ProviderSourceFactory)
 	c.DeleteNamespaceCmd = namespace.NewDeleteNamespaceCommand(c.NamespaceRepo, c.ModuleProviderRepo, c.ProviderRepo, namespaceAuditService)
 	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo, moduleAuditService)
 	publishModuleVersionCmd, err := moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo, moduleAuditService)
@@ -863,7 +863,7 @@ func NewContainer(
 		return nil, fmt.Errorf("failed to create publish module version command: %w", err)
 	}
 	c.PublishModuleVersionCmd = publishModuleVersionCmd
-	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
+	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo, c.ProviderSourceFactory, moduleAuditService)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo, moduleAuditService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)
@@ -993,7 +993,7 @@ func NewContainer(
 
 	// Initialize config repository and queries
 	versionReader := version.NewVersionReader()
-	configRepository := config.NewConfigRepositoryImpl(versionReader, domainConfig)
+	configRepository := config.NewConfigRepositoryImpl(versionReader, domainConfig, c.ProviderSourceFactory)
 	c.GetConfigQuery = configQuery.NewGetConfigQuery(configRepository)
 	c.GetVersionQuery = configQuery.NewGetVersionQuery(configRepository)
 

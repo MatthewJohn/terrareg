@@ -965,6 +965,27 @@ class SettingsTab extends ModuleDetailsTab {
             browseUrlTemplate.attr('placeholder', `https://github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}/tree/{tag}/{path}`);
             browseUrlTemplate.val(this._moduleDetails.repo_browse_url_template);
 
+            // Setup provider sources dropdown
+            let providerSourceSelect = $('#settings-provider-source');
+            $.get('/v1/terrareg/config').then((data) => {
+                if (data && data.PROVIDER_SOURCES) {
+                    data.PROVIDER_SOURCES.forEach((providerSource) => {
+                        let option = $('<option></option>');
+                        option.val(providerSource.name);
+                        option.text(providerSource.name);
+                        if (this._moduleDetails.provider_source === providerSource.name) {
+                            option.attr('selected', '');
+                        }
+                        providerSourceSelect.append(option);
+                    });
+                }
+            });
+
+            // Set provider source inheritance disabled checkbox
+            if (this._moduleDetails.provider_source_inheritance_disabled) {
+                $('#settings-provider-source-inheritance-disabled').attr('checked', true);
+            }
+
             // Obtain list of namespaces to move to
             isLoggedIn().then((auth) => {
                 $.get('/v1/terrareg/namespaces').then((data) => {
@@ -2580,6 +2601,8 @@ function updateModuleProviderSettings(moduleDetails) {
             git_path: $('#settings-git-path').val(),
             archive_git_path: $('#settings-archive-git-path').is(':checked'),
             verified: $('#settings-verified').is(':checked'),
+            provider_source: $('#settings-provider-source').val(),
+            provider_source_inheritance_disabled: $('#settings-provider-source-inheritance-disabled').is(':checked'),
             csrf_token: $('#settings-csrf-token').val()
         }),
         contentType: 'application/json'

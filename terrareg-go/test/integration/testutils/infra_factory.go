@@ -6,6 +6,7 @@ import (
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	authRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	providerSourceRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_source/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	providerrepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
@@ -14,6 +15,7 @@ import (
 	sqldbAuth "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	sqldbModule "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	sqldbProvider "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
+	sqldbProviderSource "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider_source"
 	"github.com/stretchr/testify/require"
 )
 
@@ -108,12 +110,13 @@ func CreateUserGroupRepository(t *testing.T, db *sqldb.Database) authRepository.
 
 // TestRepositories holds all common repositories with consistent config
 type TestRepositories struct {
-	Namespace      repository.NamespaceRepository
-	ModuleProvider repository.ModuleProviderRepository
-	ModuleVersion  repository.ModuleVersionRepository
-	UserGroup      authRepository.UserGroupRepository
-	Analytics      analyticsCmd.AnalyticsRepository
-	Provider       providerrepo.ProviderRepository
+	Namespace        repository.NamespaceRepository
+	ModuleProvider   repository.ModuleProviderRepository
+	ModuleVersion    repository.ModuleVersionRepository
+	UserGroup        authRepository.UserGroupRepository
+	Analytics        analyticsCmd.AnalyticsRepository
+	Provider         providerrepo.ProviderRepository
+	ProviderSource   providerSourceRepository.ProviderSourceRepository
 }
 
 // CreateTestRepositories creates all common repositories with consistent config
@@ -145,12 +148,16 @@ func CreateTestRepositories(t *testing.T, db *sqldb.Database, opts ...ConfigOpti
 	// Create provider repository
 	providerRepo := sqldbProvider.NewProviderRepository(db.DB)
 
+	// Create provider source repository
+	psRepo := sqldbProviderSource.NewProviderSourceRepository(db.DB)
+
 	return &TestRepositories{
-		Namespace:      nsRepo,
-		ModuleProvider: mpRepo,
-		ModuleVersion:  mvRepo,
-		UserGroup:      ugRepo,
-		Analytics:      analyticsRepoImpl,
-		Provider:       providerRepo,
+		Namespace:        nsRepo,
+		ModuleProvider:   mpRepo,
+		ModuleVersion:    mvRepo,
+		UserGroup:        ugRepo,
+		Analytics:        analyticsRepoImpl,
+		Provider:         providerRepo,
+		ProviderSource:   psRepo,
 	}
 }

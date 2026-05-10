@@ -14,6 +14,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/test/fixtures"
 	testutils "github.com/matthewjohn/terrareg/terrareg-go/test/integration/testutils"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 )
 
 // versionSorter implements sort.Interface for semantic version sorting
@@ -66,7 +67,7 @@ func TestModuleProvider_InvalidNames(t *testing.T) {
 
 	for _, name := range invalidNames {
 		t.Run(name, func(t *testing.T) {
-			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone)
+			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory))
 			_, err := model.NewModuleProvider(namespace, types.ModuleName("testmodule"), types.ModuleProviderName(name))
 			assert.Error(t, err, "Expected error for invalid provider name: %s", name)
 		})
@@ -89,7 +90,7 @@ func TestModuleProvider_ValidNames(t *testing.T) {
 
 	for _, name := range validNames {
 		t.Run(name, func(t *testing.T) {
-			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone)
+			namespace := model.ReconstructNamespace(1, "test", nil, model.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory))
 			providerName := types.ModuleProviderName(name)
 			moduleProvider, err := model.NewModuleProvider(namespace, types.ModuleName("testmodule"), providerName)
 			assert.NoError(t, err, "Expected no error for valid provider name: %s", name)
@@ -972,7 +973,7 @@ func TestModuleProvider_LatestVersionWith190And110(t *testing.T) {
 	defer testutils.CleanupTestDatabase(t, db)
 
 	// Create namespace
-	namespace := model.ReconstructNamespace(1, "testns", nil, model.NamespaceTypeNone)
+	namespace := model.ReconstructNamespace(1, "testns", nil, model.NamespaceTypeNone, nil, new(mocks.MockProviderSourceFactory))
 	err := db.DB.Create(&sqldb.NamespaceDB{
 		ID:            namespace.ID(),
 		Namespace:     "testns",
@@ -989,12 +990,15 @@ func TestModuleProvider_LatestVersionWith190And110(t *testing.T) {
 		namespace,
 		types.ModuleName("testmod"),
 		types.ModuleProviderName("aws"),
-		false, // verified
-		nil, // gitProviderID
+		false,         // verified
+		nil,           // gitProviderID
 		nil, nil, nil, // repoBaseURLTemplate, repoCloneURLTemplate, repoBrowseURLTemplate
 		nil, nil, // gitTagFormat, gitPath
-		false, // archiveGitPath
-		now, now, // createdAt, updatedAt
+		false,                                // archiveGitPath
+		nil,                                  // ProviderSourceName
+		false,                                // Disable provider source inheritance
+		new(mocks.MockProviderSourceFactory), // ProviderSourceFactory
+		now, now,                             // createdAt, updatedAt
 	)
 
 	// Save to database
@@ -1044,12 +1048,15 @@ func TestModuleProvider_LatestVersionWith190And110(t *testing.T) {
 			namespace,
 			types.ModuleName("testmod2"),
 			types.ModuleProviderName("aws"),
-			false, // verified
-			nil, // gitProviderID
+			false,         // verified
+			nil,           // gitProviderID
 			nil, nil, nil, // repoBaseURLTemplate, repoCloneURLTemplate, repoBrowseURLTemplate
 			nil, nil, // gitTagFormat, gitPath
-			false, // archiveGitPath
-			now, now, // createdAt, updatedAt
+			false,                                // archiveGitPath
+			nil,                                  // ProviderSourceName
+			false,                                // Disable provider source inheritance
+			new(mocks.MockProviderSourceFactory), // ProviderSourceFactory
+			now, now,                             // createdAt, updatedAt
 		)
 
 		dbModuleProvider2 := sqldb.ModuleProviderDB{

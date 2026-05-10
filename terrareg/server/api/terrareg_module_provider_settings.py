@@ -81,6 +81,20 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
+            'provider_source', type=str,
+            required=False,
+            default=None,
+            help='Name of provider source for git authentication.',
+            location='json'
+        )
+        parser.add_argument(
+            'provider_source_inheritance_disabled', type=inputs.boolean,
+            required=False,
+            default=None,
+            help='Whether provider source inheritance from namespace is disabled.',
+            location='json'
+        )
+        parser.add_argument(
             'namespace', type=str,
             required=False,
             default=None,
@@ -190,6 +204,17 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         # Update verified if specified
         if args.verified is not None:
             module_provider.update_verified(verified=args.verified)
+
+        # Update provider_source if specified
+        if args.provider_source is not None:
+            try:
+                module_provider.update_provider_source(provider_source_name=args.provider_source)
+            except terrareg.errors.InvalidProviderSourceNameError as exc:
+                return {'message': str(exc)}, 400
+
+        # Update provider_source_inheritance_disabled if specified
+        if args.provider_source_inheritance_disabled is not None:
+            module_provider.update_provider_source_inheritance_disabled(disabled=args.provider_source_inheritance_disabled)
 
         # If any of the module name/namespace changing arguments are provided,
         # call method to update name

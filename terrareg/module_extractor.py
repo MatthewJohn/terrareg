@@ -10,14 +10,12 @@ import zipfile
 import tarfile
 import subprocess
 import json
-import datetime
 import re
 import glob
 import pathlib
 import urllib.parse
 
-from datetime import datetime, timezone, timedelta
-from github import Auth, GithubIntegration
+from datetime import datetime
 from werkzeug.utils import secure_filename
 import magic
 from bs4 import BeautifulSoup
@@ -492,7 +490,7 @@ terraform {{
         self._module_version.update_attributes(
             module_details_id=module_details.pk,
 
-            published_at=datetime.datetime.now(),
+            published_at=datetime.now(),
 
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
@@ -827,32 +825,6 @@ class ApiUploadModuleExtractor(ModuleExtractor):
         super(ApiUploadModuleExtractor, self).process_upload()
 
 
-class GitHubAppManager:
-    def __init__(self, app_id, private_key, installation_id):
-        self.app_id = app_id
-        self.private_key = private_key
-        self.installation_id = int(installation_id)
-        self.token = None
-        self.expiry = None
-
-    def get_valid_token(self):
-        if not self.token or not self.expiry or self.expiry < datetime.now(timezone.utc) + timedelta(minutes=5):
-            self._refresh_token()
-
-        return self.token
-
-    def _refresh_token(self):
-        auth = Auth.AppAuth(self.app_id, self.private_key)
-        g = GithubIntegration(auth=auth)
-
-        token_auth = g.get_access_token(int(self.installation_id))
-
-        self.token = Auth.Token(token_auth.token)
-        # PyGithub returns expires_at as a datetime object
-        self.expiry = token_auth.expires_at.replace(tzinfo=timezone.utc)
-        if Config().DEBUG:
-            print("Successfully requested a new GitHub App token.")
-
 class GitModuleExtractor(ModuleExtractor):
     """Extraction of module via git."""
 
@@ -861,14 +833,11 @@ class GitModuleExtractor(ModuleExtractor):
     def __init__(self, *args, **kwargs):
         """Store member variables."""
         super(GitModuleExtractor, self).__init__(*args, **kwargs)
-        # # Sanitise URL and tag name
-        # self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
-        # self._tag_name = urllib.parse.quote(tag_name, safe='/')
 
     def _get_authenticated_git_url(self, git_url: str) -> str:
         """
-        Attempts to authenticate the git URL using GitHub App or basic credentials
-        and returns the authenticated URL.
+        Attempts to authenticate the git URL using provider source GitHub App authentication
+        or basic credentials and returns the authenticated URL.
         """
         config = Config()
         parsed_url = urllib.parse.urlparse(git_url)
@@ -878,42 +847,27 @@ class GitModuleExtractor(ModuleExtractor):
 
         authenticated_netloc = None
 
-        # 1. Try Github App Authentication
-        if config.MODULE_CLONE_GITHUB_APP_ID and \
-           (config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY or config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH) and \
-           config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID:
+        # 1. Try provider source GitHub App authentication
+        module_provider = self._module_version.module_provider
+        namespace = module_provider.module.namespace
+
+        if provider_source := module_provider.get_effective_provider_source():
             try:
-                private_key = config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY
-                if not private_key:
-                    with open(config.MODULE_CLONE_GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
-                        private_key = f.read()
-                github_module = GitHubAppManager(config.MODULE_CLONE_GITHUB_APP_ID, private_key, config.MODULE_CLONE_GITHUB_APP_INSTALLATION_ID)
-                access_token = github_module.get_valid_token()
-
-                if access_token:
-                    authenticated_netloc = f'x-access-token:{access_token.token}'
-                else:
-                    raise Exception("No token returned from Github API for App installation.")
-
+                installation_id = provider_source.get_github_app_installation_id(namespace)
+                if installation_id:
+                    token = provider_source.generate_app_installation_token(installation_id)
+                    if token:
+                        authenticated_netloc = f'x-access-token:{token}'
             except Exception as exc:
                 if config.DEBUG:
-                    print(f'An error occurred while generating Github App installation token: {str(exc)}')
+                    print(f'Provider source GitHub App auth failed: {exc}')
 
-        # 2. Fallback to Upstream Git Credentials (using PyGithub Auth objects)
-        if not authenticated_netloc and \
-           (config.UPSTREAM_GIT_CREDENTIALS_USERNAME or config.UPSTREAM_GIT_CREDENTIALS_PASSWORD):
-            if config.UPSTREAM_GIT_CREDENTIALS_PASSWORD:
-                if config.UPSTREAM_GIT_CREDENTIALS_USERNAME:
-                    # Use Auth.Login to get username and password
-                    auth = Auth.Login(config.UPSTREAM_GIT_CREDENTIALS_USERNAME, config.UPSTREAM_GIT_CREDENTIALS_PASSWORD)
-                    authenticated_netloc = f"{auth.login}:{auth.password}"
-                else:
-                    # Use Auth.Token for a personal access token
-                    auth = Auth.Token(config.UPSTREAM_GIT_CREDENTIALS_PASSWORD)
-                    authenticated_netloc = f":{auth.token}"
-            else:
-                # Only username provided, no password
-                authenticated_netloc = f"{config.UPSTREAM_GIT_CREDENTIALS_USERNAME}:"
+        # 2. Fallback to basic credentials
+        if not authenticated_netloc:
+            username = config.UPSTREAM_GIT_CREDENTIALS_USERNAME or ""
+            password = config.UPSTREAM_GIT_CREDENTIALS_PASSWORD or ""
+            if username or password:
+                authenticated_netloc = f"{username}:{password}"
 
         if authenticated_netloc:
             domain_and_port = parsed_url.netloc.split('@')[-1]

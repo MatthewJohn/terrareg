@@ -26,10 +26,11 @@ func NewNamespaceDetailsQuery(namespaceRepo namespaceRepo.NamespaceRepository, n
 
 // NamespaceDetails represents namespace details
 type NamespaceDetails struct {
-	Name           string  `json:"name"`
-	DisplayName    *string `json:"display_name,omitempty"`
-	IsAutoVerified bool    `json:"is_auto_verified"`
-	Trusted        bool    `json:"trusted"`
+	Name                   string  `json:"name"`
+	DisplayName            *string `json:"display_name,omitempty"`
+	IsAutoVerified         bool    `json:"is_auto_verified"`
+	Trusted                bool    `json:"trusted"`
+	DefaultProviderSource  *string `json:"default_provider_source"`
 }
 
 // Execute executes the query
@@ -51,11 +52,13 @@ func (q *NamespaceDetailsQuery) Execute(ctx context.Context, namespaceName strin
 	}
 
 	displayName := namespace.DisplayName()
+	defaultProviderSource := namespace.DefaultProviderSourceName()
 	details := &NamespaceDetails{
-		Name:           string(namespace.Name()),
-		DisplayName:    displayName,
-		IsAutoVerified: q.namespaceService.IsAutoVerified(namespace),
-		Trusted:        q.namespaceService.IsTrusted(namespace),
+		Name:                  string(namespace.Name()),
+		DisplayName:           displayName,
+		IsAutoVerified:        q.namespaceService.IsAutoVerified(namespace),
+		Trusted:               q.namespaceService.IsTrusted(namespace),
+		DefaultProviderSource: defaultProviderSource,
 	}
 
 	return details, nil

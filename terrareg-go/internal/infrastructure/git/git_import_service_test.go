@@ -13,6 +13,7 @@ import (
 	moduleRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared/types"
 	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/test/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -272,6 +273,9 @@ func TestGitImportService_TemporaryDirectoryUsage(t *testing.T) {
 		&tagFormat,
 		nil,
 		false,
+		nil,
+		false,
+		new(mocks.MockProviderSourceFactory),
 		time.Now(),
 		time.Now(),
 	)

@@ -178,7 +178,7 @@ func ReconstructNamespaceDomainModel(t *testing.T, db *sqldb.Database, nsDB *sql
 		nsType = model.NamespaceTypeNone
 	}
 
-	return model.ReconstructNamespace(nsDB.ID, types.NamespaceName(nsDB.Namespace), nsDB.DisplayName, nsType)
+	return model.ReconstructNamespace(nsDB.ID, types.NamespaceName(nsDB.Namespace), nsDB.DisplayName, nsType, nsDB.DefaultProviderSourceName, nil)
 }
 
 // SetLatestVersionForProvider sets the latest version for a module provider
