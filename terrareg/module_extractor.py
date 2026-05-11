@@ -23,6 +23,7 @@ import markdown
 import pathspec
 
 import terrareg.models
+import terrareg.module_security_results
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -170,30 +171,36 @@ class ModuleExtractor:
     def _run_tfsec(self, module_path):
         """Run tfsec and return output."""
         try:
-            raw_output = subprocess.check_output([
-                'trivy', 'config',
-                '--format', 'json',
-                '--include-non-failures',
-                '--tf-exclude-downloaded-modules',
-                '--exit-code', '0',
-                module_path
-            ])
+                raw_output = subprocess.check_output([
+                    'trivy', 'fs', '--format', 'json', '--tf', module_path
+                ])
         except subprocess.CalledProcessError as exc:
             raise UnableToProcessTerraformError(
                 'An error occurred whilst performing security scan of code.' +
                 (f": {str(exc)}: {exc.output.decode('utf-8')}" if Config().DEBUG else "")
             )
-
-        # Validate json
-        try:
-            tfsec_results = json.loads(raw_output)
-        except json.JSONDecodeError as exc:
+        except FileNotFoundError as exc:
             raise UnableToProcessTerraformError(
-                'An error occurred whilst interpretting results of security scan.' +
-                (f": {str(exc)}: {exc.output.decode('utf-8')}" if Config().DEBUG else "")
+                'trivy binary not found. Ensure trivy is installed and in PATH.' +
+                (f": {str(exc)}" if Config().DEBUG else "")
+            )
+        except FileNotFoundError as exc:
+            raise UnableToProcessTerraformError(
+                'tfsec binary not found. Ensure tfsec is installed and in PATH.' +
+                (f": {str(exc)}" if Config().DEBUG else "")
             )
 
-        return tfsec_results
+        # Convert trivy JSON to tfsec-like structure
+        try:
+            trivy_results = json.loads(raw_output)
+            tfsec_like = terrareg.module_security_results.ModuleSecurityResults.from_trivy_data(trivy_results).to_dict()
+        except Exception as exc:
+            raise UnableToProcessTerraformError(
+                'An error occurred whilst interpreting results of security scan.' +
+                (f": {str(exc)}" if Config().DEBUG else "")
+            )
+
+        return tfsec_like
 
     def _create_terraform_rc_file(self):
         """Create terraform RC file, if enabled"""

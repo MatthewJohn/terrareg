@@ -95,7 +95,7 @@ class TrivyModuleSecurityResult(ModuleSecurityResult):
             rule_id=data.get("ID"),
             long_id=data.get("Query"),
             rule_description=data.get("Title"),
-            provider=cause_metadata.get("Provider", "").lower() or None,
+            provider=cause_metadata.get("Provider", None),
             service=cause_metadata.get("Service"),
             impact=data.get("Description"),
             resolution=data.get("Resolution"),
