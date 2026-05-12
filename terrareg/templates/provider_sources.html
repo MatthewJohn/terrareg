@@ -1,0 +1,87 @@
+{% extends 'template.html' %}
+
+{% block title %}Provider Sources{% endblock %}
+
+{% block header %}
+<script src="/static/js/terrareg/provider_sources_page.js"></script>
+<link rel="stylesheet" href="/static/css/provider_sources_page.css" />
+
+<script>
+    window.Prism = window.Prism || {};
+    $(document).ready(function () {
+        renderPage();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul id="breadcrumb-ul">
+        <li><a href="/">Home</a></li>
+        <li class="is-active"><a href="/provider-sources">Provider Sources</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+        <section class="section">
+            <h1 class="title">Provider Sources</h1>
+            <p class="subtitle">Manage Git provider sources used for Terraform providers</p>
+
+            <div id="error-message" class="notification is-danger default-hidden">
+                <button class="delete"></button>
+                <span id="error-message-text"></span>
+            </div>
+
+            <div id="success-message" class="notification is-success default-hidden">
+                <button class="delete"></button>
+                <span id="success-message-text"></span>
+            </div>
+
+            <div class="box">
+                <h2 class="title is-4">Provider Sources List</h2>
+                <table id="provider-sources-table" class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>API Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="provider-sources-table-body">
+                        <!-- Rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="box">
+                <h2 class="title is-4">About Provider Sources</h2>
+                <p>Provider sources define the Git repositories where Terraform providers are hosted. Each provider source specifies the URL templates for cloning, browsing, and accessing the provider's API.</p>
+                <p><strong>Note:</strong> Provider sources can only be deleted if they are not currently in use by any modules or providers.</p>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Delete Provider Source</p>
+            <button class="delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+            <p>Are you sure you want to delete the provider source <strong id="delete-provider-source-name"></strong>?</p>
+            <p class="help is-danger">This action cannot be undone. The provider source will be removed from the system.</p>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-danger" id="confirm-delete-button">Delete</button>
+            <button class="button" id="cancel-delete-button">Cancel</button>
+        </footer>
+    </div>
+</div>
+
+{% endblock %}

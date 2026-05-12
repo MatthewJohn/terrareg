@@ -39,6 +39,13 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
             obj = PublishApiKeyAuthMethod()
             assert obj.is_enabled() is expected_result
 
+    def test_is_enabled_from_db_api_key(self):
+        """Test DB-backed publish API keys enable the auth method."""
+        with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', []), \
+                mock.patch('terrareg.models.ApiKey.has_active_keys', return_value=True):
+            obj = PublishApiKeyAuthMethod()
+            assert obj.is_enabled() is True
+
     def test_requires_csrf_tokens(self):
         """Test requires_csrf_token method"""
         obj = PublishApiKeyAuthMethod()
@@ -94,6 +101,20 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
 
             obj = PublishApiKeyAuthMethod()
             assert obj.check_auth_state() is expected_result
+
+    def test_check_auth_state_with_db_api_key(self):
+        """Test publish auth falls back to DB-backed API keys."""
+        headers = {'HTTP_X_TERRAREG_APIKEY': 'db-valid'}
+        mock_api_key = mock.MagicMock()
+        with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', []), \
+                mock.patch('terrareg.models.ApiKey.verify_key', return_value=mock_api_key) as mock_verify_key, \
+                BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
+
+            obj = PublishApiKeyAuthMethod()
+            assert obj.check_auth_state() is True
+
+        mock_verify_key.assert_called_once()
+        mock_api_key.mark_used.assert_called_once_with()
 
     @pytest.mark.parametrize('namespace,access_type,expected_result', [
         ('testnamespace', UserGroupNamespacePermissionType.MODIFY, False),

@@ -1,0 +1,209 @@
+{% extends 'template.html' %}
+
+{% block title %}API Keys{% endblock %}
+
+{% block header %}
+<script>
+    var dataTable = undefined;
+
+    function showError(error) {
+        $('#api-key-error').html(error);
+        $('#api-key-error').css('display', 'block');
+        $(window).scrollTop($('#api-key-error').offset().top);
+    }
+
+    function hideError() {
+        $('#api-key-error').css('display', 'none');
+    }
+
+    function showCreatedKey(value) {
+        $('#created-api-key-value').text(value);
+        $('#created-api-key-notification').css('display', 'block');
+        $(window).scrollTop($('#created-api-key-notification').offset().top);
+    }
+
+    function hideCreatedKey() {
+        $('#created-api-key-notification').css('display', 'none');
+    }
+
+    function createApiKey() {
+        if (!$('#create-api-key-form')[0].reportValidity()) {
+            return;
+        }
+
+        $.post({
+            url: '/v1/terrareg/api-keys',
+            data: JSON.stringify({
+                name: $('#api-key-name').val(),
+                key_type: $('#api-key-type').val(),
+                namespace: $('#api-key-namespace').val() || null,
+                expires_at: $('#api-key-expires-at').val() || null,
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            hideError();
+            showCreatedKey(res.plaintext_key);
+            $('#create-api-key-form')[0].reset();
+            getApiKeyList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    function revokeApiKey(apiKeyId) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/api-keys/${apiKeyId}`,
+            contentType: 'application/json'
+        }).done(() => {
+            hideError();
+            getApiKeyList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    async function getApiKeyList() {
+        return new Promise((resolve, reject) => {
+            $.get('/v1/terrareg/api-keys').then((apiKeys) => {
+                let tableContent = $('#api-key-table-content');
+
+                if (dataTable) {
+                    dataTable.destroy();
+                }
+
+                tableContent.empty();
+
+                for (let apiKey of apiKeys) {
+                    let row = $('<tr></tr>');
+                    row.append(`<td class="is-vcentered">${apiKey.name}</td>`);
+                    row.append(`<td class="is-vcentered">${apiKey.key_type}</td>`);
+                    row.append(`<td class="is-vcentered">${apiKey.namespace || '<em>all</em>'}</td>`);
+                    row.append(`<td class="is-vcentered"><code>${apiKey.key_prefix}</code></td>`);;
+                    row.append(`<td class="is-vcentered">${apiKey.created_by || ''}</td>`);
+                    row.append(`<td class="is-vcentered">${apiKey.last_used_at || ''}</td>`);
+                    row.append(`<td class="is-vcentered">${apiKey.expires_at || ''}</td>`);
+                    row.append(`<td class="is-vcentered">${apiKey.is_active ? 'Active' : 'Revoked'}</td>`);
+
+                    let buttonTd = $('<td class="is-vcentered"></td>');
+                    if (apiKey.is_active) {
+                        let revokeButton = $('<button class="button is-small is-warning">Revoke</button>');
+                        revokeButton.on('click', () => {
+                            revokeApiKey(apiKey.id);
+                        });
+                        buttonTd.append(revokeButton);
+                    }
+                    row.append(buttonTd);
+
+                    tableContent.append(row);
+                }
+            }).then(() => {
+                dataTable = $('#api-key-table').DataTable({
+                    order: [[0, 'asc']],
+                    paging: false,
+                    autoWidth: true,
+                    responsive: true,
+                    lengthMenu: [
+                        [25, 50, -1],
+                        [25, 50, 'All'],
+                    ],
+                });
+                resolve();
+            }).fail(reject);
+        });
+    }
+
+    $(document).ready(() => {
+        hideCreatedKey();
+        getApiKeyList();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li>Settings</li>
+        <li class="is-active"><a href="/api-keys">API Keys</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-four-fifths is-offset-one-tenth">
+
+        <div class="field is-vertical">
+            <div id="api-key-error" style="display: none" class="notification is-danger"></div>
+            <div id="created-api-key-notification" style="display: none" class="notification is-success">
+                <strong>New API key</strong>
+                <p>This value is only shown once. Store it now.</p>
+                <pre id="created-api-key-value"></pre>
+                <button class="button is-small is-light" onclick="hideCreatedKey();">Dismiss</button>
+            </div>
+
+            <table id="api-key-table" class="table display compact nowrap responsive" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Namespace</th>
+                        <th>Prefix</th>
+                        <th>Created By</th>
+                        <th>Last Used</th>
+                        <th>Expires</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="api-key-table-content">
+                </tbody>
+            </table>
+
+            <h2 class="h2">Create API Key</h2>
+            <form id="create-api-key-form" onsubmit="event.preventDefault(); createApiKey();">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input required id="api-key-name" class="input" type="text" placeholder="CI upload key">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Type</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="api-key-type">
+                                <option value="upload">Upload</option>
+                                <option value="publish">Publish</option>
+                                <option value="module_full">Module Full (Upload + Publish)</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Namespace Restriction</label>
+                    <div class="control">
+                        <input id="api-key-namespace" class="input" type="text" placeholder="Leave blank for all namespaces">
+                    </div>
+                    <p class="help">Optional. Restrict this key to a single namespace. Only applies to upload and publish key types.</p>
+                </div>
+                <div class="field">
+                    <label class="label">Expires At</label>
+                    <div class="control">
+                        <input id="api-key-expires-at" class="input" type="datetime-local">
+                    </div>
+                    <p class="help">Optional. Leave blank for a non-expiring key.</p>
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

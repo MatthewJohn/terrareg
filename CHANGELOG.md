@@ -1,5 +1,22 @@
 # Changelog
 
+# [4.5.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.4.0...v4.5.0) (2026-05-12)
+
+
+### Features
+
+* **auth:** Add optional namespace restriction to upload and publish API keys
+* **auth:** Store matched DB-backed API key on Flask `g` during authentication to enable per-request namespace checks
+* **auth:** Add `MODULE_FULL` (`module_full`) API key type granting both upload and publish permissions in a single key
+* **ui:** Add Namespace Restriction field to the API Keys create form
+* **ui:** Add Namespace column to the API Keys list table
+
+
+### Notes
+
+* New nullable `namespace` column added to the `api_key` table — run migrations before deploying (`MIGRATE_DATABASE=True` or `alembic upgrade head`). Existing keys without a namespace set are unaffected.
+
+
 # [4.4.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.4...v4.4.0) (2026-05-10)
 
 

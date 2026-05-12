@@ -1,0 +1,229 @@
+{% extends 'template.html' %}
+
+{% block title %}Git Providers{% endblock %}
+
+{% block header %}
+<script>
+    var dataTable = undefined;
+    var editModeProviderId = null;
+
+    function showError(error) {
+        $('#git-provider-error').html(error);
+        $('#git-provider-error').css('display', 'block');
+        $(window).scrollTop($('#git-provider-error').offset().top);
+    }
+
+    function hideError() {
+        $('#git-provider-error').css('display', 'none');
+    }
+
+    function resetForm() {
+        editModeProviderId = null;
+        $('#git-provider-form-title').text('Create Git Provider');
+        $('#git-provider-submit-button').text('Create');
+        $('#git-provider-cancel-button').css('display', 'none');
+        $('#git-provider-name').val('');
+        $('#git-provider-base-url').val('');
+        $('#git-provider-clone-url').val('');
+        $('#git-provider-browse-url').val('');
+        $('#git-provider-git-path').val('');
+    }
+
+    function populateForm(gitProvider) {
+        editModeProviderId = gitProvider.id;
+        $('#git-provider-form-title').text(`Edit Git Provider: ${gitProvider.name}`);
+        $('#git-provider-submit-button').text('Save');
+        $('#git-provider-cancel-button').css('display', 'inline-flex');
+        $('#git-provider-name').val(gitProvider.name);
+        $('#git-provider-base-url').val(gitProvider.base_url_template);
+        $('#git-provider-clone-url').val(gitProvider.clone_url_template);
+        $('#git-provider-browse-url').val(gitProvider.browse_url_template);
+        $('#git-provider-git-path').val(gitProvider.git_path_template || '');
+        $(window).scrollTop($('#git-provider-form').offset().top);
+    }
+
+    function getFormData() {
+        return {
+            name: $('#git-provider-name').val(),
+            base_url_template: $('#git-provider-base-url').val(),
+            clone_url_template: $('#git-provider-clone-url').val(),
+            browse_url_template: $('#git-provider-browse-url').val(),
+            git_path_template: $('#git-provider-git-path').val(),
+            csrf_token: '{{ csrf_token }}'
+        };
+    }
+
+    function submitGitProvider() {
+        if (!$('#git-provider-form')[0].reportValidity()) {
+            return;
+        }
+
+        const request = {
+            url: editModeProviderId ? `/v1/terrareg/git_providers/${editModeProviderId}` : '/v1/terrareg/git_providers',
+            method: 'POST',
+            data: JSON.stringify(getFormData()),
+            contentType: 'application/json'
+        };
+
+        $.ajax(request).done(() => {
+            hideError();
+            resetForm();
+            getGitProviderList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    function deleteGitProvider(gitProviderId) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/git_providers/${gitProviderId}`,
+            contentType: 'application/json'
+        }).done(() => {
+            hideError();
+            if (editModeProviderId === gitProviderId) {
+                resetForm();
+            }
+            getGitProviderList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    async function getGitProviderList() {
+        return new Promise((resolve, reject) => {
+            $.get('/v1/terrareg/git_providers').then((gitProviders) => {
+                let tableContent = $('#git-provider-table-content');
+
+                if (dataTable) {
+                    dataTable.destroy();
+                }
+
+                tableContent.empty();
+
+                for (let gitProvider of gitProviders) {
+                    let row = $('<tr></tr>');
+                    row.append(`<td class="is-vcentered">${gitProvider.name}</td>`);
+                    row.append(`<td class="is-vcentered"><code>${gitProvider.base_url_template}</code></td>`);
+                    row.append(`<td class="is-vcentered"><code>${gitProvider.clone_url_template}</code></td>`);
+                    row.append(`<td class="is-vcentered"><code>${gitProvider.browse_url_template}</code></td>`);
+                    row.append(`<td class="is-vcentered"><code>${gitProvider.git_path_template || ''}</code></td>`);
+
+                    let buttonTd = $('<td class="is-vcentered"></td>');
+                    let editButton = $('<button class="button is-small is-primary">Edit</button>');
+                    editButton.on('click', () => {
+                        populateForm(gitProvider);
+                    });
+
+                    let deleteButton = $('<button class="button is-small is-danger ml-2">Delete</button>');
+                    deleteButton.on('click', () => {
+                        deleteGitProvider(gitProvider.id);
+                    });
+
+                    buttonTd.append(editButton);
+                    buttonTd.append(deleteButton);
+                    row.append(buttonTd);
+
+                    tableContent.append(row);
+                }
+            }).then(() => {
+                dataTable = $('#git-provider-table').DataTable({
+                    order: [[0, 'asc']],
+                    paging: false,
+                    autoWidth: true,
+                    responsive: true,
+                    lengthMenu: [
+                        [25, 50, -1],
+                        [25, 50, 'All'],
+                    ],
+                });
+                resolve();
+            }).fail(reject);
+        });
+    }
+
+    $(document).ready(() => {
+        resetForm();
+        getGitProviderList();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li>Settings</li>
+        <li class="is-active"><a href="/git-providers">Git Providers</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-four-fifths is-offset-one-tenth">
+
+        <div class="field is-vertical">
+            <div id="git-provider-error" style="display: none" class="notification is-danger"></div>
+
+            <table id="git-provider-table" class="table display compact nowrap responsive" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Base URL Template</th>
+                        <th>Clone URL Template</th>
+                        <th>Browse URL Template</th>
+                        <th>Git Path Template</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="git-provider-table-content">
+                </tbody>
+            </table>
+
+            <h2 id="git-provider-form-title" class="h2">Create Git Provider</h2>
+            <form id="git-provider-form" onsubmit="event.preventDefault(); submitGitProvider();">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input required id="git-provider-name" class="input" type="text" placeholder="Corporate Gitlab">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Base URL Template</label>
+                    <div class="control">
+                        <input required id="git-provider-base-url" class="input" type="text" placeholder="https://git.example.com/{namespace}/{module}">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Clone URL Template</label>
+                    <div class="control">
+                        <input required id="git-provider-clone-url" class="input" type="text" placeholder="ssh://git@git.example.com/{namespace}/{module}.git">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Browse URL Template</label>
+                    <div class="control">
+                        <input required id="git-provider-browse-url" class="input" type="text" placeholder="https://git.example.com/{namespace}/{module}/tree/{tag}/{path}">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Git Path Template</label>
+                    <div class="control">
+                        <input id="git-provider-git-path" class="input" type="text" placeholder="/{module}/{provider}">
+                    </div>
+                    <p class="help">Optional. Use this when namespace or module placeholders are delegated to the path.</p>
+                </div>
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button id="git-provider-submit-button" class="button is-link">Create</button>
+                    </div>
+                    <div class="control">
+                        <button id="git-provider-cancel-button" type="button" class="button is-light" onclick="resetForm();">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
