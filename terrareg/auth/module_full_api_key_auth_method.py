@@ -1,26 +1,28 @@
 
-import terrareg.config
 import terrareg.models
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
 
 
-class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
-    """Auth method for publish API key"""
+class ModuleFullApiKeyAuthMethod(BaseApiKeyAuthMethod):
+    """Auth method for module-full API key (upload + publish)"""
 
-    key_type = 'publish'
-
-    @classmethod
-    def get_valid_keys(cls):
-        return terrareg.config.Config().PUBLISH_API_KEYS
+    key_type = 'module_full'
 
     @classmethod
     def check_auth_state(cls):
-        """Check if upload API key is provided"""
-        return cls._check_api_key(cls.get_valid_keys())
+        """Check if module-full API key is provided"""
+        return cls._check_api_key([])
 
     @classmethod
     def is_enabled(cls):
-        return bool(terrareg.config.Config().PUBLISH_API_KEYS or terrareg.models.ApiKey.has_active_keys(terrareg.models.ApiKeyType.PUBLISH))
+        return terrareg.models.ApiKey.has_active_keys(terrareg.models.ApiKeyType.MODULE_FULL)
+
+    def can_upload_module_version(self, namespace):
+        """Whether user can upload/index module version within a namespace."""
+        key = self.matched_api_key
+        if key is not None and key.namespace is not None:
+            return key.namespace == namespace
+        return True
 
     def can_publish_module_version(self, namespace):
         """Whether user can publish module version within a namespace."""
@@ -35,4 +37,4 @@ class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
 
     def get_username(self):
         """Get username of current user"""
-        return 'Publish API Key'
+        return 'Module Full API Key'

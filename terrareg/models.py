@@ -1,6 +1,8 @@
 
 import contextlib
 import datetime
+import hashlib
+import hmac
 from typing import Optional, Union
 from enum import Enum
 import os
@@ -28,13 +30,14 @@ import terrareg.audit_action
 from terrareg.namespace_type import NamespaceType
 import terrareg.result_data
 from terrareg.errors import (
-    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, GpgKeyInUseError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, GitProviderInUseError, GitProviderManagedByConfigurationError, GpgKeyInUseError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
     RepositoryUrlDoesNotContainPathError,
+    InvalidApiKeyTypeError,
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
     NoModuleDownloadMethodConfiguredError,
@@ -481,8 +484,292 @@ class UserGroupNamespacePermission:
             ))
 
 
+class ApiKeyType(Enum):
+    """Supported API key types."""
+
+    ADMIN = 'admin'
+    UPLOAD = 'upload'
+    PUBLISH = 'publish'
+    MODULE_FULL = 'module_full'
+
+
+class ApiKey:
+    """Interface to create and validate UI-managed API keys."""
+
+    TOKEN_BYTES = 32
+    PREFIX_LENGTH = 8
+    PBKDF2_ITERATIONS = 600000
+
+    @classmethod
+    def _normalise_key_type(cls, key_type):
+        """Convert key type to a validated string value."""
+        if isinstance(key_type, ApiKeyType):
+            return key_type.value
+
+        if isinstance(key_type, str):
+            key_type = key_type.lower()
+            valid_key_types = [api_key_type.value for api_key_type in ApiKeyType]
+            if key_type in valid_key_types:
+                return key_type
+
+        raise InvalidApiKeyTypeError('Invalid API key type: {}'.format(key_type))
+
+    @classmethod
+    def _generate_key_hash(cls, api_key, salt):
+        """Generate a stable PBKDF2 hash for an API key."""
+        return hashlib.pbkdf2_hmac(
+            'sha256',
+            api_key.encode('utf-8'),
+            salt.encode('utf-8'),
+            cls.PBKDF2_ITERATIONS
+        ).hex()
+
+    @classmethod
+    def create(cls, name, key_type, created_by=None, expires_at=None, namespace=None):
+        """Create an API key and return the model plus the plaintext secret."""
+        key_type = cls._normalise_key_type(key_type)
+        plaintext_key = secrets.token_urlsafe(cls.TOKEN_BYTES)
+        salt = secrets.token_hex(16)
+        key_hash = cls._generate_key_hash(plaintext_key, salt)
+
+        db = Database.get()
+        insert = db.api_key.insert().values(
+            name=name,
+            key_type=key_type,
+            key_prefix=plaintext_key[:cls.PREFIX_LENGTH],
+            key_hash=key_hash,
+            key_salt=salt,
+            created_at=datetime.datetime.now(),
+            created_by=created_by,
+            last_used_at=None,
+            expires_at=expires_at,
+            is_active=True,
+            namespace=namespace or None,
+        )
+
+        with db.get_connection() as conn:
+            res = conn.execute(insert)
+
+        return cls(id=res.inserted_primary_key[0]), plaintext_key
+
+    @classmethod
+    def get(cls, id):
+        """Get API key by primary key."""
+        api_key = cls(id=id)
+        if api_key._get_db_row() is None:
+            return None
+        return api_key
+
+    @classmethod
+    def get_all(cls, key_type=None):
+        """Return all API keys, optionally filtered by type."""
+        db = Database.get()
+        select = db.api_key.select()
+        if key_type is not None:
+            select = select.where(db.api_key.c.key_type == cls._normalise_key_type(key_type))
+
+        with db.get_connection() as conn:
+            return [
+                cls(id=row['id'])
+                for row in conn.execute(select)
+            ]
+
+    @classmethod
+    def has_active_keys(cls, key_type):
+        """Whether any active, non-expired API keys exist for the type."""
+        db = Database.get()
+        select = sqlalchemy.select(db.api_key.c.id).where(
+            db.api_key.c.key_type == cls._normalise_key_type(key_type),
+            db.api_key.c.is_active == True,
+            sqlalchemy.or_(
+                db.api_key.c.expires_at.is_(None),
+                db.api_key.c.expires_at > datetime.datetime.now()
+            )
+        ).limit(1)
+
+        with db.get_connection() as conn:
+            return conn.execute(select).fetchone() is not None
+
+    @classmethod
+    def verify_key(cls, api_key, key_type):
+        """Validate a plaintext API key against stored hashes."""
+        key_type = cls._normalise_key_type(key_type)
+        db = Database.get()
+        select = db.api_key.select().where(
+            db.api_key.c.key_type == key_type,
+            db.api_key.c.is_active == True,
+            sqlalchemy.or_(
+                db.api_key.c.expires_at.is_(None),
+                db.api_key.c.expires_at > datetime.datetime.now()
+            )
+        )
+
+        with db.get_connection() as conn:
+            for row in conn.execute(select):
+                candidate_hash = cls._generate_key_hash(api_key, row['key_salt'])
+                if hmac.compare_digest(candidate_hash, row['key_hash']):
+                    return cls(id=row['id'])
+        return None
+
+    @property
+    def pk(self):
+        """Return DB ID for API key."""
+        return self._get_db_row()['id']
+
+    @property
+    def name(self):
+        """Return API key name."""
+        return self._get_db_row()['name']
+
+    @property
+    def key_type(self):
+        """Return API key type."""
+        return self._get_db_row()['key_type']
+
+    @property
+    def key_prefix(self):
+        """Return API key prefix."""
+        return self._get_db_row()['key_prefix']
+
+    @property
+    def created_at(self):
+        """Return API key creation timestamp."""
+        return self._get_db_row()['created_at']
+
+    @property
+    def created_by(self):
+        """Return API key creator."""
+        return self._get_db_row()['created_by']
+
+    @property
+    def last_used_at(self):
+        """Return API key last usage timestamp."""
+        return self._get_db_row()['last_used_at']
+
+    @property
+    def expires_at(self):
+        """Return API key expiry timestamp."""
+        return self._get_db_row()['expires_at']
+
+    @property
+    def is_active(self):
+        """Return whether API key is active."""
+        return self._get_db_row()['is_active']
+
+    @property
+    def namespace(self):
+        """Return optional namespace restriction for this API key."""
+        return self._get_db_row()['namespace']
+
+    def __init__(self, id):
+        """Store member variable for ID."""
+        self._id = id
+        self._row_cache = None
+
+    def mark_used(self):
+        """Update last-used time for the API key."""
+        db = Database.get()
+        update = db.api_key.update().where(
+            db.api_key.c.id == self.pk
+        ).values(last_used_at=datetime.datetime.now())
+        with db.get_connection() as conn:
+            conn.execute(update)
+        self._row_cache = None
+
+    def revoke(self):
+        """Deactivate the API key."""
+        db = Database.get()
+        update = db.api_key.update().where(
+            db.api_key.c.id == self.pk
+        ).values(is_active=False)
+        with db.get_connection() as conn:
+            conn.execute(update)
+        self._row_cache = None
+
+    def delete(self):
+        """Delete the API key."""
+        db = Database.get()
+        delete = db.api_key.delete().where(db.api_key.c.id == self.pk)
+        with db.get_connection() as conn:
+            conn.execute(delete)
+        self._row_cache = None
+
+    def _get_db_row(self):
+        """Return DB row for API key."""
+        if self._row_cache is None:
+            db = Database.get()
+            select = db.api_key.select().where(db.api_key.c.id == self._id)
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+
 class GitProvider:
     """Interface to specify how modules should interact with known git providers."""
+
+    @classmethod
+    def _normalise_git_path_template(cls, git_path_template):
+        """Convert empty git path values to None."""
+        return git_path_template or None
+
+    @classmethod
+    def _validate_provider_config(
+        cls, name, base_url_template, clone_url_template,
+        browse_url_template, git_path_template=None
+    ):
+        """Validate git provider configuration."""
+        required_attributes = {
+            'name': name,
+            'base_url': base_url_template,
+            'clone_url': clone_url_template,
+            'browse_url': browse_url_template,
+        }
+        for attribute, value in required_attributes.items():
+            if not isinstance(value, str) or not value.strip():
+                raise InvalidGitProviderConfigError(
+                    'Git provider config does not contain required attribute: {}'.format(attribute))
+
+        git_path_template = cls._normalise_git_path_template(git_path_template)
+        validation_suffix = git_path_template or ''
+
+        GitUrlValidator(base_url_template + validation_suffix).validate(
+            requires_namespace_placeholder=True,
+            requires_module_placeholder=True,
+            requires_tag_placeholder=False,
+            requires_path_placeholder=False
+        )
+        GitUrlValidator(clone_url_template + validation_suffix).validate(
+            requires_namespace_placeholder=True,
+            requires_module_placeholder=True,
+            requires_tag_placeholder=False,
+            requires_path_placeholder=False
+        )
+        GitUrlValidator(browse_url_template + validation_suffix).validate(
+            requires_namespace_placeholder=True,
+            requires_module_placeholder=True,
+            requires_tag_placeholder=True,
+            requires_path_placeholder=True
+        )
+        return git_path_template
+
+    @classmethod
+    def _get_config_managed_provider_names(cls):
+        """Return provider names managed by startup configuration."""
+        configured_providers = json.loads(terrareg.config.Config().GIT_PROVIDER_CONFIG)
+        return {
+            provider['name']
+            for provider in configured_providers
+            if isinstance(provider, dict) and provider.get('name')
+        }
+
+    @classmethod
+    def _ensure_name_not_managed_by_config(cls, name):
+        """Ensure provider name is not controlled by startup configuration."""
+        if name in cls._get_config_managed_provider_names():
+            raise GitProviderManagedByConfigurationError(
+                'Git provider {} is managed by GIT_PROVIDER_CONFIG and cannot be modified via the web interface'.format(name)
+            )
 
     @staticmethod
     def initialise_from_config():
@@ -490,40 +777,13 @@ class GitProvider:
         git_provider_config = json.loads(terrareg.config.Config().GIT_PROVIDER_CONFIG)
         db = Database.get()
         for git_provider_config in git_provider_config:
-            # Validate provider config
-            for attr in ['name', 'base_url', 'clone_url', 'browse_url']:
-                if attr not in git_provider_config:
-                    raise InvalidGitProviderConfigError(
-                        'Git provider config does not contain required attribute: {}'.format(attr))
-
-            # Obtain git path value, defaulting to empty string
-            git_path_template = git_provider_config.get('git_path', '')
-
-            # Valid git URLs for git provider.
-            # Append git_path to base, clone and browse URL, as placeholders may be delegated
-            # to the git path to ensure unique locations for modules.
-            GitUrlValidator(git_provider_config['base_url'] + git_path_template).validate(
-                requires_namespace_placeholder=True,
-                requires_module_placeholder=True,
-                requires_tag_placeholder=False,
-                requires_path_placeholder=False
+            git_path_template = GitProvider._validate_provider_config(
+                name=git_provider_config.get('name'),
+                base_url_template=git_provider_config.get('base_url'),
+                clone_url_template=git_provider_config.get('clone_url'),
+                browse_url_template=git_provider_config.get('browse_url'),
+                git_path_template=git_provider_config.get('git_path', '')
             )
-            GitUrlValidator(git_provider_config['clone_url'] + git_path_template).validate(
-                requires_namespace_placeholder=True,
-                requires_module_placeholder=True,
-                requires_tag_placeholder=False,
-                requires_path_placeholder=False
-            )
-            GitUrlValidator(git_provider_config['browse_url'] + git_path_template).validate(
-                requires_namespace_placeholder=True,
-                requires_module_placeholder=True,
-                requires_tag_placeholder=True,
-                requires_path_placeholder=True
-            )
-
-            # If git_path template is an empty string, revert to None
-            if not git_path_template:
-                git_path_template = None
 
             # Check if git provider exists in DB
             existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])
@@ -547,6 +807,36 @@ class GitProvider:
                 )
             with db.get_connection() as conn:
                 conn.execute(upsert)
+
+    @classmethod
+    def create(cls, name, base_url_template, clone_url_template, browse_url_template, git_path_template=None):
+        """Create a git provider."""
+        cls._ensure_name_not_managed_by_config(name)
+        if cls.get_by_name(name=name):
+            raise InvalidGitProviderConfigError(
+                'Git provider with name {} already exists'.format(name)
+            )
+
+        git_path_template = cls._validate_provider_config(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+
+        db = Database.get()
+        insert = db.git_provider.insert().values(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(insert)
+
+        return cls(id=res.inserted_primary_key[0])
 
     @classmethod
     def get_by_name(cls, name):
@@ -632,6 +922,73 @@ class GitProvider:
         self._id = id
         self._row_cache = None
 
+    def update(self, name, base_url_template, clone_url_template, browse_url_template, git_path_template=None):
+        """Update git provider attributes."""
+        self._ensure_name_not_managed_by_config(self.name)
+        if name != self.name:
+            self._ensure_name_not_managed_by_config(name)
+            existing_provider = self.get_by_name(name=name)
+            if existing_provider and existing_provider.pk != self.pk:
+                raise InvalidGitProviderConfigError(
+                    'Git provider with name {} already exists'.format(name)
+                )
+
+        git_path_template = self._validate_provider_config(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+
+        db = Database.get()
+        update = db.git_provider.update().where(
+            db.git_provider.c.id == self.pk
+        ).values(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        self._row_cache = None
+
+    def get_usage_count(self):
+        """Return number of module providers using this git provider."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            sqlalchemy.func.count('*').label('count')
+        ).select_from(
+            db.module_provider
+        ).where(
+            db.module_provider.c.git_provider_id == self.pk
+        )
+        with db.get_connection() as conn:
+            return conn.execute(select).fetchone()['count']
+
+    def delete(self):
+        """Delete git provider if it is not in use."""
+        self._ensure_name_not_managed_by_config(self.name)
+        usage_count = self.get_usage_count()
+        if usage_count:
+            raise GitProviderInUseError(
+                'Cannot delete git provider {} as it is in use by {} module providers'.format(
+                    self.name, usage_count
+                )
+            )
+
+        db = Database.get()
+        delete = db.git_provider.delete().where(
+            db.git_provider.c.id == self.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(delete)
+
+        self._row_cache = None
+
     def _get_db_row(self):
         """Return DB row for git provider."""
         if self._row_cache is None:
@@ -642,7 +999,7 @@ class GitProvider:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                return res.fetchone()
+                self._row_cache = res.fetchone()
         return self._row_cache
 
 

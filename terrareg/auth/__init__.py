@@ -8,6 +8,7 @@ from .admin_api_key_auth_method import AdminApiKeyAuthMethod
 from .admin_session_auth_method import AdminSessionAuthMethod
 from .upload_api_key_auth_method import UploadApiKeyAuthMethod
 from .publish_api_key_auth_method import PublishApiKeyAuthMethod
+from .module_full_api_key_auth_method import ModuleFullApiKeyAuthMethod
 from .saml_auth_method import SamlAuthMethod
 from .openid_auth_method import OpenidConnectAuthMethod
 from .github_auth_method import GithubAuthMethod
@@ -38,6 +39,7 @@ class AuthFactory:
                     AdminSessionAuthMethod,
                     UploadApiKeyAuthMethod,
                     PublishApiKeyAuthMethod,
+                    ModuleFullApiKeyAuthMethod,
                     SamlAuthMethod,
                     OpenidConnectAuthMethod,
                     GithubAuthMethod,

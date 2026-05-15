@@ -20,6 +20,7 @@ from .saml_initiate import ApiSamlInitiate
 from .saml_metadata import ApiSamlMetadata
 from .terraform_well_known import ApiTerraformWellKnown
 from .terrareg_admin_authenticate import ApiTerraregAdminAuthenticate
+from .terrareg_api_keys import ApiTerraregApiKey, ApiTerraregApiKeys
 from .terrareg_audit_history import ApiTerraregAuditHistory
 from .terrareg_auth_user_groups import ApiTerraregAuthUserGroups
 from .terrareg_config import ApiTerraregConfig
@@ -27,7 +28,7 @@ from .terrareg_example_details import ApiTerraregExampleDetails
 from .terrareg_example_file_list import ApiTerraregExampleFileList
 from .terrareg_example_file import ApiTerraregExampleFile
 from .terrareg_example_readme_html import ApiTerraregExampleReadmeHtml
-from .terrareg_git_providers import ApiTerraregGitProviders
+from .terrareg_git_providers import ApiTerraregGitProvider, ApiTerraregGitProviders
 from .terrareg_global_stats_summary import ApiTerraregGlobalStatsSummary
 from .terrareg_global_usage_stats import ApiTerraregGlobalUsageStats
 from .terrareg_health import ApiTerraregHealth
@@ -62,6 +63,7 @@ from .terrareg_user_group import ApiTerraregAuthUserGroup
 from .terrareg_graph_data import ApiTerraregGraphData
 from .terrareg_module_provider_redirects import ApiTerraregModuleProviderRedirects
 from .terrareg_module_provider_redirect_delete import ApiTerraregModuleProviderRedirectDelete
+from .terrareg_provider_sources import ApiTerraregProviderSources, ApiTerraregProviderSource
 from .github.github_login_initiate import GithubLoginInitiate
 from .github.github_login_callback import GithubLoginCallback
 from .github.github_auth_status import GithubAuthStatus

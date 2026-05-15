@@ -127,3 +127,80 @@ class TestGitProvider(TerraregIntegrationTest):
             else:
                 with pytest.raises(terrareg.errors.RepositoryUrlParseError):
                     terrareg.models.GitProvider.initialise_from_config()
+
+    def test_create_update_and_delete(self, delete_existing_git_providers):
+        """Test CRUD operations for git providers."""
+        git_provider = terrareg.models.GitProvider.create(
+            name='Runtime Provider',
+            base_url_template='https://example.com/{namespace}/{module}',
+            clone_url_template='ssh://git@example.com/{namespace}/{module}.git',
+            browse_url_template='https://example.com/{namespace}/{module}/tree/{tag}/{path}',
+            git_path_template='/{provider}'
+        )
+
+        assert git_provider.name == 'Runtime Provider'
+        assert git_provider.git_path_template == '/{provider}'
+
+        git_provider.update(
+            name='Renamed Provider',
+            base_url_template='https://example.com/scm/{namespace}/{module}',
+            clone_url_template='ssh://git@example.com/scm/{namespace}/{module}.git',
+            browse_url_template='https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}',
+            git_path_template=''
+        )
+
+        updated_provider = terrareg.models.GitProvider.get(id=git_provider.pk)
+        assert updated_provider.name == 'Renamed Provider'
+        assert updated_provider.base_url_template == 'https://example.com/scm/{namespace}/{module}'
+        assert updated_provider.git_path_template is None
+
+        updated_provider.delete()
+        assert terrareg.models.GitProvider.get(id=git_provider.pk) is None
+
+    def test_delete_fails_when_provider_in_use(self, delete_existing_git_providers):
+        """Test deletion is blocked while a module provider references the git provider."""
+        git_provider = terrareg.models.GitProvider.create(
+            name='Used Provider',
+            base_url_template='https://example.com/{namespace}/{module}',
+            clone_url_template='ssh://git@example.com/{namespace}/{module}.git',
+            browse_url_template='https://example.com/{namespace}/{module}/tree/{tag}/{path}'
+        )
+
+        namespace = terrareg.models.Namespace.create(name='gitproviderns', display_name='Git Provider Namespace')
+        module = terrareg.models.Module(namespace=namespace, name='examplemodule')
+        module_provider = terrareg.models.ModuleProvider.get(module=module, name='aws', create=True)
+        module_provider.update_git_provider(git_provider)
+
+        with pytest.raises(terrareg.errors.GitProviderInUseError):
+            git_provider.delete()
+
+    def test_config_managed_provider_cannot_be_modified(self, delete_existing_git_providers, set_config):
+        """Test env-managed providers cannot be changed via runtime CRUD methods."""
+        config = [{
+            'name': 'Config Provider',
+            'base_url': 'https://example.com/{namespace}/{module}',
+            'clone_url': 'ssh://git@example.com/{namespace}/{module}.git',
+            'browse_url': 'https://example.com/{namespace}/{module}/tree/{tag}/{path}'
+        }]
+        with set_config(config):
+            terrareg.models.GitProvider.initialise_from_config()
+            git_provider = terrareg.models.GitProvider.get_by_name('Config Provider')
+
+            with pytest.raises(terrareg.errors.GitProviderManagedByConfigurationError):
+                git_provider.update(
+                    name='Config Provider',
+                    base_url_template='https://other.example.com/{namespace}/{module}',
+                    clone_url_template='ssh://git@other.example.com/{namespace}/{module}.git',
+                    browse_url_template='https://other.example.com/{namespace}/{module}/tree/{tag}/{path}'
+                )
+
+            with pytest.raises(terrareg.errors.GitProviderManagedByConfigurationError):
+                git_provider.delete()
+
+            with pytest.raises(terrareg.errors.GitProviderManagedByConfigurationError):
+                terrareg.models.GitProvider.create(
+                    name='Config Provider',
+                    base_url_template='https://example.com/{namespace}/{module}',
+                    clone_url_template='ssh://git@example.com/{namespace}/{module}.git',
+                    browse_url_template='https://example.com/{namespace}/{module}/tree/{tag}/{path}'
+                )
