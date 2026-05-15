@@ -8,10 +8,16 @@ import terrareg.models
 class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
     """Auth method for admin API key"""
 
+    key_type = 'admin'
+
+    @classmethod
+    def get_valid_keys(cls):
+        return [terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN]
+
     @classmethod
     def check_auth_state(cls):
         """Check if admin API key is provided"""
-        return cls._check_api_key([terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN], key_type=terrareg.models.ApiKeyType.ADMIN)
+        return cls._check_api_key(cls.get_valid_keys())
 
     @classmethod
     def is_enabled(cls):

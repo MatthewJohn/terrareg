@@ -7,10 +7,16 @@ from .base_api_key_auth_method import BaseApiKeyAuthMethod
 class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for upload API key"""
 
+    key_type = 'upload'
+
+    @classmethod
+    def get_valid_keys(cls):
+        return terrareg.config.Config().UPLOAD_API_KEYS
+
     @classmethod
     def check_auth_state(cls):
         """Check if upload API key is provided"""
-        return cls._check_api_key(terrareg.config.Config().UPLOAD_API_KEYS, key_type=terrareg.models.ApiKeyType.UPLOAD)
+        return cls._check_api_key(cls.get_valid_keys())
 
     @classmethod
     def is_enabled(cls):

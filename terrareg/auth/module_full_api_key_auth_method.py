@@ -6,10 +6,12 @@ from .base_api_key_auth_method import BaseApiKeyAuthMethod
 class ModuleFullApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for module-full API key (upload + publish)"""
 
+    key_type = 'module_full'
+
     @classmethod
     def check_auth_state(cls):
         """Check if module-full API key is provided"""
-        return cls._check_api_key([], key_type=terrareg.models.ApiKeyType.MODULE_FULL)
+        return cls._check_api_key([])
 
     @classmethod
     def is_enabled(cls):
