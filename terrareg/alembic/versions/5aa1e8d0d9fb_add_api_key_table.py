@@ -1,4 +1,5 @@
 """add_api_key_table
+   add_namespace_to_api_key
 
 Revision ID: 5aa1e8d0d9fb
 Revises: c72f7c6ef6a7
@@ -32,7 +33,9 @@ def upgrade():
         sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.PrimaryKeyConstraint('id')
     )
+    op.add_column('api_key', sa.Column('namespace', sa.String(length=128), nullable=True))
+
 
 
 def downgrade():
-    op.drop_table('api_key')
+    op.drop_column('api_key', 'namespace')
