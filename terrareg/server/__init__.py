@@ -709,11 +709,11 @@ class Server(BaseHandler):
             '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
         )
         self._api.add_resource(
-            ApiTerraregProviderSources,
+            ApiTerraregGitProviderSources,
             '/v1/terrareg/provider-sources'
         )
         self._api.add_resource(
-            ApiTerraregProviderSource,
+            ApiTerraregGitProviderSource,
             '/v1/terrareg/provider-sources/<string:provider_source_name>'
         )
 
