@@ -490,7 +490,7 @@ class ApiKeyType(Enum):
     ADMIN = 'admin'
     UPLOAD = 'upload'
     PUBLISH = 'publish'
-    MODULE_FULL = 'module_full'
+    UPLOAD_AND_PUBLISH = 'upload_and_publish'
 
 
 class ApiKey:
@@ -508,6 +508,8 @@ class ApiKey:
 
         if isinstance(key_type, str):
             key_type = key_type.lower()
+            if key_type == 'module_full':
+                key_type = ApiKeyType.UPLOAD_AND_PUBLISH.value
             valid_key_types = [api_key_type.value for api_key_type in ApiKeyType]
             if key_type in valid_key_types:
                 return key_type
@@ -708,10 +710,36 @@ class ApiKey:
 class GitProvider:
     """Interface to specify how modules should interact with known git providers."""
 
+    _PROVIDER_TEMPLATE_VALIDATIONS = (
+        ('base_url_template', {
+            'requires_namespace_placeholder': True,
+            'requires_module_placeholder': True,
+            'requires_tag_placeholder': False,
+            'requires_path_placeholder': False,
+        }),
+        ('clone_url_template', {
+            'requires_namespace_placeholder': True,
+            'requires_module_placeholder': True,
+            'requires_tag_placeholder': False,
+            'requires_path_placeholder': False,
+        }),
+        ('browse_url_template', {
+            'requires_namespace_placeholder': True,
+            'requires_module_placeholder': True,
+            'requires_tag_placeholder': True,
+            'requires_path_placeholder': True,
+        }),
+    )
+
     @classmethod
     def _normalise_git_path_template(cls, git_path_template):
         """Convert empty git path values to None."""
         return git_path_template or None
+
+    @classmethod
+    def _raise_template_validation_error(cls, field_name, exc):
+        """Raise the original validation error type with field context."""
+        raise exc.__class__(f'{field_name}: {exc}') from exc
 
     @classmethod
     def _validate_provider_config(
@@ -731,26 +759,28 @@ class GitProvider:
                     'Git provider config does not contain required attribute: {}'.format(attribute))
 
         git_path_template = cls._normalise_git_path_template(git_path_template)
+
+        if git_path_template:
+            try:
+                GitUrlValidator(git_path_template).validate()
+            except RepositoryUrlParseError as exc:
+                cls._raise_template_validation_error('git_path_template', exc)
+
         validation_suffix = git_path_template or ''
 
-        GitUrlValidator(base_url_template + validation_suffix).validate(
-            requires_namespace_placeholder=True,
-            requires_module_placeholder=True,
-            requires_tag_placeholder=False,
-            requires_path_placeholder=False
-        )
-        GitUrlValidator(clone_url_template + validation_suffix).validate(
-            requires_namespace_placeholder=True,
-            requires_module_placeholder=True,
-            requires_tag_placeholder=False,
-            requires_path_placeholder=False
-        )
-        GitUrlValidator(browse_url_template + validation_suffix).validate(
-            requires_namespace_placeholder=True,
-            requires_module_placeholder=True,
-            requires_tag_placeholder=True,
-            requires_path_placeholder=True
-        )
+        provider_templates = {
+            'base_url_template': base_url_template,
+            'clone_url_template': clone_url_template,
+            'browse_url_template': browse_url_template,
+        }
+        for field_name, validation_kwargs in cls._PROVIDER_TEMPLATE_VALIDATIONS:
+            try:
+                GitUrlValidator(provider_templates[field_name] + validation_suffix).validate(
+                    **validation_kwargs
+                )
+            except RepositoryUrlParseError as exc:
+                cls._raise_template_validation_error(field_name, exc)
+
         return git_path_template
 
     @classmethod

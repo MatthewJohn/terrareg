@@ -316,17 +316,8 @@ class Server(BaseHandler):
             '/user-groups'
         )(self._view_serve_user_groups)
         self._app.route(
-            '/git-providers'
-        )(self._view_serve_git_providers)
-        self._app.route(
-            '/api-keys'
-        )(self._view_serve_api_keys)
-        self._app.route(
             '/audit-history'
         )(self._view_serve_audit_history)
-        self._app.route(
-            '/provider-sources'
-        )(self._view_serve_provider_sources)
 
         # Legacy module search URL
         self._app.route(
@@ -499,14 +490,6 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiTerraregConfig,
             '/v1/terrareg/config'
-        )
-        self._api.add_resource(
-            ApiTerraregApiKeys,
-            '/v1/terrareg/api-keys'
-        )
-        self._api.add_resource(
-            ApiTerraregApiKey,
-            '/v1/terrareg/api-keys/<int:api_key_id>'
         )
         self._api.add_resource(
             ApiTerraregGitProviders,
@@ -707,14 +690,6 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiTerraregAuthUserGroupNamespacePermissions,
             '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
-        )
-        self._api.add_resource(
-            ApiTerraregGitProviderSources,
-            '/v1/terrareg/provider-sources'
-        )
-        self._api.add_resource(
-            ApiTerraregGitProviderSource,
-            '/v1/terrareg/provider-sources/<string:provider_source_name>'
         )
 
         ## Auth endpoints /v1/terrareg/auth
@@ -1076,11 +1051,6 @@ class Server(BaseHandler):
         return self._render_template("provider_search.html")
 
     @static_page_auth_required
-    def _view_serve_provider_sources(self):
-        """Serve the legacy provider sources route."""
-        return redirect('/search/providers')
-
-    @static_page_auth_required
     def _view_serve_user_groups(self):
         """Page to view/modify user groups and permissions."""
         if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
@@ -1091,30 +1061,6 @@ class Server(BaseHandler):
                 error_description="You are not logged in or do not have permssion to view this page"
             ), 403
         return self._render_template('user_groups.html')
-
-    @static_page_auth_required
-    def _view_serve_git_providers(self):
-        """Page to view and modify git providers."""
-        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
-            return self._render_template(
-                'error.html',
-                root_bread_brumb='Git Providers',
-                error_title='Permission denied',
-                error_description="You are not logged in or do not have permssion to view this page"
-            ), 403
-        return self._render_template('git_providers.html')
-
-    @static_page_auth_required
-    def _view_serve_api_keys(self):
-        """Page to view and modify API keys."""
-        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
-            return self._render_template(
-                'error.html',
-                root_bread_brumb='API Keys',
-                error_title='Permission denied',
-                error_description="You are not logged in or do not have permssion to view this page"
-            ), 403
-        return self._render_template('api_keys.html')
 
     @static_page_auth_required
     def _view_serve_audit_history(self):

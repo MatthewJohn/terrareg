@@ -157,6 +157,19 @@ class TestGitProvider(TerraregIntegrationTest):
         updated_provider.delete()
         assert terrareg.models.GitProvider.get(id=git_provider.pk) is None
 
+    def test_create_validation_error_includes_field_name(self, delete_existing_git_providers):
+        """Test git provider validation errors identify the failing field."""
+        with pytest.raises(
+            terrareg.errors.RepositoryUrlParseError,
+            match='base_url_template: Namespace placeholder not present in URL'
+        ):
+            terrareg.models.GitProvider.create(
+                name='Invalid Provider',
+                base_url_template='https://example.com/{module}',
+                clone_url_template='ssh://git@example.com/{namespace}/{module}.git',
+                browse_url_template='https://example.com/{namespace}/{module}/tree/{tag}/{path}',
+            )
+
     def test_delete_fails_when_provider_in_use(self, delete_existing_git_providers):
         """Test deletion is blocked while a module provider references the git provider."""
         git_provider = terrareg.models.GitProvider.create(

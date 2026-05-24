@@ -20,7 +20,6 @@ from .saml_initiate import ApiSamlInitiate
 from .saml_metadata import ApiSamlMetadata
 from .terraform_well_known import ApiTerraformWellKnown
 from .terrareg_admin_authenticate import ApiTerraregAdminAuthenticate
-from .terrareg_api_keys import ApiTerraregApiKey, ApiTerraregApiKeys
 from .terrareg_audit_history import ApiTerraregAuditHistory
 from .terrareg_auth_user_groups import ApiTerraregAuthUserGroups
 from .terrareg_config import ApiTerraregConfig
@@ -63,7 +62,6 @@ from .terrareg_user_group import ApiTerraregAuthUserGroup
 from .terrareg_graph_data import ApiTerraregGraphData
 from .terrareg_module_provider_redirects import ApiTerraregModuleProviderRedirects
 from .terrareg_module_provider_redirect_delete import ApiTerraregModuleProviderRedirectDelete
-from .terrareg_git_provider_sources import ApiTerraregGitProviderSources, ApiTerraregGitProviderSource
 from .github.github_login_initiate import GithubLoginInitiate
 from .github.github_login_callback import GithubLoginCallback
 from .github.github_auth_status import GithubAuthStatus

@@ -15,7 +15,7 @@ from terrareg.errors import (
 
 
 class ApiTerraregGitProviders(ErrorCatchingResource):
-    """Interface to obtain git provider configurations."""
+    """List and create git provider configurations."""
 
     method_decorators = {
         'get': [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')],
@@ -23,7 +23,7 @@ class ApiTerraregGitProviders(ErrorCatchingResource):
     }
 
     def _post_arg_parser(self):
-        """Return argument parser for create request."""
+        """Return parser for git provider creation."""
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, required=True, location='json')
         parser.add_argument('base_url_template', type=str, required=True, location='json')
@@ -34,7 +34,7 @@ class ApiTerraregGitProviders(ErrorCatchingResource):
         return parser
 
     def _get(self):
-        """Return list of git providers"""
+        """Return all git providers."""
         return [
             {
                 "id": git_provider.pk,
@@ -74,12 +74,12 @@ class ApiTerraregGitProviders(ErrorCatchingResource):
 
 
 class ApiTerraregGitProvider(ErrorCatchingResource):
-    """Interface to update and delete git provider configurations."""
+    """Update and delete a git provider configuration."""
 
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('is_admin')]
 
     def _post_arg_parser(self):
-        """Return argument parser for update request."""
+        """Return parser for git provider updates."""
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, required=True, location='json')
         parser.add_argument('base_url_template', type=str, required=True, location='json')
@@ -89,7 +89,7 @@ class ApiTerraregGitProvider(ErrorCatchingResource):
         parser.add_argument('csrf_token', type=str, required=False, location='json', default=None)
         return parser
 
-    def _post(self, git_provider_id):
+    def _post(self, git_provider_id: int):
         """Update an existing git provider."""
         args = self._post_arg_parser().parse_args()
         terrareg.csrf.check_csrf_token(args.csrf_token)
@@ -118,7 +118,7 @@ class ApiTerraregGitProvider(ErrorCatchingResource):
             "git_path_template": git_provider.git_path_template,
         }
 
-    def _delete(self, git_provider_id):
+    def _delete(self, git_provider_id: int):
         """Delete an existing git provider."""
         git_provider = terrareg.models.GitProvider.get(id=git_provider_id)
         if git_provider is None:
