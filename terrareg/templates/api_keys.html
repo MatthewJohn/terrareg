@@ -64,6 +64,19 @@
         });
     }
 
+    function deleteApiKey(apiKeyId) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/api-keys/${apiKeyId}/delete`,
+            contentType: 'application/json'
+        }).done(() => {
+            hideError();
+            getApiKeyList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
     async function getApiKeyList() {
         return new Promise((resolve, reject) => {
             $.get('/v1/terrareg/api-keys').then((apiKeys) => {
@@ -94,6 +107,12 @@
                         });
                         buttonTd.append(revokeButton);
                     }
+
+                    let deleteButton = $('<button class="button is-small is-danger ml-2">Delete</button>');
+                    deleteButton.on('click', () => {
+                        deleteApiKey(apiKey.id);
+                    });
+                    buttonTd.append(deleteButton);
                     row.append(buttonTd);
 
                     tableContent.append(row);

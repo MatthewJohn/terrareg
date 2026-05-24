@@ -16,6 +16,7 @@ import terrareg.auth
 import terrareg.provider_source.factory
 import terrareg.provider_category_model
 import terrareg.provider_model
+from terrareg.server.api.terrareg_api_keys import ApiTerraregApiKey, ApiTerraregApiKeyDelete, ApiTerraregApiKeys
 from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
@@ -288,6 +289,18 @@ class Server(BaseHandler):
             ApiProviderCategories,
             '/v2/categories'
         )
+        self._api.add_resource(
+            ApiTerraregApiKeys,
+            '/v1/terrareg/api-keys'
+        )
+        self._api.add_resource(
+            ApiTerraregApiKey,
+            '/v1/terrareg/api-keys/<int:api_key_id>'
+        )
+        self._api.add_resource(
+            ApiTerraregApiKeyDelete,
+            '/v1/terrareg/api-keys/<int:api_key_id>/delete'
+        )
 
         # Views
         self._app.route('/')(self._view_serve_static_index)
@@ -318,6 +331,12 @@ class Server(BaseHandler):
         self._app.route(
             '/audit-history'
         )(self._view_serve_audit_history)
+        self._app.route(
+        '/api-keys'
+        )(self._view_serve_api_keys)
+        self._app.route(
+            '/git-providers'
+        )(self._view_serve_git_providers)
 
         # Legacy module search URL
         self._app.route(
@@ -1073,3 +1092,24 @@ class Server(BaseHandler):
                 error_description="You are not logged in or do not have permssion to view this page"
             ), 403
         return self._render_template('audit_history.html')
+    @static_page_auth_required
+    def _view_serve_api_keys(self):
+        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
+            return self._render_template(
+                'error.html',
+                root_bread_brumb='API Keys',
+                error_title='Permission denied',
+                error_description="You are not logged in or do not have permssion to view this page"
+            ), 403
+        return self._render_template('api_keys.html')
+
+    @static_page_auth_required
+    def _view_serve_git_providers(self):
+        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
+            return self._render_template(
+                'error.html',
+                root_bread_brumb='Git Providers',
+                error_title='Permission denied',
+                error_description="You are not logged in or do not have permssion to view this page"
+            ), 403
+        return self._render_template('git_providers.html')

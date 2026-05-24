@@ -89,3 +89,18 @@ class ApiTerraregApiKey(ErrorCatchingResource):
 
         api_key.revoke()
         return {}, 204
+
+
+class ApiTerraregApiKeyDelete(ErrorCatchingResource):
+    """Delete an API key."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('is_admin')]
+
+    def _delete(self, api_key_id):
+        """Delete an API key."""
+        api_key = terrareg.models.ApiKey.get(api_key_id)
+        if api_key is None:
+            return {'message': 'API key does not exist.'}, 400
+
+        api_key.delete()
+        return {}, 204

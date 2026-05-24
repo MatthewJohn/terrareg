@@ -37,7 +37,7 @@ class BaseApiKeyAuthMethod(BaseAuthMethod):
         return cls(matched_api_key=matched_api_key)
 
     @classmethod
-    def _check_api_key_with_matched_key(cls, valid_keys) -> tuple[bool, terrareg.models.ApiKey | None]:
+    def _check_api_key_with_matched_key(cls, valid_keys) -> tuple[bool, 'terrareg.models.ApiKey | None']:
         """Whether whether API key is valid"""
         if not isinstance(valid_keys, list):
             valid_keys = []

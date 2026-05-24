@@ -6,6 +6,8 @@
 <script>
     var dataTable = undefined;
     var editModeProviderId = null;
+    var gitProvidersCanEdit = false;
+    var gitProviders = [];
 
     function showError(error) {
         $('#git-provider-error').html(error);
@@ -15,6 +17,14 @@
 
     function hideError() {
         $('#git-provider-error').css('display', 'none');
+    }
+
+    function setGitProviderControlsVisible(isVisible) {
+        gitProvidersCanEdit = isVisible;
+
+        const displayValue = isVisible ? '' : 'none';
+        $('.git-provider-action-column').css('display', displayValue);
+        $('#git-provider-form-section').css('display', displayValue);
     }
 
     function resetForm() {
@@ -40,6 +50,10 @@
         $('#git-provider-browse-url').val(gitProvider.browse_url_template);
         $('#git-provider-git-path').val(gitProvider.git_path_template || '');
         $(window).scrollTop($('#git-provider-form').offset().top);
+    }
+
+    function getGitProviderById(gitProviderId) {
+        return gitProviders.find((gitProvider) => gitProvider.id === gitProviderId);
     }
 
     function getFormData() {
@@ -90,9 +104,29 @@
         });
     }
 
+    function bindGitProviderActionButtons() {
+        $('#git-provider-table-content')
+            .off('click', '.git-provider-edit-button')
+            .on('click', '.git-provider-edit-button', function () {
+                const gitProviderId = Number($(this).attr('data-git-provider-id'));
+                const gitProvider = getGitProviderById(gitProviderId);
+                if (gitProvider) {
+                    populateForm(gitProvider);
+                }
+            });
+
+        $('#git-provider-table-content')
+            .off('click', '.git-provider-delete-button')
+            .on('click', '.git-provider-delete-button', function () {
+                const gitProviderId = Number($(this).attr('data-git-provider-id'));
+                deleteGitProvider(gitProviderId);
+            });
+    }
+
     async function getGitProviderList() {
         return new Promise((resolve, reject) => {
-            $.get('/v1/terrareg/git_providers').then((gitProviders) => {
+            $.get('/v1/terrareg/git_providers').then((fetchedGitProviders) => {
+                gitProviders = fetchedGitProviders;
                 let tableContent = $('#git-provider-table-content');
 
                 if (dataTable) {
@@ -101,7 +135,7 @@
 
                 tableContent.empty();
 
-                for (let gitProvider of gitProviders) {
+                for (let gitProvider of fetchedGitProviders) {
                     let row = $('<tr></tr>');
                     row.append(`<td class="is-vcentered">${gitProvider.name}</td>`);
                     row.append(`<td class="is-vcentered"><code>${gitProvider.base_url_template}</code></td>`);
@@ -109,19 +143,21 @@
                     row.append(`<td class="is-vcentered"><code>${gitProvider.browse_url_template}</code></td>`);
                     row.append(`<td class="is-vcentered"><code>${gitProvider.git_path_template || ''}</code></td>`);
 
-                    let buttonTd = $('<td class="is-vcentered"></td>');
-                    let editButton = $('<button class="button is-small is-primary">Edit</button>');
-                    editButton.on('click', () => {
-                        populateForm(gitProvider);
-                    });
+                    let buttonTd = $('<td class="is-vcentered git-provider-action-column"></td>');
+                    if (gitProvidersCanEdit) {
+                        let editButton = $(
+                            `<button class="button is-small is-primary git-provider-edit-button" type="button">Edit</button>`
+                        );
+                        editButton.attr('data-git-provider-id', gitProvider.id);
 
-                    let deleteButton = $('<button class="button is-small is-danger ml-2">Delete</button>');
-                    deleteButton.on('click', () => {
-                        deleteGitProvider(gitProvider.id);
-                    });
+                        let deleteButton = $(
+                            `<button class="button is-small is-danger ml-2 git-provider-delete-button" type="button">Delete</button>`
+                        );
+                        deleteButton.attr('data-git-provider-id', gitProvider.id);
 
-                    buttonTd.append(editButton);
-                    buttonTd.append(deleteButton);
+                        buttonTd.append(editButton);
+                        buttonTd.append(deleteButton);
+                    }
                     row.append(buttonTd);
 
                     tableContent.append(row);
@@ -142,8 +178,11 @@
         });
     }
 
-    $(document).ready(() => {
+    $(document).ready(async () => {
         resetForm();
+        const loggedIn = await isLoggedIn();
+        setGitProviderControlsVisible(!!loggedIn.site_admin);
+        bindGitProviderActionButtons();
         getGitProviderList();
     });
 </script>
@@ -172,55 +211,57 @@
                         <th>Clone URL Template</th>
                         <th>Browse URL Template</th>
                         <th>Git Path Template</th>
-                        <th>Action</th>
+                        <th class="git-provider-action-column">Action</th>
                     </tr>
                 </thead>
                 <tbody id="git-provider-table-content">
                 </tbody>
             </table>
 
-            <h2 id="git-provider-form-title" class="h2">Create Git Provider</h2>
-            <form id="git-provider-form" onsubmit="event.preventDefault(); submitGitProvider();">
-                <div class="field">
-                    <label class="label">Name</label>
-                    <div class="control">
-                        <input required id="git-provider-name" class="input" type="text" placeholder="Corporate Gitlab">
+            <div id="git-provider-form-section" style="display: none;">
+                <h2 id="git-provider-form-title" class="h2">Create Git Provider</h2>
+                <form id="git-provider-form" onsubmit="event.preventDefault(); submitGitProvider();">
+                    <div class="field">
+                        <label class="label">Name</label>
+                        <div class="control">
+                            <input required id="git-provider-name" class="input" type="text" placeholder="Corporate Gitlab">
+                        </div>
                     </div>
-                </div>
-                <div class="field">
-                    <label class="label">Base URL Template</label>
-                    <div class="control">
-                        <input required id="git-provider-base-url" class="input" type="text" placeholder="https://git.example.com/{namespace}/{module}">
+                    <div class="field">
+                        <label class="label">Base URL Template</label>
+                        <div class="control">
+                            <input required id="git-provider-base-url" class="input" type="text" placeholder="https://git.example.com/{namespace}/{module}">
+                        </div>
                     </div>
-                </div>
-                <div class="field">
-                    <label class="label">Clone URL Template</label>
-                    <div class="control">
-                        <input required id="git-provider-clone-url" class="input" type="text" placeholder="ssh://git@git.example.com/{namespace}/{module}.git">
+                    <div class="field">
+                        <label class="label">Clone URL Template</label>
+                        <div class="control">
+                            <input required id="git-provider-clone-url" class="input" type="text" placeholder="ssh://git@git.example.com/{namespace}/{module}.git">
+                        </div>
                     </div>
-                </div>
-                <div class="field">
-                    <label class="label">Browse URL Template</label>
-                    <div class="control">
-                        <input required id="git-provider-browse-url" class="input" type="text" placeholder="https://git.example.com/{namespace}/{module}/tree/{tag}/{path}">
+                    <div class="field">
+                        <label class="label">Browse URL Template</label>
+                        <div class="control">
+                            <input required id="git-provider-browse-url" class="input" type="text" placeholder="https://git.example.com/{namespace}/{module}/tree/{tag}/{path}">
+                        </div>
                     </div>
-                </div>
-                <div class="field">
-                    <label class="label">Git Path Template</label>
-                    <div class="control">
-                        <input id="git-provider-git-path" class="input" type="text" placeholder="/{module}/{provider}">
+                    <div class="field">
+                        <label class="label">Git Path Template</label>
+                        <div class="control">
+                            <input id="git-provider-git-path" class="input" type="text" placeholder="/{module}/{provider}">
+                        </div>
+                        <p class="help">Optional. Use this when namespace or module placeholders are delegated to the path.</p>
                     </div>
-                    <p class="help">Optional. Use this when namespace or module placeholders are delegated to the path.</p>
-                </div>
-                <div class="field is-grouped">
-                    <div class="control">
-                        <button id="git-provider-submit-button" class="button is-link">Create</button>
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button id="git-provider-submit-button" class="button is-link">Create</button>
+                        </div>
+                        <div class="control">
+                            <button id="git-provider-cancel-button" type="button" class="button is-light" onclick="resetForm();">Cancel</button>
+                        </div>
                     </div>
-                    <div class="control">
-                        <button id="git-provider-cancel-button" type="button" class="button is-light" onclick="resetForm();">Cancel</button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
 
     </div>

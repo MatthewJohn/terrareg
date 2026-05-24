@@ -89,14 +89,7 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
             })
 
         assert res.status_code == 201
-        assert res.json == {
-            'id': 9,
-            'name': 'runtime-provider',
-            'base_url_template': 'https://example.com/{namespace}/{module}',
-            'clone_url_template': 'ssh://git@example.com/{namespace}/{module}.git',
-            'browse_url_template': 'https://example.com/{namespace}/{module}/tree/{tag}/{path}',
-            'git_path_template': '/{provider}'
-        }
+        assert res.json == {'id': 9}
         mock_check_csrf.assert_called_once_with('csrf-token')
         mock_create.assert_called_once_with(
             name='runtime-provider',
@@ -136,6 +129,36 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
             clone_url_template='ssh://git@example.com/scm/{namespace}/{module}.git',
             browse_url_template='https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}',
             git_path_template=''
+        )
+        mock_check_csrf.assert_called_once_with('csrf-token')
+        mock_get.assert_called_once_with(id=4)
+
+    def test_partial_update_git_provider(self, client, app_context, test_request_context):
+        """Test updating a git provider with partial input."""
+        git_provider = mock.MagicMock(
+            pk=4,
+            name='existing-provider',
+            base_url_template='https://example.com/scm/{namespace}/{module}',
+            clone_url_template='ssh://git@example.com/scm/{namespace}/{module}.git',
+            browse_url_template='https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}',
+            git_path_template='/{provider}'
+        )
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.GitProvider.get', return_value=git_provider) as mock_get:
+            res = client.post('/v1/terrareg/git_providers/4', json={
+                'name': 'updated-provider',
+                'csrf_token': 'csrf-token'
+            })
+
+        assert res.status_code == 200
+        git_provider.update.assert_called_once_with(
+            name='updated-provider',
+            base_url_template='https://example.com/scm/{namespace}/{module}',
+            clone_url_template='ssh://git@example.com/scm/{namespace}/{module}.git',
+            browse_url_template='https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}',
+            git_path_template='/{provider}'
         )
         mock_check_csrf.assert_called_once_with('csrf-token')
         mock_get.assert_called_once_with(id=4)
