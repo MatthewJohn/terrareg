@@ -28,7 +28,7 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
 
     def test_is_enabled(self):
         """Test DB-backed upload-and-publish API keys enable the auth method."""
-        with mock.patch('terrareg.models.ApiKey.has_active_keys', return_value=True) as mock_has_active_keys:
+        with mock.patch('terrareg.api_key.ApiKey.has_active_keys', return_value=True) as mock_has_active_keys:
             obj = UploadAndPublishApiKeyAuthMethod()
             assert obj.is_enabled() is True
 
@@ -77,7 +77,7 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
 
         mock_api_key = mock.MagicMock()
         with mock.patch(
-            'terrareg.models.ApiKey.verify_key',
+            'terrareg.api_key.ApiKey.verify_key',
             return_value=mock_api_key if api_key_header == 'valid' else None
         ) as mock_verify_key, BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
             obj = UploadAndPublishApiKeyAuthMethod()
@@ -94,7 +94,7 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
         """Test upload-and-publish auth stores matched DB-backed API keys on the instance."""
         headers = {'HTTP_X_TERRAREG_APIKEY': 'db-valid'}
         mock_api_key = mock.MagicMock()
-        with mock.patch('terrareg.models.ApiKey.verify_key', return_value=mock_api_key), \
+        with mock.patch('terrareg.api_key.ApiKey.verify_key', return_value=mock_api_key), \
                 BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
             obj = UploadAndPublishApiKeyAuthMethod.get_current_instance()
 

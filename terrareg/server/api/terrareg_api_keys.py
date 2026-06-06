@@ -6,7 +6,7 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource, api_e
 import terrareg.auth
 import terrareg.auth_wrapper
 import terrareg.csrf
-import terrareg.models
+import terrareg.api_key
 from terrareg.errors import InvalidApiKeyTypeError
 
 
@@ -44,7 +44,7 @@ class ApiTerraregApiKeys(ErrorCatchingResource):
         """Return all API keys."""
         return [
             self._serialize_api_key(api_key)
-            for api_key in terrareg.models.ApiKey.get_all()
+            for api_key in terrareg.api_key.ApiKey.get_all()
         ]
 
     def _post(self):
@@ -60,7 +60,7 @@ class ApiTerraregApiKeys(ErrorCatchingResource):
                 return api_error('Invalid expires_at value, expected ISO-8601 datetime'), 400
 
         try:
-            api_key, plaintext_key = terrareg.models.ApiKey.create(
+            api_key, plaintext_key = terrareg.api_key.ApiKey.create(
                 name=args.name,
                 key_type=args.key_type,
                 created_by=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
@@ -83,7 +83,7 @@ class ApiTerraregApiKey(ErrorCatchingResource):
 
     def _delete(self, api_key_id):
         """Revoke an API key."""
-        api_key = terrareg.models.ApiKey.get(api_key_id)
+        api_key = terrareg.api_key.ApiKey.get(api_key_id)
         if api_key is None:
             return {'message': 'API key does not exist.'}, 400
 
@@ -98,7 +98,7 @@ class ApiTerraregApiKeyDelete(ErrorCatchingResource):
 
     def _delete(self, api_key_id):
         """Delete an API key."""
-        api_key = terrareg.models.ApiKey.get(api_key_id)
+        api_key = terrareg.api_key.ApiKey.get(api_key_id)
         if api_key is None:
             return {'message': 'API key does not exist.'}, 400
 

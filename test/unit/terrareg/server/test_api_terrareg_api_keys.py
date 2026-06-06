@@ -22,7 +22,7 @@ class TestApiTerraregApiKeys(TerraregUnitTest):
 
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
-                unittest.mock.patch('terrareg.models.ApiKey.get', return_value=api_key):
+                unittest.mock.patch('terrareg.api_key.ApiKey.get', return_value=api_key):
             res = client.delete('/v1/terrareg/api-keys/7')
 
         assert res.status_code == 204
@@ -46,7 +46,7 @@ class TestApiTerraregApiKeys(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
-                unittest.mock.patch('terrareg.models.ApiKey.create', return_value=(created_api_key, 'secret-value')):
+                unittest.mock.patch('terrareg.api_key.ApiKey.create', return_value=(created_api_key, 'secret-value')):
             res = client.post('/v1/terrareg/api-keys', json={
                 'name': 'upload-key',
                 'key_type': 'upload',
@@ -78,7 +78,7 @@ class TestApiTerraregApiKeys(TerraregUnitTest):
 
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
-                unittest.mock.patch('terrareg.models.ApiKey.get', return_value=api_key):
+                unittest.mock.patch('terrareg.api_key.ApiKey.get', return_value=api_key):
             res = client.delete('/v1/terrareg/api-keys/7/delete')
 
         assert res.status_code == 204

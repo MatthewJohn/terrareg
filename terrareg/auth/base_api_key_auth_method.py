@@ -2,7 +2,7 @@
 from flask import request
 
 from .base_auth_method import BaseAuthMethod
-import terrareg.models
+import terrareg.api_key
 
 class BaseApiKeyAuthMethod(BaseAuthMethod):
     """Base auth method for API key-based authentication"""
@@ -37,7 +37,7 @@ class BaseApiKeyAuthMethod(BaseAuthMethod):
         return cls(matched_api_key=matched_api_key)
 
     @classmethod
-    def _check_api_key_with_matched_key(cls, valid_keys) -> tuple[bool, 'terrareg.models.ApiKey | None']:
+    def _check_api_key_with_matched_key(cls, valid_keys) -> tuple[bool, 'terrareg.api_key.ApiKey | None']:
         """Whether whether API key is valid"""
         if not isinstance(valid_keys, list):
             valid_keys = []
@@ -55,7 +55,7 @@ class BaseApiKeyAuthMethod(BaseAuthMethod):
                 return True, None
 
         if cls.key_type is not None:
-            stored_api_key = terrareg.models.ApiKey.verify_key(actual_key, cls.key_type)
+            stored_api_key = terrareg.api_key.ApiKey.verify_key(actual_key, cls.key_type)
             if stored_api_key is not None:
                 stored_api_key.mark_used()
                 return True, stored_api_key

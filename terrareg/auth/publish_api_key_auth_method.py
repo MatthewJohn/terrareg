@@ -1,6 +1,6 @@
 
 import terrareg.config
-import terrareg.models
+import terrareg.api_key
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
 
 
@@ -20,7 +20,7 @@ class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
 
     @classmethod
     def is_enabled(cls):
-        return bool(terrareg.config.Config().PUBLISH_API_KEYS or terrareg.models.ApiKey.has_active_keys(terrareg.models.ApiKeyType.PUBLISH))
+        return bool(terrareg.config.Config().PUBLISH_API_KEYS or terrareg.api_key.ApiKey.has_active_keys(terrareg.api_key.ApiKeyType.PUBLISH))
 
     def can_publish_module_version(self, namespace):
         """Whether user can publish module version within a namespace."""

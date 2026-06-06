@@ -2,7 +2,7 @@
 from .base_admin_auth_method import BaseAdminAuthMethod
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
 import terrareg.config
-import terrareg.models
+import terrareg.api_key
 
 
 class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
@@ -22,4 +22,4 @@ class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
     @classmethod
     def is_enabled(cls):
         """Whether admin API key auth is configured."""
-        return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN or terrareg.models.ApiKey.has_active_keys(terrareg.models.ApiKeyType.ADMIN))
+        return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN or terrareg.api_key.ApiKey.has_active_keys(terrareg.api_key.ApiKeyType.ADMIN))

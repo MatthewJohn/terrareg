@@ -42,7 +42,7 @@ class TestAdminApiKeyAuthMethod(BaseAuthMethodTest):
     def test_is_enabled_from_db_api_key(self):
         """Test DB-backed admin API keys enable the auth method."""
         with mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', None), \
-                mock.patch('terrareg.models.ApiKey.has_active_keys', return_value=True):
+                mock.patch('terrareg.api_key.ApiKey.has_active_keys', return_value=True):
             obj = AdminApiKeyAuthMethod()
             assert obj.is_enabled() is True
 
@@ -106,7 +106,7 @@ class TestAdminApiKeyAuthMethod(BaseAuthMethodTest):
         headers = {'HTTP_X_TERRAREG_APIKEY': 'db-valid'}
         mock_api_key = mock.MagicMock()
         with mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', None), \
-                mock.patch('terrareg.models.ApiKey.verify_key', return_value=mock_api_key) as mock_verify_key, \
+                mock.patch('terrareg.api_key.ApiKey.verify_key', return_value=mock_api_key) as mock_verify_key, \
                 BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
 
             obj = AdminApiKeyAuthMethod()

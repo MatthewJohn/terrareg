@@ -1,4 +1,4 @@
-import terrareg.models
+import terrareg.api_key
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
 
 
@@ -14,7 +14,7 @@ class UploadAndPublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
 
     @classmethod
     def is_enabled(cls):
-        return terrareg.models.ApiKey.has_active_keys(terrareg.models.ApiKeyType.UPLOAD_AND_PUBLISH)
+        return terrareg.api_key.ApiKey.has_active_keys(terrareg.api_key.ApiKeyType.UPLOAD_AND_PUBLISH)
 
     def can_upload_module_version(self, namespace):
         """Whether user can upload/index module version within a namespace."""
