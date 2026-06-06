@@ -28,22 +28,6 @@ class ApiKey:
     PBKDF2_ITERATIONS = 600000
 
     @classmethod
-    def _normalise_key_type(cls, key_type):
-        """Convert key type to a validated string value."""
-        if isinstance(key_type, ApiKeyType):
-            return key_type.value
-
-        if isinstance(key_type, str):
-            key_type = key_type.lower()
-            if key_type == 'module_full':
-                key_type = ApiKeyType.UPLOAD_AND_PUBLISH.value
-            valid_key_types = [api_key_type.value for api_key_type in ApiKeyType]
-            if key_type in valid_key_types:
-                return key_type
-
-        raise InvalidApiKeyTypeError('Invalid API key type: {}'.format(key_type))
-
-    @classmethod
     def _generate_key_hash(cls, api_key, salt):
         """Generate a stable PBKDF2 hash for an API key."""
         return hashlib.pbkdf2_hmac(
@@ -54,9 +38,8 @@ class ApiKey:
         ).hex()
 
     @classmethod
-    def create(cls, name, key_type, created_by=None, expires_at=None, namespace=None):
+    def create(cls: type['ApiKey'], name: str, key_type: ApiKeyType, created_by: Optional[str]=None, expires_at: Optional[datetime.datetime]=None, namespace: Optional[str]=None) -> Tuple['ApiKeyType', str]:
         """Create an API key and return the model plus the plaintext secret."""
-        key_type = cls._normalise_key_type(key_type)
         plaintext_key = secrets.token_urlsafe(cls.TOKEN_BYTES)
         salt = secrets.token_hex(16)
         key_hash = cls._generate_key_hash(plaintext_key, salt)
@@ -82,7 +65,7 @@ class ApiKey:
         return cls(id=res.inserted_primary_key[0]), plaintext_key
 
     @classmethod
-    def get(cls, id):
+    def get(cls, id: int) -> Optional['ApiKey']:
         """Get API key by primary key."""
         api_key = cls(id=id)
         if api_key._get_db_row() is None:
@@ -90,12 +73,12 @@ class ApiKey:
         return api_key
 
     @classmethod
-    def get_all(cls, key_type=None):
+    def get_all(cls, key_type: Optional[ApiKeyType]=None) -> List['ApiKey']:
         """Return all API keys, optionally filtered by type."""
         db = Database.get()
         select = db.api_key.select()
         if key_type is not None:
-            select = select.where(db.api_key.c.key_type == cls._normalise_key_type(key_type))
+            select = select.where(db.api_key.c.key_type==key_type.value)
 
         with db.get_connection() as conn:
             return [
@@ -104,11 +87,11 @@ class ApiKey:
             ]
 
     @classmethod
-    def has_active_keys(cls, key_type):
+    def has_active_keys(cls, key_type: ApiKeyType) -> bool:
         """Whether any active, non-expired API keys exist for the type."""
         db = Database.get()
         select = sqlalchemy.select(db.api_key.c.id).where(
-            db.api_key.c.key_type == cls._normalise_key_type(key_type),
+            db.api_key.c.key_type == key_type.value,
             db.api_key.c.is_active == True,
             sqlalchemy.or_(
                 db.api_key.c.expires_at.is_(None),
@@ -120,7 +103,7 @@ class ApiKey:
             return conn.execute(select).fetchone() is not None
 
     @classmethod
-    def verify_key(cls, api_key, key_type):
+    def verify_key(cls, api_key: str, key_type: 'ApiKeyType') -> Optional['ApiKey']:
         """Validate a plaintext API key against stored hashes."""
         key_type = cls._normalise_key_type(key_type)
         db = Database.get()
@@ -141,52 +124,52 @@ class ApiKey:
         return None
 
     @property
-    def pk(self):
+    def pk(self) -> int:
         """Return DB ID for API key."""
         return self._get_db_row()['id']
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return API key name."""
         return self._get_db_row()['name']
 
     @property
-    def key_type(self):
+    def key_type(self) -> ApiKeyType:
         """Return API key type."""
-        return self._get_db_row()['key_type']
+        return ApiKeyType(self._get_db_row()['key_type'])
 
     @property
-    def key_prefix(self):
+    def key_prefix(self) -> str:
         """Return API key prefix."""
         return self._get_db_row()['key_prefix']
 
     @property
-    def created_at(self):
+    def created_at(self) -> datetime.datetime:
         """Return API key creation timestamp."""
         return self._get_db_row()['created_at']
 
     @property
-    def created_by(self):
+    def created_by(self) -> str:
         """Return API key creator."""
         return self._get_db_row()['created_by']
 
     @property
-    def last_used_at(self):
+    def last_used_at(self) -> Optional[datetime.datetime]:
         """Return API key last usage timestamp."""
         return self._get_db_row()['last_used_at']
 
     @property
-    def expires_at(self):
+    def expires_at(self) -> Optional[datetime.datetime]:
         """Return API key expiry timestamp."""
         return self._get_db_row()['expires_at']
 
     @property
-    def is_active(self):
+    def is_active(self) -> bool:
         """Return whether API key is active."""
         return self._get_db_row()['is_active']
 
     @property
-    def namespace(self):
+    def namespace(self) -> str:
         """Return optional namespace restriction for this API key."""
         return self._get_db_row()['namespace']
 

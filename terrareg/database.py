@@ -285,7 +285,7 @@ class Database():
         cls._ENGINE = None
 
     @classmethod
-    def get(cls):
+    def get(cls) -> 'Database':
         """Get singleton instance of class."""
         if cls._INSTANCE is None:
             cls._INSTANCE = Database()

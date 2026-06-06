@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import hashlib
 import hmac
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 from enum import Enum
 import os
 import json
@@ -37,6 +37,7 @@ from terrareg.errors import (
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
     RepositoryUrlDoesNotContainPathError,
+    InvalidApiKeyTypeError,
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
     NoModuleDownloadMethodConfiguredError,
