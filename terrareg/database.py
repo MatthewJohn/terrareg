@@ -354,7 +354,7 @@ class Database():
             'api_key', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
-            sqlalchemy.Column('key_type', sqlalchemy.String(32), nullable=False),
+            sqlalchemy.Column('key_type', sqlalchemy.Enum(terrareg.api_key_type.ApiKeyType), nullable=False),
             sqlalchemy.Column('key_prefix', sqlalchemy.String(16), nullable=False),
             sqlalchemy.Column('key_hash', sqlalchemy.String(128), nullable=False),
             sqlalchemy.Column('key_salt', sqlalchemy.String(64), nullable=False),

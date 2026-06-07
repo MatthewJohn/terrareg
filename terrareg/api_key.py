@@ -1,23 +1,16 @@
 
 import datetime
 import hashlib
+import hmac
 import secrets
 from enum import Enum
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Any
 
 import sqlalchemy
 
 from terrareg.errors import InvalidApiKeyTypeError
 from terrareg.database import Database
-
-
-class ApiKeyType(Enum):
-    """Supported API key types."""
-
-    ADMIN = 'admin'
-    UPLOAD = 'upload'
-    PUBLISH = 'publish'
-    UPLOAD_AND_PUBLISH = 'upload_and_publish'
+from terrareg.api_key_type import ApiKeyType
 
 
 class ApiKey:
@@ -105,7 +98,6 @@ class ApiKey:
     @classmethod
     def verify_key(cls, api_key: str, key_type: 'ApiKeyType') -> Optional['ApiKey']:
         """Validate a plaintext API key against stored hashes."""
-        key_type = cls._normalise_key_type(key_type)
         db = Database.get()
         select = db.api_key.select().where(
             db.api_key.c.key_type == key_type,

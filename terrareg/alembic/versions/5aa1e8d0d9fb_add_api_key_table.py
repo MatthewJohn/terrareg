@@ -8,6 +8,7 @@ Create Date: 2026-05-12 00:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+from terrareg.alembic.versions import Enum
 
 
 # revision identifiers, used by Alembic.
@@ -22,7 +23,7 @@ def upgrade():
         'api_key',
         sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.Column('name', sa.String(length=128), nullable=False),
-        sa.Column('key_type', sa.String(length=32), nullable=False),
+        sa.Column('key_type', Enum('ADMIN', 'UPLOAD', 'PUBLISH', 'UPLOAD_AND_PUBLISH', name='apikeytype'), nullable=False),
         sa.Column('key_prefix', sa.String(length=16), nullable=False),
         sa.Column('key_hash', sa.String(length=128), nullable=False),
         sa.Column('key_salt', sa.String(length=64), nullable=False),
