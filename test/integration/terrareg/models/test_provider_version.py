@@ -56,7 +56,8 @@ class TestProviderVersion(TerraregIntegrationTest):
         ('1.2.3-alpha', True),
         ('1.2.3-beta', True),
         ('1.2.3-anothersuffix1', True),
-        ('1.2.2-123', True)
+        ('1.2.2-123', True),
+        ('1.2.3-dev.1', True)
     ])
     def test___validate_version_valid(self, version, beta):
         """Test valid provider versions"""
