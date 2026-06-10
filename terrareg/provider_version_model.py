@@ -27,7 +27,7 @@ class ProviderVersion:
     @staticmethod
     def _validate_version(version):
         """Validate version, checking if version is a beta version."""
-        match = re.match(r'^[0-9]+\.[0-9]+\.[0-9]+((?:-[a-z0-9]+(?:\.[a-z0-9]+)*)?)$', version)
+        match = re.match(r'^[0-9]+\.[0-9]+\.[0-9]+((:?-[a-z0-9]+)?)$', version)
         if not match:
             raise InvalidVersionError('Version is invalid')
         return bool(match.group(1))
