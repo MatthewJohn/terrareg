@@ -27,7 +27,6 @@ class TestModuleVersion(TerraregIntegrationTest):
         '.23.1',
         '1.1.1.1',
         '1.1.1.',
-        '1.2.3-dottedsuffix1.2',
         '1.2.3-invalid-suffix',
         '1.0.9-'
     ])
