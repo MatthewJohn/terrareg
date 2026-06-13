@@ -448,3 +448,9 @@ class UnableToObtainReleaseError(TerraregError):
     """Unable to find Release metadata from provider"""
 
     pass
+
+
+class InvalidModuleTagsConfigError(TerraregError):
+    """Invalid module tags configuration provided"""
+
+    pass
