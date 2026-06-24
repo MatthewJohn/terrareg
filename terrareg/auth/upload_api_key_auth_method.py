@@ -1,26 +1,21 @@
 
+from typing import List, Optional
+
 import terrareg.config
 import terrareg.api_key
+import terrareg.api_key_type
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
+import terrareg.user_group_namespace_permission_type
 
 
 class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for upload API key"""
 
-    key_type = 'upload'
+    key_type = terrareg.api_key_type.ApiKeyType.UPLOAD
 
     @classmethod
-    def get_valid_keys(cls):
+    def get_static_keys(cls) -> List[str]:
         return terrareg.config.Config().UPLOAD_API_KEYS
-
-    @classmethod
-    def check_auth_state(cls):
-        """Check if upload API key is provided"""
-        return cls._check_api_key(cls.get_valid_keys())
-
-    @classmethod
-    def is_enabled(cls):
-        return bool(terrareg.config.Config().UPLOAD_API_KEYS or terrareg.api_key.ApiKey.has_active_keys(terrareg.api_key.ApiKeyType.UPLOAD))
 
     def can_upload_module_version(self, namespace):
         """Whether user can upload/index module version within a namespace."""
@@ -29,7 +24,7 @@ class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
             return key.namespace == namespace
         return True
 
-    def check_namespace_access(self, permission_type, namespace):
+    def check_namespace_access(self, permission_type: terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType, namespace: Optional[str]):
         """Check access level to a given namespace."""
         return False
 

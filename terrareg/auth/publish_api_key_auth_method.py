@@ -1,28 +1,22 @@
 
+from typing import Optional, List
+
 import terrareg.config
 import terrareg.api_key
+import terrareg.api_key_type
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
 
 
 class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for publish API key"""
 
-    key_type = 'publish'
+    key_type = terrareg.api_key_type.ApiKeyType.PUBLISH
 
     @classmethod
-    def get_valid_keys(cls):
+    def get_static_keys(cls) -> List[str]:
         return terrareg.config.Config().PUBLISH_API_KEYS
 
-    @classmethod
-    def check_auth_state(cls):
-        """Check if upload API key is provided"""
-        return cls._check_api_key(cls.get_valid_keys())
-
-    @classmethod
-    def is_enabled(cls):
-        return bool(terrareg.config.Config().PUBLISH_API_KEYS or terrareg.api_key.ApiKey.has_active_keys(terrareg.api_key.ApiKeyType.PUBLISH))
-
-    def can_publish_module_version(self, namespace):
+    def can_publish_module_version(self, namespace: Optional[str]) -> bool:
         """Whether user can publish module version within a namespace."""
         key = self.matched_api_key
         if key is not None and key.namespace is not None:

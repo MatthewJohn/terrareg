@@ -1,25 +1,20 @@
 
+from typing import List
+
 from .base_admin_auth_method import BaseAdminAuthMethod
 from .base_api_key_auth_method import BaseApiKeyAuthMethod
 import terrareg.config
 import terrareg.api_key
+import terrareg.api_key_type
 
 
 class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
     """Auth method for admin API key"""
 
-    key_type = 'admin'
+    key_type = terrareg.api_key_type.ApiKeyType.ADMIN
 
     @classmethod
-    def get_valid_keys(cls):
-        return [terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN]
-
-    @classmethod
-    def check_auth_state(cls):
-        """Check if admin API key is provided"""
-        return cls._check_api_key(cls.get_valid_keys())
-
-    @classmethod
-    def is_enabled(cls):
-        """Whether admin API key auth is configured."""
-        return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN or terrareg.api_key.ApiKey.has_active_keys(terrareg.api_key.ApiKeyType.ADMIN))
+    def get_static_keys(cls) -> List[str]:
+        if admin_token := terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN:
+            return [admin_token]
+        return []

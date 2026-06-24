@@ -31,7 +31,7 @@ class ApiKey:
         ).hex()
 
     @classmethod
-    def create(cls: type['ApiKey'], name: str, key_type: ApiKeyType, created_by: Optional[str]=None, expires_at: Optional[datetime.datetime]=None, namespace: Optional[str]=None) -> Tuple['ApiKeyType', str]:
+    def create(cls: type['ApiKey'], name: str, key_type: ApiKeyType, created_by: Optional[str]=None, expires_at: Optional[datetime.datetime]=None, namespace: Optional[str]=None) -> Tuple['ApiKey', str]:
         """Create an API key and return the model plus the plaintext secret."""
         plaintext_key = secrets.token_urlsafe(cls.TOKEN_BYTES)
         salt = secrets.token_hex(16)
@@ -53,7 +53,10 @@ class ApiKey:
         )
 
         with db.get_connection() as conn:
+            if conn is None:
+                raise Exception("Could not get database connection")
             res = conn.execute(insert)
+            assert res is not None
 
         return cls(id=res.inserted_primary_key[0]), plaintext_key
 
@@ -100,7 +103,7 @@ class ApiKey:
         """Validate a plaintext API key against stored hashes."""
         db = Database.get()
         select = db.api_key.select().where(
-            db.api_key.c.key_type == key_type,
+            db.api_key.c.key_type == key_type.value,
             db.api_key.c.is_active == True,
             sqlalchemy.or_(
                 db.api_key.c.expires_at.is_(None),
