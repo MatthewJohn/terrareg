@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 
+import terrareg.api_key_type
 from terrareg.auth import UploadAndPublishApiKeyAuthMethod
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import BaseTest
@@ -32,7 +33,9 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
             obj = UploadAndPublishApiKeyAuthMethod()
             assert obj.is_enabled() is True
 
-        mock_has_active_keys.assert_called_once()
+        mock_has_active_keys.assert_called_once_with(
+            terrareg.api_key_type.ApiKeyType.UPLOAD_AND_PUBLISH
+        )
 
     def test_requires_csrf_tokens(self):
         """Test requires_csrf_token method."""
@@ -47,7 +50,7 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
     def test_can_publish_module_version_restricted_namespace(self):
         """Test namespace-restricted keys only publish within their namespace."""
         obj = UploadAndPublishApiKeyAuthMethod()
-        obj.matched_api_key = mock.MagicMock(namespace='allowed')
+        obj._matched_api_key = mock.MagicMock(namespace='allowed')
         assert obj.can_publish_module_version(namespace='allowed') is True
         assert obj.can_publish_module_version(namespace='blocked') is False
 
@@ -59,7 +62,7 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
     def test_can_upload_module_version_restricted_namespace(self):
         """Test namespace-restricted keys only upload within their namespace."""
         obj = UploadAndPublishApiKeyAuthMethod()
-        obj.matched_api_key = mock.MagicMock(namespace='allowed')
+        obj._matched_api_key = mock.MagicMock(namespace='allowed')
         assert obj.can_upload_module_version(namespace='allowed') is True
         assert obj.can_upload_module_version(namespace='blocked') is False
 
@@ -76,15 +79,20 @@ class TestUploadAndPublishApiKeyAuthMethod(BaseAuthMethodTest):
             headers['HTTP_X_TERRAREG_APIKEY'] = api_key_header
 
         mock_api_key = mock.MagicMock()
+        if not (base_test := BaseTest.get()) or not (server := base_test.SERVER) or not (app := server._app):
+            raise Exception("Cannot get app")
+
         with mock.patch(
             'terrareg.api_key.ApiKey.verify_key',
             return_value=mock_api_key if api_key_header == 'valid' else None
-        ) as mock_verify_key, BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
+        ) as mock_verify_key, base_test.SERVER._app.test_request_context(environ_base=headers):
             obj = UploadAndPublishApiKeyAuthMethod()
             assert obj.check_auth_state() is expected_result
 
         if api_key_header:
-            mock_verify_key.assert_called_once_with(api_key_header, 'upload_and_publish')
+            mock_verify_key.assert_called_once_with(
+                api_key_header, terrareg.api_key_type.ApiKeyType.UPLOAD_AND_PUBLISH
+            )
             if expected_result:
                 mock_api_key.mark_used.assert_called_once_with()
         else:

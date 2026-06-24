@@ -1,15 +1,17 @@
 
+
 from abc import abstractmethod, ABC
 from typing import List, Optional, Self
 from flask import request
 
 from .base_auth_method import BaseAuthMethod
 import terrareg.api_key
+import terrareg.api_key_type
 
 class BaseApiKeyAuthMethod(ABC, BaseAuthMethod):
     """Base auth method for API key-based authentication"""
 
-    key_type: Optional[terrareg.api_key.ApiKeyType]
+    key_type: Optional[terrareg.api_key_type.ApiKeyType]
 
     def __init__(self, matched_api_key: Optional[terrareg.api_key.ApiKey]=None):
         self._matched_api_key = matched_api_key
@@ -28,7 +30,7 @@ class BaseApiKeyAuthMethod(ABC, BaseAuthMethod):
 
     @property
     def matched_api_key(self) -> Optional[terrareg.api_key.ApiKey]:
-        """Return the DB-backed ApiKey that authenticated this request, or None for env-var keys."""
+        """Return the DB-backed ApiKey that authenticated this request, or None for environment-variable-based keys."""
         return self._matched_api_key
 
     @classmethod

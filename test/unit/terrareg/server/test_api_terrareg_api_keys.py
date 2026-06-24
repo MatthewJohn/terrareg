@@ -1,4 +1,5 @@
 import unittest.mock
+import terrareg.api_key_type
 
 from test.unit.terrareg import TerraregUnitTest
 from test import client, app_context, test_request_context
@@ -30,18 +31,17 @@ class TestApiTerraregApiKeys(TerraregUnitTest):
 
     def test_create_api_key_returns_plaintext_key(self, client, app_context, test_request_context):
         """Test API key creation returns the one-time plaintext key."""
-        created_api_key = unittest.mock.MagicMock(
-            pk=11,
-            name='upload-key',
-            key_type='upload',
-            key_prefix='prefix',
-            created_at=None,
-            created_by='admin',
-            last_used_at=None,
-            expires_at=None,
-            is_active=True,
-            namespace=None,
-        )
+        created_api_key = unittest.mock.MagicMock()
+        created_api_key.pk = 11
+        created_api_key.name = 'upload-key'
+        created_api_key.key_type = terrareg.api_key_type.ApiKeyType.UPLOAD
+        created_api_key.key_prefix = 'prefix'
+        created_api_key.created_at = None
+        created_api_key.created_by = 'admin'
+        created_api_key.last_used_at = None
+        created_api_key.expires_at = None
+        created_api_key.is_active = True
+        created_api_key.namespace = None
 
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
@@ -71,6 +71,22 @@ class TestApiTerraregApiKeys(TerraregUnitTest):
             },
             'plaintext_key': 'secret-value',
         }
+
+    def test_create_api_key_invalid_key_type(self, client, app_context, test_request_context):
+        """Test API key creation rejects invalid key_type strings."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True):
+            res = client.post('/v1/terrareg/api-keys', json={
+                'name': 'upload-key',
+                'key_type': 'invalid-type',
+                'namespace': None,
+                'expires_at': None,
+                'csrf_token': 'csrf-token'
+            })
+
+        assert res.status_code == 400
+        assert 'Invalid key_type' in res.json['message']
 
     def test_delete_api_key(self, client, app_context, test_request_context):
         """Test API key hard delete uses the dedicated delete endpoint."""

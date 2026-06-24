@@ -19,7 +19,7 @@ class TestApiKey(TerraregIntegrationTest):
         )
 
         assert api_key.name == 'CI upload key'
-        assert api_key.key_type == terrareg.api_key.ApiKeyType.UPLOAD.value
+        assert api_key.key_type == terrareg.api_key.ApiKeyType.UPLOAD
         assert api_key.key_prefix == plaintext_key[:terrareg.api_key.ApiKey.PREFIX_LENGTH]
         assert api_key.last_used_at is None
 
@@ -41,8 +41,3 @@ class TestApiKey(TerraregIntegrationTest):
         )
 
         assert terrareg.api_key.ApiKey.verify_key(plaintext_key, terrareg.api_key.ApiKeyType.PUBLISH) is None
-
-    def test_invalid_type_raises(self):
-        """Test invalid API key types are rejected."""
-        with pytest.raises(terrareg.errors.InvalidApiKeyTypeError):
-            terrareg.api_key.ApiKey.create(name='bad key', key_type='invalid-type')

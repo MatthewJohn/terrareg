@@ -32,7 +32,7 @@ class ApiKey:
 
     @classmethod
     def create(cls: type['ApiKey'], name: str, key_type: ApiKeyType, created_by: Optional[str]=None, expires_at: Optional[datetime.datetime]=None, namespace: Optional[str]=None) -> Tuple['ApiKey', str]:
-        """Create an API key and return the model plus the plaintext secret."""
+        """Create an API key and return the model plus the plain-text secret."""
         plaintext_key = secrets.token_urlsafe(cls.TOKEN_BYTES)
         salt = secrets.token_hex(16)
         key_hash = cls._generate_key_hash(plaintext_key, salt)
@@ -40,7 +40,7 @@ class ApiKey:
         db = Database.get()
         insert = db.api_key.insert().values(
             name=name,
-            key_type=key_type,
+            key_type=key_type.name,
             key_prefix=plaintext_key[:cls.PREFIX_LENGTH],
             key_hash=key_hash,
             key_salt=salt,
@@ -74,7 +74,7 @@ class ApiKey:
         db = Database.get()
         select = db.api_key.select()
         if key_type is not None:
-            select = select.where(db.api_key.c.key_type==key_type.value)
+            select = select.where(db.api_key.c.key_type==key_type.name)
 
         with db.get_connection() as conn:
             return [
@@ -87,7 +87,7 @@ class ApiKey:
         """Whether any active, non-expired API keys exist for the type."""
         db = Database.get()
         select = sqlalchemy.select(db.api_key.c.id).where(
-            db.api_key.c.key_type == key_type.value,
+            db.api_key.c.key_type == key_type.name,
             db.api_key.c.is_active == True,
             sqlalchemy.or_(
                 db.api_key.c.expires_at.is_(None),
@@ -100,10 +100,10 @@ class ApiKey:
 
     @classmethod
     def verify_key(cls, api_key: str, key_type: 'ApiKeyType') -> Optional['ApiKey']:
-        """Validate a plaintext API key against stored hashes."""
+        """Validate a plain-text API key against stored hashes."""
         db = Database.get()
         select = db.api_key.select().where(
-            db.api_key.c.key_type == key_type.value,
+            db.api_key.c.key_type == key_type.name,
             db.api_key.c.is_active == True,
             sqlalchemy.or_(
                 db.api_key.c.expires_at.is_(None),

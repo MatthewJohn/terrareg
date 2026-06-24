@@ -101,14 +101,13 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
 
     def test_update_git_provider(self, client, app_context, test_request_context):
         """Test updating a git provider."""
-        git_provider = mock.MagicMock(
-            pk=4,
-            name='updated-provider',
-            base_url_template='https://example.com/scm/{namespace}/{module}',
-            clone_url_template='ssh://git@example.com/scm/{namespace}/{module}.git',
-            browse_url_template='https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}',
-            git_path_template=None
-        )
+        git_provider = mock.MagicMock()
+        git_provider.pk = 4
+        git_provider.name = 'updated-provider'
+        git_provider.base_url_template = 'https://example.com/scm/{namespace}/{module}'
+        git_provider.clone_url_template = 'ssh://git@example.com/scm/{namespace}/{module}.git'
+        git_provider.browse_url_template = 'https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}'
+        git_provider.git_path_template = None
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
@@ -135,14 +134,13 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
 
     def test_partial_update_git_provider(self, client, app_context, test_request_context):
         """Test updating a git provider with partial input."""
-        git_provider = mock.MagicMock(
-            pk=4,
-            name='existing-provider',
-            base_url_template='https://example.com/scm/{namespace}/{module}',
-            clone_url_template='ssh://git@example.com/scm/{namespace}/{module}.git',
-            browse_url_template='https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}',
-            git_path_template='/{provider}'
-        )
+        git_provider = mock.MagicMock()
+        git_provider.pk = 4
+        git_provider.name = 'existing-provider'
+        git_provider.base_url_template = 'https://example.com/scm/{namespace}/{module}'
+        git_provider.clone_url_template = 'ssh://git@example.com/scm/{namespace}/{module}.git'
+        git_provider.browse_url_template = 'https://example.com/scm/{namespace}/{module}/tree/{tag}/{path}'
+        git_provider.git_path_template = '/{provider}'
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \

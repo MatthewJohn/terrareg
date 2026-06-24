@@ -3,6 +3,7 @@
 from unittest import mock
 import pytest
 
+import terrareg.api_key_type
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.auth import PublishApiKeyAuthMethod
 from test.unit.terrareg.auth.base_auth_method_test import BaseAuthMethodTest
@@ -42,9 +43,12 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
     def test_is_enabled_from_db_api_key(self):
         """Test DB-backed publish API keys enable the auth method."""
         with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', []), \
-                mock.patch('terrareg.api_key.ApiKey.has_active_keys', return_value=True):
+                mock.patch('terrareg.api_key.ApiKey.has_active_keys', return_value=True) as mock_has_active_keys:
             obj = PublishApiKeyAuthMethod()
             assert obj.is_enabled() is True
+            mock_has_active_keys.assert_called_once_with(
+                terrareg.api_key_type.ApiKeyType.PUBLISH
+            )
 
     def test_requires_csrf_tokens(self):
         """Test requires_csrf_token method"""
@@ -113,7 +117,9 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
             obj = PublishApiKeyAuthMethod()
             assert obj.check_auth_state() is True
 
-        mock_verify_key.assert_called_once()
+        mock_verify_key.assert_called_once_with(
+            'db-valid', terrareg.api_key_type.ApiKeyType.PUBLISH
+        )
         mock_api_key.mark_used.assert_called_once_with()
 
     @pytest.mark.parametrize('namespace,access_type,expected_result', [

@@ -7,6 +7,7 @@ import terrareg.auth
 import terrareg.auth_wrapper
 import terrareg.csrf
 import terrareg.api_key
+import terrareg.api_key_type
 from terrareg.errors import InvalidApiKeyTypeError
 
 
@@ -26,11 +27,11 @@ class ApiTerraregApiKeys(ErrorCatchingResource):
         return parser
 
     def _serialize_api_key(self, api_key):
-        """Serialize API key details without exposing the secret."""
+        """Serialise API key details without exposing the secret."""
         return {
             'id': api_key.pk,
             'name': api_key.name,
-            'key_type': api_key.key_type,
+            'key_type': api_key.key_type.value if api_key.key_type else None,
             'key_prefix': api_key.key_prefix,
             'created_at': api_key.created_at.isoformat() if api_key.created_at else None,
             'created_by': api_key.created_by,
@@ -60,9 +61,14 @@ class ApiTerraregApiKeys(ErrorCatchingResource):
                 return api_error('Invalid expires_at value, expected ISO-8601 datetime'), 400
 
         try:
+            key_type_enum = terrareg.api_key_type.ApiKeyType(args.key_type)
+        except ValueError:
+            return api_error(f'Invalid key_type: {args.key_type}'), 400
+
+        try:
             api_key, plaintext_key = terrareg.api_key.ApiKey.create(
                 name=args.name,
-                key_type=args.key_type,
+                key_type=key_type_enum,
                 created_by=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
                 expires_at=expires_at,
                 namespace=args.namespace or None,
