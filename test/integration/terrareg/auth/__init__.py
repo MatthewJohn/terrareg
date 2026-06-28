@@ -1,0 +1,1 @@
+from test.integration.terrareg import TerraregIntegrationTest
