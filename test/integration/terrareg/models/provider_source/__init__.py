@@ -37,7 +37,7 @@ def test_provider_source(request):
 
     # Delete provider source
     with db.get_connection() as conn:
-        conn.execute(db.provider_source.delete(
+        conn.execute(db.provider_source.delete().where(
             db.provider_source.c.api_name=="test-provider-source"
         ))
 
@@ -58,7 +58,7 @@ def test_repository(test_namespace, test_provider_source):
     yield repository
     db = terrareg.database.Database.get()
     with db.get_connection() as conn:
-        conn.execute(db.repository.delete(db.repository.c.id==repository_pk))
+        conn.execute(db.repository.delete().where(db.repository.c.id==repository_pk))
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ def test_provider(test_repository, test_namespace, test_provider_category):
     # where applicable
     db = terrareg.database.Database.get()
     with db.get_connection() as conn:
-        conn.execute(db.provider.update(db.provider.c.id==provider_id).values(
+        conn.execute(db.provider.update().where(db.provider.c.id==provider_id).values(
             name="unittest-create-provider-name",
             description=db.encode_blob("Unittest provider description")
         ))
@@ -88,5 +88,5 @@ def test_provider(test_repository, test_namespace, test_provider_category):
     yield provider
 
     with db.get_connection() as conn:
-        conn.execute(db.provider.delete(db.provider.c.id==provider_id))
+        conn.execute(db.provider.delete().where(db.provider.c.id==provider_id))
 

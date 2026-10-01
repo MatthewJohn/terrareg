@@ -93,5 +93,5 @@ class ApiModuleSearch(ErrorCatchingResource):
             ]
         }
         if args.include_count:
-            res['count'] = search_results.count
+            res._mapping['count'] = search_results.count
         return res

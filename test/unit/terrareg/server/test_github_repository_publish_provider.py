@@ -1,3 +1,4 @@
+import sqlalchemy
 
 from contextlib import contextmanager
 from datetime import datetime
@@ -231,7 +232,7 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
 
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            rows = conn.execute(db.provider_version.select()).all()
+            rows = conn.execute(sqlalchemy.select(db.provider_version)).all()
             pre_existing_provider_version_count = len(rows)
 
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
@@ -262,10 +263,10 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
 
             with db.get_connection() as conn:
                 # Ensure no providers were created in database
-                rows = conn.execute(db.provider.select(db.provider.c.repository_id==test_repository.pk)).all()
+                rows = conn.execute(sqlalchemy.select(db.provider).where(db.provider.c.repository_id==test_repository.pk)).all()
                 assert len(rows) == 0
                 # Ensure no new provider versions are present
-                rows = conn.execute(db.provider_version.select()).all()
+                rows = conn.execute(sqlalchemy.select(db.provider_version)).all()
                 assert len(rows) == pre_existing_provider_version_count
 
     @pytest.mark.skip("Generic exceptions throw an exception in test client. See https://gitlab.dockstudios.co.uk/pub/terrareg/-/issues/526")
@@ -283,7 +284,7 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
 
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            rows = conn.execute(db.provider_version.select()).all()
+            rows = conn.execute(sqlalchemy.select(db.provider_version)).all()
             pre_existing_provider_version_count = len(rows)
 
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
@@ -314,10 +315,10 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
 
             with db.get_connection() as conn:
                 # Ensure no providers were created in database
-                rows = conn.execute(db.provider.select(db.provider.c.repository_id==test_repository.pk)).all()
+                rows = conn.execute(sqlalchemy.select(db.provider).where(db.provider.c.repository_id==test_repository.pk)).all()
                 assert len(rows) == 0
                 # Ensure no new provider versions are present
-                rows = conn.execute(db.provider_version.select()).all()
+                rows = conn.execute(sqlalchemy.select(db.provider_version)).all()
                 assert len(rows) == pre_existing_provider_version_count
 
     def test_github_without_permissions(self, client, test_github_provider_source, test_repository_create):

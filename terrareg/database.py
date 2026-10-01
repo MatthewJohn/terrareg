@@ -931,7 +931,29 @@ class Database():
             return TransactionConnectionWrapper(current_transaction)
 
         # If transaction is not currently active, return database connection
-        return cls.get().get_engine().connect()
+        # wrapped to commit on exit (SQLAlchemy 2.0 does not autocommit)
+        return CommittingConnectionWrapper(cls.get().get_engine().connect())
+
+
+class CommittingConnectionWrapper:
+    """Wrapper that commits the connection on exit."""
+
+    def __init__(self, connection):
+        self._connection = connection
+
+    def __enter__(self):
+        return self._connection
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+        self._connection.close()
+        return False
+
+    def __getattr__(self, name):
+        return getattr(self._connection, name)
 
 
 class TransactionConnectionWrapper:

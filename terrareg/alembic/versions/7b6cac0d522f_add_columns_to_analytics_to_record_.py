@@ -27,20 +27,20 @@ def upgrade():
     # but certainly compatible between SQLite and MySQL
     bind = op.get_bind()
 
-    module_version_rows = bind.execute("""
+    module_version_rows = bind.execute(sa.text("""
         SELECT mv.id, ns.namespace, mp.module, mp.provider
         FROM module_version mv
         INNER JOIN module_provider mp
             ON mv.module_provider_id=mp.id
         INNER JOIN namespace ns
             ON mp.namespace_id=ns.id
-    """)
+    """))
     module_version_lookup = {
         row[0]: row[1:]
         for row in module_version_rows
     }
 
-    analytics_rows = bind.execute("SELECT id, parent_module_version FROM analytics")
+    analytics_rows = bind.execute(sa.text("SELECT id, parent_module_version FROM analytics"))
     for row in analytics_rows:
         analytics_id, module_version_id = row
 

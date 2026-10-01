@@ -1,3 +1,6 @@
+import sqlalchemy
+
+from test.unit.terrareg import MockRow
 
 # Temp import
 import json
@@ -543,9 +546,9 @@ class TestGithubProviderSource(BaseProviderSourceTests):
             if pre_existing_provider_version:
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    conn.execute(db.provider_version.delete(
-                        db.provider_version.c.provider_id==test_provider.pk
-                    ))
+                    conn.execute(db.provider_version.delete().where(
+            db.provider_version.c.provider_id==test_provider.pk
+        ))
 
     @pytest.mark.parametrize('result_count, expected_pages', [
         # No results
@@ -918,11 +921,11 @@ class TestGithubProviderSource(BaseProviderSourceTests):
     ])
     def test_auto_generate_github_organisation_namespaces(self, value, expected_result, test_provider_source):
         """Test auto_generate_github_organisation_namespaces property"""
-        test_provider_source._cache_db_row = {
+        test_provider_source._cache_db_row = MockRow({
             "config": terrareg.database.Database.encode_blob(json.dumps({
                 "auto_generate_github_organisation_namespaces": value
             } if value else {}))
-        }
+        })
 
         assert test_provider_source.auto_generate_github_organisation_namespaces == expected_result
 
@@ -941,11 +944,11 @@ class TestGithubProviderSource(BaseProviderSourceTests):
             pem_file.flush()
 
             if file_exists:
-                test_provider_source._cache_db_row = {
+                test_provider_source._cache_db_row = MockRow({
                     "config": terrareg.database.Database.encode_blob(json.dumps({
                         "private_key_path": pem_file.name
                     }))
-                }
+                })
 
             if file_exists:
                 assert test_provider_source._private_key == "test\nprivate-key\nContent".encode('utf-8')
@@ -1001,12 +1004,12 @@ class TestGithubProviderSource(BaseProviderSourceTests):
     ])
     def test__get_default_access_token(self, default_installation_id, default_access_token, generate_app_installation_token_response, expected_response, test_provider_source):
         """Test _get_default_access_token method"""
-        test_provider_source._cache_db_row = {
+        test_provider_source._cache_db_row = MockRow({
             "config": terrareg.database.Database.encode_blob(json.dumps({
                 "default_installation_id": default_installation_id,
                 "default_access_token": default_access_token
             }))
-        }
+        })
         with unittest.mock.patch(
                 'terrareg.provider_source.GithubProviderSource.generate_app_installation_token',
                 unittest.mock.MagicMock(return_value=generate_app_installation_token_response)) as mock_generate_app_installation_token:
@@ -1196,11 +1199,11 @@ class TestGithubProviderSource(BaseProviderSourceTests):
         test_provider_source._add_repository(repository_metadata=repository_metadata)
 
         with db.get_connection() as conn:
-            row = conn.execute(db.repository.select()).first()
+            row = conn.execute(sqlalchemy.select(db.repository)).first()
 
             if expect_create:
                 assert row is not None
-                row = dict(row)
+                row = dict(row._mapping)
                 del row["id"]
 
                 assert row["provider_source_name"] == test_provider_source.name

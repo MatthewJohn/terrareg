@@ -1,3 +1,4 @@
+import sqlalchemy
 
 from typing import Dict, Union
 import unittest.mock
@@ -72,8 +73,7 @@ def mock_provider_source_class():
             """Return database row for module details."""
             if self._cache_db_row is None:
                 db = terrareg.database.Database.get()
-                select = db.provider_source.select(
-                ).where(
+                select = sqlalchemy.select(db.provider_source).where(
                     db.provider_source.c.name == self.name
                 )
                 with db.get_connection() as conn:
@@ -146,7 +146,7 @@ def mock_provider_source(mock_provider_source_class):
         # Delete provider source
         db = terrareg.database.Database.get()
         with terrareg.database.Database.get_connection() as conn:
-            conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+            conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
 
 @pytest.fixture
@@ -178,7 +178,7 @@ def test_github_provider_source():
     # Delete provider source
     db = terrareg.database.Database.get()
     with terrareg.database.Database.get_connection() as conn:
-        conn.execute(db.provider_source.delete(db.provider_source.c.name==name))
+        conn.execute(db.provider_source.delete().where(db.provider_source.c.name==name))
 
 
 @pytest.fixture
@@ -213,7 +213,7 @@ def test_repository(test_namespace, mock_provider_source):
     yield repository
     db = terrareg.database.Database.get()
     with db.get_connection() as conn:
-        conn.execute(db.repository.delete(db.repository.c.id==repository_pk))
+        conn.execute(db.repository.delete().where(db.repository.c.id==repository_pk))
 
 
 @pytest.fixture
@@ -229,7 +229,7 @@ def test_provider_category():
     yield provider_category
     db = terrareg.database.Database.get()
     with terrareg.database.Database.get_connection() as conn:
-        conn.execute(db.provider_category.delete(db.provider_category.c.id==provider_category_pk))
+        conn.execute(db.provider_category.delete().where(db.provider_category.c.id==provider_category_pk))
 
 
 @pytest.fixture
@@ -249,7 +249,7 @@ def test_provider(test_repository, test_namespace, test_provider_category):
     # where applicable
     db = terrareg.database.Database.get()
     with db.get_connection() as conn:
-        conn.execute(db.provider.update(db.provider.c.id==provider_id).values(
+        conn.execute(db.provider.update().where(db.provider.c.id==provider_id).values(
             name="unittest-create-provider-name",
             description="Unittest provider description"
         ))
@@ -259,7 +259,7 @@ def test_provider(test_repository, test_namespace, test_provider_category):
     yield provider
 
     with db.get_connection() as conn:
-        conn.execute(db.provider.delete(db.provider.c.id==provider_id))
+        conn.execute(db.provider.delete().where(db.provider.c.id==provider_id))
 
 
 @pytest.fixture
@@ -274,9 +274,9 @@ def test_provider_version(test_provider, test_gpg_key):
     finally:
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            conn.execute(db.provider_version_binary.delete(db.provider_version_binary.c.provider_version_id==provider_version_id))
-            conn.execute(db.provider_version_documentation.delete(db.provider_version_documentation.c.provider_version_id==provider_version_id))
-            conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+            conn.execute(db.provider_version_binary.delete().where(db.provider_version_binary.c.provider_version_id==provider_version_id))
+            conn.execute(db.provider_version_documentation.delete().where(db.provider_version_documentation.c.provider_version_id==provider_version_id))
+            conn.execute(db.provider_version.delete().where(db.provider_version.c.id==provider_version_id))
 
 
 @pytest.fixture
@@ -310,7 +310,7 @@ def test_github_provider_source_for_modules():
     # Delete provider source
     db = terrareg.database.Database.get()
     with terrareg.database.Database.get_connection() as conn:
-        conn.execute(db.provider_source.delete(db.provider_source.c.name==name))
+        conn.execute(db.provider_source.delete().where(db.provider_source.c.name==name))
 
 
 @pytest.fixture

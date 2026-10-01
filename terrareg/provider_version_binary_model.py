@@ -109,7 +109,7 @@ class ProviderVersionBinary:
             row = conn.execute(select).first()
 
         if row:
-            return cls(pk=row["id"])
+            return cls(pk=row._mapping["id"])
         return None
 
     @classmethod
@@ -126,29 +126,29 @@ class ProviderVersionBinary:
         with db.get_connection() as conn:
             rows = conn.execute(select).all()
         return [
-            cls(pk=row["id"])
+            cls(pk=row._mapping["id"])
             for row in rows
         ]
 
     @property
     def name(self) -> str:
         """Return name of file"""
-        return self._get_db_row()["name"]
+        return self._get_db_row()._mapping["name"]
 
     @property
     def architecture(self) -> 'terrareg.provider_binary_types.ProviderBinaryArchitectureType':
         """Return architecture"""
-        return self._get_db_row()["architecture"]
+        return self._get_db_row()._mapping["architecture"]
 
     @property
     def operating_system(self) -> 'terrareg.provider_binary_types.ProviderBinaryOperatingSystemType':
         """Return operating system"""
-        return self._get_db_row()["operating_system"]
+        return self._get_db_row()._mapping["operating_system"]
 
     @property
     def checksum(self) -> str:
         """Return checksum of file"""
-        return self._get_db_row()["checksum"]
+        return self._get_db_row()._mapping["checksum"]
 
     @property
     def local_file_path(self) -> str:
@@ -158,7 +158,7 @@ class ProviderVersionBinary:
     @property
     def provider_version(self) -> Optional['terrareg.provider_version_model.ProviderVersion']:
         """Return provider_version"""
-        return terrareg.provider_version_model.ProviderVersion.get_by_pk(self._get_db_row()["provider_version_id"])
+        return terrareg.provider_version_model.ProviderVersion.get_by_pk(self._get_db_row()._mapping["provider_version_id"])
 
     def __init__(self, pk):
         """Store member variables"""
@@ -169,7 +169,7 @@ class ProviderVersionBinary:
         """Get object from database"""
         if self._cache_db_row is None:
             db = terrareg.database.Database.get()
-            select = db.provider_version_binary.select().where(
+            select = sqlalchemy.select(db.provider_version_binary).where(
                 db.provider_version_binary.c.id == self._pk
             )
             with db.get_connection() as conn:

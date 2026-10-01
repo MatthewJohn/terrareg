@@ -81,7 +81,7 @@ class Session:
         # Check if session exists in database and is still valid
         db = Database.get()
         with db.get_connection() as conn:
-            res = conn.execute(db.session.select().where(
+            res = conn.execute(sqlalchemy.select(db.session).where(
                 db.session.c.id==session_id,
                 db.session.c.expiry >= datetime.datetime.now()
             ))
@@ -111,7 +111,7 @@ class Session:
         """Return provider source authentication details"""
         db = Database.get()
         with db.get_connection() as conn:
-            res = conn.execute(db.session.select().where(
+            res = conn.execute(sqlalchemy.select(db.session).where(
                 db.session.c.id==self._session_id,
                 db.session.c.expiry >= datetime.datetime.now()
             ))
@@ -119,7 +119,7 @@ class Session:
         if not row:
             return None
 
-        return json.loads(Database.decode_blob((row['provider_source_auth'] or b'{}')))
+        return json.loads(Database.decode_blob((row._mapping['provider_source_auth'] or b'{}')))
 
     @provider_source_auth.setter
     def provider_source_auth(self, new):
@@ -159,11 +159,11 @@ class UserGroup:
         """Obtain group by name."""
         db = Database.get()
         with db.get_connection() as conn:
-            res = conn.execute(db.user_group.select().where(
+            res = conn.execute(sqlalchemy.select(db.user_group).where(
                 db.user_group.c.name==name
             ))
             if row := res.fetchone():
-                return cls(name=row['name'])
+                return cls(name=row._mapping['name'])
 
             return None
 
@@ -205,16 +205,16 @@ class UserGroup:
         """Obtain all user groups."""
         db = Database.get()
         with db.get_connection() as conn:
-            res = conn.execute(db.user_group.select())
+            res = conn.execute(sqlalchemy.select(db.user_group))
             return [
-                cls(row['name'])
+                cls(row._mapping['name'])
                 for row in res.fetchall()
             ]
 
     @property
     def pk(self):
         """Return DB ID of user group"""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     @property
     def name(self):
@@ -224,7 +224,7 @@ class UserGroup:
     @property
     def site_admin(self):
         """Return site_admin property of user group"""
-        return self._get_db_row()['site_admin']
+        return self._get_db_row()._mapping['site_admin']
 
     def __init__(self, name):
         """Store member variables"""
@@ -242,7 +242,7 @@ class UserGroup:
         if self._row_cache is None:
             db = Database.get()
             # Obtain row from user group table.
-            select = db.user_group.select().where(
+            select = sqlalchemy.select(db.user_group).where(
                 db.user_group.c.name == self._name
             )
             with db.get_connection() as conn:
@@ -298,8 +298,8 @@ class UserGroupNamespacePermission:
 
             return [
                 cls(
-                    user_group=UserGroup(name=r['user_group_name']),
-                    namespace=Namespace(name=r['namespace_name'])
+                    user_group=UserGroup(name=r._mapping['user_group_name']),
+                    namespace=Namespace(name=r._mapping['namespace_name'])
                 )
                 for r in res.fetchall()
             ]
@@ -327,8 +327,8 @@ class UserGroupNamespacePermission:
 
             return [
                 cls(
-                    user_group=UserGroup(name=r['user_group_name']),
-                    namespace=Namespace(name=r['namespace_name'])
+                    user_group=UserGroup(name=r._mapping['user_group_name']),
+                    namespace=Namespace(name=r._mapping['namespace_name'])
                 )
                 for r in res.fetchall()
             ]
@@ -362,7 +362,7 @@ class UserGroupNamespacePermission:
             )
             res = conn.execute(query)
             permissions = [
-                cls(user_group=user_group_mapping[row['user_group_name']], namespace=namespace)
+                cls(user_group=user_group_mapping[row._mapping['user_group_name']], namespace=namespace)
                 for row in res
             ]
 
@@ -425,7 +425,7 @@ class UserGroupNamespacePermission:
     @property
     def permission_type(self):
         """Return permission."""
-        return self._get_db_row()['permission_type']
+        return self._get_db_row()._mapping['permission_type']
 
     def __init__(self, user_group, namespace):
         """Store member variables."""
@@ -554,7 +554,7 @@ class GitProvider:
         db = Database.get()
         # Obtain row from git providers table where name
         # matches git provider name
-        select = db.git_provider.select().where(
+        select = sqlalchemy.select(db.git_provider).where(
             db.git_provider.c.name == name
         )
         with db.get_connection() as conn:
@@ -564,7 +564,7 @@ class GitProvider:
         # If git provider found with name, return instance
         # of git provider object with ID
         if row:
-            return cls(id=row['id'])
+            return cls(id=row._mapping['id'])
 
         # Otherwise return None
         return None
@@ -575,11 +575,11 @@ class GitProvider:
         db = Database.get()
         # Obtain row from git providers table where name
         # matches git provider name
-        select = db.git_provider.select()
+        select = sqlalchemy.select(db.git_provider)
         with db.get_connection() as conn:
             res = conn.execute(select)
             return [
-                cls(id=row['id'])
+                cls(id=row._mapping['id'])
                 for row in res
             ]
 
@@ -594,32 +594,32 @@ class GitProvider:
     @property
     def pk(self):
         """Return DB ID for git provider."""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     @property
     def name(self):
         """Return name for git provider."""
-        return self._get_db_row()['name']
+        return self._get_db_row()._mapping['name']
 
     @property
     def clone_url_template(self):
         """Return clone_url_template for git provider."""
-        return self._get_db_row()['clone_url_template']
+        return self._get_db_row()._mapping['clone_url_template']
 
     @property
     def base_url_template(self):
         """Return base_url for git provider."""
-        return self._get_db_row()['base_url_template']
+        return self._get_db_row()._mapping['base_url_template']
 
     @property
     def browse_url_template(self):
         """Return browse_url for git provider."""
-        return self._get_db_row()['browse_url_template']
+        return self._get_db_row()._mapping['browse_url_template']
 
     @property
     def git_path_template(self):
         """Return git_path for git provider."""
-        return self._get_db_row()['git_path_template']
+        return self._get_db_row()._mapping['git_path_template']
 
     def __eq__(self, __o):
         """Check if two git providers are the same"""
@@ -637,7 +637,7 @@ class GitProvider:
         if self._row_cache is None:
             db = Database.get()
             # Obtain row from git providers table for git provider.
-            select = db.git_provider.select().where(
+            select = sqlalchemy.select(db.git_provider).where(
                 db.git_provider.c.id == self._id
             )
             with db.get_connection() as conn:
@@ -665,9 +665,7 @@ class NamespaceRedirect(object):
     def delete_by_namespace(cls, namespace):
         """Delete all redirects for a given namespace"""
         db = Database.get()
-        delete = sqlalchemy.delete(
-            db.namespace_redirect
-        ).where(
+        delete = sqlalchemy.delete(db.namespace_redirect).where(
             db.namespace_redirect.c.namespace_id==namespace.pk
         )
         with db.get_connection() as conn:
@@ -689,7 +687,7 @@ class NamespaceRedirect(object):
             rows = conn.execute(select).all()
 
         return [
-            cls(pk=row['id'])
+            cls(pk=row._mapping['id'])
             for row in rows
         ]
 
@@ -724,17 +722,17 @@ class NamespaceRedirect(object):
         if not row:
             return None
 
-        return Namespace.get(name=row['namespace'])
+        return Namespace.get(name=row._mapping['namespace'])
 
     @property
     def name(self):
         """Return source name for redirect"""
-        return self._get_db_row()['name']
+        return self._get_db_row()._mapping['name']
 
     @property
     def namespace_id(self):
         """Return source namespace ID for redirect"""
-        return self._get_db_row()['namespace_id']
+        return self._get_db_row()._mapping['namespace_id']
 
     def __init__(self, pk):
         """Store member variable"""
@@ -744,8 +742,7 @@ class NamespaceRedirect(object):
     def _get_db_row(self):
         """Return database row for module provider."""
         db = Database.get()
-        select = db.namespace_redirect.select(
-        ).where(
+        select = sqlalchemy.select(db.namespace_redirect).where(
             db.namespace_redirect.c.id == self._pk
         )
         with db.get_connection() as conn:
@@ -907,7 +904,7 @@ class Namespace(object):
             db.namespace
         ).subquery()
 
-        select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
+        select = sqlalchemy.select(sqlalchemy.func.count()).select_from(counts)
 
         with db.get_connection() as conn:
             res = conn.execute(select)
@@ -974,7 +971,7 @@ class Namespace(object):
                 db.namespace.c.namespace
             )
 
-        count_query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(namespace_query.subquery())
+        count_query = sqlalchemy.select(sqlalchemy.func.count()).select_from(namespace_query.subquery())
 
         limit_query = namespace_query
         if limit is not None:
@@ -989,7 +986,7 @@ class Namespace(object):
                 offset=offset,
                 limit=limit,
                 rows=[
-                    Namespace(name=r['namespace'])
+                    Namespace(name=r._mapping['namespace'])
                     for r in res
                 ],
                 count=count_res.scalar()
@@ -1023,14 +1020,14 @@ class Namespace(object):
     @property
     def namespace_type(self):
         """Return type of namespace"""
-        return self._get_db_row()['namespace_type']
+        return self._get_db_row()._mapping['namespace_type']
 
     @property
     def default_provider_source(self) -> Optional['terrareg.provider_source.base.BaseProviderSource']:
         """Return the default provider source for this namespace."""
         try:
             row = self._get_db_row()
-            provider_source_name = row['default_provider_source_name']
+            provider_source_name = row._mapping['default_provider_source_name']
             if provider_source_name:
                 return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
                     provider_source_name
@@ -1082,12 +1079,12 @@ class Namespace(object):
         db_row = self._get_db_row()
         if not db_row:
             return None
-        return db_row['id']
+        return db_row._mapping['id']
 
     @property
     def display_name(self):
         """Return display name for namespace"""
-        return self._get_db_row()["display_name"]
+        return self._get_db_row()._mapping["display_name"]
 
     def __eq__(self, __o):
         """Check if two namespaces are the same"""
@@ -1108,8 +1105,7 @@ class Namespace(object):
         """Return database row for namespace."""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.namespace.select(
-            ).where(
+            select = sqlalchemy.select(db.namespace).where(
                 db.namespace.c.namespace == self._name
             )
             with db.get_connection() as conn:
@@ -1198,7 +1194,7 @@ class Namespace(object):
 
         # Get old value
         try:
-            old_value = self._get_db_row()['default_provider_source_name']
+            old_value = self._get_db_row()._mapping['default_provider_source_name']
         except (KeyError, TypeError):
             old_value = None
 
@@ -1254,7 +1250,7 @@ class Namespace(object):
         )
         with db.get_connection() as conn:
             res = conn.execute(select)
-            providers = [r['provider_name'] for r in res]
+            providers = [r._mapping['provider_name'] for r in res]
 
         return [
             terrareg.provider_model.Provider(namespace=self, name=provider)
@@ -1275,7 +1271,7 @@ class Namespace(object):
         )
         with db.get_connection() as conn:
             res = conn.execute(select)
-            modules = [r['module'] for r in res]
+            modules = [r._mapping['module'] for r in res]
 
         return [
             Module(namespace=self, name=module)
@@ -1358,7 +1354,7 @@ class GpgKey:
             rows = conn.execute(select).fetchall()
 
         return [
-            cls(pk=row["id"])
+            cls(pk=row._mapping["id"])
             for row in rows
         ]
 
@@ -1379,7 +1375,7 @@ class GpgKey:
             row = conn.execute(select).fetchone()
 
         if row:
-            return cls(pk=row['id'])
+            return cls(pk=row._mapping['id'])
         return None
 
     @classmethod
@@ -1398,7 +1394,7 @@ class GpgKey:
             row = conn.execute(select).fetchone()
 
         if row:
-            return cls(pk=row['id'])
+            return cls(pk=row._mapping['id'])
         return None
 
     @classmethod
@@ -1463,22 +1459,22 @@ class GpgKey:
     @property
     def namespace(self):
         """Return namespace for object"""
-        return Namespace.get_by_pk(self._get_db_row()['namespace_id'])
+        return Namespace.get_by_pk(self._get_db_row()._mapping['namespace_id'])
 
     @property
     def ascii_armor(self):
         """Return ascii_armor for gpg key"""
-        return Database.decode_blob(self._get_db_row()['ascii_armor'])
+        return Database.decode_blob(self._get_db_row()._mapping['ascii_armor'])
 
     @property
     def key_id(self):
         """Return Key ID for GPG key"""
-        return self._get_db_row()['key_id']
+        return self._get_db_row()._mapping['key_id']
 
     @property
     def fingerprint(self):
         """Return Key ID for GPG key"""
-        return self._get_db_row()['fingerprint']
+        return self._get_db_row()._mapping['fingerprint']
 
     def __init__(self, pk):
         """Store member variables"""
@@ -1489,8 +1485,7 @@ class GpgKey:
         """Return database row for module details."""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.gpg_key.select(
-            ).where(
+            select = sqlalchemy.select(db.gpg_key).where(
                 db.gpg_key.c.id == self.pk
             )
             with db.get_connection() as conn:
@@ -1511,7 +1506,7 @@ class GpgKey:
                 ).where(db.provider_version.c.gpg_key_id==self.pk)
             ).all()
             return [
-                terrareg.provider_version_model.ProviderVersion.get_by_pk(pk=row['id'])
+                terrareg.provider_version_model.ProviderVersion.get_by_pk(pk=row._mapping['id'])
                 for row in res
             ]
 
@@ -1549,13 +1544,13 @@ class GpgKey:
             "id": str(self.pk),
             "attributes": {
                 "ascii-armor": self.ascii_armor,
-                "created-at": self._get_db_row()['created_at'].isoformat(),
+                "created-at": self._get_db_row()._mapping['created_at'].isoformat(),
                 "key-id": self.key_id,
                 "namespace": self.namespace.name,
                 "source": "",
                 "source-url": None,
                 "trust-signature": "",
-                "updated-at": self._get_db_row()['updated_at'].isoformat()
+                "updated-at": self._get_db_row()._mapping['updated_at'].isoformat()
             }
         }
 
@@ -1613,7 +1608,7 @@ class Module(object):
         )
         with db.get_connection() as conn:
             res = conn.execute(select)
-            providers = [r['provider'] for r in res]
+            providers = [r._mapping['provider'] for r in res]
 
         return [
             ModuleProvider(module=self, name=provider)
@@ -1644,14 +1639,14 @@ class ModuleDetails:
     def terraform_docs(self):
         """Return terraform_docs column"""
         if self._get_db_row():
-            return self._get_db_row()['terraform_docs']
+            return self._get_db_row()._mapping['terraform_docs']
         return None
 
     @property
     def readme_content(self):
         """Return readme_content column"""
         if self._get_db_row():
-            return self._get_db_row()['readme_content']
+            return self._get_db_row()._mapping['readme_content']
         return None
 
     @property
@@ -1660,8 +1655,8 @@ class ModuleDetails:
         # If module scanning is disabled, do not return the tfsec output
         if (terrareg.config.Config().ENABLE_SECURITY_SCANNING and
                 self._get_db_row() is not None and
-                self._get_db_row()['tfsec']):
-            return json.loads(self._get_db_row()['tfsec'])
+                self._get_db_row()._mapping['tfsec']):
+            return json.loads(self._get_db_row()._mapping['tfsec'])
         return {'results': None}
 
     @property
@@ -1669,16 +1664,16 @@ class ModuleDetails:
         """Return Infracost data."""
         db_row = self._get_db_row()
         if (db_row is not None and
-                db_row['infracost']):
-            return json.loads(db_row['infracost'])
+                db_row._mapping['infracost']):
+            return json.loads(db_row._mapping['infracost'])
         return {}
 
     @property
     def terraform_graph(self):
         """Return decoded terraform graph data."""
         db_row = self._get_db_row()
-        if db_row and db_row["terraform_graph"]:
-            return Database.decode_blob(db_row["terraform_graph"])
+        if db_row and db_row._mapping["terraform_graph"]:
+            return Database.decode_blob(db_row._mapping["terraform_graph"])
         return None
 
     def get_graph_json(self, full_resource_names=False, full_module_names=False):
@@ -1891,8 +1886,8 @@ class ModuleDetails:
     def terraform_version(self):
         """Return terraform version output"""
         db_row = self._get_db_row()
-        if db_row and db_row["terraform_version"]:
-            data = Database.decode_blob(db_row["terraform_version"])
+        if db_row and db_row._mapping["terraform_version"]:
+            data = Database.decode_blob(db_row._mapping["terraform_version"])
             if data:
                 try:
                     return json.loads(data)
@@ -1905,8 +1900,8 @@ class ModuleDetails:
         """Return terraform modules output"""
         db_row = self._get_db_row()
         data = None
-        if db_row and db_row["terraform_modules"]:
-            data = Database.decode_blob(db_row["terraform_modules"])
+        if db_row and db_row._mapping["terraform_modules"]:
+            data = Database.decode_blob(db_row._mapping["terraform_modules"])
             if data:
                 try:
                     data = json.loads(data)
@@ -1925,8 +1920,7 @@ class ModuleDetails:
         """Return database row for module details."""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.module_details.select(
-            ).where(
+            select = sqlalchemy.select(db.module_details).where(
                 db.module_details.c.id == self.pk
             )
             with db.get_connection() as conn:
@@ -2130,9 +2124,9 @@ class ModuleProviderRedirect(object):
         if not row:
             return None
 
-        target_namespace = Namespace.get(name=row['namespace'])
-        target_module = Module(namespace=target_namespace, name=row['module'])
-        return ModuleProvider(module=target_module, name=row['provider'])
+        target_namespace = Namespace.get(name=row._mapping['namespace'])
+        target_module = Module(namespace=target_namespace, name=row._mapping['module'])
+        return ModuleProvider(module=target_module, name=row._mapping['provider'])
 
     @classmethod
     def get_by_module_provider(cls, module_provider):
@@ -2150,34 +2144,34 @@ class ModuleProviderRedirect(object):
             rows = conn.execute(select).all()
 
         return [
-            cls(pk=row['id'])
+            cls(pk=row._mapping['id'])
             for row in rows
         ]
 
     @property
     def module_name(self):
         """Return source module name for redirect"""
-        return self._get_db_row()['module']
+        return self._get_db_row()._mapping['module']
 
     @property
     def provider_name(self):
         """Return source provider name for redirect"""
-        return self._get_db_row()['provider']
+        return self._get_db_row()._mapping['provider']
 
     @property
     def namespace_id(self):
         """Return source namespace ID for redirect"""
-        return self._get_db_row()['namespace_id']
+        return self._get_db_row()._mapping['namespace_id']
 
     @property
     def namespace(self):
         """Return source namespace ID for redirect"""
-        return Namespace.get_by_pk(self._get_db_row()['namespace_id'])
+        return Namespace.get_by_pk(self._get_db_row()._mapping['namespace_id'])
 
     @property
     def module_provider_id(self):
         """Return destination module provider id for redirect"""
-        return self._get_db_row()['module_provider_id']
+        return self._get_db_row()._mapping['module_provider_id']
 
     @property
     def pk(self):
@@ -2197,8 +2191,7 @@ class ModuleProviderRedirect(object):
     def _get_db_row(self):
         """Return database row for module provider."""
         db = Database.get()
-        select = db.module_provider_redirect.select(
-        ).where(
+        select = sqlalchemy.select(db.module_provider_redirect).where(
             db.module_provider_redirect.c.id == self._pk
         )
         with db.get_connection() as conn:
@@ -2235,7 +2228,7 @@ class ModuleProviderRedirect(object):
         # Delete from database
         db = Database.get()
         with db.get_connection() as conn:
-            conn.execute(db.module_provider_redirect.delete(db.module_provider_redirect.c.id==self.pk))
+            conn.execute(db.module_provider_redirect.delete().where(db.module_provider_redirect.c.id==self.pk))
 
 
 class ModuleProvider(object):
@@ -2282,7 +2275,7 @@ class ModuleProvider(object):
             db.module_provider.c.provider
         ).subquery()
 
-        select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
+        select = sqlalchemy.select(sqlalchemy.func.count()).select_from(counts)
 
         with db.get_connection() as conn:
             res = conn.execute(select)
@@ -2373,12 +2366,12 @@ class ModuleProvider(object):
     @property
     def db_module_name(self):
         """Return DB module name from database"""
-        return self._get_db_row()["module"]
+        return self._get_db_row()._mapping["module"]
 
     @property
     def db_provider_name(self):
         """Return DB module name from database"""
-        return self._get_db_row()["provider"]
+        return self._get_db_row()._mapping["provider"]
 
     @property
     def id(self):
@@ -2392,12 +2385,12 @@ class ModuleProvider(object):
     @property
     def pk(self):
         """Return database ID of module provider."""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     @property
     def verified(self):
         """Return whether module provider is verified."""
-        return self._get_db_row()['verified']
+        return self._get_db_row()._mapping['verified']
 
     @property
     def can_index_by_version(self):
@@ -2407,8 +2400,8 @@ class ModuleProvider(object):
     @property
     def git_tag_format(self):
         """Return git tag format"""
-        if self._get_db_row()['git_tag_format']:
-            return self._get_db_row()['git_tag_format']
+        if self._get_db_row()._mapping['git_tag_format']:
+            return self._get_db_row()._mapping['git_tag_format']
         # Return default format template for just version
         return '{version}'
 
@@ -2453,12 +2446,12 @@ class ModuleProvider(object):
     @property
     def archive_git_path(self) -> bool:
         """Return whether archives should only contain the contents of the git_path of the repo"""
-        return bool(self._get_db_row()['archive_git_path'])
+        return bool(self._get_db_row()._mapping['archive_git_path'])
 
     @property
     def git_path(self):
         """Return path of module within git"""
-        row_value = self._get_db_row()['git_path']
+        row_value = self._get_db_row()._mapping['git_path']
         # Strip leading slash or dot-slash
         if row_value:
             # Replace placeholders in git_path
@@ -2606,8 +2599,7 @@ class ModuleProvider(object):
         """Return database row for module provider."""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.module_provider.select(
-            ).join(
+            select = sqlalchemy.select(db.module_provider).join(
                 db.namespace,
                 db.module_provider.c.namespace_id==db.namespace.c.id
             ).where(
@@ -2666,8 +2658,8 @@ class ModuleProvider(object):
 
     def get_git_provider(self):
         """Return the git provider associated with this module provider."""
-        if self._get_db_row()['git_provider_id']:
-            return GitProvider.get(id=self._get_db_row()['git_provider_id'])
+        if self._get_db_row()._mapping['git_provider_id']:
+            return GitProvider.get(id=self._get_db_row()._mapping['git_provider_id'])
         return None
 
     @property
@@ -2675,7 +2667,7 @@ class ModuleProvider(object):
         """Return the provider source associated with this module provider."""
         try:
             row = self._get_db_row()
-            provider_source_name = row['provider_source_name']
+            provider_source_name = row._mapping['provider_source_name']
             if provider_source_name:
                 return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
                     provider_source_name
@@ -2690,7 +2682,7 @@ class ModuleProvider(object):
         """Whether provider source inheritance from namespace is disabled."""
         try:
             row = self._get_db_row()
-            return row['provider_source_inheritance_disabled']
+            return row._mapping['provider_source_inheritance_disabled']
         except (KeyError, TypeError):
             # Column doesn't exist yet (migration not applied) or row is None
             return False
@@ -2716,7 +2708,7 @@ class ModuleProvider(object):
 
     def update_archive_git_path(self, archive_git_path):
         """Set archive_git_path value"""
-        original_value = self._get_db_row()['archive_git_path']
+        original_value = self._get_db_row()._mapping['archive_git_path']
         if original_value != archive_git_path:
             terrareg.audit.AuditEvent.create_audit_event(
                 action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_ARCHIVE_GIT_PATH,
@@ -2754,7 +2746,7 @@ class ModuleProvider(object):
 
         # Get old value
         try:
-            old_value = self._get_db_row()['provider_source_name']
+            old_value = self._get_db_row()._mapping['provider_source_name']
         except (KeyError, TypeError):
             old_value = None
 
@@ -2797,8 +2789,8 @@ class ModuleProvider(object):
 
         # Check if allowed and module provider has custom git URL
         if (terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and
-                self._get_db_row()['repo_clone_url_template']):
-            template = self._get_db_row()['repo_clone_url_template']
+                self._get_db_row()._mapping['repo_clone_url_template']):
+            template = self._get_db_row()._mapping['repo_clone_url_template']
 
         # Otherwise, check if module provider is configured with git provider
         elif self.get_git_provider():
@@ -2898,7 +2890,7 @@ class ModuleProvider(object):
             # Sanity check path
             safe_join_paths('/somepath/somesubpath', git_path, allow_same_directory=True)
 
-        original_value = self._get_db_row()['git_path']
+        original_value = self._get_db_row()._mapping['git_path']
         if original_value != git_path:
             terrareg.audit.AuditEvent.create_audit_event(
                 action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PATH,
@@ -2957,7 +2949,7 @@ class ModuleProvider(object):
 
             repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=&')
 
-        original_value = self._get_db_row()['repo_clone_url_template']
+        original_value = self._get_db_row()._mapping['repo_clone_url_template']
         if original_value != repo_clone_url_template:
             terrareg.audit.AuditEvent.create_audit_event(
                 action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL,
@@ -3025,7 +3017,7 @@ class ModuleProvider(object):
 
             repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=&')
 
-        original_value = self._get_db_row()['repo_browse_url_template']
+        original_value = self._get_db_row()._mapping['repo_browse_url_template']
         if original_value != repo_browse_url_template:
             terrareg.audit.AuditEvent.create_audit_event(
                 action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL,
@@ -3086,7 +3078,7 @@ class ModuleProvider(object):
 
             repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=&')
 
-        original_value = self._get_db_row()['repo_base_url_template']
+        original_value = self._get_db_row()._mapping['repo_base_url_template']
         if original_value != repo_base_url_template:
             terrareg.audit.AuditEvent.create_audit_event(
                 action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL,
@@ -3121,7 +3113,7 @@ class ModuleProvider(object):
         if version is None:
             return None
 
-        return ModuleVersion(module_provider=self, version=version['version'])
+        return ModuleVersion(module_provider=self, version=version._mapping['version'])
 
     def calculate_latest_version(self):
         """Obtain all versions of module and sort by semantic version numbers to obtain latest version."""
@@ -3140,14 +3132,14 @@ class ModuleProvider(object):
             rows = [r for r in res]
 
         # Sort rows by semantic versioning
-        rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
+        rows.sort(key=lambda x: LooseVersion(x._mapping['version']), reverse=True)
 
         # Ensure at least one row
         if not rows:
             return None
 
         # Obtain latest row
-        return ModuleVersion(module_provider=self, version=rows[0]['version'])
+        return ModuleVersion(module_provider=self, version=rows[0]._mapping['version'])
 
     def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all module provider versions."""
@@ -3172,7 +3164,7 @@ class ModuleProvider(object):
         with db.get_connection() as conn:
             res = conn.execute(select)
             module_versions = [
-                ModuleVersion(module_provider=self, version=r['version'])
+                ModuleVersion(module_provider=self, version=r._mapping['version'])
                 for r in res
             ]
         module_versions.sort(
@@ -3201,12 +3193,12 @@ class ModuleProvider(object):
         # Add new fields with proper error handling for missing columns
         if row is not None:
             try:
-                result["provider_source"] = row['provider_source_name']
+                result["provider_source"] = row._mapping['provider_source_name']
             except KeyError:
                 result["provider_source"] = None
 
             try:
-                result["provider_source_inheritance_disabled"] = row['provider_source_inheritance_disabled']
+                result["provider_source_inheritance_disabled"] = row._mapping['provider_source_inheritance_disabled']
             except KeyError:
                 result["provider_source_inheritance_disabled"] = False
         else:
@@ -3237,9 +3229,9 @@ class ModuleProvider(object):
             "git_tag_format": self.git_tag_format,
             "git_path": self.git_path,
             "archive_git_path": self.archive_git_path,
-            "repo_base_url_template": self._get_db_row()['repo_base_url_template'],
-            "repo_clone_url_template": self._get_db_row()['repo_clone_url_template'],
-            "repo_browse_url_template": self._get_db_row()['repo_browse_url_template']
+            "repo_base_url_template": self._get_db_row()._mapping['repo_base_url_template'],
+            "repo_clone_url_template": self._get_db_row()._mapping['repo_clone_url_template'],
+            "repo_browse_url_template": self._get_db_row()._mapping['repo_browse_url_template']
         })
         return api_details
 
@@ -3344,7 +3336,7 @@ class TerraformSpecsObject(object):
     @property
     def pk(self):
         """Return primary key of database row"""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     @property
     def registry_id(self):
@@ -3472,8 +3464,8 @@ module "{self.module_version.module_provider.module.name}" {{
     @property
     def module_details(self):
         """Return instance of ModuleDetails for object."""
-        if self._get_db_row() and self._get_db_row()['module_details_id']:
-            return ModuleDetails(id=self._get_db_row()['module_details_id'])
+        if self._get_db_row() and self._get_db_row()._mapping['module_details_id']:
+            return ModuleDetails(id=self._get_db_row()._mapping['module_details_id'])
         else:
             return None
 
@@ -3748,7 +3740,7 @@ class ModuleVersion(TerraformSpecsObject):
             db.module_version.c.version
         ).subquery()
 
-        select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
+        select = sqlalchemy.select(sqlalchemy.func.count()).select_from(counts)
 
         with db.get_connection() as conn:
             res = conn.execute(select)
@@ -3771,7 +3763,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def publish_date_display(self):
         """Return display view of date of module published."""
-        published_at = self._get_db_row()['published_at']
+        published_at = self._get_db_row()._mapping['published_at']
         if published_at:
             return published_at.strftime('%B %d, %Y')
         return None
@@ -3779,17 +3771,17 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def owner(self):
         """Return owner of module."""
-        return sanitise_html_content(self._get_db_row()['owner'])
+        return sanitise_html_content(self._get_db_row()._mapping['owner'])
 
     @property
     def published(self):
         """Return whether module is published"""
-        return bool(self._get_db_row()['published'])
+        return bool(self._get_db_row()._mapping['published'])
 
     @property
     def description(self):
         """Return description."""
-        return sanitise_html_content(self._get_db_row()['description'])
+        return sanitise_html_content(self._get_db_row()._mapping['description'])
 
     @property
     def version(self):
@@ -3799,7 +3791,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def git_sha(self):
         """Return git SHA of tag"""
-        return self._get_db_row()["git_sha"]
+        return self._get_db_row()._mapping["git_sha"]
 
     @property
     def source_git_tag(self):
@@ -3858,7 +3850,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def beta(self):
         """Return whether module version is a beta version."""
-        return self._get_db_row()['beta']
+        return self._get_db_row()._mapping['beta']
 
     @property
     def path(self):
@@ -3869,12 +3861,12 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def git_path(self) -> Optional[str]:
         """Return path of module within git"""
-        return self._get_db_row()['git_path']
+        return self._get_db_row()._mapping['git_path']
 
     @property
     def archive_git_path(self) -> bool:
         """Return whether archives should only contain the contents of the git_path of the repo"""
-        return bool(self._get_db_row()['archive_git_path'])
+        return bool(self._get_db_row()._mapping['archive_git_path'])
 
     @property
     def id(self):
@@ -3891,7 +3883,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_variable_template(self, html: bool=False):
         """Return variable template for module version."""
-        raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
+        raw_json = Database.decode_blob(self._get_db_row()._mapping['variable_template'])
         variables = json.loads(raw_json) if raw_json else []
 
         # Set default values for each user-defined variable
@@ -3954,7 +3946,7 @@ class ModuleVersion(TerraformSpecsObject):
     def module_version_files(self):
         """Return list of module version files for module version"""
         db = Database.get()
-        select = db.module_version_file.select().join(
+        select = sqlalchemy.select(db.module_version_file).join(
             db.module_version, db.module_version_file.c.module_version_id==db.module_version.c.id
         ).where(
             db.module_version.c.id==self.pk
@@ -3988,7 +3980,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def module_extraction_up_to_date(self):
         """Whether the extracted module version data is up-to-date"""
-        return self._get_db_row()["extraction_version"] == EXTRACTION_VERSION
+        return self._get_db_row()._mapping["extraction_version"] == EXTRACTION_VERSION
 
     @property
     def is_latest_version(self):
@@ -4013,7 +4005,7 @@ class ModuleVersion(TerraformSpecsObject):
         """Get object from database"""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.module_version.select().join(
+            select = sqlalchemy.select(db.module_version).join(
                 db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
             ).where(
                 db.module_provider.c.id == self._module_provider.pk,
@@ -4072,8 +4064,8 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Check if allowed, and module version has custom git URL
         if (terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and
-                self._get_db_row()['repo_clone_url_template']):
-            template = self._get_db_row()['repo_clone_url_template']
+                self._get_db_row()._mapping['repo_clone_url_template']):
+            template = self._get_db_row()._mapping['repo_clone_url_template']
 
         # Otherwise, get git clone URL from module provider
         elif self._module_provider.get_git_clone_url():
@@ -4181,13 +4173,13 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_browse_url_template']:
-            template = self._get_db_row()['repo_browse_url_template']
+        if terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()._mapping['repo_browse_url_template']:
+            template = self._get_db_row()._mapping['repo_browse_url_template']
 
         # Otherwise, check if allowed and module provider has custom git URL
         elif (terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and
-                self._module_provider._get_db_row()['repo_browse_url_template']):
-            template = self._module_provider._get_db_row()['repo_browse_url_template']
+                self._module_provider._get_db_row()._mapping['repo_browse_url_template']):
+            template = self._module_provider._get_db_row()._mapping['repo_browse_url_template']
 
         # Otherwise, check if module provider is configured with git provider
         elif self._module_provider.get_git_provider():
@@ -4221,13 +4213,13 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Check if allowed, and module version has custom git URL
         if (terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and
-                self._get_db_row()['repo_base_url_template']):
-            template = self._get_db_row()['repo_base_url_template']
+                self._get_db_row()._mapping['repo_base_url_template']):
+            template = self._get_db_row()._mapping['repo_base_url_template']
 
         # Otherwise, check if allowed and module provider has custom git URL
         elif (terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and
-                self._module_provider._get_db_row()['repo_base_url_template']):
-            template = self._module_provider._get_db_row()['repo_base_url_template']
+                self._module_provider._get_db_row()._mapping['repo_base_url_template']):
+            template = self._module_provider._get_db_row()._mapping['repo_base_url_template']
 
         # Otherwise, check if module provider is configured with git provider
         elif self._module_provider.get_git_provider():
@@ -4269,13 +4261,13 @@ class ModuleVersion(TerraformSpecsObject):
         api_outline = self._module_provider.get_api_outline()
         api_outline.update({
             "id": self.id,
-            "owner": row['owner'],
+            "owner": row._mapping['owner'],
             "version": self.version,
-            "description": row['description'],
+            "description": row._mapping['description'],
             "source": self.get_source_base_url(),
-            "published_at": row['published_at'].isoformat() if row['published_at'] else None,
+            "published_at": row._mapping['published_at'].isoformat() if row._mapping['published_at'] else None,
             "downloads": self.get_total_downloads(),
-            "internal": self._get_db_row()['internal']
+            "internal": self._get_db_row()._mapping['internal']
         })
 
         if target_terraform_version is not None:
@@ -4510,8 +4502,7 @@ class ModuleVersion(TerraformSpecsObject):
     def get_submodules(self):
         """Return list of submodules."""
         db = Database.get()
-        select = db.sub_module.select(
-        ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
+        select = sqlalchemy.select(db.sub_module).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
             db.module_version.c.id == self.pk,
             db.sub_module.c.type == Submodule.TYPE
         )
@@ -4519,15 +4510,14 @@ class ModuleVersion(TerraformSpecsObject):
             res = conn.execute(select)
 
             return [
-                Submodule(module_version=self, module_path=r['path'])
+                Submodule(module_version=self, module_path=r._mapping['path'])
                 for r in res
             ]
 
     def get_examples(self):
         """Return list of submodules."""
         db = Database.get()
-        select = db.sub_module.select(
-        ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
+        select = sqlalchemy.select(db.sub_module).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
             db.module_version.c.id == self.pk,
             db.sub_module.c.type == Example.TYPE
         )
@@ -4535,7 +4525,7 @@ class ModuleVersion(TerraformSpecsObject):
             res = conn.execute(select)
 
             return [
-                Example(module_version=self, module_path=r['path'])
+                Example(module_version=self, module_path=r._mapping['path'])
                 for r in res
             ]
 
@@ -4554,7 +4544,7 @@ class BaseSubmodule(TerraformSpecsObject):
     def get_by_id(cls, module_version: ModuleVersion, pk: int):
         """Return instance of submodule based on ID of submodule"""
         db = Database.get()
-        select = db.sub_module.select().where(
+        select = sqlalchemy.select(db.sub_module).where(
             db.sub_module.c.id == pk,
             db.sub_module.c.type == cls.TYPE
         )
@@ -4563,7 +4553,7 @@ class BaseSubmodule(TerraformSpecsObject):
         if row is None:
             return None
 
-        return cls(module_version=module_version, module_path=row['path'])
+        return cls(module_version=module_version, module_path=row._mapping['path'])
 
     @classmethod
     def create(cls, module_version: ModuleVersion, module_path: str):
@@ -4584,7 +4574,7 @@ class BaseSubmodule(TerraformSpecsObject):
     @property
     def pk(self):
         """Return DB primary key."""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     @property
     def path(self):
@@ -4631,7 +4621,7 @@ class BaseSubmodule(TerraformSpecsObject):
         """Get object from database"""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.sub_module.select().where(
+            select = sqlalchemy.select(db.sub_module).where(
                 db.sub_module.c.parent_module_version == self._module_version.pk,
                 db.sub_module.c.path == self._module_path,
                 db.sub_module.c.type == self.TYPE
@@ -4729,12 +4719,12 @@ class Example(BaseSubmodule):
     def get_files(self):
         """Return example files associated with example."""
         db = Database.get()
-        select = db._example_file.select().where(
+        select = sqlalchemy.select(db._example_file).where(
             db._example_file.c.submodule_id == self.pk
         )
         with db.get_connection() as conn:
             res = conn.execute(select)
-            return [ExampleFile(example=self, path=row['path']) for row in res]
+            return [ExampleFile(example=self, path=row._mapping['path']) for row in res]
 
     def delete(self):
         """Delete any example files and self."""
@@ -4781,11 +4771,11 @@ class FileObject:
     @property
     def pk(self):
         """Get ID from DB row"""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     def get_content(self, sanitise=True):
         """Return content of example file."""
-        content = Database.decode_blob(self._get_db_row()["content"])
+        content = Database.decode_blob(self._get_db_row()._mapping["content"])
         if content and sanitise:
             # Add pre tags before/after to allow for broken tags
             # inside content, e.g. for heredocs
@@ -4882,7 +4872,7 @@ class ExampleFile(FileObject):
         if not row:
             return None
 
-        example = Example.get_by_id(module_version=module_version, pk=row['submodule_id'])
+        example = Example.get_by_id(module_version=module_version, pk=row._mapping['submodule_id'])
 
         if example is None:
             return None
@@ -4910,7 +4900,7 @@ class ExampleFile(FileObject):
         if self._cache_db_row is None:
             db = Database.get()
             # Obtain row from git providers table for git provider.
-            select = db.example_file.select().where(
+            select = sqlalchemy.select(db.example_file).where(
                 db.example_file.c.submodule_id == self._example.pk,
                 db.example_file.c.path == self._path
             )
@@ -4968,7 +4958,7 @@ class ModuleVersionFile(FileObject):
         """Return DB row for git provider."""
         if self._cache_db_row is None:
             db = Database.get()
-            select = db.module_version_file.select().where(
+            select = sqlalchemy.select(db.module_version_file).where(
                 db.module_version_file.c.module_version_id == self._module_version.pk,
                 db.module_version_file.c.path == self._path
             )

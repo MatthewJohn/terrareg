@@ -1,3 +1,5 @@
+import sqlalchemy
+from test.unit.terrareg import MockRow
 from tempfile import TemporaryDirectory
 import unittest.mock
 import os
@@ -93,18 +95,18 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
 
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                rows = conn.execute(db.provider_version_binary.select().where(
+                rows = conn.execute(sqlalchemy.select(db.provider_version_binary).where(
                     db.provider_version_binary.c.name==name
                 )).all()
 
                 assert len(rows) == 1
                 row = rows[0]
 
-            assert row["name"] == name
-            assert row["provider_version_id"] == test_provider_version.pk
-            assert row["checksum"] == "c27f1263ae06f263d59eb1f172c7fe39f6d7a06771544d869cc272d94ed301d1"
-            assert row["operating_system"] is expected_os
-            assert row["architecture"] is expected_arch
+            assert row._mapping["name"] == name
+            assert row._mapping["provider_version_id"] == test_provider_version.pk
+            assert row._mapping["checksum"] == "c27f1263ae06f263d59eb1f172c7fe39f6d7a06771544d869cc272d94ed301d1"
+            assert row._mapping["operating_system"] is expected_os
+            assert row._mapping["architecture"] is expected_arch
 
             expected_binary_path = os.path.join(temp_dir, "providers", "some-organisation", "unittest-create-provider-name", "6.4.1", name)
             assert os.path.isfile(expected_binary_path)
@@ -181,9 +183,9 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
 
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            res = conn.execute(db.provider_version_binary.select().where(db.provider_version_binary.c.id==pk)).all()
+            res = conn.execute(sqlalchemy.select(db.provider_version_binary).where(db.provider_version_binary.c.id==pk)).all()
             assert len(res) == 1
-            assert dict(res[0]) == {
+            assert dict(res[0]._mapping) == {
                 "id": pk,
                 "name": "unittest-binary-provider",
                 "checksum": "abcdefg0987654",
@@ -255,9 +257,9 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         )
         assert test_provider_version_binary.name == "terraform-provider-multiple-versions_1.5.0_windows_amd64.zip"
 
-        test_provider_version_binary._cache_db_row = {
+        test_provider_version_binary._cache_db_row = MockRow({
             "name": "unittestname"
-        }
+        })
         assert test_provider_version_binary.name == "unittestname"
 
     def test_architecture(self):
@@ -273,9 +275,9 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         )
         assert test_provider_version_binary.architecture is terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64
 
-        test_provider_version_binary._cache_db_row = {
+        test_provider_version_binary._cache_db_row = MockRow({
             "architecture": terrareg.provider_binary_types.ProviderBinaryArchitectureType.I386
-        }
+        })
         assert test_provider_version_binary.architecture is terrareg.provider_binary_types.ProviderBinaryArchitectureType.I386
 
     def test_operating_system(self):
@@ -291,9 +293,9 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         )
         assert test_provider_version_binary.operating_system is terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.WINDOWS
 
-        test_provider_version_binary._cache_db_row = {
+        test_provider_version_binary._cache_db_row = MockRow({
             "operating_system": terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.FREEBSD
-        }
+        })
         assert test_provider_version_binary.operating_system is terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.FREEBSD
 
     def test_checksum(self):
@@ -309,9 +311,9 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         )
         assert test_provider_version_binary.checksum == "c2d859efacc3fbe1662bef92c80ce32c966834597625914592891eaf564af4bf"
 
-        test_provider_version_binary._cache_db_row = {
+        test_provider_version_binary._cache_db_row = MockRow({
             "checksum": "some-other-checksum-unittest"
-        }
+        })
         assert test_provider_version_binary.checksum == "some-other-checksum-unittest"
 
     def test_local_file_path(self):
@@ -361,7 +363,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         pk = test_provider_version_binary._pk
         test_provider_version_binary._cache_db_row = None
 
-        assert dict(test_provider_version_binary._get_db_row()) == {
+        assert dict(test_provider_version_binary._get_db_row()._mapping) == {
             "id": pk,
             "provider_version_id": provider_version.pk,
             "name": "terraform-provider-multiple-versions_1.5.0_windows_amd64.zip",
@@ -369,7 +371,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
             "operating_system": terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.WINDOWS,
             "architecture": terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64
         }
-        assert dict(test_provider_version_binary._cache_db_row) == {
+        assert dict(test_provider_version_binary._cache_db_row._mapping) == {
             "id": pk,
             "provider_version_id": provider_version.pk,
             "name": "terraform-provider-multiple-versions_1.5.0_windows_amd64.zip",
@@ -378,7 +380,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
             "architecture": terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64
         }
 
-        test_provider_version_binary._cache_db_row = {"test": "row"}
+        test_provider_version_binary._cache_db_row = MockRow({"test": "row"})
         assert test_provider_version_binary._get_db_row() == {"test": "row"}
 
         # Test non-existent

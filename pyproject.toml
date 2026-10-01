@@ -9,7 +9,7 @@ license = {text = "GPL-3.0"}
 readme = "README.md"
 requires-python = ">=3.12,<4"
 dependencies = [
-    "alembic (==1.14.1)",
+    "alembic (==1.20.0)",
     "aniso8601 (==9.0.1)",
     "cffi (==2.1.1)",
     "click (==8.5.0)",
@@ -29,7 +29,7 @@ dependencies = [
     "python-magic (==0.4.27)",
     "pytz (==2023.3)",
     "six (==1.16.0)",
-    "sqlalchemy (==1.4.54)",
+    "sqlalchemy (==2.1.1)",
     "werkzeug (==3.1.9)",
     "zipp (==3.19.1)",
     "mysql-connector-python (==9.1.0)",

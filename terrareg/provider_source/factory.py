@@ -61,12 +61,12 @@ class ProviderSourceFactory:
             return None
 
         # Obtain class of provider source
-        class_ = self.get_provider_source_class_by_type(res['provider_source_type'])
+        class_ = self.get_provider_source_class_by_type(res._mapping['provider_source_type'])
         if class_ is None:
             return None
 
         # Return instance of provider source class
-        return class_(name=res['name'])
+        return class_(name=res._mapping['name'])
 
     def get_provider_source_by_api_name(self, api_name: str) -> Union['terrareg.provider_source.BaseProviderSource', None]:
         """Obtain instance of provider source by API name"""
@@ -88,12 +88,12 @@ class ProviderSourceFactory:
             return None
 
         # Obtain class of provider source
-        class_ = self.get_provider_source_class_by_type(res['provider_source_type'])
+        class_ = self.get_provider_source_class_by_type(res._mapping['provider_source_type'])
         if class_ is None:
             return None
 
         # Return instance of provider source class
-        return class_(name=res['name'])
+        return class_(name=res._mapping['name'])
 
     def get_all_provider_sources(self) -> List['terrareg.provider_source.BaseProviderSource']:
         """Return all provider sources"""
@@ -107,7 +107,7 @@ class ProviderSourceFactory:
         with database.get_connection() as conn:
             res = conn.execute(select).all()
         return [
-            self.get_provider_source_class_by_type(row['provider_source_type'])(name=row['name'])
+            self.get_provider_source_class_by_type(row._mapping['provider_source_type'])(name=row._mapping['name'])
             for row in res
         ]
 

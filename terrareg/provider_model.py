@@ -109,11 +109,11 @@ class Provider:
         if not row:
             return None
 
-        namespace = terrareg.models.Namespace.get_by_pk(pk=row["namespace_id"])
+        namespace = terrareg.models.Namespace.get_by_pk(pk=row._mapping["namespace_id"])
         if namespace is None:
             return None
 
-        return cls(namespace=namespace, name=row["name"])
+        return cls(namespace=namespace, name=row._mapping["name"])
 
     @classmethod
     def get_by_repository(cls, repository: 'terrareg.repository_model.Repository') -> Union[None, 'Provider']:
@@ -132,7 +132,7 @@ class Provider:
         if not row:
             return None
 
-        return cls(namespace=terrareg.models.Namespace.get_by_pk(row["namespace_id"]), name=row["name"])
+        return cls(namespace=terrareg.models.Namespace.get_by_pk(row._mapping["namespace_id"]), name=row._mapping["name"])
 
     @classmethod
     def get(cls, namespace: 'terrareg.models.Namespace', name: str) -> Union['Provider', None]:
@@ -154,7 +154,7 @@ class Provider:
     @property
     def namespace(self) -> 'terrareg.models.Namespace':
         """Return namespace for provider"""
-        return terrareg.models.Namespace.get_by_pk(pk=self._get_db_row()["namespace_id"])
+        return terrareg.models.Namespace.get_by_pk(pk=self._get_db_row()._mapping["namespace_id"])
 
     @property
     def name(self) -> str:
@@ -169,12 +169,12 @@ class Provider:
     @property
     def pk(self) -> int:
         """Return DB pk for provider"""
-        return self._get_db_row()["id"]
+        return self._get_db_row()._mapping["id"]
 
     @property
     def tier(self) -> 'terrareg.provider_tier.ProviderTier':
         """Return provider tier"""
-        return self._get_db_row()["tier"]
+        return self._get_db_row()._mapping["tier"]
 
     @property
     def base_directory(self) -> str:
@@ -184,12 +184,12 @@ class Provider:
     @property
     def repository(self) -> 'terrareg.repository_model.Repository':
         """Return repository for provider"""
-        return terrareg.repository_model.Repository.get_by_pk(self._get_db_row()["repository_id"])
+        return terrareg.repository_model.Repository.get_by_pk(self._get_db_row()._mapping["repository_id"])
 
     @property
     def category(self) -> 'terrareg.provider_category_model.ProviderCategory':
         """Return category for provider"""
-        return terrareg.provider_category_model.ProviderCategory.get_by_pk(self._get_db_row()["provider_category_id"])
+        return terrareg.provider_category_model.ProviderCategory.get_by_pk(self._get_db_row()._mapping["provider_category_id"])
 
     @property
     def source_url(self):
@@ -200,7 +200,7 @@ class Provider:
     @property
     def description(self) -> Optional[str]:
         """Return provider description"""
-        return self._get_db_row()['description']
+        return self._get_db_row()._mapping['description']
 
     @property
     def alias(self) -> Union[str, None]:
@@ -245,7 +245,7 @@ class Provider:
     @property
     def use_default_provider_source_auth(self) -> bool:
         """Whether the provider should use default provider source auth"""
-        return self._get_db_row()["default_provider_source_auth"]
+        return self._get_db_row()._mapping["default_provider_source_auth"]
 
     def __init__(self, namespace: 'terrareg.models.Namespace', name: str):
         """Validate name and store member variables."""
@@ -257,7 +257,7 @@ class Provider:
         """Return database row for module provider."""
         if self._cache_db_row is None:
             db = terrareg.database.Database.get()
-            select = db.provider.select(
+            select = sqlalchemy.select(db.provider
             ).join(
                 db.namespace,
                 db.provider.c.namespace_id==db.namespace.c.id
@@ -273,7 +273,7 @@ class Provider:
 
     def get_latest_version(self) -> Union[None, 'terrareg.provider_version_model.ProviderVersion']:
         """Return latest version of module provider"""
-        if provider_version_pk := self._get_db_row()["latest_version_id"]:
+        if provider_version_pk := self._get_db_row()._mapping["latest_version_id"]:
             return terrareg.provider_version_model.ProviderVersion.get_by_pk(provider_version_pk)
         return None
 
@@ -288,7 +288,7 @@ class Provider:
         with db.get_connection() as conn:
             rows = conn.execute(select).all()
         return sorted([
-            terrareg.provider_version_model.ProviderVersion(provider=self, version=row["version"])
+            terrareg.provider_version_model.ProviderVersion(provider=self, version=row._mapping["version"])
             for row in rows
         ], reverse=True)
 
@@ -312,14 +312,14 @@ class Provider:
             rows = [r for r in res]
 
         # Sort rows by semantic versioning
-        rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
+        rows.sort(key=lambda x: LooseVersion(x._mapping['version']), reverse=True)
 
         # Ensure at least one row
         if not rows:
             return None
 
         # Obtain latest row
-        return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]['version'])
+        return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]._mapping['version'])
 
     def index_version(self, version: str) -> 'terrareg.provider_version_model.ProviderVersion':
         """Index single version of a provider and create new provider version"""

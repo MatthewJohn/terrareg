@@ -18,6 +18,13 @@ from .test_data import test_data_full, test_git_providers, test_user_group_data_
 from terrareg.constants import EXTRACTION_VERSION
 
 
+class MockRow(dict):
+    """Mock SQLAlchemy Row that supports both ['col'] and ._mapping['col'] access."""
+    @property
+    def _mapping(self):
+        return self
+
+
 class TerraregUnitTest(BaseTest):
 
     @classmethod
@@ -148,7 +155,7 @@ def mock_git_provider(request):
         global TEST_GIT_PROVIDER_DATA
         data = TEST_GIT_PROVIDER_DATA.get(self._id, None)
         data['id'] = self._id
-        return data
+        return MockRow(data)
     mock_method(request, 'terrareg.models.GitProvider._get_db_row', _get_db_row)
 
 
@@ -204,7 +211,7 @@ def mock_module_details(request):
     mock_method(request, 'terrareg.models.ModuleDetails.update_attributes', update_attributes)
 
     def _get_db_row(self):
-        return dict(TEST_MODULE_DETAILS[str(self._id)])
+        return MockRow(dict(TEST_MODULE_DETAILS[str(self._id)]))
     mock_method(request, 'terrareg.models.ModuleDetails._get_db_row', _get_db_row)
 
 
@@ -253,7 +260,7 @@ def mock_module_version(request):
         unittest_data = get_module_version_mock_data(self)
         if unittest_data is None:
             return None
-        return {
+        return MockRow({
             'id': unittest_data.get('id'),
             'module_provider_id': get_module_provider_mock_data(self._module_provider),
             'version': self._version,
@@ -276,7 +283,7 @@ def mock_module_version(request):
             'git_path': unittest_data.get('git_path', None),
             'archive_git_path': unittest_data.get('archive_git_path', False),
             'git_sha': unittest_data.get('git_sha'),
-        }
+        })
     mock_method(request, 'terrareg.models.ModuleVersion._get_db_row', _get_db_row)
 
 
@@ -290,10 +297,10 @@ def mock_module_version_file(request):
         data = get_module_version_mock_data(self._module_version).get('files', {}).get(self._path, None)
         if data is None:
             return None
-        return {
+        return MockRow({
             "content": Database.encode_blob(data),
             "path": self._path
-        }
+        })
     mock_method(request, "terrareg.models.ModuleVersionFile._get_db_row", _get_db_row)
 
 
@@ -378,7 +385,7 @@ def mock_module_provider(request):
         if self._name not in get_module_mock_data(self._module):
             return None
         data = get_module_provider_mock_data(self)
-        return {
+        return MockRow({
             'id': data.get('id'),
             'namespace': self._module._namespace.name,
             'module': self._module.name,
@@ -391,7 +398,7 @@ def mock_module_provider(request):
             'git_tag_format': data.get('git_tag_format', None),
             'git_path': data.get('git_path', None),
             'archive_git_path': data.get('archive_git_path', False),
-        }
+        })
     mock_method(request, 'terrareg.models.ModuleProvider._get_db_row', _get_db_row)
 
     def get_latest_version(self):
@@ -567,12 +574,12 @@ def mock_namespace(request):
         mock_namespace_data = get_namespace_mock_data(self)
         if mock_namespace_data is None:
             return None
-        return {
+        return MockRow({
             'namespace': self._name,
             'id': mock_namespace_data['id'],
             'display_name': mock_namespace_data.get('display_name'),
             'type': mock_namespace_data.get("type")
-        }
+        })
     mock_method(request, 'terrareg.models.Namespace._get_db_row', _get_db_row)
 
     def get_total_count():
@@ -705,11 +712,11 @@ def mock_user_group(request):
         """Return DB row for user group."""
         global USER_GROUP_CONFIG
         if self._name in USER_GROUP_CONFIG:
-            return {
+            return MockRow({
                 'id': USER_GROUP_CONFIG[self._name].get('id', 100),
                 'name': self._name,
                 'site_admin': USER_GROUP_CONFIG[self._name].get('site_admin', False)
-            }
+            })
     mock_method(request, 'terrareg.models.UserGroup._get_db_row', _get_db_row)
 
     def _delete_from_database(self):
@@ -758,11 +765,11 @@ def mock_user_group_namespace_permission(request):
         """Return DB row for user group."""
         global USER_GROUP_CONFIG
         if self._user_group.name in USER_GROUP_CONFIG and self._namespace.name in USER_GROUP_CONFIG[self._user_group.name].get('namespace_permissions', {}):
-            return {
+            return MockRow({
                 'namespace_id': self._namespace.pk,
                 'user_group_id': self._user_group.pk,
                 'permission_type': USER_GROUP_CONFIG[self._user_group.name]['namespace_permissions'][self._namespace.name]
-            }
+            })
         return None
     mock_method(request, 'terrareg.models.UserGroupNamespacePermission._get_db_row', _get_db_row)
 
