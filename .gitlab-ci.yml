@@ -7,7 +7,7 @@ variables:
   MYSQL_DATABASE: terrareg-integration
   MYSQL_ROOT_PASSWORD: password
   IN_TERRAREG_CI: "true"
-  AWS_ENDPOINT_URL: "http://minio:9000"
+  AWS_ENDPOINT_URL: "http://seaweedfs:8333"
   AWS_ACCESS_KEY_ID: "GA7JXYR4LUFQ23YPMO_MFKLI"
   AWS_SECRET_ACCESS_KEY: "4x5JqXPd-1JOo97CwI0Pr_LBVS-gApjrU7JUNrclkbOXrdYU"
   AWS_BUCKET_NAME: "terrareg"
@@ -123,12 +123,9 @@ unit-integration-selenium-tests:
   stage: test
   extends: [.test_image, .limit_release_and_non_pushes]
   services:
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   script:
     # Perform database migration
     - poetry run alembic upgrade head
@@ -153,16 +150,14 @@ mysql-integration-selenium-tests:
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
     # Set datbase URL for schema migration
     DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Perform database migration
     - poetry run alembic upgrade head
@@ -182,16 +177,14 @@ postgres-integration-selenium-tests:
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
     # Set datbase URL for schema migration
     DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
     POSTGRES_USER: terrareg
     POSTGRES_PASSWORD: terrareg
     POSTGRES_DATABASE: terrareg
@@ -245,12 +238,9 @@ golang-integration-tests-sqlite:
   image: golang:1.25.4-trixie
   extends: .before_script_golang
   services:
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   script:
     # Run integration tests excluding selenium (using build tags)
     - go test -short -tags='!selenium' ./test/integration/... -timeout 10m 2>&1 | tee integration-test-report.txt
@@ -273,13 +263,11 @@ golang-integration-tests-mysql:
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   variables:
     DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     - go test ./test/integration/... -timeout 10m 2>&1 | tee integration-mysql-test-report.txt
     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-mysql-test-report.txt > junit-integration-mysql-report.xml
@@ -299,13 +287,11 @@ golang-integration-tests-postgres:
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   variables:
     DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
     POSTGRES_USER: terrareg
     POSTGRES_PASSWORD: terrareg
     POSTGRES_DATABASE: terrareg
@@ -328,12 +314,9 @@ golang-selenium-tests-sqlite:
   needs:
     - build-golang-test-docker-image
   services:
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   script:
     - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-test-report.txt
     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-test-report.txt > junit-selenium-report.xml
@@ -355,13 +338,11 @@ golang-selenium-tests-mysql:
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   variables:
     DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Run selenium tests
     - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-mysql-test-report.txt
@@ -383,13 +364,11 @@ golang-selenium-tests-postgres:
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
   variables:
     DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
     POSTGRES_USER: terrareg
     POSTGRES_PASSWORD: terrareg
     POSTGRES_DATABASE: terrareg
