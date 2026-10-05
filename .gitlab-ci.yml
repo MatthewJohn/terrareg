@@ -123,9 +123,11 @@ unit-integration-selenium-tests:
   stage: test
   extends: [.test_image, .limit_release_and_non_pushes]
   services:
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   script:
     # Perform database migration
     - poetry run alembic upgrade head
@@ -150,9 +152,11 @@ mysql-integration-selenium-tests:
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
@@ -177,9 +181,11 @@ postgres-integration-selenium-tests:
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
@@ -238,9 +244,11 @@ golang-integration-tests-sqlite:
   image: golang:1.25.4-trixie
   extends: .before_script_golang
   services:
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   script:
     # Run integration tests excluding selenium (using build tags)
     - go test -short -tags='!selenium' ./test/integration/... -timeout 10m 2>&1 | tee integration-test-report.txt
@@ -263,9 +271,11 @@ golang-integration-tests-mysql:
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
   script:
@@ -287,9 +297,11 @@ golang-integration-tests-postgres:
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
     POSTGRES_USER: terrareg
@@ -314,9 +326,11 @@ golang-selenium-tests-sqlite:
   needs:
     - build-golang-test-docker-image
   services:
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   script:
     - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-test-report.txt
     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-test-report.txt > junit-selenium-report.xml
@@ -338,9 +352,11 @@ golang-selenium-tests-mysql:
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
   script:
@@ -364,9 +380,11 @@ golang-selenium-tests-postgres:
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: chrislusf/seaweedfs
+    - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
       command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
     POSTGRES_USER: terrareg
