@@ -34,6 +34,11 @@ cache:
       when: always
     - when: never
 
+.tags:
+  tags:
+    # Apply to AMD due to current AWS instance type limitations on ARM
+    - amd64
+
 .pr_deployment:
   variables:
     # Configure base domain that the
@@ -121,7 +126,7 @@ cache:
 
 unit-integration-selenium-tests:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   services:
     - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
@@ -146,7 +151,7 @@ unit-integration-selenium-tests:
 
 mysql-integration-selenium-tests:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   needs:
     - unit-integration-selenium-tests
   services:
@@ -175,7 +180,7 @@ mysql-integration-selenium-tests:
 
 postgres-integration-selenium-tests:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   #needs:
   #  - unit-integration-selenium-tests
   services:
@@ -207,7 +212,7 @@ postgres-integration-selenium-tests:
 
 spell-checker:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   script:
     ./scripts/check_spelling.sh
 
@@ -433,7 +438,7 @@ test-docker-image:
   # Use python:3.12, as it's already used
   # by build and comes with curl
   image: python:3.12
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -451,7 +456,7 @@ test-docker-image-waitress:
   # Use python:3.12, as it's already used
   # by build and comes with curl
   image: python:3.12
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -468,7 +473,7 @@ test-docker-image-waitress:
 build-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -478,7 +483,7 @@ build-docker-image:
 build-test-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -492,7 +497,7 @@ build-test-docker-image:
 build-golang-test-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -502,7 +507,7 @@ build-golang-test-docker-image:
 build-golang-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -513,7 +518,7 @@ test-golang-docker-image:
   # Use python:3.12, as it's already used
   # by build and comes with curl
   image: python:3.12
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - name: terrareg-go-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -528,7 +533,7 @@ test-golang-docker-image:
 
 build-pr-image:
   stage: build
-  extends: .pr_deployment
+  extends: [.pr_deployment, .tags]
   # Use tags to limit to the nomad runner
   tags: [nomad]
 
@@ -728,6 +733,7 @@ stop_main_demo:
 
 release:
   stage: deploy
+  extends: .tags
   image: semantic-release:latest
   cache:
     paths:
@@ -749,6 +755,7 @@ release:
 generate-docs:
   stage: deploy
   image: python:3.12
+  extends: .tags
   variables:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
