@@ -1,3 +1,4 @@
+import sqlalchemy
 
 import json
 import unittest.mock
@@ -77,7 +78,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
 
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.api_name=="ut-name"))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.api_name=="ut-name"))
 
     @pytest.mark.parametrize('call_api_name, provider_api_name, provider_type, expected_class_type', [
         ('test-provider-source', 'test-provider-source', terrareg.provider_source_type.ProviderSourceType.GITHUB, terrareg.provider_source.GithubProviderSource),
@@ -105,7 +106,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
 
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name=="Provider Name"))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name=="Provider Name"))
 
     def test_get_all_provider_sources(self):
         """Test get_all_provider_sources"""
@@ -139,7 +140,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
 
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.api_name.in_(["prov-1", "prov-2"])))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.api_name.in_(["prov-1", "prov-2"])))
 
     @pytest.mark.parametrize('name, expected_api_name', [
         # Empty values
@@ -197,7 +198,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
             finally:
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    conn.execute(db.provider_source.delete(db.provider_source.c.name=="Test Create 1"))
+                    conn.execute(db.provider_source.delete().where(db.provider_source.c.name=="Test Create 1"))
 
     @pytest.mark.parametrize('config, expected_error', [
         # Invalid type
@@ -254,9 +255,9 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
                 })
 
                 with db.get_connection() as conn:
-                    res = conn.execute(db.provider_source.select(db.provider_source.c.api_name=="test-pre-existing")).all()
+                    res = conn.execute(sqlalchemy.select(db.provider_source).where(db.provider_source.c.api_name=="test-pre-existing")).all()
                     assert len(res) == 1
-                    assert dict(res[0]) == {
+                    assert dict(res[0]._mapping) == {
                         "name": "Test Pre-existing",
                         "api_name": "test-pre-existing",
                         "provider_source_type": terrareg.provider_source_type.ProviderSourceType.GITHUB,
@@ -264,7 +265,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
                     }
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name=="Test Pre-existing"))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name=="Test Pre-existing"))
 
     def test_initialise_from_config_duplicate(self):
         """Test initialise_from_config with a duplicate provider defined in config."""
@@ -293,9 +294,9 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
                 })
 
                 with db.get_connection() as conn:
-                    res = conn.execute(db.provider_source.select(db.provider_source.c.api_name=="test-duplicate")).all()
+                    res = conn.execute(sqlalchemy.select(db.provider_source).where(db.provider_source.c.api_name=="test-duplicate")).all()
                     assert len(res) == 1
-                    assert dict(res[0]) == {
+                    assert dict(res[0]._mapping) == {
                         "name": "Test Duplicate",
                         "api_name": "test-duplicate",
                         "provider_source_type": terrareg.provider_source_type.ProviderSourceType.GITHUB,
@@ -303,4 +304,4 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
                     }
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name=="Test Duplicate"))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name=="Test Duplicate"))

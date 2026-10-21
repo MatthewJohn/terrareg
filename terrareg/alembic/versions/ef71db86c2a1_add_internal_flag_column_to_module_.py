@@ -30,7 +30,7 @@ def upgrade():
     if op.get_bind().engine.name == 'postgresql':
         false_value = "false"
         true_value = "true"
-    res = c.execute(f"""
+    res = c.execute(sa.text(f"""
         SELECT
             module_version.id AS module_version_id,
             module_version.version as version,
@@ -38,7 +38,7 @@ def upgrade():
         FROM module_version
         INNER JOIN module_provider ON module_provider.id=module_version.module_provider_id
         WHERE module_version.beta={false_value} AND module_version.published={true_value}
-    """)
+    """))
     latest_versions = {}
     for row in res:
         version = row[1]

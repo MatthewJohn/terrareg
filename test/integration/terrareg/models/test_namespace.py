@@ -113,7 +113,7 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.id==original.pk))
+                conn.execute(db.namespace.delete().where(db.namespace.c.id==original.pk))
 
     @pytest.mark.parametrize('name,display_name', [
         ('test-create-namespace', 'Test Create Namespace'),
@@ -134,7 +134,7 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace==name))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace==name))
 
     def test_create_with_name_error(self):
         """Test Namespace create method with _validate_name error"""
@@ -164,7 +164,7 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.id==original.pk))
+                conn.execute(db.namespace.delete().where(db.namespace.c.id==original.pk))
 
     def test_create_duplicate_empty_display_name(self):
         """Create creating two namespaces with empty display name"""
@@ -175,8 +175,8 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-duplicate"))
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-duplicate2"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-duplicate"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-duplicate2"))
 
     def test_update_display_name(self):
         """Test updating display name of namespace"""
@@ -197,16 +197,16 @@ class TestNamespace(TerraregIntegrationTest):
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
             audit_event = audit_events[0]
-            assert audit_event['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
-            assert audit_event['object_type'] == "Namespace"
-            assert audit_event['object_id'] == "test-update-display-name"
-            assert audit_event['old_value'] == "Old display name"
-            assert audit_event['new_value'] == "New Display Name"
+            assert audit_event._mapping['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
+            assert audit_event._mapping['object_type'] == "Namespace"
+            assert audit_event._mapping['object_id'] == "test-update-display-name"
+            assert audit_event._mapping['old_value'] == "Old display name"
+            assert audit_event._mapping['new_value'] == "New Display Name"
 
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-display-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-update-display-name"))
 
     def test_update_display_name_duplicate(self):
         """Test updating display name of namespace with name that is a duplicate of another namespace"""
@@ -233,8 +233,8 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-display-name"))
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-display-name-duplicate"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-update-display-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-update-display-name-duplicate"))
 
     @pytest.mark.parametrize('old_value, new_value', [
         # Test same value
@@ -269,7 +269,7 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-display-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-update-display-name"))
 
     def test_update_display_name_capitalisation_change(self):
         """
@@ -295,16 +295,16 @@ class TestNamespace(TerraregIntegrationTest):
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
             audit_event = audit_events[0]
-            assert audit_event['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
-            assert audit_event['object_type'] == "Namespace"
-            assert audit_event['object_id'] == "test-update-display-name"
-            assert audit_event['old_value'] == "Old display name"
-            assert audit_event['new_value'] == "Old Display NAME"
+            assert audit_event._mapping['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
+            assert audit_event._mapping['object_type'] == "Namespace"
+            assert audit_event._mapping['object_id'] == "test-update-display-name"
+            assert audit_event._mapping['old_value'] == "Old display name"
+            assert audit_event._mapping['new_value'] == "Old Display NAME"
 
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-display-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-update-display-name"))
 
     def test_update_name(self):
         """Test updating name of namespace"""
@@ -344,17 +344,17 @@ class TestNamespace(TerraregIntegrationTest):
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
             audit_event = audit_events[0]
-            assert audit_event['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_NAME
-            assert audit_event['object_type'] == "Namespace"
-            assert audit_event['object_id'] == "test-change-name"
-            assert audit_event['old_value'] == "test-change-name"
-            assert audit_event['new_value'] == "new-changed-name"
+            assert audit_event._mapping['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_NAME
+            assert audit_event._mapping['object_type'] == "Namespace"
+            assert audit_event._mapping['object_id'] == "test-change-name"
+            assert audit_event._mapping['old_value'] == "test-change-name"
+            assert audit_event._mapping['new_value'] == "new-changed-name"
 
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-name"))
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="new-changed-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-change-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="new-changed-name"))
 
     def test_update_name_duplicate(self):
         """Test updating name of namespace with a duplicate name"""
@@ -388,7 +388,7 @@ class TestNamespace(TerraregIntegrationTest):
 
             # Ensure no Namespace redirect was created
             with db.get_connection() as conn:
-                assert len(conn.execute(db.namespace_redirect.select()).all()) == 0
+                assert len(conn.execute(sqlalchemy.select(db.namespace_redirect)).all()) == 0
 
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
@@ -397,8 +397,8 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-name"))
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-name-duplicate"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-change-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-change-name-duplicate"))
 
     def test_update_name_without_change(self):
         """Test updating name of namespace with same name"""
@@ -429,12 +429,12 @@ class TestNamespace(TerraregIntegrationTest):
 
             # Ensure no Namespace redirect was created
             with db.get_connection() as conn:
-                assert len(conn.execute(db.namespace_redirect.select()).all()) == 0
+                assert len(conn.execute(sqlalchemy.select(db.namespace_redirect)).all()) == 0
 
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-name"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="test-update-name"))
 
     def test_delete(self):
         """Test deleting namespace"""
@@ -491,7 +491,7 @@ class TestNamespace(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.namespace_redirect.delete())
                 conn.execute(db.user_group_namespace_permission.delete())
-                conn.execute(db.namespace.delete(db.namespace.c.namespace.in_(["testdelete", "testtodelete", "test-control", "test-control-new"])))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace.in_(["testdelete", "testtodelete", "test-control", "test-control-new"])))
 
     def test_delete_with_modules(self):
         """Test deleting namespace with modules present"""
@@ -529,6 +529,6 @@ class TestNamespace(TerraregIntegrationTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.module_provider.delete(db.module_provider.c.id==module_provider_pk))
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="testdelete"))
+                conn.execute(db.module_provider.delete().where(db.module_provider.c.id==module_provider_pk))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="testdelete"))
 

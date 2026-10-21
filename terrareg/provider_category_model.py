@@ -25,12 +25,12 @@ class ProviderCategory:
     @property
     def name(self) -> str:
         """Return name"""
-        return self._get_db_row()["name"]
+        return self._get_db_row()._mapping["name"]
 
     @property
     def slug(self) -> str:
         """Return slug"""
-        return self._get_db_row()["slug"]
+        return self._get_db_row()._mapping["slug"]
 
     @property
     def pk(self) -> int:
@@ -45,7 +45,7 @@ class ProviderCategory:
     @property
     def user_selectable(self):
         """Return whether provider category is user selectable"""
-        return self._get_db_row()["user_selectable"]
+        return self._get_db_row()._mapping["user_selectable"]
 
     def __eq__(self, __o):
         """Check if two provider categories are the same"""
@@ -62,7 +62,7 @@ class ProviderCategory:
         """Return database row for module details."""
         if self._cache_db_row is None:
             db = terrareg.database.Database.get()
-            select = db.provider_category.select(
+            select = sqlalchemy.select(db.provider_category
             ).where(
                 db.provider_category.c.id == self._pk
             )
@@ -118,7 +118,7 @@ class ProviderCategoryFactory:
             return None
 
         # Return instance of provider category class
-        return ProviderCategory(pk=res['id'])
+        return ProviderCategory(pk=res._mapping['id'])
 
     def get_provider_category_by_pk(self, pk: int) -> Union[None, ProviderCategory]:
         """Return instance of provider category by pk"""
@@ -138,7 +138,7 @@ class ProviderCategoryFactory:
         with database.get_connection() as conn:
             res = conn.execute(select).all()
         return [
-            ProviderCategory(pk=row['id'])
+            ProviderCategory(pk=row._mapping['id'])
             for row in res
         ]
 

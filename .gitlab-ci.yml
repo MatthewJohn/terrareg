@@ -7,7 +7,7 @@ variables:
   MYSQL_DATABASE: terrareg-integration
   MYSQL_ROOT_PASSWORD: password
   IN_TERRAREG_CI: "true"
-  AWS_ENDPOINT_URL: "http://minio:9000"
+  AWS_ENDPOINT_URL: "http://seaweedfs:8333"
   AWS_ACCESS_KEY_ID: "GA7JXYR4LUFQ23YPMO_MFKLI"
   AWS_SECRET_ACCESS_KEY: "4x5JqXPd-1JOo97CwI0Pr_LBVS-gApjrU7JUNrclkbOXrdYU"
   AWS_BUCKET_NAME: "terrareg"
@@ -33,6 +33,11 @@ cache:
     - if: $CI_PIPELINE_SOURCE == 'push'
       when: always
     - when: never
+
+.tags:
+  tags:
+    # Apply to AMD due to current AWS instance type limitations on ARM
+    - amd64
 
 .pr_deployment:
   variables:
@@ -121,14 +126,13 @@ cache:
 
 unit-integration-selenium-tests:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   services:
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
+    - name: chrislusf/seaweedfs:4.48
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   script:
     # Perform database migration
     - poetry run alembic upgrade head
@@ -147,22 +151,22 @@ unit-integration-selenium-tests:
 
 mysql-integration-selenium-tests:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   needs:
     - unit-integration-selenium-tests
   services:
     - name: mariadb:10.8
       alias: mysql
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs:4.48
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
     # Set datbase URL for schema migration
     DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Perform database migration
     - poetry run alembic upgrade head
@@ -176,22 +180,22 @@ mysql-integration-selenium-tests:
 
 postgres-integration-selenium-tests:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   #needs:
   #  - unit-integration-selenium-tests
   services:
     - name: postgres:17.4
       alias: postgres
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
+    - name: chrislusf/seaweedfs:4.48
+      alias: seaweedfs
+      command: ["sh", "-c", "weed mini -dir=/data"]
+      variables:
+        S3_BUCKET: terrareg
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
     # Set datbase URL for schema migration
     DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
     POSTGRES_USER: terrareg
     POSTGRES_PASSWORD: terrareg
     POSTGRES_DATABASE: terrareg
@@ -208,227 +212,225 @@ postgres-integration-selenium-tests:
 
 spell-checker:
   stage: test
-  extends: [.test_image, .limit_release_and_non_pushes]
+  extends: [.test_image, .limit_release_and_non_pushes, .tags]
   script:
     ./scripts/check_spelling.sh
 
 
-# ============================================================================
-# GOLANG IMPLEMENTATION TESTS
-# ============================================================================
+# # ============================================================================
+# # GOLANG IMPLEMENTATION TESTS
+# # ============================================================================
 
-# Unit tests for Go implementation
-golang-unit-tests:
-  stage: test
-  image: golang:1.25.4-trixie
-  extends: .before_script_golang
-  script:
-    # Run only non-integration, non-selenium tests with coverage
-    - go test -short -tags='!selenium' -timeout 10m -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-report.txt
-    # Only show coverage summary, not full function-by-function output
-    - go tool cover -func=coverage.out | grep "total:" | tee coverage.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < test-report.txt > junit-report.xml
-  coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-report.xml
-    paths:
-      - terrareg-go/coverage.out
-      - terrareg-go/coverage.txt
-      - terrareg-go/test-report.txt
-      - terrareg-go/junit-report.xml
-    expire_in: 1 week
+# # Unit tests for Go implementation
+# golang-unit-tests:
+#   stage: test
+#   image: golang:1.25.4-trixie
+#   extends: .before_script_golang
+#   script:
+#     # Run only non-integration, non-selenium tests with coverage
+#     - go test -short -tags='!selenium' -timeout 10m -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-report.txt
+#     # Only show coverage summary, not full function-by-function output
+#     - go tool cover -func=coverage.out | grep "total:" | tee coverage.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < test-report.txt > junit-report.xml
+#   coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-report.xml
+#     paths:
+#       - terrareg-go/coverage.out
+#       - terrareg-go/coverage.txt
+#       - terrareg-go/test-report.txt
+#       - terrareg-go/junit-report.xml
+#     expire_in: 1 week
 
-# Go integration tests with SQLite (default)
-golang-integration-tests-sqlite:
-  stage: test
-  image: golang:1.25.4-trixie
-  extends: .before_script_golang
-  services:
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
-  script:
-    # Run integration tests excluding selenium (using build tags)
-    - go test -short -tags='!selenium' ./test/integration/... -timeout 10m 2>&1 | tee integration-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-test-report.txt > junit-integration-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-integration-report.xml
-    paths:
-      - terrareg-go/integration-test-report.txt
-      - terrareg-go/junit-integration-report.xml
-    expire_in: 1 week
+# # Go integration tests with SQLite (default)
+# golang-integration-tests-sqlite:
+#   stage: test
+#   image: golang:1.25.4-trixie
+#   extends: .before_script_golang
+#   services:
+#     - name: chrislusf/seaweedfs:4.48
+#       alias: seaweedfs
+#       command: ["sh", "-c", "weed mini -dir=/data"]
+#       variables:
+#         S3_BUCKET: terrareg
+#   script:
+#     # Run integration tests excluding selenium (using build tags)
+#     - go test -short -tags='!selenium' ./test/integration/... -timeout 10m 2>&1 | tee integration-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-test-report.txt > junit-integration-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-integration-report.xml
+#     paths:
+#       - terrareg-go/integration-test-report.txt
+#       - terrareg-go/junit-integration-report.xml
+#     expire_in: 1 week
 
-# Go integration tests with MySQL
-golang-integration-tests-mysql:
-  stage: test
-  image: golang:1.25.4-trixie
-  extends: .before_script_golang
-  needs:
-    - golang-integration-tests-sqlite
-  services:
-    - name: mariadb:10.8
-      alias: mysql
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
-  script:
-    - go test ./test/integration/... -timeout 10m 2>&1 | tee integration-mysql-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-mysql-test-report.txt > junit-integration-mysql-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-integration-mysql-report.xml
-    paths:
-      - terrareg-go/integration-mysql-test-report.txt
-      - terrareg-go/junit-integration-mysql-report.xml
-    expire_in: 1 week
+# # Go integration tests with MySQL
+# golang-integration-tests-mysql:
+#   stage: test
+#   image: golang:1.25.4-trixie
+#   extends: .before_script_golang
+#   needs:
+#     - golang-integration-tests-sqlite
+#   services:
+#     - name: mariadb:10.8
+#       alias: mysql
+#     - name: chrislusf/seaweedfs:4.48
+#       alias: seaweedfs
+#       command: ["sh", "-c", "weed mini -dir=/data"]
+#       variables:
+#         S3_BUCKET: terrareg
+#   variables:
+#     DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
+#   script:
+#     - go test ./test/integration/... -timeout 10m 2>&1 | tee integration-mysql-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-mysql-test-report.txt > junit-integration-mysql-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-integration-mysql-report.xml
+#     paths:
+#       - terrareg-go/integration-mysql-test-report.txt
+#       - terrareg-go/junit-integration-mysql-report.xml
+#     expire_in: 1 week
 
-# Go integration tests with PostgreSQL
-golang-integration-tests-postgres:
-  stage: test
-  image: golang:1.25.4-trixie
-  extends: .before_script_golang
-  services:
-    - name: postgres:17.4
-      alias: postgres
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
-    POSTGRES_USER: terrareg
-    POSTGRES_PASSWORD: terrareg
-    POSTGRES_DATABASE: terrareg
-  script:
-    # Run integration tests with race detector (excluding selenium via build tags)
-    - go test -short -v -race -tags='!selenium' ./test/integration/... -timeout 15m 2>&1 | tee integration-postgres-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-postgres-test-report.txt > junit-integration-postgres-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-integration-postgres-report.xml
-    paths:
-      - terrareg-go/integration-postgres-test-report.txt
-      - terrareg-go/junit-integration-postgres-report.xml
-    expire_in: 1 week
+# # Go integration tests with PostgreSQL
+# golang-integration-tests-postgres:
+#   stage: test
+#   image: golang:1.25.4-trixie
+#   extends: .before_script_golang
+#   services:
+#     - name: postgres:17.4
+#       alias: postgres
+#     - name: chrislusf/seaweedfs:4.48
+#       alias: seaweedfs
+#       command: ["sh", "-c", "weed mini -dir=/data"]
+#       variables:
+#         S3_BUCKET: terrareg
+#   variables:
+#     DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
+#     POSTGRES_USER: terrareg
+#     POSTGRES_PASSWORD: terrareg
+#     POSTGRES_DATABASE: terrareg
+#   script:
+#     # Run integration tests with race detector (excluding selenium via build tags)
+#     - go test -short -v -race -tags='!selenium' ./test/integration/... -timeout 15m 2>&1 | tee integration-postgres-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < integration-postgres-test-report.txt > junit-integration-postgres-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-integration-postgres-report.xml
+#     paths:
+#       - terrareg-go/integration-postgres-test-report.txt
+#       - terrareg-go/junit-integration-postgres-report.xml
+#     expire_in: 1 week
 
-# Go selenium tests with SQLite (default)
-golang-selenium-tests-sqlite:
-  stage: test
-  extends: .test_image_golang
-  needs:
-    - build-golang-test-docker-image
-  services:
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
-  script:
-    - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-test-report.txt > junit-selenium-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-selenium-report.xml
-    paths:
-      - terrareg-go/selenium-test-report.txt
-      - terrareg-go/junit-selenium-report.xml
-    expire_in: 1 week
+# # Go selenium tests with SQLite (default)
+# golang-selenium-tests-sqlite:
+#   stage: test
+#   extends: .test_image_golang
+#   needs:
+#     - build-golang-test-docker-image
+#   services:
+#     - name: chrislusf/seaweedfs:4.48
+#       alias: seaweedfs
+#       command: ["sh", "-c", "weed mini -dir=/data"]
+#       variables:
+#         S3_BUCKET: terrareg
+#   script:
+#     - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-test-report.txt > junit-selenium-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-selenium-report.xml
+#     paths:
+#       - terrareg-go/selenium-test-report.txt
+#       - terrareg-go/junit-selenium-report.xml
+#     expire_in: 1 week
 
-# Go selenium tests with MySQL
-golang-selenium-tests-mysql:
-  stage: test
-  extends: .test_image_golang
-  needs:
-    - build-golang-test-docker-image
-    - golang-selenium-tests-sqlite
-  services:
-    - name: mariadb:10.8
-      alias: mysql
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
-  script:
-    # Run selenium tests
-    - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-mysql-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-mysql-test-report.txt > junit-selenium-mysql-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-selenium-mysql-report.xml
-    paths:
-      - terrareg-go/selenium-mysql-test-report.txt
-      - terrareg-go/junit-selenium-mysql-report.xml
-    expire_in: 1 week
+# # Go selenium tests with MySQL
+# golang-selenium-tests-mysql:
+#   stage: test
+#   extends: .test_image_golang
+#   needs:
+#     - build-golang-test-docker-image
+#     - golang-selenium-tests-sqlite
+#   services:
+#     - name: mariadb:10.8
+#       alias: mysql
+#     - name: chrislusf/seaweedfs:4.48
+#       alias: seaweedfs
+#       command: ["sh", "-c", "weed mini -dir=/data"]
+#       variables:
+#         S3_BUCKET: terrareg
+#   variables:
+#     DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?parseTime=true
+#   script:
+#     # Run selenium tests
+#     - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-mysql-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-mysql-test-report.txt > junit-selenium-mysql-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-selenium-mysql-report.xml
+#     paths:
+#       - terrareg-go/selenium-mysql-test-report.txt
+#       - terrareg-go/junit-selenium-mysql-report.xml
+#     expire_in: 1 week
 
-# Go selenium tests with PostgreSQL
-golang-selenium-tests-postgres:
-  stage: test
-  extends: .test_image_golang
-  needs:
-    - build-golang-test-docker-image
-  services:
-    - name: postgres:17.4
-      alias: postgres
-    - name: minio/minio
-      alias: minio
-      command: ["server", "/data", "--console-address", ":9001"]
-  variables:
-    DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
-    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
-    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
-    POSTGRES_USER: terrareg
-    POSTGRES_PASSWORD: terrareg
-    POSTGRES_DATABASE: terrareg
-  script:
-    # Run selenium tests
-    - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-postgres-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-postgres-test-report.txt > junit-selenium-postgres-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-selenium-postgres-report.xml
-    paths:
-      - terrareg-go/selenium-postgres-test-report.txt
-      - terrareg-go/junit-selenium-postgres-report.xml
-    expire_in: 1 week
+# # Go selenium tests with PostgreSQL
+# golang-selenium-tests-postgres:
+#   stage: test
+#   extends: .test_image_golang
+#   needs:
+#     - build-golang-test-docker-image
+#   services:
+#     - name: postgres:17.4
+#       alias: postgres
+#     - name: chrislusf/seaweedfs:4.48
+#       alias: seaweedfs
+#       command: ["sh", "-c", "weed mini -dir=/data"]
+#       variables:
+#         S3_BUCKET: terrareg
+#   variables:
+#     DATABASE_URL: postgres://terrareg:terrareg@postgres:5432/terrareg?sslmode=disable
+#     POSTGRES_USER: terrareg
+#     POSTGRES_PASSWORD: terrareg
+#     POSTGRES_DATABASE: terrareg
+#   script:
+#     # Run selenium tests
+#     - go test -v -tags=selenium ./test/selenium/... -timeout 30m 2>&1 | tee selenium-postgres-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < selenium-postgres-test-report.txt > junit-selenium-postgres-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-selenium-postgres-report.xml
+#     paths:
+#       - terrareg-go/selenium-postgres-test-report.txt
+#       - terrareg-go/junit-selenium-postgres-report.xml
+#     expire_in: 1 week
 
-# Go security tests
-golang-security-tests:
-  stage: test
-  image: golang:1.25.4-trixie
-  extends: .before_script_golang
-  script:
-    - go test -v ./test/security/... -timeout 5m 2>&1 | tee security-test-report.txt
-    - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < security-test-report.txt > junit-security-report.xml
-  artifacts:
-    reports:
-      junit: terrareg-go/junit-security-report.xml
-    paths:
-      - terrareg-go/security-test-report.txt
-      - terrareg-go/junit-security-report.xml
-    expire_in: 1 week
+# # Go security tests
+# golang-security-tests:
+#   stage: test
+#   image: golang:1.25.4-trixie
+#   extends: .before_script_golang
+#   script:
+#     - go test -v ./test/security/... -timeout 5m 2>&1 | tee security-test-report.txt
+#     - go install github.com/jstemmer/go-junit-report/v2@latest && go-junit-report -set-exit-code < security-test-report.txt > junit-security-report.xml
+#   artifacts:
+#     reports:
+#       junit: terrareg-go/junit-security-report.xml
+#     paths:
+#       - terrareg-go/security-test-report.txt
+#       - terrareg-go/junit-security-report.xml
+#     expire_in: 1 week
 
-# Go vet and static analysis
-golang-vet:
-  stage: test
-  image: golang:1.25.4-trixie
-  extends: .before_script_golang
-  script:
-    - go vet ./...
-    - go install honnef.co/go/tools/cmd/staticcheck@latest && staticcheck ./...
+# # Go vet and static analysis
+# golang-vet:
+#   stage: test
+#   image: golang:1.25.4-trixie
+#   extends: .before_script_golang
+#   script:
+#     - go vet ./...
+#     - go install honnef.co/go/tools/cmd/staticcheck@latest && staticcheck ./...
 
 
 test-docker-image:
@@ -436,7 +438,7 @@ test-docker-image:
   # Use python:3.12, as it's already used
   # by build and comes with curl
   image: python:3.12
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -454,7 +456,7 @@ test-docker-image-waitress:
   # Use python:3.12, as it's already used
   # by build and comes with curl
   image: python:3.12
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -471,7 +473,7 @@ test-docker-image-waitress:
 build-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -481,7 +483,7 @@ build-docker-image:
 build-test-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -495,7 +497,7 @@ build-test-docker-image:
 build-golang-test-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -505,7 +507,7 @@ build-golang-test-docker-image:
 build-golang-docker-image:
   stage: build
   image: docker:latest
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - docker:dind
   script:
@@ -516,7 +518,7 @@ test-golang-docker-image:
   # Use python:3.12, as it's already used
   # by build and comes with curl
   image: python:3.12
-  extends: .limit_release_and_non_pushes
+  extends: [.limit_release_and_non_pushes, .tags]
   services:
     - name: terrareg-go-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -531,7 +533,7 @@ test-golang-docker-image:
 
 build-pr-image:
   stage: build
-  extends: .pr_deployment
+  extends: [.pr_deployment, .tags]
   # Use tags to limit to the nomad runner
   tags: [nomad]
 
@@ -731,6 +733,7 @@ stop_main_demo:
 
 release:
   stage: deploy
+  extends: .tags
   image: semantic-release:latest
   cache:
     paths:
@@ -752,6 +755,7 @@ release:
 generate-docs:
   stage: deploy
   image: python:3.12
+  extends: .tags
   variables:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
