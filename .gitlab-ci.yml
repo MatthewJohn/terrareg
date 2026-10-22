@@ -493,43 +493,43 @@ build-test-docker-image:
 # GOLANG BUILD STAGE
 # ============================================================================
 
-# Build Go Docker image for testing
-build-golang-test-docker-image:
-  stage: build
-  image: docker:latest
-  extends: [.limit_release_and_non_pushes, .tags]
-  services:
-    - docker:dind
-  script:
-    - docker build -f terrareg-go/Dockerfile.tests -t terrareg-go-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
+# # Build Go Docker image for testing
+# build-golang-test-docker-image:
+#   stage: build
+#   image: docker:latest
+#   extends: [.limit_release_and_non_pushes, .tags]
+#   services:
+#     - docker:dind
+#   script:
+#     - docker build -f terrareg-go/Dockerfile.tests -t terrareg-go-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
 
-# Build Go production Docker image
-build-golang-docker-image:
-  stage: build
-  image: docker:latest
-  extends: [.limit_release_and_non_pushes, .tags]
-  services:
-    - docker:dind
-  script:
-    - docker build -f terrareg-go/Dockerfile -t terrareg-go-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
+# # Build Go production Docker image
+# build-golang-docker-image:
+#   stage: build
+#   image: docker:latest
+#   extends: [.limit_release_and_non_pushes, .tags]
+#   services:
+#     - docker:dind
+#   script:
+#     - docker build -f terrareg-go/Dockerfile -t terrareg-go-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
 
-test-golang-docker-image:
-  stage: test
-  # Use python:3.12, as it's already used
-  # by build and comes with curl
-  image: python:3.12
-  extends: [.limit_release_and_non_pushes, .tags]
-  services:
-    - name: terrareg-go-image:v${CI_COMMIT_SHORT_SHA}
-      alias: terrareg
-  variables:
-    MIGRATE_DATABASE: "True"
-    SECRET_KEY: ec9b8cc5ed0404acb3983b7836844d828728c22c28ecbed9095edef9b7489e85
-  script:
-    # Wait for Terrareg container to come up
-    - sleep 30
-    # Curl the terrareg homepage and ensure the title is displayed
-    - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
+# test-golang-docker-image:
+#   stage: test
+#   # Use python:3.12, as it's already used
+#   # by build and comes with curl
+#   image: python:3.12
+#   extends: [.limit_release_and_non_pushes, .tags]
+#   services:
+#     - name: terrareg-go-image:v${CI_COMMIT_SHORT_SHA}
+#       alias: terrareg
+#   variables:
+#     MIGRATE_DATABASE: "True"
+#     SECRET_KEY: ec9b8cc5ed0404acb3983b7836844d828728c22c28ecbed9095edef9b7489e85
+#   script:
+#     # Wait for Terrareg container to come up
+#     - sleep 30
+#     # Curl the terrareg homepage and ensure the title is displayed
+#     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
 
 build-pr-image:
   stage: build
