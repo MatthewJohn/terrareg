@@ -171,7 +171,7 @@ class AnalyticsEngine:
         """Return number of downloads for a given module version."""
         db = Database.get()
         select = sqlalchemy.select(
-            [sqlalchemy.func.count()]
+            sqlalchemy.func.count()
         ).select_from(
             db.analytics
         )
@@ -249,7 +249,7 @@ class AnalyticsEngine:
         with db.get_connection() as conn:
             res = conn.execute(count_select)
             data = {
-                f"{row['namespace']}/{row['module']}/{row['provider']}": row['count']
+                f"{row._mapping['namespace']}/{row._mapping['module']}/{row._mapping['provider']}": row._mapping['count']
                 for row in res
             }
         return data
@@ -258,7 +258,7 @@ class AnalyticsEngine:
         """Return number of downloads for a given module version."""
         db = Database.get()
         select = sqlalchemy.select(
-            [sqlalchemy.func.count()]
+            sqlalchemy.func.count()
         ).select_from(
             db.analytics
         ).join(
@@ -279,7 +279,7 @@ class AnalyticsEngine:
         for i in [(7, 'week'), (31, 'month'), (365, 'year'), (None, 'total')]:
 
             select = sqlalchemy.select(
-                [sqlalchemy.func.count()]
+                sqlalchemy.func.count()
             ).select_from(
                 db.analytics
             )
@@ -371,9 +371,7 @@ class AnalyticsEngine:
         # Obtain a list of the MAX (latest) analytics row IDs,
         # grouped by analytics token and environment.
         id_subquery = sqlalchemy.select(
-            [
                 sqlalchemy.func.max(db.analytics.c.id)
-            ]
         ).select_from(
             db.analytics
         )
@@ -388,13 +386,13 @@ class AnalyticsEngine:
 
         # Select all required fields for the given IDs
         # obtained from subquery.
-        select = sqlalchemy.select([
+        select = sqlalchemy.select(
             db.analytics.c.environment,
             db.analytics.c.analytics_token,
             db.module_version.c.version,
             db.analytics.c.terraform_version,
             db.analytics.c.timestamp
-        ]).select_from(
+        ).select_from(
             db.analytics
         )
         select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
@@ -417,13 +415,13 @@ class AnalyticsEngine:
 
                 # Check if row is usable
                 ## Skip any rows without analytics tokens, if they are required.
-                if AnalyticsEngine.are_tokens_enabled() and not row['analytics_token']:
+                if AnalyticsEngine.are_tokens_enabled() and not row._mapping['analytics_token']:
                     continue
                 ## Skip any rows without an environment, if they are required.
-                if AnalyticsEngine.are_environments_enabled() and not row['environment']:
+                if AnalyticsEngine.are_environments_enabled() and not row._mapping['environment']:
                     continue
 
-                token = row['analytics_token'] if row['analytics_token'] else 'No token provided'
+                token = row._mapping['analytics_token'] if row._mapping['analytics_token'] else 'No token provided'
 
                 # Populate map with empty details for this analytics token,
                 # if it doesn't already exist.
@@ -433,7 +431,7 @@ class AnalyticsEngine:
                         'module_version': None,
                         'environment': None
                     }
-                terraform_version = row['terraform_version'] if row['terraform_version'] else '0.0.0'
+                terraform_version = row._mapping['terraform_version'] if row._mapping['terraform_version'] else '0.0.0'
 
                 # Check if environment of current download is 'higher than' previous
                 ## Use this row if the current 'highest' value has an empty environment (this will always
@@ -441,16 +439,16 @@ class AnalyticsEngine:
                 if (token_version_mapping[token]['environment'] is None or
                     ## Ignore any future rows with an empty environment. If there aren't
                     ## environments in use, there will only be one row per analytics token
-                    (row['environment'] is not None and
+                    (row._mapping['environment'] is not None and
                     ## Ensure that the environment (still) exists
-                    row['environment'] in environment_priorities and
+                    row._mapping['environment'] in environment_priorities and
                     ## Ensure the environment token appears higher in the
                     ## environment priorities than the current 'highest' row
-                    environment_priorities[row['environment']] >
+                    environment_priorities[row._mapping['environment']] >
                     environment_priorities[token_version_mapping[token]['environment']])):
 
-                    token_version_mapping[token]['environment'] = row['environment']
-                    token_version_mapping[token]['module_version'] = row['version']
+                    token_version_mapping[token]['environment'] = row._mapping['environment']
+                    token_version_mapping[token]['module_version'] = row._mapping['version']
                     token_version_mapping[token]['terraform_version'] = terraform_version
 
         return token_version_mapping
@@ -567,8 +565,8 @@ class AnalyticsEngine:
         for row in rows:
             module_provider_usage_metric.add_data_row(
                 value='1',
-                labels={'module_provider_id': '{}/{}/{}'.format(row['namespace'], row['module'], row['provider']),
-                        'analytics_token': row['analytics_token']}
+                labels={'module_provider_id': '{}/{}/{}'.format(row._mapping['namespace'], row._mapping['module'], row._mapping['provider']),
+                        'analytics_token': row._mapping['analytics_token']}
             )
         prometheus_generator.add_metric(module_provider_usage_metric)
 
@@ -632,7 +630,7 @@ class ProviderAnalytics:
         """Return number of downloads for a given provider version."""
         db = Database.get()
         select = sqlalchemy.select(
-            [sqlalchemy.func.count()]
+            sqlalchemy.func.count()
         ).select_from(
             db.provider_analytics
         ).join(
@@ -661,7 +659,7 @@ class ProviderAnalytics:
         for i in stat_types:
 
             select = sqlalchemy.select(
-                [sqlalchemy.func.count()]
+                sqlalchemy.func.count()
             ).select_from(
                 db.provider_analytics
             )

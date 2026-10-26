@@ -1,3 +1,5 @@
+import sqlalchemy
+from test.unit.terrareg import MockRow
 
 import pytest
 
@@ -72,11 +74,11 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             assert isinstance(documentation._pk, int)
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                res = conn.execute(db.provider_version_documentation.select().where(
+                res = conn.execute(sqlalchemy.select(db.provider_version_documentation).where(
                     db.provider_version_documentation.c.id==documentation._pk
                 )).all()
                 assert len(res) == 1
-                assert dict(res[0]) == {
+                assert dict(res[0]._mapping) == {
                     "id": documentation._pk,
                     "provider_version_id": test_provider_version.pk,
                     "name": "test-provider-documentation.md",
@@ -112,11 +114,11 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
         assert isinstance(pk, int)
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            res = conn.execute(db.provider_version_documentation.select().where(
+            res = conn.execute(sqlalchemy.select(db.provider_version_documentation).where(
                 db.provider_version_documentation.c.id==pk
             )).all()
             assert len(res) == 1
-            assert dict(res[0]) == {
+            assert dict(res[0]._mapping) == {
                 "id": pk,
                 "provider_version_id": test_provider_version.pk,
                 "name": "unit-test-provider-documentation.md",
@@ -238,7 +240,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
 
         non_existent = terrareg.provider_version_documentation_model.ProviderVersionDocumentation(pk=999987)
         assert non_existent.exists is False
-        non_existent._cache_db_row = {"test": "row"}
+        non_existent._cache_db_row = MockRow({"test": "row"})
         assert non_existent.exists is True
 
     @pytest.mark.parametrize('test_data, expected_title', [
@@ -251,7 +253,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
         inst = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_pk(pk=6344)
         assert inst.title == "Overview"
 
-        inst._cache_db_row = test_data
+        inst._cache_db_row = MockRow(test_data)
         assert inst.title == expected_title
 
     def test_pk(self):
@@ -324,7 +326,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
         provider = terrareg.provider_model.Provider.get(namespace=namespace, name="multiple-versions")
         provider_version = terrareg.provider_version_model.ProviderVersion.get(provider=provider, version="1.5.0")
 
-        assert dict(inst._get_db_row()) == {
+        assert dict(inst._get_db_row()._mapping) == {
             'content': b'Documentation for generating a thing!',
             'description': b'Inital thing for multiple versions provider',
             'documentation_type': terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
@@ -337,7 +339,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             'subcategory': 'some-subcategory',
             'title': 'multiple_versions_thing',
         }
-        assert dict(inst._cache_db_row) == {
+        assert dict(inst._cache_db_row._mapping) == {
             'content': b'Documentation for generating a thing!',
             'description': b'Inital thing for multiple versions provider',
             'documentation_type': terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
@@ -351,7 +353,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             'title': 'multiple_versions_thing',
         }
 
-        inst._cache_db_row = {"test": "row"}
+        inst._cache_db_row = MockRow({"test": "row"})
         assert inst._get_db_row() == {"test": "row"}
 
         # Test non-existent
@@ -484,8 +486,8 @@ and it _really_ *does* work!
     def test_get_content_conversion(self, html, content, expected_result):
         """Test get_content"""
         inst = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_pk(pk=6347)
-        inst._cache_db_row = {
+        inst._cache_db_row = MockRow({
             "filename": "test.md",
             "content": terrareg.database.Database.encode_blob(content)
-        }
+        })
         assert inst.get_content(html=html) == expected_result

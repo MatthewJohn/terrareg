@@ -1,5 +1,6 @@
 
 import json
+from test.unit.terrareg import MockRow
 import pytest
 
 from test.integration.terrareg import TerraregIntegrationTest
@@ -36,7 +37,7 @@ class TestBaseProviderSource(TerraregIntegrationTest):
         # Ensure value from DB is correctly obtained
         assert test_provider_source.api_name == "test-provider-source"
         # Ensure the value is obtained from the cached DB row
-        test_provider_source._cache_db_row = {"api_name": "mock-api-name"}
+        test_provider_source._cache_db_row = MockRow({"api_name": "mock-api-name"})
         assert test_provider_source.api_name == "mock-api-name"
 
     def test__config(self, test_provider_source):
@@ -52,7 +53,7 @@ class TestBaseProviderSource(TerraregIntegrationTest):
     def test__get_db_row(self, test_provider_source):
         """Test _get_db_row."""
         assert test_provider_source._cache_db_row is None
-        assert dict(test_provider_source._get_db_row()) == {
+        assert dict(test_provider_source._get_db_row()._mapping) == {
             'api_name': 'test-provider-source',
             'config': terrareg.database.Database.encode_blob(json.dumps(self.ADDITIONAL_CONFIG)),
             'name': 'Test Provider Source',
@@ -60,7 +61,7 @@ class TestBaseProviderSource(TerraregIntegrationTest):
         }
 
         # Ensure cached row has been updated
-        assert dict(test_provider_source._cache_db_row) == {
+        assert dict(test_provider_source._cache_db_row._mapping) == {
             'api_name': 'test-provider-source',
             'config': terrareg.database.Database.encode_blob(json.dumps(self.ADDITIONAL_CONFIG)),
             'name': 'Test Provider Source',
@@ -69,5 +70,5 @@ class TestBaseProviderSource(TerraregIntegrationTest):
 
         # Update cache DB row to ensure the cached version is
         # returned
-        test_provider_source._cache_db_row = {"new_dict": "true"}
+        test_provider_source._cache_db_row = MockRow({"new_dict": "true"})
         assert test_provider_source._get_db_row() == {"new_dict": "true"}

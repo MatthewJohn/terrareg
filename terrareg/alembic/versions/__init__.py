@@ -22,7 +22,7 @@ def update_enum(table: str, column: str, enum_name: str, old_enum_values: List[s
     elif op.get_bind().engine.name == 'postgresql':
         new_type = sa.Enum(*new_enum_values, name=enum_name)
         temp_type_name = f"{enum_name}_migration_temp"
-        op.execute(f"ALTER TYPE {enum_name} RENAME TO {temp_type_name}")
+        op.execute(sa.text(f"ALTER TYPE {enum_name} RENAME TO {temp_type_name}"))
 
         new_type.create(op.get_bind())
 
@@ -30,7 +30,7 @@ def update_enum(table: str, column: str, enum_name: str, old_enum_values: List[s
             f'ALTER TABLE {table} ALTER COLUMN {column} '
             f'TYPE {enum_name} USING {column}::text::{enum_name}'
         )
-        op.execute(f'DROP TYPE {temp_type_name}')
+        op.execute(sa.text(f'DROP TYPE {temp_type_name}'))
     else:
         raise Exception("Invalid Database engine")
 

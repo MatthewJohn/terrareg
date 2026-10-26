@@ -149,7 +149,7 @@ class BaseTest:
         """Setup test data in database"""
         # Delete any pre-existing data
         db = Database.get()
-        with Database.get_engine().connect() as conn:
+        with Database.get().get_connection() as conn:
             conn.execute(db.audit_history.delete())
             conn.execute(db.user_group_namespace_permission.delete())
             conn.execute(db.user_group.delete())
@@ -179,7 +179,7 @@ class BaseTest:
                     id=git_provider_id,
                     **cls._GIT_PROVIDER_DATA[git_provider_id]
                 )
-                with Database.get_engine().connect() as conn:
+                with Database.get().get_connection() as conn:
                     conn.execute(insert)
 
             with unittest.mock.patch('terrareg.config.Config.PROVIDER_CATEGORIES', json.dumps(cls._PROVIDER_CATEGORIES)):
@@ -219,7 +219,7 @@ class BaseTest:
                         insert = Database.get().module_provider.insert().values(
                             **module_provider_attributes
                         )
-                        with Database.get_engine().connect() as conn:
+                        with Database.get().get_connection() as conn:
                             res = conn.execute(insert)
 
                         # Insert module versions
@@ -251,7 +251,7 @@ class BaseTest:
                             insert = Database.get().module_version.insert().values(
                                 **data
                             )
-                            with Database.get_engine().connect() as conn:
+                            with Database.get().get_connection() as conn:
                                 conn.execute(insert)
 
                             module_version = ModuleVersion(module_provider=module_provider, version=version_number)
@@ -411,7 +411,7 @@ class BaseTest:
  
         # Reset all sequences in postgres, as it cannot handle inserting custom values into fields that
         # normally use sequences
-        with Database.get_engine().connect() as conn:
+        with Database.get().get_connection() as conn:
             if conn.engine.name == "postgresql":
                 for table in ['namespace', 'module_provider', 'module_version', 'module_details']:
                     conn.execute(

@@ -81,8 +81,8 @@ class AuditEvent:
         with db.get_connection() as conn:
             res = conn.execute(filtered_limit)
             res = res.fetchall()
-            filtered_count = conn.execute(filtered_count_query).fetchone()['count']
-            total_count = conn.execute(total_count_query).fetchone()['count']
+            filtered_count = conn.execute(filtered_count_query).fetchone()._mapping['count']
+            total_count = conn.execute(total_count_query).fetchone()._mapping['count']
 
         return res, total_count, filtered_count
 
