@@ -70,7 +70,7 @@ def upgrade():
     op.add_column('module_version', sa.Column('internal', sa.BOOLEAN(), nullable=True))
 
     # Set any pre-existing rows to internal false
-    op.execute(f"""UPDATE module_version set internal={false_value}""")
+    op.execute(sa.text(f"""UPDATE module_version set internal={false_value}"""))
 
     # Disable nullable flag in column
     with op.batch_alter_table('module_version', schema=None) as batch_op:
