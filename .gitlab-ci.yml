@@ -1,4 +1,4 @@
-image: python:3.12
+image: python:3.15
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -151,7 +151,7 @@ mysql-integration-selenium-tests:
   needs:
     - unit-integration-selenium-tests
   services:
-    - name: mariadb:10.8
+    - name: mariadb:10.11
       alias: mysql
     - name: minio/minio
       alias: minio
@@ -180,7 +180,7 @@ postgres-integration-selenium-tests:
   #needs:
   #  - unit-integration-selenium-tests
   services:
-    - name: postgres:17.4
+    - name: postgres:17.11
       alias: postgres
     - name: minio/minio
       alias: minio
@@ -220,7 +220,7 @@ spell-checker:
 # Unit tests for Go implementation
 golang-unit-tests:
   stage: test
-  image: golang:1.25.4-trixie
+  image: golang:1.27.3-trixie
   extends: .before_script_golang
   script:
     # Run only non-integration, non-selenium tests with coverage
@@ -242,7 +242,7 @@ golang-unit-tests:
 # Go integration tests with SQLite (default)
 golang-integration-tests-sqlite:
   stage: test
-  image: golang:1.25.4-trixie
+  image: golang:1.27.3-trixie
   extends: .before_script_golang
   services:
     - name: minio/minio
@@ -266,12 +266,12 @@ golang-integration-tests-sqlite:
 # Go integration tests with MySQL
 golang-integration-tests-mysql:
   stage: test
-  image: golang:1.25.4-trixie
+  image: golang:1.27.3-trixie
   extends: .before_script_golang
   needs:
     - golang-integration-tests-sqlite
   services:
-    - name: mariadb:10.8
+    - name: mariadb:10.11
       alias: mysql
     - name: minio/minio
       alias: minio
@@ -294,10 +294,10 @@ golang-integration-tests-mysql:
 # Go integration tests with PostgreSQL
 golang-integration-tests-postgres:
   stage: test
-  image: golang:1.25.4-trixie
+  image: golang:1.27.3-trixie
   extends: .before_script_golang
   services:
-    - name: postgres:17.4
+    - name: postgres:17.11
       alias: postgres
     - name: minio/minio
       alias: minio
@@ -353,7 +353,7 @@ golang-selenium-tests-mysql:
     - build-golang-test-docker-image
     - golang-selenium-tests-sqlite
   services:
-    - name: mariadb:10.8
+    - name: mariadb:10.11
       alias: mysql
     - name: minio/minio
       alias: minio
@@ -381,7 +381,7 @@ golang-selenium-tests-postgres:
   needs:
     - build-golang-test-docker-image
   services:
-    - name: postgres:17.4
+    - name: postgres:17.11
       alias: postgres
     - name: minio/minio
       alias: minio
@@ -408,7 +408,7 @@ golang-selenium-tests-postgres:
 # Go security tests
 golang-security-tests:
   stage: test
-  image: golang:1.25.4-trixie
+  image: golang:1.27.3-trixie
   extends: .before_script_golang
   script:
     - go test -v ./test/security/... -timeout 5m 2>&1 | tee security-test-report.txt
@@ -424,7 +424,7 @@ golang-security-tests:
 # Go vet and static analysis
 golang-vet:
   stage: test
-  image: golang:1.25.4-trixie
+  image: golang:1.27.3-trixie
   extends: .before_script_golang
   script:
     - go vet ./...
@@ -435,7 +435,7 @@ test-docker-image:
   stage: test
   # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.12
+  image: python:3.15
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
@@ -453,7 +453,7 @@ test-docker-image-waitress:
   stage: test
   # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.12
+  image: python:3.15
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
@@ -515,7 +515,7 @@ test-golang-docker-image:
   stage: test
   # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.12
+  image: python:3.15
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-go-image:v${CI_COMMIT_SHORT_SHA}
@@ -581,7 +581,7 @@ deploy_review:
     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
 
   image:
-    name: hashicorp/terraform:1.5
+    name: hashicorp/terraform:1.17
     entrypoint: ["/bin/sh", "-c"]
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -613,7 +613,7 @@ stop_review:
     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
       when: manual
   image:
-    name: hashicorp/terraform:1.5
+    name: hashicorp/terraform:1.17
     entrypoint: ["/bin/sh", "-c"]
   variables:
     GIT_STRATEGY: none
@@ -751,7 +751,7 @@ release:
 
 generate-docs:
   stage: deploy
-  image: python:3.12
+  image: python:3.15
   variables:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
