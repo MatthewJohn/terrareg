@@ -1,6 +1,6 @@
 
 import contextlib
-import unittest.mock
+from unittest import mock
 
 import pytest
 
@@ -18,14 +18,15 @@ class TestAuthFactory(TerraregUnitTest):
         auth_method_instance_mocks = {}
 
         for mock_name in ['AdminApiKeyAuthMethod', 'AdminSessionAuthMethod', 'UploadApiKeyAuthMethod',
-                          'PublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+              'PublishApiKeyAuthMethod', 'UploadAndPublishApiKeyAuthMethod',
+              'SamlAuthMethod', 'OpenidConnectAuthMethod', 'GithubAuthMethod',
                           'TerraformOidcAuthMethod', 'TerraformAnalyticsAuthKeyAuthMethod',
                           'TerraformIgnoreAnalyticsAuthMethod', 'TerraformInternalExtractionAuthMethod',
                           'NotAuthenticated']:
-            auth_method_class_mocks[mock_name] = unittest.mock.MagicMock()
-            auth_method_class_mocks[mock_name].is_enabled = unittest.mock.MagicMock(return_value=(mock_name in enabled_mocks))
-            auth_method_instance_mocks[mock_name] = unittest.mock.MagicMock()
-            auth_method_class_mocks[mock_name].get_current_instance = unittest.mock.MagicMock(return_value=auth_method_instance_mocks[mock_name])
+            auth_method_class_mocks[mock_name] = mock.MagicMock()
+            auth_method_class_mocks[mock_name].is_enabled = mock.MagicMock(return_value=(mock_name in enabled_mocks))
+            auth_method_instance_mocks[mock_name] = mock.MagicMock()
+            auth_method_class_mocks[mock_name].get_current_instance = mock.MagicMock(return_value=auth_method_instance_mocks[mock_name])
 
         return auth_method_class_mocks, auth_method_instance_mocks
 
@@ -35,26 +36,34 @@ class TestAuthFactory(TerraregUnitTest):
         (['AdminSessionAuthMethod'], 'AdminSessionAuthMethod'),
         (['UploadApiKeyAuthMethod'], 'UploadApiKeyAuthMethod'),
         (['PublishApiKeyAuthMethod'], 'PublishApiKeyAuthMethod'),
+        (['UploadAndPublishApiKeyAuthMethod'], 'UploadAndPublishApiKeyAuthMethod'),
         (['SamlAuthMethod'], 'SamlAuthMethod'),
         (['OpenidConnectAuthMethod'], 'OpenidConnectAuthMethod'),
         (['NotAuthenticated'], 'NotAuthenticated'),
 
         # Enable all auth methods and remove one at a time to ensure they are checked in order
         (['AdminApiKeyAuthMethod', 'AdminSessionAuthMethod', 'UploadApiKeyAuthMethod',
-          'PublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+          'PublishApiKeyAuthMethod', 'UploadAndPublishApiKeyAuthMethod',
+          'SamlAuthMethod', 'OpenidConnectAuthMethod',
           'NotAuthenticated'],
           'AdminApiKeyAuthMethod'),
         (['AdminSessionAuthMethod', 'UploadApiKeyAuthMethod',
-          'PublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+          'PublishApiKeyAuthMethod', 'UploadAndPublishApiKeyAuthMethod',
+          'SamlAuthMethod', 'OpenidConnectAuthMethod',
           'NotAuthenticated'],
           'AdminSessionAuthMethod'),
         (['UploadApiKeyAuthMethod',
-          'PublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+          'PublishApiKeyAuthMethod', 'UploadAndPublishApiKeyAuthMethod',
+          'SamlAuthMethod', 'OpenidConnectAuthMethod',
           'NotAuthenticated'],
           'UploadApiKeyAuthMethod'),
-        (['PublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+        (['PublishApiKeyAuthMethod', 'UploadAndPublishApiKeyAuthMethod',
+          'SamlAuthMethod', 'OpenidConnectAuthMethod',
           'NotAuthenticated'],
           'PublishApiKeyAuthMethod'),
+        (['UploadAndPublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+          'NotAuthenticated'],
+          'UploadAndPublishApiKeyAuthMethod'),
         (['SamlAuthMethod', 'OpenidConnectAuthMethod',
           'NotAuthenticated'],
           'SamlAuthMethod'),
@@ -84,7 +93,7 @@ class TestAuthFactory(TerraregUnitTest):
 
             # Enable all mocks of auth method classes
             with contextlib.ExitStack() as stack:
-                for mock_ctx in [unittest.mock.patch(f'terrareg.auth.{mock_name}', auth_method_class_mocks[mock_name])
+                for mock_ctx in [mock.patch(f'terrareg.auth.{mock_name}', auth_method_class_mocks[mock_name])
                                 for mock_name in auth_method_class_mocks]:
                     stack.enter_context(mock_ctx)
 
@@ -100,7 +109,7 @@ class TestAuthFactory(TerraregUnitTest):
 
             # Enable all mocks of auth method classes
             with contextlib.ExitStack() as stack:
-                for mock_ctx in [unittest.mock.patch(f'terrareg.auth.{mock_name}', auth_method_class_mocks[mock_name])
+                for mock_ctx in [mock.patch(f'terrareg.auth.{mock_name}', auth_method_class_mocks[mock_name])
                                 for mock_name in auth_method_class_mocks]:
                     stack.enter_context(mock_ctx)
 

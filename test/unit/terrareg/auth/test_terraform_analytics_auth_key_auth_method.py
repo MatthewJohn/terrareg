@@ -1,5 +1,5 @@
 
-import unittest.mock
+from unittest import mock
 
 import pytest
 
@@ -25,7 +25,7 @@ class TestTerraformAnalyticsAuthKeyAuthMethod(BaseTerraformStaticTokenTests):
     def test_is_enabled(self, analaytics_auth_keys, expected_result):
         """Test get_username method"""
         obj = self.CLS()
-        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', analaytics_auth_keys):
+        with mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', analaytics_auth_keys):
             assert obj.is_enabled() is expected_result
 
     @pytest.mark.parametrize('analaytics_auth_keys, authorization_header, expected_result', [
@@ -58,7 +58,7 @@ class TestTerraformAnalyticsAuthKeyAuthMethod(BaseTerraformStaticTokenTests):
         if authorization_header is not None:
             headers['Authorization'] = authorization_header
 
-        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', analaytics_auth_keys), \
+        with mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', analaytics_auth_keys), \
                 BaseTest.get().SERVER._app.test_request_context(headers=headers) as request_context:
             assert obj.check_auth_state() is expected_result
 

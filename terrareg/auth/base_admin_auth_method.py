@@ -28,10 +28,6 @@ class BaseAdminAuthMethod(BaseAuthMethod):
         # Allow full access to all namespaces
         return True
 
-    @classmethod
-    def is_enabled(cls):
-        return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN)
-
     def get_username(self):
         """Get username of current user"""
         return 'Built-in admin'

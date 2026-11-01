@@ -1,7 +1,9 @@
 
 import contextlib
 import datetime
-from typing import Optional, Union
+import hashlib
+import hmac
+from typing import Optional, Union, Tuple
 from enum import Enum
 import os
 import json
@@ -28,13 +30,14 @@ import terrareg.audit_action
 from terrareg.namespace_type import NamespaceType
 import terrareg.result_data
 from terrareg.errors import (
-    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, GpgKeyInUseError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, GitProviderInUseError, GitProviderManagedByConfigurationError, GpgKeyInUseError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
     RepositoryUrlDoesNotContainPathError,
+    InvalidApiKeyTypeError,
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
     NoModuleDownloadMethodConfiguredError,
@@ -484,46 +487,110 @@ class UserGroupNamespacePermission:
 class GitProvider:
     """Interface to specify how modules should interact with known git providers."""
 
+    _PROVIDER_TEMPLATE_VALIDATIONS = (
+        ('base_url_template', {
+            'requires_namespace_placeholder': True,
+            'requires_module_placeholder': True,
+            'requires_tag_placeholder': False,
+            'requires_path_placeholder': False,
+        }),
+        ('clone_url_template', {
+            'requires_namespace_placeholder': True,
+            'requires_module_placeholder': True,
+            'requires_tag_placeholder': False,
+            'requires_path_placeholder': False,
+        }),
+        ('browse_url_template', {
+            'requires_namespace_placeholder': True,
+            'requires_module_placeholder': True,
+            'requires_tag_placeholder': True,
+            'requires_path_placeholder': True,
+        }),
+    )
+
+    @classmethod
+    def _normalise_git_path_template(cls, git_path_template):
+        """Convert empty git path values to None."""
+        return git_path_template or None
+
+    @classmethod
+    def _raise_template_validation_error(cls, field_name, exc):
+        """Raise the original validation error type with field context."""
+        raise exc.__class__(f'{field_name}: {exc}') from exc
+
+    @classmethod
+    def _validate_provider_config(
+        cls, name, base_url_template, clone_url_template,
+        browse_url_template, git_path_template=None
+    ):
+        """Validate git provider configuration."""
+        required_attributes = {
+            'name': name,
+            'base_url': base_url_template,
+            'clone_url': clone_url_template,
+            'browse_url': browse_url_template,
+        }
+        for attribute, value in required_attributes.items():
+            if not isinstance(value, str) or not value.strip():
+                raise InvalidGitProviderConfigError(
+                    'Git provider config does not contain required attribute: {}'.format(attribute))
+
+        git_path_template = cls._normalise_git_path_template(git_path_template)
+
+        if git_path_template:
+            try:
+                GitUrlValidator(git_path_template).validate()
+            except RepositoryUrlParseError as exc:
+                cls._raise_template_validation_error('git_path_template', exc)
+
+        validation_suffix = git_path_template or ''
+
+        provider_templates = {
+            'base_url_template': base_url_template,
+            'clone_url_template': clone_url_template,
+            'browse_url_template': browse_url_template,
+        }
+        for field_name, validation_kwargs in cls._PROVIDER_TEMPLATE_VALIDATIONS:
+            try:
+                GitUrlValidator(provider_templates[field_name] + validation_suffix).validate(
+                    **validation_kwargs
+                )
+            except RepositoryUrlParseError as exc:
+                cls._raise_template_validation_error(field_name, exc)
+
+        return git_path_template
+
+    @classmethod
+    def _get_config_managed_provider_names(cls):
+        """Return provider names managed by startup configuration."""
+        configured_providers = json.loads(terrareg.config.Config().GIT_PROVIDER_CONFIG)
+        return {
+            provider['name']
+            for provider in configured_providers
+            if isinstance(provider, dict) and provider.get('name')
+        }
+
+    @classmethod
+    def _ensure_name_not_managed_by_config(cls, name):
+        """Ensure provider name is not controlled by startup configuration."""
+        if name in cls._get_config_managed_provider_names():
+            raise GitProviderManagedByConfigurationError(
+                'Git provider {} is managed by GIT_PROVIDER_CONFIG and cannot be modified via the web interface'.format(name)
+            )
+
     @staticmethod
     def initialise_from_config():
         """Load git providers from config into database."""
         git_provider_config = json.loads(terrareg.config.Config().GIT_PROVIDER_CONFIG)
         db = Database.get()
         for git_provider_config in git_provider_config:
-            # Validate provider config
-            for attr in ['name', 'base_url', 'clone_url', 'browse_url']:
-                if attr not in git_provider_config:
-                    raise InvalidGitProviderConfigError(
-                        'Git provider config does not contain required attribute: {}'.format(attr))
-
-            # Obtain git path value, defaulting to empty string
-            git_path_template = git_provider_config.get('git_path', '')
-
-            # Valid git URLs for git provider.
-            # Append git_path to base, clone and browse URL, as placeholders may be delegated
-            # to the git path to ensure unique locations for modules.
-            GitUrlValidator(git_provider_config['base_url'] + git_path_template).validate(
-                requires_namespace_placeholder=True,
-                requires_module_placeholder=True,
-                requires_tag_placeholder=False,
-                requires_path_placeholder=False
+            git_path_template = GitProvider._validate_provider_config(
+                name=git_provider_config.get('name'),
+                base_url_template=git_provider_config.get('base_url'),
+                clone_url_template=git_provider_config.get('clone_url'),
+                browse_url_template=git_provider_config.get('browse_url'),
+                git_path_template=git_provider_config.get('git_path', '')
             )
-            GitUrlValidator(git_provider_config['clone_url'] + git_path_template).validate(
-                requires_namespace_placeholder=True,
-                requires_module_placeholder=True,
-                requires_tag_placeholder=False,
-                requires_path_placeholder=False
-            )
-            GitUrlValidator(git_provider_config['browse_url'] + git_path_template).validate(
-                requires_namespace_placeholder=True,
-                requires_module_placeholder=True,
-                requires_tag_placeholder=True,
-                requires_path_placeholder=True
-            )
-
-            # If git_path template is an empty string, revert to None
-            if not git_path_template:
-                git_path_template = None
 
             # Check if git provider exists in DB
             existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])
@@ -547,6 +614,36 @@ class GitProvider:
                 )
             with db.get_connection() as conn:
                 conn.execute(upsert)
+
+    @classmethod
+    def create(cls, name, base_url_template, clone_url_template, browse_url_template, git_path_template=None):
+        """Create a git provider."""
+        cls._ensure_name_not_managed_by_config(name)
+        if cls.get_by_name(name=name):
+            raise InvalidGitProviderConfigError(
+                'Git provider with name {} already exists'.format(name)
+            )
+
+        git_path_template = cls._validate_provider_config(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+
+        db = Database.get()
+        insert = db.git_provider.insert().values(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(insert)
+
+        return cls(id=res.inserted_primary_key[0])
 
     @classmethod
     def get_by_name(cls, name):
@@ -632,6 +729,73 @@ class GitProvider:
         self._id = id
         self._row_cache = None
 
+    def update(self, name, base_url_template, clone_url_template, browse_url_template, git_path_template=None):
+        """Update git provider attributes."""
+        self._ensure_name_not_managed_by_config(self.name)
+        if name != self.name:
+            self._ensure_name_not_managed_by_config(name)
+            existing_provider = self.get_by_name(name=name)
+            if existing_provider and existing_provider.pk != self.pk:
+                raise InvalidGitProviderConfigError(
+                    'Git provider with name {} already exists'.format(name)
+                )
+
+        git_path_template = self._validate_provider_config(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+
+        db = Database.get()
+        update = db.git_provider.update().where(
+            db.git_provider.c.id == self.pk
+        ).values(
+            name=name,
+            base_url_template=base_url_template,
+            clone_url_template=clone_url_template,
+            browse_url_template=browse_url_template,
+            git_path_template=git_path_template,
+        )
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        self._row_cache = None
+
+    def get_usage_count(self):
+        """Return number of module providers using this git provider."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            sqlalchemy.func.count('*').label('count')
+        ).select_from(
+            db.module_provider
+        ).where(
+            db.module_provider.c.git_provider_id == self.pk
+        )
+        with db.get_connection() as conn:
+            return conn.execute(select).fetchone()['count']
+
+    def delete(self):
+        """Delete git provider if it is not in use."""
+        self._ensure_name_not_managed_by_config(self.name)
+        usage_count = self.get_usage_count()
+        if usage_count:
+            raise GitProviderInUseError(
+                'Cannot delete git provider {} as it is in use by {} module providers'.format(
+                    self.name, usage_count
+                )
+            )
+
+        db = Database.get()
+        delete = db.git_provider.delete().where(
+            db.git_provider.c.id == self.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(delete)
+
+        self._row_cache = None
+
     def _get_db_row(self):
         """Return DB row for git provider."""
         if self._row_cache is None:
@@ -642,7 +806,7 @@ class GitProvider:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                return res.fetchone()
+                self._row_cache = res.fetchone()
         return self._row_cache
 
 

@@ -1,35 +1,44 @@
 """Provide database class."""
 
+from __future__ import annotations
+
 from contextlib import contextmanager
+from typing import Any, Generator, Optional, Union, cast
+
+import flask
 import sqlalchemy
 import sqlalchemy.dialects.mysql
-
 from flask import has_request_context
-import flask
-from terrareg.audit_action import AuditAction
+from sqlalchemy import MetaData, Table
+from sqlalchemy.engine import Connection, Engine, Transaction as SATransaction
+from sqlalchemy.sql import Select
 
+import terrareg.api_key_type
+from terrareg.audit_action import AuditAction
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
-from terrareg.provider_tier import ProviderTier
-from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.namespace_type import NamespaceType
-from terrareg.provider_source_type import ProviderSourceType
-import terrareg.provider_documentation_type
 import terrareg.provider_binary_types
+import terrareg.provider_documentation_type
+from terrareg.provider_source_type import ProviderSourceType
+from terrareg.provider_tier import ProviderTier
+from terrareg.user_group_namespace_permission_type import (
+    UserGroupNamespacePermissionType,
+)
 
 
 class Database():
     """Handle database connection and setting up database schema"""
 
-    _META = None
-    _ENGINE = None
-    _INSTANCE = None
+    _META: Optional[MetaData] = None
+    _ENGINE: Optional[Engine] = None
+    _INSTANCE: Optional[Database] = None
 
     blob_encoding_format = 'utf-8'
     MEDIUM_BLOB_SIZE = ((2 ** 24) - 1)
 
     @staticmethod
-    def encode_blob(value):
+    def encode_blob(value: Any) -> bytes:
         """Encode string as a blog value"""
         # Convert any untruthful values to empty string
         if not value:
@@ -37,261 +46,272 @@ class Database():
         return value.encode(Database.blob_encoding_format)
 
     @staticmethod
-    def decode_blob(value):
+    def decode_blob(value: Optional[bytes]) -> Optional[str]:
         """Decode blob as a string."""
         if value is None:
             return None
         return value.decode(Database.blob_encoding_format)
 
     @staticmethod
-    def medium_blob():
+    def medium_blob() -> sqlalchemy.LargeBinary:
         """Return column type for medium blob."""
         return sqlalchemy.LargeBinary(
                 length=Database.MEDIUM_BLOB_SIZE).with_variant(
                     sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql")
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Setup member variables."""
-        self._session = None
-        self._terraform_idp_authorization_code = None
-        self._terraform_idp_access_token = None
-        self._terraform_idp_subject_identifier = None
-        self._user_group = None
-        self._user_group_namespace_permission = None
-        self._git_provider = None
-        self._namespace_redirect = None
-        self._namespace = None
-        self._module_provider_redirect = None
-        self._module_provider = None
-        self._module_details = None
-        self._module_version = None
-        self._sub_module = None
-        self._gpg_key = None
-        self._provider_category = None
-        self._provider_source = None
-        self._repository = None
-        self._provider = None
-        self._provider_version = None
-        self._provider_version_documentation = None
-        self._provider_version_binary = None
-        self._analytics = None
-        self._provider_analytics = None
-        self._example_file = None
-        self._module_version_file = None
-        self.transaction_connection = None
+        self._session: Optional[Table] = None
+        self._terraform_idp_authorization_code: Optional[Table] = None
+        self._terraform_idp_access_token: Optional[Table] = None
+        self._terraform_idp_subject_identifier: Optional[Table] = None
+        self._api_key: Optional[Table] = None
+        self._user_group: Optional[Table] = None
+        self._user_group_namespace_permission: Optional[Table] = None
+        self._git_provider: Optional[Table] = None
+        self._namespace_redirect: Optional[Table] = None
+        self._namespace: Optional[Table] = None
+        self._module_provider_redirect: Optional[Table] = None
+        self._module_provider: Optional[Table] = None
+        self._module_details: Optional[Table] = None
+        self._module_version: Optional[Table] = None
+        self._sub_module: Optional[Table] = None
+        self._gpg_key: Optional[Table] = None
+        self._provider_category: Optional[Table] = None
+        self._provider_source: Optional[Table] = None
+        self._repository: Optional[Table] = None
+        self._provider: Optional[Table] = None
+        self._provider_version: Optional[Table] = None
+        self._provider_version_documentation: Optional[Table] = None
+        self._provider_version_binary: Optional[Table] = None
+        self._analytics: Optional[Table] = None
+        self._provider_analytics: Optional[Table] = None
+        self._example_file: Optional[Table] = None
+        self._module_version_file: Optional[Table] = None
+        
+        # Corrected type from Table to Connection
+        self.transaction_connection: Optional[Connection] = None
 
     @property
-    def session(self):
+    def session(self) -> Table:
         """Return session table"""
         if self._session is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._session
 
     @property
-    def terraform_idp_authorization_code(self):
+    def terraform_idp_authorization_code(self) -> Table:
         """Return terraform_idp_authorization_code table"""
         if self._terraform_idp_authorization_code is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._terraform_idp_authorization_code
 
     @property
-    def terraform_idp_access_token(self):
+    def terraform_idp_access_token(self) -> Table:
         """Return terraform_idp_access_token table"""
         if self._terraform_idp_access_token is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._terraform_idp_access_token
 
     @property
-    def terraform_idp_subject_identifier(self):
+    def terraform_idp_subject_identifier(self) -> Table:
         """Return terraform_idp_subject_identifier table"""
         if self._terraform_idp_subject_identifier is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._terraform_idp_subject_identifier
 
     @property
-    def user_group(self):
+    def api_key(self) -> Table:
+        """Return api_key table."""
+        if self._api_key is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._api_key
+
+    @property
+    def user_group(self) -> Table:
         """Return user_group table."""
         if self._user_group is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._user_group
 
     @property
-    def user_group_namespace_permission(self):
+    def user_group_namespace_permission(self) -> Table:
         """Return user_group_namespace_permission table."""
         if self._user_group_namespace_permission is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._user_group_namespace_permission
 
     @property
-    def git_provider(self):
+    def git_provider(self) -> Table:
         """Return git_provider table."""
         if self._git_provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._git_provider
 
     @property
-    def namespace_redirect(self):
+    def namespace_redirect(self) -> Table:
         """Return namespace_redirect redirect table."""
         if self._namespace_redirect is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._namespace_redirect
 
     @property
-    def namespace(self):
+    def namespace(self) -> Table:
         """Return namespace table."""
         if self._namespace is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._namespace
 
     @property
-    def module_provider_redirect(self):
+    def module_provider_redirect(self) -> Table:
         """Return module provider redirect table."""
         if self._module_provider_redirect is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_provider_redirect
 
     @property
-    def module_provider(self):
+    def module_provider(self) -> Table:
         """Return module_provider table."""
         if self._module_provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_provider
 
     @property
-    def module_details(self):
+    def module_details(self) -> Table:
         """Return module_details table."""
         if self._module_details is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_details
 
     @property
-    def module_version(self):
+    def module_version(self) -> Table:
         """Return module_version table."""
         if self._module_version is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version
 
     @property
-    def sub_module(self):
+    def sub_module(self) -> Table:
         """Return submodule table."""
         if self._sub_module is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._sub_module
 
     @property
-    def analytics(self):
+    def analytics(self) -> Table:
         """Return analytics table."""
         if self._analytics is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._analytics
 
     @property
-    def provider_analytics(self):
+    def provider_analytics(self) -> Table:
         """Return provider_analytics table."""
         if self._provider_analytics is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_analytics
 
     @property
-    def example_file(self):
+    def example_file(self) -> Table:
         """Return example_file table."""
         if self._example_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._example_file
 
     @property
-    def module_version_file(self):
+    def module_version_file(self) -> Table:
         """Return module_version_file table."""
         if self._module_version_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
 
     @property
-    def gpg_key(self):
+    def gpg_key(self) -> Table:
         """Return gpg_key table."""
         if self._gpg_key is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._gpg_key
 
     @property
-    def provider_category(self):
+    def provider_category(self) -> Table:
         """Return provider_category table."""
         if self._provider_category is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_category
 
     @property
-    def provider_source(self):
+    def provider_source(self) -> Table:
         """Return provider_source table."""
         if self._provider_source is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_source
 
     @property
-    def repository(self):
+    def repository(self) -> Table:
         """Return provider_source table."""
         if self._repository is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._repository
 
     @property
-    def provider(self):
+    def provider(self) -> Table:
         """Return provider table."""
         if self._provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider
 
     @property
-    def provider_version(self):
+    def provider_version(self) -> Table:
         """Return provider_version table."""
         if self._provider_version is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_version
 
     @property
-    def provider_version_documentation(self):
+    def provider_version_documentation(self) -> Table:
         """Return provider_version_documentation table."""
         if self._provider_version_documentation is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_version_documentation
 
     @property
-    def provider_version_binary(self):
+    def provider_version_binary(self) -> Table:
         """Return provider_version_binary table."""
         if self._provider_version_binary is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_version_binary
 
     @property
-    def audit_history(self):
+    def audit_history(self) -> Table:
         """Audit history table."""
         if self._audit_history is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._audit_history
 
     @classmethod
-    def reset(cls):
+    def reset(cls) -> None:
         """Reset database connections."""
         cls._INSTANCE = None
         cls._META = None
         cls._ENGINE = None
 
     @classmethod
-    def get(cls):
+    def get(cls) -> Database:
         """Get singleton instance of class."""
         if cls._INSTANCE is None:
             cls._INSTANCE = Database()
         return cls._INSTANCE
 
     @classmethod
-    def get_meta(cls) -> sqlalchemy.MetaData:
+    def get_meta(cls) -> MetaData:
         """Return meta object"""
         if cls._META is None:
             cls._META = sqlalchemy.MetaData()
+        assert cls._META is not None
         return cls._META
 
     @classmethod
-    def get_engine(cls) -> sqlalchemy.engine.Engine:
+    def get_engine(cls) -> Engine:
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
             cls._ENGINE = sqlalchemy.create_engine(
@@ -300,9 +320,10 @@ class Database():
                 pool_pre_ping=True,
                 pool_recycle=300
             )
+        assert cls._ENGINE is not None
         return cls._ENGINE
 
-    def initialise(self):
+    def initialise(self) -> None:
         """Initialise database schema."""
         meta = self.get_meta()
         engine = self.get_engine()
@@ -340,6 +361,22 @@ class Database():
             sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('data', Database.medium_blob()),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._api_key = sqlalchemy.Table(
+            'api_key', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('key_type', sqlalchemy.Enum(terrareg.api_key_type.ApiKeyType), nullable=False),
+            sqlalchemy.Column('key_prefix', sqlalchemy.String(16), nullable=False),
+            sqlalchemy.Column('key_hash', sqlalchemy.String(128), nullable=False),
+            sqlalchemy.Column('key_salt', sqlalchemy.String(64), nullable=False),
+            sqlalchemy.Column('created_at', sqlalchemy.DateTime, nullable=False),
+            sqlalchemy.Column('created_by', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
+            sqlalchemy.Column('last_used_at', sqlalchemy.DateTime, nullable=True),
+            sqlalchemy.Column('expires_at', sqlalchemy.DateTime, nullable=True),
+            sqlalchemy.Column('is_active', sqlalchemy.Boolean, nullable=False, default=True),
+            sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
         )
 
         self._user_group = sqlalchemy.Table(
@@ -842,7 +879,7 @@ class Database():
             sqlalchemy.Column('new_value', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
-    def select_module_version_joined_module_provider(self, *select_args):
+    def select_module_version_joined_module_provider(self, *select_args: Any) -> Select[Any]:
         """Perform select on module_version, joined to module_provider table."""
         return sqlalchemy.select(
             *select_args
@@ -852,7 +889,7 @@ class Database():
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
-    def select_module_provider_joined_latest_module_version(self, *select_args):
+    def select_module_provider_joined_latest_module_version(self, *select_args: Any) -> Select[Any]:
         """Perform select on module_provider, joined to latest version from module_version table."""
         return sqlalchemy.select(
             *select_args
@@ -862,7 +899,7 @@ class Database():
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
-    def select_provider_joined_latest_provider_version(self, *select_args):
+    def select_provider_joined_latest_provider_version(self, *select_args: Any) -> Select[Any]:
         """Perform select on provider, joined to latest version from provider_version table"""
         return sqlalchemy.select(
             *select_args
@@ -878,36 +915,39 @@ class Database():
         )
 
     @classmethod
-    def get_current_transaction(cls):
+    def get_current_transaction(cls) -> Optional[Connection]:
         """Check if currently in transaction."""
+        db = cls.get()
         if has_request_context():
-            if cls.get().transaction_connection is not None:
+            if db.transaction_connection is not None:
                 raise Exception('Global database transaction is present whilst in request context!')
 
-            if flask.g.get('database_transaction_connection', None):
-                return flask.g.get('database_transaction_connection', None)
+            conn = flask.g.get('database_transaction_connection')
+            if isinstance(conn, Connection):
+                return conn
+            return None
         else:
-            if cls.get().transaction_connection is not None:
-                return cls.get().transaction_connection
-
-        return None
+            return db.transaction_connection
 
     @classmethod
-    def start_transaction(cls):
+    def start_transaction(cls) -> Transaction:
         """Start DB transaction, store in current context and return"""
         # Check if currently in transaction
         if cls.get_current_transaction():
             raise Exception('Already within database transaction')
         conn = Database.get().get_connection()
+        assert isinstance(conn, Connection)
         return Transaction(conn)
 
     @classmethod
     @contextmanager
-    def get_new_transaction_or_nested(cls):
+    def get_new_transaction_or_nested(cls) -> Generator[SATransaction, None, None]:
         """Obtain new transaction, if there isn't one otherwise, start a nested transaction"""
         current_transaction = cls.get_current_transaction()
-        if current_transaction:
+        if current_transaction is not None:
             nested = current_transaction.begin_nested()
+            if nested is None:
+                raise Exception("Unable to start nested transaction")
             try:
                 yield nested
             except:
@@ -915,14 +955,17 @@ class Database():
                 raise
         else:
             with cls.start_transaction() as transaction:
+                if transaction is None:
+                    raise Exception("Unable to start transaction")
                 try:
                     yield transaction.transaction
                 except:
-                    transaction.transaction.rollback()
+                    if transaction.transaction is not None:
+                        transaction.transaction.rollback()
                     raise
 
     @classmethod
-    def get_connection(cls):
+    def get_connection(cls) -> Union[TransactionConnectionWrapper, Connection]:
         """Get connection, checking for transaction and returning it."""
         current_transaction = cls.get_current_transaction()
         if current_transaction is not None:
@@ -935,41 +978,71 @@ class Database():
 
 
 class TransactionConnectionWrapper:
+    _transaction: Optional[Connection]
 
-    def __init__(self, transaction):
+    def __init__(self, transaction: Connection) -> None:
         """Store transaction"""
         self._transaction = transaction
 
-    def __enter__(self):
+    def __enter__(self) -> Connection:
         """On enter, return transaction."""
+        if self._transaction is None:
+            raise Exception("Cannot re-enter transaction")
         return self._transaction
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
         """Do nothing on exit"""
         self._transaction = None
 
 
 class Transaction:
     """Custom wrapper for database transaction."""
+    _connection: Connection
+    _transaction_outer: Optional[SATransaction]
 
     @property
-    def transaction(self):
+    def transaction(self) -> SATransaction:
         """Return database transaction object."""
+        if self._transaction_outer is None:
+            raise RuntimeError("Transaction not started")
         return self._transaction_outer
 
     @property
-    def connection(self):
+    def connection(self) -> Connection:
         """Return database connection object."""
         return self._connection
 
-    def __init__(self, connection):
+    def __init__(self, connection: Connection) -> None:
         """Store database connection."""
         self._connection = connection
         self._transaction_outer = None
-    
-    def __enter__(self):
+
+    def execute(self, *args: Any, **kwargs: Any) -> Any:
+        """Delegate execute to the connection."""
+        return self._connection.execute(*args, **kwargs)
+
+    def begin_nested(self) -> SATransaction:
+        """Start a nested transaction."""
+        # Cast to SATransaction to satisfy Pyright if stubs return specific subclasses
+        return cast(SATransaction, self._connection.begin_nested())
+
+    def rollback(self) -> None:
+        """Rollback the transaction."""
+        if self._transaction_outer is not None:
+            self._transaction_outer.rollback()
+        else:
+            # If no transaction object is present (e.g. before __enter__ completes or after exit),
+            # we might attempt to rollback the connection directly if supported,
+            # but generally this state indicates a logic error.
+            raise RuntimeError("Cannot rollback: Transaction not started")
+
+    def __enter__(self) -> Transaction:
         """Start transaction and store in current context."""
         self._transaction_outer = self._connection.begin()
+ 
+        # Assert to satisfy Pyright that _transaction_outer is not None
+        if self._transaction_outer is None:
+            raise RuntimeError("Failed to start transaction")
 
         self._transaction_outer.__enter__()
 
@@ -982,12 +1055,12 @@ class Transaction:
 
         return self
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
         """End transaction and remove from current context."""
         if has_request_context():
             flask.g.database_transaction_connection = None
         else:
             Database.get().transaction_connection = None
 
-        self._transaction_outer.__exit__(*args, **kwargs)
-
+        if self._transaction_outer is not None:
+            self._transaction_outer.__exit__(*args, **kwargs)

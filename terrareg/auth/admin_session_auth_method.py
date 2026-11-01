@@ -1,4 +1,5 @@
 
+import terrareg.config
 from .base_admin_auth_method import BaseAdminAuthMethod
 from .base_session_auth_method import BaseSessionAuthMethod
 from .authentication_type import AuthenticationType
@@ -14,3 +15,8 @@ class AdminSessionAuthMethod(BaseAdminAuthMethod, BaseSessionAuthMethod):
         """Check admin session"""
         # There are no additional attributes to check
         return True
+
+    @classmethod
+    def is_enabled(cls):
+        """Whether admin session auth is enabled."""
+        return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN)

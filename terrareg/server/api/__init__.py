@@ -27,7 +27,7 @@ from .terrareg_example_details import ApiTerraregExampleDetails
 from .terrareg_example_file_list import ApiTerraregExampleFileList
 from .terrareg_example_file import ApiTerraregExampleFile
 from .terrareg_example_readme_html import ApiTerraregExampleReadmeHtml
-from .terrareg_git_providers import ApiTerraregGitProviders
+from .terrareg_git_providers import ApiTerraregGitProvider, ApiTerraregGitProviders
 from .terrareg_global_stats_summary import ApiTerraregGlobalStatsSummary
 from .terrareg_global_usage_stats import ApiTerraregGlobalUsageStats
 from .terrareg_health import ApiTerraregHealth
