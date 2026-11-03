@@ -180,7 +180,7 @@ postgres-integration-selenium-tests:
   #needs:
   #  - unit-integration-selenium-tests
   services:
-    - name: postgres:17.4
+    - name: postgres:18.6
       alias: postgres
     - name: minio/minio
       alias: minio
@@ -297,7 +297,7 @@ golang-integration-tests-postgres:
   image: golang:1.25.4-trixie
   extends: .before_script_golang
   services:
-    - name: postgres:17.4
+    - name: postgres:18.6
       alias: postgres
     - name: minio/minio
       alias: minio
@@ -381,7 +381,7 @@ golang-selenium-tests-postgres:
   needs:
     - build-golang-test-docker-image
   services:
-    - name: postgres:17.4
+    - name: postgres:18.6
       alias: postgres
     - name: minio/minio
       alias: minio
