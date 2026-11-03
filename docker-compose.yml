@@ -85,7 +85,7 @@ services:
   mysql:
     container_name: "${DOCKER_NAME}_mysql"
     restart: unless-stopped
-    image: mariadb:10.11
+    image: mariadb:13.0
     volumes:
       - 'mysql:/var/lib/mysql'
     env_file:

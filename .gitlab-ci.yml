@@ -151,7 +151,7 @@ mysql-integration-selenium-tests:
   needs:
     - unit-integration-selenium-tests
   services:
-    - name: mariadb:10.8
+    - name: mariadb:13.0
       alias: mysql
     - name: minio/minio
       alias: minio
@@ -271,7 +271,7 @@ golang-integration-tests-mysql:
   needs:
     - golang-integration-tests-sqlite
   services:
-    - name: mariadb:10.8
+    - name: mariadb:13.0
       alias: mysql
     - name: minio/minio
       alias: minio
@@ -353,7 +353,7 @@ golang-selenium-tests-mysql:
     - build-golang-test-docker-image
     - golang-selenium-tests-sqlite
   services:
-    - name: mariadb:10.8
+    - name: mariadb:13.0
       alias: mysql
     - name: minio/minio
       alias: minio
