@@ -74,19 +74,19 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         # Ensure that a DB row is now returned
         new_db_row = module_version._get_db_row()
-        assert new_db_row['module_provider_id'] == module_provider_row['id']
-        assert type(new_db_row['id']) == int
+        assert new_db_row._mapping['module_provider_id'] == module_provider_row._mapping['id']
+        assert type(new_db_row._mapping['id']) == int
 
-        assert new_db_row['published'] == False
-        assert new_db_row['version'] == '1.0.0'
+        assert new_db_row._mapping['published'] == False
+        assert new_db_row._mapping['version'] == '1.0.0'
 
-        assert new_db_row['beta'] == False
+        assert new_db_row._mapping['beta'] == False
 
         for attr in ['description', 'module_details_id', 'owner',
                      'published_at', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
-            assert new_db_row[attr] == None
+            assert new_db_row._mapping[attr] == None
 
     def test_create_beta_version(self):
         """Test creating DB row for beta version"""
@@ -105,19 +105,19 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         # Ensure that a DB row is now returned
         new_db_row = module_version._get_db_row()
-        assert new_db_row['module_provider_id'] == module_provider_row['id']
-        assert type(new_db_row['id']) == int
+        assert new_db_row._mapping['module_provider_id'] == module_provider_row._mapping['id']
+        assert type(new_db_row._mapping['id']) == int
 
-        assert new_db_row['published'] == False
-        assert new_db_row['version'] == '1.0.0-beta'
+        assert new_db_row._mapping['published'] == False
+        assert new_db_row._mapping['version'] == '1.0.0-beta'
 
-        assert new_db_row['beta'] == True
+        assert new_db_row._mapping['beta'] == True
 
         for attr in ['description', 'module_details_id', 'owner',
                      'published_at', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
-            assert new_db_row[attr] == None
+            assert new_db_row._mapping[attr] == None
 
     @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,config_auto_publish,expected_return_value,should_raise_error', [
         # Legacy mode should allow the re-index and ignore pre-existing version for setting published
@@ -145,7 +145,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         db = Database.get()
 
         try:
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 conn.execute(db.namespace.insert().values(
                     id=9999,
                     namespace='testcreationunique'
@@ -212,7 +212,7 @@ class TestModuleVersion(TerraregIntegrationTest):
             # Ensure that pre-existing row is returned
             pre_existing_row = module_version._get_db_row()
             assert pre_existing_row is not None
-            assert pre_existing_row['id'] == 10001
+            assert pre_existing_row._mapping['id'] == 10001
 
             with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', module_version_reindex_mode), \
                     unittest.mock.patch('terrareg.config.Config.AUTO_PUBLISH_MODULE_VERSIONS', config_auto_publish):
@@ -231,29 +231,29 @@ class TestModuleVersion(TerraregIntegrationTest):
 
             # Ensure that a DB row is now returned
             new_db_row = module_version._get_db_row()
-            assert new_db_row['module_provider_id'] == module_provider_row['id']
-            assert type(new_db_row['id']) == int
+            assert new_db_row._mapping['module_provider_id'] == module_provider_row._mapping['id']
+            assert type(new_db_row._mapping['id']) == int
 
-            assert new_db_row['published'] == False
-            assert new_db_row['version'] == '1.1.0'
+            assert new_db_row._mapping['published'] == False
+            assert new_db_row._mapping['version'] == '1.1.0'
 
             for attr in ['description', 'module_details_id', 'owner',
                         'published_at', 'repo_base_url_template',
                         'repo_browse_url_template', 'repo_clone_url_template',
                         'variable_template']:
-                assert new_db_row[attr] == None
+                assert new_db_row._mapping[attr] == None
 
             # Ensure that all moduleversion, submodules and example files have been removed
-            with db.get_engine().connect() as conn:
-                mv_res = conn.execute(db.module_version.select(
-                    db.module_version.c.id == 10001
-                ))
+            with db.get_connection() as conn:
+                mv_res = conn.execute(sqlalchemy.select(db.module_version).where(
+db.module_version.c.id == 10001
+))
                 assert [r for r in mv_res] == []
 
                 # Check for any submodules with the original IDs
                 # or with the previous module ID or with the example
                 # paths
-                sub_module_res = conn.execute(db.sub_module.select().where(
+                sub_module_res = conn.execute(sqlalchemy.select(db.sub_module).where(
                     sqlalchemy.or_(
                         db.sub_module.c.id.in_((10002, 10003)),
                         db.sub_module.c.parent_module_version == 10001,
@@ -264,21 +264,21 @@ class TestModuleVersion(TerraregIntegrationTest):
                 assert [r for r in sub_module_res] == []
 
                 # Ensure example files have been removed
-                example_file_res = conn.execute(db.example_file.select().where(
+                example_file_res = conn.execute(sqlalchemy.select(db.example_file).where(
                     db.example_file.c.id == 10004
                 ))
                 assert [r for r in example_file_res] == []
 
                 # Ensure analytics are retained
-                analytics_res = conn.execute(db.analytics.select().where(
+                analytics_res = conn.execute(sqlalchemy.select(db.analytics).where(
                     db.analytics.c.id==10005
                 ))
                 analytics_res = list(analytics_res)
                 assert len(analytics_res) == 1
-                assert analytics_res[0]['id'] == 10005
+                assert analytics_res[0]._mapping['id'] == 10005
                 # Assert that analytics row has been updated to new module version ID
-                assert analytics_res[0]['parent_module_version'] == new_db_row['id']
-                assert analytics_res[0]['environment'] == 'test'
+                assert analytics_res[0]._mapping['parent_module_version'] == new_db_row._mapping['id']
+                assert analytics_res[0]._mapping['environment'] == 'test'
 
                 # Ensure namespace still exists
                 namespace = Namespace.get('testcreationunique')
@@ -292,7 +292,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                 module_provider = ModuleProvider.get(module, 'testprovider')
                 if module_provider:
                     module_provider.delete()
-                with db.get_engine().connect() as conn:
+                with db.get_connection() as conn:
                     conn.execute(db.namespace.delete().where(
                         db.namespace.c.id==9999
                     ))
@@ -443,20 +443,20 @@ class TestModuleVersion(TerraregIntegrationTest):
         db = Database.get()
         with db.get_connection() as conn:
 
-            res = conn.execute(db.module_version.select().where(db.module_version.c.id==module_version_pk))
+            res = conn.execute(sqlalchemy.select(db.module_version).where(db.module_version.c.id==module_version_pk))
             assert res.fetchone() is not None
 
-            res = conn.execute(db.sub_module.select().where(db.sub_module.c.id==example_pk))
+            res = conn.execute(sqlalchemy.select(db.sub_module).where(db.sub_module.c.id==example_pk))
             assert res.fetchone() is not None
 
-            res = conn.execute(db.example_file.select().where(db.example_file.c.id==example_file_pk))
+            res = conn.execute(sqlalchemy.select(db.example_file).where(db.example_file.c.id==example_file_pk))
             assert res.fetchone() is not None
 
             analytics_row_id = conn.execute(
-                db.analytics.select().where(
+                sqlalchemy.select(db.analytics).where(
                     db.analytics.c.parent_module_version==module_version_pk
                 )
-            ).fetchone()['id']
+            ).fetchone()._mapping['id']
 
         # Delete module version
         module_version.delete()
@@ -464,18 +464,18 @@ class TestModuleVersion(TerraregIntegrationTest):
         # Check module_version, example and example file have been removed
         with db.get_connection() as conn:
 
-            res = conn.execute(db.module_version.select().where(db.module_version.c.id==module_version_pk))
+            res = conn.execute(sqlalchemy.select(db.module_version).where(db.module_version.c.id==module_version_pk))
             assert res.fetchone() is None
 
-            res = conn.execute(db.sub_module.select().where(db.sub_module.c.id==example_pk))
+            res = conn.execute(sqlalchemy.select(db.sub_module).where(db.sub_module.c.id==example_pk))
             assert res.fetchone() is None
 
-            res = conn.execute(db.example_file.select().where(db.example_file.c.id==example_file_pk))
+            res = conn.execute(sqlalchemy.select(db.example_file).where(db.example_file.c.id==example_file_pk))
             assert res.fetchone() is None
 
             # Ensure that the analytics has been removed
             analytics_res = conn.execute(
-                db.analytics.select().where(
+                sqlalchemy.select(db.analytics).where(
                     db.analytics.c.id==analytics_row_id
                 )
             )

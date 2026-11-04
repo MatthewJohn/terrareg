@@ -22,7 +22,7 @@ def upgrade():
 
     # Update column with default value
     c = op.get_bind()
-    c.execute(f"""UPDATE module_version SET extraction_version=1""")
+    c.execute(sa.text(f"""UPDATE module_version SET extraction_version=1"""))
 
 
 def downgrade():

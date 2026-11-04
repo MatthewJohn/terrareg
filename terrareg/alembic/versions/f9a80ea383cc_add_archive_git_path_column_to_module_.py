@@ -38,7 +38,7 @@ def upgrade():
         batch_op.add_column(sa.Column('git_path', sa.String(length=1024), nullable=True))
 
     bind = op.get_bind()
-    module_provider_paths = bind.execute("""SELECT id, git_path FROM module_provider""")
+    module_provider_paths = bind.execute(sa.text("""SELECT id, git_path FROM module_provider"""))
     for module_provider_id, git_path in module_provider_paths:
         bind.execute(
             sa.sql.text(

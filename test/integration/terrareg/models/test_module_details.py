@@ -16,12 +16,12 @@ class TestModuleDetails(TerraregIntegrationTest):
     def test_create(self):
         """Test creating a ModuleDetails row/object"""
         db = Database.get()
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             highest_existing_id = conn.execute(
-                db.module_details.select().order_by(
+                sqlalchemy.select(db.module_details).order_by(
                     sqlalchemy.desc(db.module_details.c.id)
                 )
-            ).fetchone()['id']
+            ).fetchone()._mapping['id']
 
         # Create new module details object
         module_details = ModuleDetails.create()
@@ -63,9 +63,9 @@ class TestModuleDetails(TerraregIntegrationTest):
         db = Database.get()
 
         # Ensure the row can be found in the database
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(
-                db.module_details.select().where(
+                sqlalchemy.select(db.module_details).where(
                     db.module_details.c.id == module_details_id
                 )
             ).fetchone()
@@ -75,9 +75,9 @@ class TestModuleDetails(TerraregIntegrationTest):
         module_details.delete()
 
         # Ensure the row is no longer present in DB
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(
-                db.module_details.select().where(
+                sqlalchemy.select(db.module_details).where(
                     db.module_details.c.id == module_details_id
                 )
             ).fetchone()

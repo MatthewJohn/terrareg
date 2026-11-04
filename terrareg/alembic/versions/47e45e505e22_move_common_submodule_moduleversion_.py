@@ -19,7 +19,7 @@ def migrate_data_to_module_details(c, source_table):
     """Migrate readme_content and module_details columns from source table to rows in module_details table."""
     # Iterate over all rows of source table, extract readme_content and module_details,
     # create row in module_details table and update module_details foreign key ID in source table
-    res = c.execute(f"""SELECT id, readme_content, module_details FROM {source_table}""")
+    res = c.execute(sa.text(f"""SELECT id, readme_content, module_details FROM {source_table}"""))
     for row in res:
 
         source_id, readme_content, module_details = row

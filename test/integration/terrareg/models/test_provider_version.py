@@ -1,5 +1,6 @@
 
 import contextlib
+from test.unit.terrareg import MockRow
 from datetime import datetime
 import json
 from tempfile import TemporaryDirectory
@@ -103,11 +104,11 @@ class TestProviderVersion(TerraregIntegrationTest):
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
-        assert isinstance(version_obj._get_db_row()["published_at"], datetime)
+        assert isinstance(version_obj._get_db_row()._mapping['published_at'], datetime)
 
-        version_obj._cache_db_row = {
+        version_obj._cache_db_row = MockRow({
             "published_at": published_at
-        }
+        })
         assert version_obj.publish_date_display == expected_value
 
     def test_version(self):
@@ -129,9 +130,9 @@ class TestProviderVersion(TerraregIntegrationTest):
         assert version_obj.git_tag == "v1.5.0"
 
         # Modify DB column and ensure it is used
-        version_obj._cache_db_row = {
+        version_obj._cache_db_row = MockRow({
             "git_tag": "v56.21.32"
-        }
+        })
         assert version_obj.git_tag == "v56.21.32"
 
     def test_base_directory(self):
@@ -160,7 +161,7 @@ class TestProviderVersion(TerraregIntegrationTest):
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
         assert isinstance(version_obj.pk, int)
 
-        version_obj._cache_db_row = {"id": 123}
+        version_obj._cache_db_row = MockRow({"id": 123})
         assert version_obj.pk == 123
 
     def test_id(self):
@@ -186,7 +187,7 @@ class TestProviderVersion(TerraregIntegrationTest):
             # Delete from database
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.id==version_obj.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.id==version_obj.pk))
             
             version_obj._cache_db_row = None
             assert version_obj.exists is False
@@ -209,9 +210,9 @@ class TestProviderVersion(TerraregIntegrationTest):
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
 
-        version_obj._cache_db_row = {
+        version_obj._cache_db_row = MockRow({
             "extraction_version": extraction_version
-        }
+        })
         assert version_obj.provider_extraction_up_to_date is up_to_date
 
 
@@ -320,16 +321,16 @@ class TestProviderVersion(TerraregIntegrationTest):
         db_row = version_obj._get_db_row()
         assert version_obj._cache_db_row is db_row
 
-        db_row = dict(db_row)
-        assert isinstance(db_row["id"], int)
-        assert isinstance(db_row["gpg_key_id"], int)
-        assert isinstance(db_row["provider_id"], int)
-        assert isinstance(db_row["published_at"], datetime)
+        db_row = MockRow(db_row._mapping)
+        assert isinstance(db_row._mapping['id'], int)
+        assert isinstance(db_row._mapping['gpg_key_id'], int)
+        assert isinstance(db_row._mapping['provider_id'], int)
+        assert isinstance(db_row._mapping['published_at'], datetime)
 
-        db_row["id"] = 55
-        db_row["gpg_key_id"] = 1
-        db_row["provider_id"] = 1
-        db_row["published_at"] = datetime(2023, 11, 13, 5, 43, 30, 897287)
+        db_row._mapping['id'] = 55
+        db_row._mapping['gpg_key_id'] = 1
+        db_row._mapping['provider_id'] = 1
+        db_row._mapping['published_at'] = datetime(2023, 11, 13, 5, 43, 30, 897287)
         assert db_row == {
             'beta': False,
             'extraction_version': None,
@@ -363,20 +364,20 @@ class TestProviderVersion(TerraregIntegrationTest):
 
             db_row = version_obj._get_db_row()
             assert db_row is not None
-            assert db_row["git_tag"] == "v3.6.3"
-            assert db_row["gpg_key_id"] == gpg_key.pk
-            assert db_row["published_at"] is None
+            assert db_row._mapping['git_tag'] == "v3.6.3"
+            assert db_row._mapping['gpg_key_id'] == gpg_key.pk
+            assert db_row._mapping['published_at'] is None
 
             # Force refresh of provider data and ensure the new version is not marked as a new versino
             provider_obj._cache_db_row = None
-            assert provider_obj._get_db_row()["latest_version_id"] != db_row["id"]
+            assert provider_obj._get_db_row()._mapping['latest_version_id'] != db_row._mapping['id']
 
         # Ensure that once outside of context, the new version has published_at and latest_version_id
         # has been updated
         version_obj._cache_db_row = None
-        assert isinstance(version_obj._get_db_row()["published_at"], datetime)
+        assert isinstance(version_obj._get_db_row()._mapping['published_at'], datetime)
         provider_obj._cache_db_row = None
-        assert provider_obj._get_db_row()["latest_version_id"] == db_row["id"]
+        assert provider_obj._get_db_row()._mapping['latest_version_id'] == db_row._mapping['id']
 
     def test_prepare_version(self):
         """Test prepare_version"""
@@ -393,7 +394,7 @@ class TestProviderVersion(TerraregIntegrationTest):
 
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            audit_row = dict(conn.execute(db.audit_history.select().order_by(db.audit_history.c.id.desc()).limit(1)).first())
+            audit_row = dict(conn.execute(sqlalchemy.select(db.audit_history).order_by(db.audit_history.c.id.desc()).limit(1)).first()._mapping)
             assert audit_row["action"] == terrareg.audit_action.AuditAction.PROVIDER_VERSION_INDEX
             assert audit_row["object_id"] == "initial-providers/to-delete/1.21.3"
             assert audit_row["object_type"] == "ProviderVersion"
@@ -413,12 +414,12 @@ class TestProviderVersion(TerraregIntegrationTest):
         version_obj.prepare_version(git_tag=f"v{version}", gpg_key=gpg_key)
 
         # Obtain previous latest version from provider
-        previous_latest_version_id = provider_obj._get_db_row()["latest_version_id"]
+        previous_latest_version_id = provider_obj._get_db_row()._mapping['latest_version_id']
 
         version_obj.publish()
 
         provider_obj._cache_db_row = None
-        new_latest_version_id = provider_obj._get_db_row()["latest_version_id"]
+        new_latest_version_id = provider_obj._get_db_row()._mapping['latest_version_id']
 
         if latest:
             assert new_latest_version_id != previous_latest_version_id
@@ -456,9 +457,9 @@ class TestProviderVersion(TerraregIntegrationTest):
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
-        version_obj._cache_db_row = {
+        version_obj._cache_db_row = MockRow({
             "protocol_versions": terrareg.database.Database.encode_blob(db_row_value)
-        }
+        })
 
         assert version_obj.protocols == expected_value
 
@@ -479,7 +480,7 @@ class TestProviderVersion(TerraregIntegrationTest):
             beta=True
         )
 
-        assert dict(version_obj._get_db_row()) == {
+        assert dict(version_obj._get_db_row()._mapping) == {
             'beta': True,
             'extraction_version': 23,
             'git_tag': 'v5.4.3',
@@ -513,9 +514,9 @@ class TestProviderVersion(TerraregIntegrationTest):
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
-        db_row = dict(version_obj._get_db_row())
+        db_row = dict(version_obj._get_db_row()._mapping)
         db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
-        version_obj._cache_db_row = db_row
+        version_obj._cache_db_row = MockRow(db_row)
 
         assert version_obj.get_api_outline() == {
             'alias': None,
@@ -538,10 +539,10 @@ class TestProviderVersion(TerraregIntegrationTest):
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
-        db_row = dict(version_obj._get_db_row())
+        db_row = dict(version_obj._get_db_row()._mapping)
         db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
         db_row["id"] = 23
-        version_obj._cache_db_row = db_row
+        version_obj._cache_db_row = MockRow(db_row)
 
         assert version_obj.get_v2_include() == {
             'type': 'provider-versions',
@@ -562,9 +563,9 @@ class TestProviderVersion(TerraregIntegrationTest):
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
 
-        db_row = dict(version_obj._get_db_row())
+        db_row = dict(version_obj._get_db_row()._mapping)
         db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
-        version_obj._cache_db_row = db_row
+        version_obj._cache_db_row = MockRow(db_row)
 
         assert version_obj.get_api_details() == {
             'alias': None,
@@ -640,15 +641,15 @@ class TestProviderVersion(TerraregIntegrationTest):
         # Ensure row doesn't exist in DB
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            assert conn.execute(db.provider_version.select().where(db.provider_version.c.version=="10.20.30")).first() is None
+            assert conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.version=="10.20.30")).first() is None
 
         version_obj._create_db_row(gpg_key=gpg_key, git_tag="v2.3.4-unittest")
 
         with db.get_connection() as conn:
-            row = conn.execute(db.provider_version.select().where(db.provider_version.c.version=="10.20.30")).first()
+            row = conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.version=="10.20.30")).first()
 
         assert row is not None
-        row = dict(row)
+        row = dict(row._mapping)
         row["id"] = 55
         assert row == {
             'beta': False,

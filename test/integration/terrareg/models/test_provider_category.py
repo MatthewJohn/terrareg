@@ -120,7 +120,7 @@ class TestProviderCategory(TerraregIntegrationTest):
             row = instance._get_db_row()
             if exists:
                 assert row is not None
-                assert dict(row) == {
+                assert dict(row._mapping) == {
                     'id': 564341,
                     'name': 'Unittest Provider Category',
                     'slug': 'unittest-provider-category',

@@ -155,13 +155,13 @@ class ModuleSearch(object):
             res = conn.execute(limited_search)
             count_result = conn.execute(count_search)
 
-            count = count_result.fetchone()['count']
+            count = count_result.fetchone()._mapping['count']
 
             module_providers = []
             for r in res:
-                namespace = terrareg.models.Namespace(name=r['namespace'])
-                module = terrareg.models.Module(namespace=namespace, name=r['module'])
-                module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
+                namespace = terrareg.models.Namespace(name=r._mapping['namespace'])
+                module = terrareg.models.Module(namespace=namespace, name=r._mapping['module'])
+                module_providers.append(terrareg.models.ModuleProvider(module=module, name=r._mapping['provider']))
 
         return terrareg.result_data.ResultData(
             offset=offset,
@@ -184,33 +184,33 @@ class ModuleSearch(object):
         with db.get_connection() as conn:
             verified_count = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count')]
+                    sqlalchemy.func.count().label('count')
                 ).select_from(
                     main_select.where(
                         db.module_provider.c.verified==True
                     ).subquery()
                 )
-            ).fetchone()['count']
+            ).fetchone()._mapping['count']
 
             trusted_count = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count')]
+                    sqlalchemy.func.count().label('count')
                 ).select_from(
                     main_select.where(
                         db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
-            ).fetchone()['count']
+            ).fetchone()._mapping['count']
 
             contributed_count = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count')]
+                    sqlalchemy.func.count().label('count')
                 ).select_from(
                     main_select.where(
                         ~db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
-            ).fetchone()['count']
+            ).fetchone()._mapping['count']
 
             provider_subquery = main_select.group_by(
                 db.namespace.c.namespace,
@@ -219,7 +219,7 @@ class ModuleSearch(object):
             ).subquery()
             provider_res = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count'), provider_subquery.c.provider]
+                    sqlalchemy.func.count().label('count'), provider_subquery.c.provider
                 ).select_from(
                     provider_subquery
                 ).group_by(provider_subquery.c.provider)
@@ -232,7 +232,7 @@ class ModuleSearch(object):
             ).subquery()
             namespace_res = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count'), namespace_subquery.c.namespace]
+                    sqlalchemy.func.count().label('count'), namespace_subquery.c.namespace
                 ).select_from(
                     namespace_subquery
                 ).group_by(namespace_subquery.c.namespace)
@@ -243,11 +243,11 @@ class ModuleSearch(object):
                 'trusted_namespaces': trusted_count,
                 'contributed': contributed_count,
                 'providers': {
-                    r['provider']: r['count']
+                    r._mapping['provider']: r._mapping['count']
                     for r in provider_res
                 },
                 'namespaces': {
-                    r['namespace']: r['count']
+                    r._mapping['namespace']: r._mapping['count']
                     for r in namespace_res
                 }
             }
@@ -276,26 +276,26 @@ class ModuleSearch(object):
         if not row:
             return None
 
-        namespace = terrareg.models.Namespace(name=row['namespace'])
+        namespace = terrareg.models.Namespace(name=row._mapping['namespace'])
         module = terrareg.models.Module(namespace=namespace,
-                                        name=row['module'])
+                                        name=row._mapping['module'])
         module_provider = terrareg.models.ModuleProvider(module=module,
-                                                         name=row['provider'])
+                                                         name=row._mapping['provider'])
         return terrareg.models.ModuleVersion(module_provider=module_provider,
-                                             version=row['version'])
+                                             version=row._mapping['version'])
 
     @staticmethod
     def get_most_downloaded_module_provider_this_Week():
         """Obtain module provider with most downloads this week."""
         db = Database.get()
         counts = sqlalchemy.select(
-            [
+
                 sqlalchemy.func.count().label('download_count'),
                 db.namespace.c.namespace,
                 db.module_provider.c.module,
                 db.module_provider.c.provider
-            ]
-        ).select_from(
+            
+                ).select_from(
             db.analytics
         ).join(
             db.module_version,
@@ -333,8 +333,8 @@ class ModuleSearch(object):
         if not row:
             return None
 
-        namespace = terrareg.models.Namespace(name=row['namespace'])
+        namespace = terrareg.models.Namespace(name=row._mapping['namespace'])
         module = terrareg.models.Module(namespace=namespace,
-                                        name=row['module'])
+                                        name=row._mapping['module'])
         return terrareg.models.ModuleProvider(module=module,
-                                              name=row['provider'])
+                                              name=row._mapping['provider'])

@@ -134,12 +134,12 @@ class ProviderSearch:
             res = conn.execute(limited_search)
             count_result = conn.execute(count_search)
 
-            count = count_result.fetchone()['count']
+            count = count_result.fetchone()._mapping['count']
 
             module_providers = []
             for r in res:
-                namespace = terrareg.models.Namespace(name=r['namespace'])
-                module_providers.append(terrareg.provider_model.Provider(namespace=namespace, name=r['provider_name']))
+                namespace = terrareg.models.Namespace(name=r._mapping['namespace'])
+                module_providers.append(terrareg.provider_model.Provider(namespace=namespace, name=r._mapping['provider_name']))
 
         return terrareg.result_data.ResultData(
             offset=offset,
@@ -158,28 +158,28 @@ class ProviderSearch:
         with db.get_connection() as conn:
             trusted_count = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count')]
+                    sqlalchemy.func.count().label('count')
                 ).select_from(
                     main_select.where(
                         db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
-            ).fetchone()['count']
+            ).fetchone()._mapping['count']
 
             contributed_count = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count')]
+                    sqlalchemy.func.count().label('count')
                 ).select_from(
                     main_select.where(
                         ~db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
-            ).fetchone()['count']
+            ).fetchone()._mapping['count']
 
             main_select_subquery = main_select.subquery()
             category_res = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count'), main_select_subquery.c.provider_category_slug]
+                    sqlalchemy.func.count().label('count'), main_select_subquery.c.provider_category_slug
                 ).select_from(
                     main_select_subquery
                 ).group_by(main_select_subquery.c.provider_category_slug)
@@ -191,7 +191,7 @@ class ProviderSearch:
             ).subquery()
             namespace_res = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count'), namespace_subquery.c.namespace]
+                    sqlalchemy.func.count().label('count'), namespace_subquery.c.namespace
                 ).select_from(
                     namespace_subquery
                 ).group_by(namespace_subquery.c.namespace)
@@ -201,11 +201,11 @@ class ProviderSearch:
                 'trusted_namespaces': trusted_count,
                 'contributed': contributed_count,
                 'provider_categories': {
-                    r['provider_category_slug']: r['count']
+                    r._mapping['provider_category_slug']: r._mapping['count']
                     for r in category_res
                 },
                 'namespaces': {
-                    r['namespace']: r['count']
+                    r._mapping['namespace']: r._mapping['count']
                     for r in namespace_res
                 }
             }

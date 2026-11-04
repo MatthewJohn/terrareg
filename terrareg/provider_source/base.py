@@ -2,6 +2,8 @@
 from typing import Dict, Union, List, Tuple, Optional
 import json
 
+import sqlalchemy
+
 import terrareg.database
 import terrareg.provider_source.repository_release_metadata
 import terrareg.repository_model
@@ -27,7 +29,7 @@ class BaseProviderSource:
     @property
     def api_name(self) -> str:
         """Return API name"""
-        return self._get_db_row()["api_name"]
+        return self._get_db_row()._mapping["api_name"]
 
     @property
     def login_button_text(self):
@@ -37,7 +39,7 @@ class BaseProviderSource:
     @property
     def _config(self) -> Dict[str, Union[str, bool]]:
         """Return config for provider source"""
-        return json.loads(terrareg.database.Database.decode_blob(self._get_db_row()['config']))
+        return json.loads(terrareg.database.Database.decode_blob(self._get_db_row()._mapping['config']))
 
     def __init__(self, name: str):
         """Initialise member variables"""
@@ -48,7 +50,7 @@ class BaseProviderSource:
         """Return database row for module details."""
         if self._cache_db_row is None:
             db = terrareg.database.Database.get()
-            select = db.provider_source.select(
+            select = sqlalchemy.select(db.provider_source
             ).where(
                 db.provider_source.c.name == self.name
             )

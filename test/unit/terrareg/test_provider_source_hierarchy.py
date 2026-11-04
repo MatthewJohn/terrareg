@@ -78,7 +78,7 @@ class TestProviderSourceHierarchy(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_get_effective_provider_source_returns_module_provider_source(self):
         """Verify get_effective_provider_source returns module provider source when set"""
@@ -121,7 +121,7 @@ class TestProviderSourceHierarchy(TerraregIntegrationTest):
             module_provider.delete()
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_get_effective_provider_source_falls_back_to_namespace(self):
         """Verify get_effective_provider_source falls back to namespace default when module provider has none"""
@@ -175,7 +175,7 @@ class TestProviderSourceHierarchy(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_get_effective_provider_source_returns_none_when_no_source(self):
         """Verify get_effective_provider_source returns None when neither module provider nor namespace has source"""
@@ -266,8 +266,8 @@ class TestProviderSourceHierarchy(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==namespace_ps_name))
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==module_ps_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==namespace_ps_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==module_ps_name))
 
 
 class TestProviderSourceUpdateMethods(TerraregIntegrationTest):
@@ -314,7 +314,7 @@ class TestProviderSourceUpdateMethods(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_namespace_update_default_provider_source_unset_empty_string(self):
         """Test unsetting provider source with empty string"""
@@ -354,7 +354,7 @@ class TestProviderSourceUpdateMethods(TerraregIntegrationTest):
         finally:
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_namespace_update_default_provider_source_invalid_provider(self):
         """Test setting invalid provider source raises error"""
@@ -425,7 +425,7 @@ class TestProviderSourceUpdateMethods(TerraregIntegrationTest):
             module_provider.delete()
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_update_provider_source_unset_empty_string(self):
         """Test unsetting provider source with empty string"""
@@ -468,7 +468,7 @@ class TestProviderSourceUpdateMethods(TerraregIntegrationTest):
             module_provider.delete()
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_update_provider_source_invalid_provider(self):
         """Test setting invalid provider source raises error"""
@@ -609,4 +609,4 @@ class TestProviderSourceUpdateMethods(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==namespace_ps_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==namespace_ps_name))

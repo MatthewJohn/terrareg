@@ -30,7 +30,7 @@ def upgrade():
 
     # Migrate namespace column of module provider to new namespace table
     c = op.get_bind()
-    module_providers = c.execute(f"""SELECT id, namespace FROM module_provider""")
+    module_providers = c.execute(sa.text(f"""SELECT id, namespace FROM module_provider"""))
     created_namespaces = {}
     for row in module_providers:
 

@@ -114,7 +114,7 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
             # Module not in DB, no deletion needed
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_extraction_fallback_to_basic_credentials_no_installation(self):
         """Test fallback to basic credentials when provider source has no GitHub installation"""
@@ -197,7 +197,7 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
             module_provider.delete()
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_extraction_github_user_namespace(self):
         """Test module extraction with GitHub user namespace"""
@@ -292,7 +292,7 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
             module_provider.delete()
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_extraction_without_provider_source(self):
         """Test module extraction without provider source uses basic credentials"""
@@ -434,7 +434,7 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_provider_source_overrides_namespace(self):
         """
@@ -548,8 +548,8 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==namespace_ps_name))
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==module_ps_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==namespace_ps_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==module_ps_name))
 
     def test_fallback_to_basic_credentials_when_no_provider_source(self):
         """
@@ -672,7 +672,7 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
             module_provider.delete()
             namespace.delete()
             with terrareg.database.Database.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_ssh_urls_unmodified_by_authentication_logic(self):
         """
@@ -754,4 +754,4 @@ class TestProviderSourceGitAuthentication(TerraregIntegrationTest):
                     db.namespace.c.namespace == namespace.name
                 ).values(default_provider_source_name=None))
                 namespace.delete()
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))

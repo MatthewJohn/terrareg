@@ -1,3 +1,4 @@
+import sqlalchemy
 
 import os
 import shutil
@@ -170,10 +171,10 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(module=module, name='providername')
         assert module_provider is not None
         row = module_provider._get_db_row()
-        assert row['id'] == 48
-        assert row['namespace_id'] == namespace.pk
-        assert row['module'] == 'modulename'
-        assert row['provider'] == 'providername'
+        assert row._mapping['id'] == 48
+        assert row._mapping['namespace_id'] == namespace.pk
+        assert row._mapping['module'] == 'modulename'
+        assert row._mapping['provider'] == 'providername'
 
     def test_get_module_provider_non_existent(self):
         """Attempt to get non-existent module provider"""
@@ -189,7 +190,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True):
             module_provider = ModuleProvider.get(module=module, name='doesnotexistgetcreate', create=True)
             assert module_provider is not None
-            assert module_provider._get_db_row()['provider'] == 'doesnotexistgetcreate'
+            assert module_provider._get_db_row()._mapping['provider'] == 'doesnotexistgetcreate'
 
     def test_get_module_provider_with_create_auto_create_disabled(self):
         """Attempt to get non-existent module provider with auto-creation disabled"""
@@ -206,7 +207,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True):
             module_provider = ModuleProvider.get(module=module, name='providername', create=True)
             assert module_provider is not None
-            assert module_provider._get_db_row()['id'] == 48
+            assert module_provider._get_db_row()._mapping['id'] == 48
 
     def test_get_module_provider_with_create_auto_create_disabled_existing(self):
         """Attempt to get non-existent module provider with auto-creation disabled"""
@@ -215,7 +216,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', False):
             module_provider = ModuleProvider.get(module=module, name='providername', create=True)
             assert module_provider is not None
-            assert module_provider._get_db_row()['id'] == 48
+            assert module_provider._get_db_row()._mapping['id'] == 48
 
     @pytest.mark.parametrize('git_path,expected_git_path', [
         (None, None),
@@ -266,11 +267,11 @@ class TestModuleProvider(TerraregIntegrationTest):
         db = Database.get()
         with db.get_connection() as conn:
 
-            res = conn.execute(db.module_provider.select().where(db.module_provider.c.id==module_provider_pk))
+            res = conn.execute(sqlalchemy.select(db.module_provider).where(db.module_provider.c.id==module_provider_pk))
             assert res.fetchone() is not None
 
             for mv_pk in module_version_pks:
-                res = conn.execute(db.module_version.select().where(db.module_version.c.id==mv_pk))
+                res = conn.execute(sqlalchemy.select(db.module_version).where(db.module_version.c.id==mv_pk))
                 assert res.fetchone() is not None
 
         # Delete module provider
@@ -281,11 +282,11 @@ class TestModuleProvider(TerraregIntegrationTest):
         # Check module_version, example and example file have been removed
         with db.get_connection() as conn:
 
-            res = conn.execute(db.module_provider.select().where(db.module_provider.c.id==module_provider_pk))
+            res = conn.execute(sqlalchemy.select(db.module_provider).where(db.module_provider.c.id==module_provider_pk))
             assert res.fetchone() is None
 
             for mv_pk in module_version_pks:
-                res = conn.execute(db.module_version.select().where(db.module_version.c.id==mv_pk))
+                res = conn.execute(sqlalchemy.select(db.module_version).where(db.module_version.c.id==mv_pk))
                 assert res.fetchone() is None
 
     @pytest.mark.parametrize('module_directory_exists, module_provider_directory_exists, module_provider_directory_non_empty', [
@@ -402,7 +403,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # Create new module provider object
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
-        assert module_provider._get_db_row()['repo_clone_url_template'] == url
+        assert module_provider._get_db_row()._mapping['repo_clone_url_template'] == url
 
     @pytest.mark.parametrize('url, expected_exception, expected_message', [
         ('://github.com/example/blah.git',
@@ -443,7 +444,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
 
         # Ensure clone URL hasn't been modified
-        assert module_provider._get_db_row()['repo_clone_url_template'] == 'old-value'
+        assert module_provider._get_db_row()._mapping['repo_clone_url_template'] == 'old-value'
 
     @pytest.mark.parametrize('url', [
         None,
@@ -462,7 +463,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # Create new module provider object
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
-        assert module_provider._get_db_row()['repo_browse_url_template'] == url
+        assert module_provider._get_db_row()._mapping['repo_browse_url_template'] == url
 
     @pytest.mark.parametrize('url, expected_exception, expected_message', [
         ('://github.com/example/blah/{tag}/{path}',
@@ -506,7 +507,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
 
         # Ensure browse URL hasn't been modified
-        assert module_provider._get_db_row()['repo_browse_url_template'] == 'old-value'
+        assert module_provider._get_db_row()._mapping['repo_browse_url_template'] == 'old-value'
 
     @pytest.mark.parametrize('url', [
         None,
@@ -525,7 +526,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # Create new module provider object
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
-        assert module_provider._get_db_row()['repo_base_url_template'] == url
+        assert module_provider._get_db_row()._mapping['repo_base_url_template'] == url
 
     @pytest.mark.parametrize('url, expected_exception, expected_message', [
         ('://github.com/example/blah',
@@ -566,7 +567,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
 
         # Ensure base URL hasn't been modified
-        assert module_provider._get_db_row()['repo_base_url_template'] == 'old-value'
+        assert module_provider._get_db_row()._mapping['repo_base_url_template'] == 'old-value'
 
     @pytest.mark.parametrize('format', [
         '{version}',
@@ -760,15 +761,15 @@ class TestModuleProvider(TerraregIntegrationTest):
                     [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE, original_namespace_name, new_namespace_name],
                     [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME, original_module_name, new_module_name],
                     [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME, original_provider_name, new_provider_name]]:
-                filtered_events = [e for e in filter(lambda x: x['action'] == audit_action, unprocessed_audit_events)]
+                filtered_events = [e for e in filter(lambda x: x._mapping['action'] == audit_action, unprocessed_audit_events)]
                 if original_value != new_value:
                     assert len(filtered_events) == 1
                     audit_event = filtered_events[0]
-                    assert audit_event['action'] == audit_action
-                    assert audit_event['object_type'] == "ModuleProvider"
-                    assert audit_event['object_id'] == "testnamespace/torename/test"
-                    assert audit_event['old_value'] == original_value
-                    assert audit_event['new_value'] == new_value
+                    assert audit_event._mapping['action'] == audit_action
+                    assert audit_event._mapping['object_type'] == "ModuleProvider"
+                    assert audit_event._mapping['object_id'] == "testnamespace/torename/test"
+                    assert audit_event._mapping['old_value'] == original_value
+                    assert audit_event._mapping['new_value'] == new_value
                     # Remove audit event from unprocessed events
                     unprocessed_audit_events.remove(audit_event)
                 else:
@@ -842,7 +843,7 @@ class TestModuleProvider(TerraregIntegrationTest):
             # Ensure no redirects exist
             db = Database.get()
             with db.get_connection() as conn:
-                res = conn.execute(db.module_provider_redirect.select()).all()
+                res = conn.execute(sqlalchemy.select(db.module_provider_redirect)).all()
                 assert len(res) == 0
 
             # Check PK of olds modules
@@ -974,7 +975,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         finally:
             # Delete provider source
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+                conn.execute(db.provider_source.delete().where(db.provider_source.c.name==provider_source_name))
 
     def test_module_provider_provider_source_none_when_not_linked(self):
         """Test that ModuleProvider.provider_source returns None when not linked"""

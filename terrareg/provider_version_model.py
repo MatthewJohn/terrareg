@@ -56,16 +56,16 @@ class ProviderVersion:
             row = conn.execute(select).first()
         if not row:
             return None
-        provider = terrareg.provider_model.Provider.get_by_pk(pk=row["provider_id"])
+        provider = terrareg.provider_model.Provider.get_by_pk(pk=row._mapping["provider_id"])
         if provider is None:
             return None
 
-        return cls(provider=provider, version=row["version"])
+        return cls(provider=provider, version=row._mapping["version"])
 
     @property
     def publish_date_display(self):
         """Return display view of date of provider published."""
-        published_at = self._get_db_row()['published_at']
+        published_at = self._get_db_row()._mapping['published_at']
         if published_at:
             return published_at.strftime('%B %d, %Y')
         return None
@@ -78,7 +78,7 @@ class ProviderVersion:
     @property
     def git_tag(self):
         """Return git tag."""
-        return self._get_db_row()["git_tag"]
+        return self._get_db_row()._mapping["git_tag"]
 
     @property
     def base_directory(self) -> str:
@@ -88,12 +88,12 @@ class ProviderVersion:
     @property
     def beta(self) -> bool:
         """Return whether provider version is a beta version."""
-        return self._get_db_row()['beta']
+        return self._get_db_row()._mapping['beta']
 
     @property
     def pk(self) -> int:
         """Return DB ID of provider version."""
-        return self._get_db_row()['id']
+        return self._get_db_row()._mapping['id']
 
     @property
     def id(self) -> str:
@@ -116,7 +116,7 @@ class ProviderVersion:
     @property
     def provider_extraction_up_to_date(self) -> bool:
         """Whether the extracted version data is up-to-date"""
-        return self._get_db_row()["extraction_version"] == PROVIDER_EXTRACTION_VERSION
+        return self._get_db_row()._mapping["extraction_version"] == PROVIDER_EXTRACTION_VERSION
 
     @property
     def is_latest_version(self) -> bool:
@@ -127,7 +127,7 @@ class ProviderVersion:
     def gpg_key(self) -> 'terrareg.models.GpgKey':
         """Return GPG"""
         return terrareg.models.GpgKey.get_by_id_and_namespace(
-            id_=self._get_db_row()["gpg_key_id"],
+            id_=self._get_db_row()._mapping["gpg_key_id"],
             namespace=self.provider.namespace
         )
 
@@ -175,7 +175,7 @@ class ProviderVersion:
         """Get object from database"""
         if self._cache_db_row is None:
             db = terrareg.database.Database.get()
-            select = db._provider_version.select().join(
+            select = sqlalchemy.select(db._provider_version).join(
                 db.provider,
                 db.provider_version.c.provider_id == db.provider.c.id
             ).where(
@@ -240,7 +240,7 @@ class ProviderVersion:
     def protocols(self) -> List[str]:
         """Return list of supported protocols"""
         protocol_json = terrareg.database.Database.decode_blob(
-            self._get_db_row()["protocol_versions"]
+            self._get_db_row()._mapping["protocol_versions"]
         )
         if protocol_json:
             return json.loads(protocol_json)
@@ -292,7 +292,7 @@ class ProviderVersion:
             "tag": self.git_tag,
             "description": self.provider.repository.description,
             "source": self.provider.source_url,
-            "published_at": (db_row["published_at"].isoformat() if db_row["published_at"] else None),
+            "published_at": (db_row._mapping["published_at"].isoformat() if db_row._mapping["published_at"] else None),
             "downloads": self.get_total_downloads(),
             "tier": self.provider.tier.value,
             "logo_url": self.provider.logo_url,
@@ -307,7 +307,7 @@ class ProviderVersion:
             "attributes": {
                 "description": self.provider.description,
                 "downloads": self.get_downloads(),
-                "published-at": (db_row["published_at"].isoformat() if db_row["published_at"] else None),
+                "published-at": (db_row._mapping["published_at"].isoformat() if db_row._mapping["published_at"] else None),
                 "tag": self.git_tag,
                 "version": self.version
             },

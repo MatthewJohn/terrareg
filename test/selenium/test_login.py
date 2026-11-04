@@ -485,9 +485,9 @@ class TestLogin(SeleniumTest):
                 mock_get_user_organisations.assert_called_once_with("unittest-access-code")
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(
-                    db.provider_source.c.name=="UT Github"
-                ))
+                conn.execute(db.provider_source.delete().where(
+            db.provider_source.c.name=="UT Github"
+        ))
 
     def test_invalid_github_response(self):
         """Test handling of invalid SAML authentication error"""
@@ -537,6 +537,6 @@ class TestLogin(SeleniumTest):
                 mock_auth_object.get_attributes.assert_not_called()
         finally:
             with db.get_connection() as conn:
-                conn.execute(db.provider_source.delete(
-                    db.provider_source.c.name=="UT Github"
-                ))
+                conn.execute(db.provider_source.delete().where(
+            db.provider_source.c.name=="UT Github"
+        ))
