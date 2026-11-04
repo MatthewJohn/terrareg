@@ -56,7 +56,7 @@ class BaseProviderSource:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._cache_db_row = res.fetchone()
+                self._cache_db_row = res.mappings().fetchone()
 
         return self._cache_db_row
 

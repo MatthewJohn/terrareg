@@ -54,7 +54,7 @@ class ProviderSourceFactory:
             database.provider_source.c.name==name
         )
         with database.get_connection() as conn:
-            res = conn.execute(select).first()
+            res = conn.execute(select).mappings().first()
 
         # If there are no matching rows, return None
         if res is None:
@@ -81,7 +81,7 @@ class ProviderSourceFactory:
             database.provider_source.c.api_name==api_name
         )
         with database.get_connection() as conn:
-            res = conn.execute(select).first()
+            res = conn.execute(select).mappings().first()
 
         # If there are no matching rows, return None
         if res is None:
@@ -105,7 +105,7 @@ class ProviderSourceFactory:
             database.provider_source
         )
         with database.get_connection() as conn:
-            res = conn.execute(select).all()
+            res = conn.execute(select).mappings().all()
         return [
             self.get_provider_source_class_by_type(row._mapping['provider_source_type'])(name=row._mapping['name'])
             for row in res

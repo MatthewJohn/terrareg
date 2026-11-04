@@ -53,7 +53,7 @@ class ProviderVersion:
             db.provider_version.c.id==pk
         )
         with db.get_connection() as conn:
-            row = conn.execute(select).first()
+            row = conn.execute(select).mappings().first()
         if not row:
             return None
         provider = terrareg.provider_model.Provider.get_by_pk(pk=row._mapping["provider_id"])
@@ -184,7 +184,7 @@ class ProviderVersion:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._cache_db_row = res.fetchone()
+                self._cache_db_row = res.mappings().fetchone()
         return self._cache_db_row
 
     def generate_file_name_from_suffix(self, suffix: str) -> str:

@@ -47,7 +47,7 @@ class TestAuditEvent(TerraregIntegrationTest):
         with db.get_connection() as conn:
             query = sqlalchemy.select(db.audit_history)
             res = conn.execute(query)
-            rows = res.fetchall()
+            rows = res.mappings().fetchall()
         assert len(rows) == 1
         audit_event = rows[0]
 

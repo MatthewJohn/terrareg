@@ -105,7 +105,7 @@ class Provider:
         )
 
         with db.get_connection() as conn:
-            row = conn.execute(select).first()
+            row = conn.execute(select).mappings().first()
         if not row:
             return None
 
@@ -128,7 +128,7 @@ class Provider:
             db.provider.c.repository_id==repository.pk
         )
         with db.get_connection() as conn:
-            row = conn.execute(select).fetchone()
+            row = conn.execute(select).mappings().fetchone()
         if not row:
             return None
 
@@ -267,7 +267,7 @@ class Provider:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._cache_db_row = res.fetchone()
+                self._cache_db_row = res.mappings().fetchone()
 
         return self._cache_db_row
 
@@ -286,7 +286,7 @@ class Provider:
             db.provider_version.c.provider_id==self.pk
         )
         with db.get_connection() as conn:
-            rows = conn.execute(select).all()
+            rows = conn.execute(select).mappings().all()
         return sorted([
             terrareg.provider_version_model.ProviderVersion(provider=self, version=row._mapping["version"])
             for row in rows
@@ -309,7 +309,7 @@ class Provider:
             res = conn.execute(select)
 
             # Convert to list
-            rows = [r for r in res]
+            rows = [r for r in res.mappings()]
 
         # Sort rows by semantic versioning
         rows.sort(key=lambda x: LooseVersion(x._mapping['version']), reverse=True)

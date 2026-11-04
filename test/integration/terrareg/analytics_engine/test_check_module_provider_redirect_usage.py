@@ -132,7 +132,7 @@ class TestCheckModuleProviderRedirectUsage(TerraregIntegrationTest):
 
         assert len(res) == len(expected_results)
 
-        for row in res:
+        for row in res.mappings():
             assert row[0] in expected_results
             assert (expected_results[row[0]] - timedelta(minutes=1)) < row[1] < (expected_results[row[0]] + timedelta(minutes=1))
             del expected_results[row[0]]
@@ -178,7 +178,7 @@ class TestCheckModuleProviderRedirectUsage(TerraregIntegrationTest):
 
         assert len(res) == len(expected_results)
 
-        for row in res:
+        for row in res.mappings():
             assert row[0] in expected_results
             assert (expected_results[row[0]] - timedelta(minutes=1)) < row[1] < (expected_results[row[0]] + timedelta(minutes=1))
             del expected_results[row[0]]

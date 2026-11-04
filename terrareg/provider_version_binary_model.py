@@ -106,7 +106,7 @@ class ProviderVersionBinary:
         )
 
         with db.get_connection() as conn:
-            row = conn.execute(select).first()
+            row = conn.execute(select).mappings().first()
 
         if row:
             return cls(pk=row._mapping["id"])
@@ -124,7 +124,7 @@ class ProviderVersionBinary:
             db.provider_version_binary.c.provider_version_id==provider_version.pk,
         )
         with db.get_connection() as conn:
-            rows = conn.execute(select).all()
+            rows = conn.execute(select).mappings().all()
         return [
             cls(pk=row._mapping["id"])
             for row in rows
@@ -174,7 +174,7 @@ class ProviderVersionBinary:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._cache_db_row = res.fetchone()
+                self._cache_db_row = res.mappings().fetchone()
         return self._cache_db_row
 
     def create_local_binary(self, content: bytes):
