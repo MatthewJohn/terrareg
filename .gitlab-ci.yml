@@ -130,7 +130,6 @@ unit-integration-selenium-tests:
   services:
     - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
-      command: ["sh", "-c", "weed mini -dir=/data"]
       variables:
         S3_BUCKET: terrareg
   script:
@@ -159,7 +158,6 @@ mysql-integration-selenium-tests:
       alias: mysql
     - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
-      command: ["sh", "-c", "weed mini -dir=/data"]
       variables:
         S3_BUCKET: terrareg
   variables:
@@ -188,7 +186,6 @@ postgres-integration-selenium-tests:
       alias: postgres
     - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
-      command: ["sh", "-c", "weed mini -dir=/data"]
       variables:
         S3_BUCKET: terrareg
   variables:
@@ -223,10 +220,6 @@ spell-checker:
 
 # # Unit tests for Go implementation
 # golang-unit-tests:
-#   stage: test
-#   image: golang:1.25.4-trixie
-#   extends: .before_script_golang
-#   script:
 #     # Run only non-integration, non-selenium tests with coverage
 #     - go test -short -tags='!selenium' -timeout 10m -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-report.txt
 #     # Only show coverage summary, not full function-by-function output
