@@ -1,5 +1,5 @@
 # Multi-stage build for Terrareg Go implementation
-FROM golang:1.25.4-trixie AS builder
+FROM golang:1.27.3-trixie AS builder
 
 ARG VERSION
 ARG http_proxy
