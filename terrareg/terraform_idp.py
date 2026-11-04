@@ -62,7 +62,7 @@ class BaseIdpDatabase:
                     self.table.c.key==item
                 )
             )
-            item = res.mappings().first()
+            item = res.first()
             if item:
                 return json.loads(Database.decode_blob(item[0]))
             raise KeyError
@@ -133,7 +133,7 @@ class BaseIdpDatabase:
             )
             return [
                 [row[0], json.loads(Database.decode_blob(row[1]))]
-                for row in res.mappings().all()
+                for row in res.all()
             ]
 
 

@@ -72,7 +72,7 @@ class Repository:
             db.repository.c.owner.in_(owners)
         )
         with db.get_connection() as conn:
-            res = conn.execute(select).mappings().all()
+            res = conn.execute(select).all()
             return [
                 cls(pk=row._mapping['id'])
                 for row in res
@@ -87,7 +87,7 @@ class Repository:
             db.repository.c.provider_id==provider_id
         )
         with db.get_connection() as conn:
-            row = conn.execute(select).mappings().fetchone()
+            row = conn.execute(select).fetchone()
 
         if row:
             return cls(pk=row._mapping['id'])
@@ -100,7 +100,7 @@ class Repository:
             db.repository.c.id==pk
         )
         with db.get_connection() as conn:
-            row = conn.execute(select).mappings().fetchone()
+            row = conn.execute(select).fetchone()
 
         if row:
             return cls(pk=row._mapping['id'])
@@ -184,7 +184,7 @@ class Repository:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._row_cache = res.mappings().fetchone()
+                self._row_cache = res.fetchone()
         return self._row_cache
 
     def update_attributes(self, **kwargs):

@@ -39,7 +39,7 @@ class TestAuthorizationCodeDatabase(TerraregIntegrationTest):
                     database.terraform_idp_authorization_code.c.key,
                     database.terraform_idp_authorization_code.c.data
                 ).select_from(database.terraform_idp_authorization_code)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this": "that"}')
             ]
@@ -62,7 +62,7 @@ class TestAuthorizationCodeDatabase(TerraregIntegrationTest):
                     database.terraform_idp_authorization_code.c.key,
                     database.terraform_idp_authorization_code.c.data
                 ).select_from(database.terraform_idp_authorization_code)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this": "that"}')
             ]
@@ -77,7 +77,7 @@ class TestAuthorizationCodeDatabase(TerraregIntegrationTest):
                     database.terraform_idp_authorization_code.c.key,
                     database.terraform_idp_authorization_code.c.data
                 ).select_from(database.terraform_idp_authorization_code)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this2": "that2"}')
             ]
@@ -178,7 +178,7 @@ class TestAccessTokenDatabase(TerraregIntegrationTest):
                     database.terraform_idp_access_token.c.key,
                     database.terraform_idp_access_token.c.data
                 ).select_from(database.terraform_idp_access_token)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this": "that"}')
             ]
@@ -201,7 +201,7 @@ class TestAccessTokenDatabase(TerraregIntegrationTest):
                     database.terraform_idp_access_token.c.key,
                     database.terraform_idp_access_token.c.data
                 ).select_from(database.terraform_idp_access_token)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this": "that"}')
             ]
@@ -216,7 +216,7 @@ class TestAccessTokenDatabase(TerraregIntegrationTest):
                     database.terraform_idp_access_token.c.key,
                     database.terraform_idp_access_token.c.data
                 ).select_from(database.terraform_idp_access_token)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this2": "that2"}')
             ]
@@ -318,7 +318,7 @@ class TestSubjectIdentifierDatabase(TerraregIntegrationTest):
                     database.terraform_idp_subject_identifier.c.key,
                     database.terraform_idp_subject_identifier.c.data
                 ).select_from(database.terraform_idp_subject_identifier)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this": "that"}')
             ]
@@ -340,7 +340,7 @@ class TestSubjectIdentifierDatabase(TerraregIntegrationTest):
                     database.terraform_idp_subject_identifier.c.key,
                     database.terraform_idp_subject_identifier.c.data
                 ).select_from(database.terraform_idp_subject_identifier)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this": "that"}')
             ]
@@ -355,7 +355,7 @@ class TestSubjectIdentifierDatabase(TerraregIntegrationTest):
                     database.terraform_idp_subject_identifier.c.key,
                     database.terraform_idp_subject_identifier.c.data
                 ).select_from(database.terraform_idp_subject_identifier)
-            ).mappings().all()
+            ).all()
             assert row_data == [
                 ("testcode", b'{"this2": "that2"}')
             ]

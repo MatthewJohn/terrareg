@@ -76,7 +76,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 res = conn.execute(sqlalchemy.select(db.provider_version_documentation).where(
                     db.provider_version_documentation.c.id==documentation._pk
-                )).mappings().all()
+                )).all()
                 assert len(res) == 1
                 assert dict(res[0]._mapping) == {
                     "id": documentation._pk,
@@ -116,7 +116,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
         with db.get_connection() as conn:
             res = conn.execute(sqlalchemy.select(db.provider_version_documentation).where(
                 db.provider_version_documentation.c.id==pk
-            )).mappings().all()
+            )).all()
             assert len(res) == 1
             assert dict(res[0]._mapping) == {
                 "id": pk,
@@ -229,9 +229,9 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             language=language
         )
         assert isinstance(res, list)
-        for doc_itx in res.mappings():
+        for doc_itx in res:
             assert isinstance(doc_itx, terrareg.provider_version_documentation_model.ProviderVersionDocumentation)
-        assert [doc._pk for doc in res.mappings()] == expected_ids
+        assert [doc._pk for doc in res] == expected_ids
 
     def test_exists(self):
         """Test exists property"""

@@ -68,7 +68,7 @@ class ProviderCategory:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._cache_db_row = res.mappings().fetchone()
+                self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
 
@@ -111,7 +111,7 @@ class ProviderCategoryFactory:
             database.provider_category.c.slug==slug
         )
         with database.get_connection() as conn:
-            res = conn.execute(select).mappings().first()
+            res = conn.execute(select).first()
 
         # If there are no matching rows, return None
         if res is None:
@@ -136,7 +136,7 @@ class ProviderCategoryFactory:
             database.provider_category
         )
         with database.get_connection() as conn:
-            res = conn.execute(select).mappings().all()
+            res = conn.execute(select).all()
         return [
             ProviderCategory(pk=row._mapping['id'])
             for row in res

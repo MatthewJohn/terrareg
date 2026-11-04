@@ -123,7 +123,7 @@ class ProviderVersionDocumentation:
         )
 
         with db.get_connection() as conn:
-            row = conn.execute(select).mappings().first()
+            row = conn.execute(select).first()
 
         if row:
             return cls(pk=row._mapping["id"])
@@ -141,7 +141,7 @@ class ProviderVersionDocumentation:
             db.provider_version_documentation.c.provider_version_id==provider_version.pk,
         )
         with db.get_connection() as conn:
-            rows = conn.execute(select).mappings().all()
+            rows = conn.execute(select).all()
         return [
             cls(pk=row._mapping["id"])
             for row in rows
@@ -166,7 +166,7 @@ class ProviderVersionDocumentation:
             db.provider_version_documentation.c.language==language,
         )
         with db.get_connection() as conn:
-            rows = conn.execute(select).mappings().all()
+            rows = conn.execute(select).all()
         return [
             cls(pk=row._mapping["id"])
             for row in rows
@@ -242,7 +242,7 @@ class ProviderVersionDocumentation:
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
-                self._cache_db_row = res.mappings().fetchone()
+                self._cache_db_row = res.fetchone()
         return self._cache_db_row
 
     def get_api_outline(self) -> dict:
