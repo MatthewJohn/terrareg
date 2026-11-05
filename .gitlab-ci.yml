@@ -154,7 +154,7 @@ mysql-integration-selenium-tests:
   needs:
     - unit-integration-selenium-tests
   services:
-    - name: mariadb:10.8
+    - name: mariadb:13.0
       alias: mysql
     - name: chrislusf/seaweedfs:4.48
       alias: seaweedfs
