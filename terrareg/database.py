@@ -56,6 +56,7 @@ class Database():
         self._terraform_idp_authorization_code = None
         self._terraform_idp_access_token = None
         self._terraform_idp_subject_identifier = None
+        self._api_key = None
         self._user_group = None
         self._user_group_namespace_permission = None
         self._git_provider = None
@@ -107,6 +108,13 @@ class Database():
         if self._terraform_idp_subject_identifier is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._terraform_idp_subject_identifier
+
+    @property
+    def api_key(self):
+        """Return api_key table."""
+        if self._api_key is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._api_key
 
     @property
     def user_group(self):
@@ -340,6 +348,22 @@ class Database():
             sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('data', Database.medium_blob()),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._api_key = sqlalchemy.Table(
+            'api_key', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('key_type', sqlalchemy.String(32), nullable=False),
+            sqlalchemy.Column('key_prefix', sqlalchemy.String(16), nullable=False),
+            sqlalchemy.Column('key_hash', sqlalchemy.String(128), nullable=False),
+            sqlalchemy.Column('key_salt', sqlalchemy.String(64), nullable=False),
+            sqlalchemy.Column('created_at', sqlalchemy.DateTime, nullable=False),
+            sqlalchemy.Column('created_by', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
+            sqlalchemy.Column('last_used_at', sqlalchemy.DateTime, nullable=True),
+            sqlalchemy.Column('expires_at', sqlalchemy.DateTime, nullable=True),
+            sqlalchemy.Column('is_active', sqlalchemy.Boolean, nullable=False, default=True),
+            sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
         )
 
         self._user_group = sqlalchemy.Table(

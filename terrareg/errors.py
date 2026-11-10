@@ -132,6 +132,24 @@ class InvalidGitProviderConfigError(TerraregError):
     pass
 
 
+class GitProviderInUseError(TerraregError):
+    """Git provider is in use by module providers and cannot be deleted."""
+
+    pass
+
+
+class GitProviderManagedByConfigurationError(TerraregError):
+    """Git provider is managed by configuration and cannot be edited via the UI."""
+
+    pass
+
+
+class InvalidApiKeyTypeError(TerraregError):
+    """API key type is invalid."""
+
+    pass
+
+
 class ModuleProviderCustomGitRepositoryUrlNotAllowedError(TerraregError):
     """Module provider cannot set custom git URL."""
 
