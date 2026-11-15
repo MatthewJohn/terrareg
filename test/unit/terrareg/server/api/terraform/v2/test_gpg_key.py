@@ -170,13 +170,13 @@ class TestApiGpgKeyGet(TerraregIntegrationTest):
                                    'jlqqRaU=\n'
                                    '=Hmce\n'
                                    '-----END PGP PUBLIC KEY BLOCK-----',
-                    'created-at': db_row['created_at'].isoformat(),
+                    'created-at': db_row._mapping['created_at'].isoformat(),
                     'key-id': '7C0591F6E7E2D514',
                     'namespace': 'test-namespace',
                     'source': '',
                     'source-url': None,
                     'trust-signature': '',
-                    'updated-at': db_row['updated_at'].isoformat()
+                    'updated-at': db_row._mapping['updated_at'].isoformat()
                 },
                 'id': '2',
                 'type': 'gpg-keys'

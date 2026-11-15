@@ -52,7 +52,7 @@ def mock_provider_source_class():
         @property
         def api_name(self) -> str:
             """Return API name"""
-            return self._get_db_row()["api_name"]
+            return self._get_db_row()._mapping["api_name"]
 
         @property
         def login_button_text(self):
@@ -62,7 +62,7 @@ def mock_provider_source_class():
         @property
         def _config(self) -> Dict[str, Union[str, bool]]:
             """Return config for provider source"""
-            return json.loads(terrareg.database.Database.decode_blob(self._get_db_row()['config']))
+            return json.loads(terrareg.database.Database.decode_blob(self._get_db_row()._mapping['config']))
 
         def __init__(self, name: str):
             """Initialise member variables"""

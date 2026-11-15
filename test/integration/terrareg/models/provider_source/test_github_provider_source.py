@@ -1395,9 +1395,9 @@ class TestGithubProviderSource(BaseProviderSourceTests):
     @pytest.mark.parametrize('private_key, expected_result', {
         (None, None),
         (TEST_GITHUB_PRIVATE_KEY.encode('utf-8'),
-         ("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTkyNTU4OTEsImV4cCI6MTY5OTI1NjQ5MSwiaXNzIjo5NTQ5NTZ9."
-          "C2SGwXuObOpi-4jE59fjkFSIAXkCK0tm68JQgi6mbU_SILlYksvb5E106X2B3qrJIQZNmndTYo2fGT_2RwY_kqKHl0xYw0p0Pdqqny"
-          "T8jetEK6IiQggyEm-DxlzGE7t3oyuFjq25zbrEjnmlIwnJapboU9V7amyH8WE7dl3MNo4"))
+         ("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTkyNTU4OTEsImV4cCI6MTY5OTI1NjQ5MSwiaXNzIjoiOTU0OTU2In0."
+          "o0W2GKqkjuy2_1EQvWZ6Jw7uRwr005JLIXOrWCIxSU1aZzO92u7A4Ix8P6736EVioKgu8ljpgHuZjUsThMoiYGwL8qDXHm8jJ7d9ctzvxfce"
+          "-kytOvt5GnqEmNE2HpjsH9eyeuc5QjsjiESYZQI43loDXqM0iUOcuirLCpebG28"))
     })
     def test__generate_jwt(self, private_key, expected_result, test_provider_source):
         """Test _generate_jwt"""
