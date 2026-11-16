@@ -68,13 +68,13 @@ class Repository:
     def get_repositories_by_owner_list(cls, owners: List[str]) -> List['Repository']:
         """Return list of repositories matching a list of owners"""
         db = terrareg.database.Database.get()
-        select = db.repository.select().where(
+        select = sqlalchemy.select(db.repository).where(
             db.repository.c.owner.in_(owners)
         )
         with db.get_connection() as conn:
             res = conn.execute(select).all()
             return [
-                cls(pk=row['id'])
+                cls(pk=row._mapping['id'])
                 for row in res
             ]
 
@@ -82,7 +82,7 @@ class Repository:
     def get_by_provider_source_and_provider_id(cls, provider_source: 'terrareg.provider_source.BaseProviderSource', provider_id: str) -> Union[None, 'Repository']:
         """Get repository by provider source and provider ID"""
         db = terrareg.database.Database.get()
-        select = db.repository.select().where(
+        select = sqlalchemy.select(db.repository).where(
             db.repository.c.provider_source_name==provider_source.name,
             db.repository.c.provider_id==provider_id
         )
@@ -90,20 +90,20 @@ class Repository:
             row = conn.execute(select).fetchone()
 
         if row:
-            return cls(pk=row['id'])
+            return cls(pk=row._mapping['id'])
 
     @classmethod
     def get_by_pk(cls, pk: int) -> Union[None, 'Repository']:
         """Get repository by ID"""
         db = terrareg.database.Database.get()
-        select = db.repository.select().where(
+        select = sqlalchemy.select(db.repository).where(
             db.repository.c.id==pk
         )
         with db.get_connection() as conn:
             row = conn.execute(select).fetchone()
 
         if row:
-            return cls(pk=row['id'])
+            return cls(pk=row._mapping['id'])
 
     @property
     def pk(self) -> int:
@@ -118,23 +118,23 @@ class Repository:
     @property
     def owner(self) -> str:
         """Return owner of repository"""
-        return self._get_db_row()['owner']
+        return self._get_db_row()._mapping['owner']
 
     @property
     def name(self) -> str:
         """Return name of repository"""
-        return self._get_db_row()['name']
+        return self._get_db_row()._mapping['name']
 
     @property
     def provider_id(self) -> str:
         """Return provider ID of repository"""
-        return self._get_db_row()['provider_id']
+        return self._get_db_row()._mapping['provider_id']
 
     @property
     def provider_source(self) -> 'terrareg.provider_source.BaseProviderSource':
         """Return provider source for repository"""
         return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
-            self._get_db_row()["provider_source_name"]
+            self._get_db_row()._mapping["provider_source_name"]
         )
 
     @property
@@ -149,19 +149,19 @@ class Repository:
     @property
     def description(self) -> Union[None, str]:
         """Return description"""
-        if description_blob := self._get_db_row()["description"]:
+        if description_blob := self._get_db_row()._mapping["description"]:
             return terrareg.database.Database.decode_blob(description_blob)
         return None
 
     @property
     def logo_url(self) -> Union[str, None]:
         """Return logo URL"""
-        return self._get_db_row()["logo_url"]
+        return self._get_db_row()._mapping["logo_url"]
 
     @property
     def clone_url(self) -> str:
         """Return clone URL"""
-        return self._get_db_row()["clone_url"]
+        return self._get_db_row()._mapping["clone_url"]
 
     def __eq__(self, __o):
         """Check if two repositories are the same"""
@@ -179,7 +179,7 @@ class Repository:
         if self._row_cache is None:
             db = terrareg.database.Database.get()
             # Obtain row from user group table.
-            select = db.repository.select().where(
+            select = sqlalchemy.select(db.repository).where(
                 db.repository.c.id==self.pk
             )
             with db.get_connection() as conn:

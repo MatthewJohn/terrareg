@@ -24,7 +24,7 @@ def upgrade():
     false_value = "0"
     if op.get_bind().engine.name == 'postgresql':
         false_value = "false"
-    op.execute(f"""UPDATE module_version set beta={false_value}""")
+    op.execute(sa.text(f"""UPDATE module_version set beta={false_value}"""))
 
     # Disable nullable flag in column
     with op.batch_alter_table('module_version', schema=None) as batch_op:

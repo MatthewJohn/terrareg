@@ -220,10 +220,6 @@ spell-checker:
 
 # # Unit tests for Go implementation
 # golang-unit-tests:
-#   stage: test
-#   image: golang:1.25.4-trixie
-#   extends: .before_script_golang
-#   script:
 #     # Run only non-integration, non-selenium tests with coverage
 #     - go test -short -tags='!selenium' -timeout 10m -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-report.txt
 #     # Only show coverage summary, not full function-by-function output

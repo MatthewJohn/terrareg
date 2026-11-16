@@ -172,13 +172,13 @@ class TestModuleProvider(SeleniumTest):
         """Test page functionality on a module with versions."""
         # Remove custom browse/base URL from module provider
         module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        original_provider_repo_base_url_template = module_provider._get_db_row()['repo_base_url_template']
-        original_provider_repo_browse_url_template = module_provider._get_db_row()['repo_browse_url_template']
+        original_provider_repo_base_url_template = module_provider._get_db_row()._mapping['repo_base_url_template']
+        original_provider_repo_browse_url_template = module_provider._get_db_row()._mapping['repo_browse_url_template']
         module_provider.update_attributes(repo_base_url_template=None, repo_browse_url_template=None)
 
         if attribute_to_remove:
             module_version = ModuleVersion.get(module_provider, '1.5.0')
-            original_value = module_version._get_db_row()[attribute_to_remove]
+            original_value = module_version._get_db_row()._mapping[attribute_to_remove]
             module_version.update_attributes(**{attribute_to_remove: None})
 
         try:
@@ -775,11 +775,11 @@ class TestModuleProvider(SeleniumTest):
         module_provider_row = module_provider._get_db_row()
         module_version_row = module_version._get_db_row()
 
-        original_git_provider_id = module_provider_row['git_provider_id']
-        original_module_provider_browse_url_template = module_provider_row['repo_browse_url_template']
-        original_module_provider_base_url_template = module_provider_row['repo_base_url_template']
-        original_module_version_browse_url_template = module_version_row['repo_browse_url_template']
-        original_module_version_base_url_template = module_version_row['repo_base_url_template']
+        original_git_provider_id = module_provider_row._mapping['git_provider_id']
+        original_module_provider_browse_url_template = module_provider_row._mapping['repo_browse_url_template']
+        original_module_provider_base_url_template = module_provider_row._mapping['repo_base_url_template']
+        original_module_version_browse_url_template = module_version_row._mapping['repo_browse_url_template']
+        original_module_version_base_url_template = module_version_row._mapping['repo_base_url_template']
 
 
         try:
@@ -2157,13 +2157,13 @@ EOF
 
                 module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
                 # Ensure git provider has been set
-                assert module_provider._get_db_row()['git_provider_id'] == 5
+                assert module_provider._get_db_row()._mapping['git_provider_id'] == 5
 
                 # Ensure the custom URLs has been cleared
-                assert module_provider._get_db_row()['repo_base_url_template'] == None
-                assert module_provider._get_db_row()['repo_clone_url_template'] == None
-                assert module_provider._get_db_row()['repo_browse_url_template'] == None
-                assert module_provider._get_db_row()['git_path'] == "/modules/{module}"
+                assert module_provider._get_db_row()._mapping['repo_base_url_template'] == None
+                assert module_provider._get_db_row()._mapping['repo_clone_url_template'] == None
+                assert module_provider._get_db_row()._mapping['repo_browse_url_template'] == None
+                assert module_provider._get_db_row()._mapping['git_path'] == "/modules/{module}"
 
                 # Reload page, assert the new git provider has been set
                 self.selenium_instance.refresh()
@@ -2251,11 +2251,11 @@ EOF
                 self.assert_equals(lambda: self.wait_for_element(By.ID, 'settings-status-success').text, 'Settings Updated')
 
                 module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-                assert module_provider._get_db_row()['git_provider_id'] == None
-                assert module_provider._get_db_row()['repo_base_url_template'] == "https://base-example.com/somenamespace/module"
-                assert module_provider._get_db_row()['repo_clone_url_template'] == "ssh://git@clone-example.com/somenamespace/module.git"
-                assert module_provider._get_db_row()['repo_browse_url_template'] == "https://browse-example.com/somenamespace/module/{tag}/{path}"
-                assert module_provider._get_db_row()['git_path'] == "sometest"
+                assert module_provider._get_db_row()._mapping['git_provider_id'] == None
+                assert module_provider._get_db_row()._mapping['repo_base_url_template'] == "https://base-example.com/somenamespace/module"
+                assert module_provider._get_db_row()._mapping['repo_clone_url_template'] == "ssh://git@clone-example.com/somenamespace/module.git"
+                assert module_provider._get_db_row()._mapping['repo_browse_url_template'] == "https://browse-example.com/somenamespace/module/{tag}/{path}"
+                assert module_provider._get_db_row()._mapping['git_path'] == "sometest"
 
                 # Reload page, assert the new git provider has been set
                 self.selenium_instance.refresh()
