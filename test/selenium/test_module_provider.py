@@ -116,7 +116,17 @@ class TestModuleProvider(SeleniumTest):
 
     def _click_save_settings(self):
         """Click save button on settings tab."""
-        self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+        self.wait_for_element(By.ID, 'module-provider-settings-update').click()
+
+    def _wait_for_settings_save(self):
+        """Wait for settings update request to complete, via success notification."""
+        self.wait_for_element(By.ID, 'settings-status-success')
+
+    def _get_module_provider_inheritance_disabled(self, namespace, module, provider):
+        """Obtain current provider_source_inheritance_disabled value, bypassing cached DB row."""
+        module_provider = ModuleProvider(Module(Namespace(namespace), module), provider)
+        module_provider._cache_db_row = None
+        return module_provider.provider_source_inheritance_disabled
 
     def test_module_without_versions(self):
         """Test page functionality on a module without published versions."""
@@ -3393,16 +3403,20 @@ module "root" {
         settings_tab_button.click()
 
         # Verify inheritance is not disabled (checkbox not checked)
-        inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
-        assert inheritance_disabled_checkbox.get_attribute("checked") is None
+        inheritance_disabled_checkbox = self.wait_for_element(By.ID, 'settings-provider-source-inheritance-disabled')
+        self.assert_equals(lambda: inheritance_disabled_checkbox.get_attribute("checked"), None)
 
         # Check the box to disable inheritance
         inheritance_disabled_checkbox.click()
         self._click_save_settings()
+        # Wait for update to complete, to ensure the update has been committed before verifying
+        self._wait_for_settings_save()
 
         # Verify the value was set
-        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, True)
+        self.assert_equals(
+            lambda: self._get_module_provider_inheritance_disabled('moduledetails', 'fullypopulated', 'testprovider'),
+            True
+        )
 
         # Uncheck to re-enable inheritance
         self.selenium_instance.refresh()
@@ -3414,10 +3428,14 @@ module "root" {
 
         inheritance_disabled_checkbox.click()
         self._click_save_settings()
+        # Wait for update to complete, to ensure the update has been committed before verifying
+        self._wait_for_settings_save()
 
         # Verify the value was unset
-        module_provider._cache_db_row = None
-        self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, False)
+        self.assert_equals(
+            lambda: self._get_module_provider_inheritance_disabled('moduledetails', 'fullypopulated', 'testprovider'),
+            False
+        )
 
     def test_disable_inheritance(self, mock_create_audit_event):
         """Test disabling provider source inheritance (checking the disabled box)"""
@@ -3429,14 +3447,18 @@ module "root" {
         settings_tab_button.click()
 
         # Verify inheritance is not disabled (checkbox not checked)
-        inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
-        assert inheritance_disabled_checkbox.get_attribute("checked") is None
+        inheritance_disabled_checkbox = self.wait_for_element(By.ID, 'settings-provider-source-inheritance-disabled')
+        self.assert_equals(lambda: inheritance_disabled_checkbox.get_attribute("checked"), None)
 
         # Check the box to disable inheritance
         inheritance_disabled_checkbox.click()
         self._click_save_settings()
+        # Wait for update to complete, to ensure the update has been committed before verifying
+        self._wait_for_settings_save()
 
         # Verify the value was set
-        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, True)
+        self.assert_equals(
+            lambda: self._get_module_provider_inheritance_disabled('moduledetails', 'fullypopulated', 'testprovider'),
+            True
+        )
 
