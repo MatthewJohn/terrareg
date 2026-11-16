@@ -126,7 +126,7 @@ class ProviderVersionDocumentation:
             row = conn.execute(select).first()
 
         if row:
-            return cls(pk=row["id"])
+            return cls(pk=row._mapping["id"])
         return None
 
     @classmethod
@@ -143,7 +143,7 @@ class ProviderVersionDocumentation:
         with db.get_connection() as conn:
             rows = conn.execute(select).all()
         return [
-            cls(pk=row["id"])
+            cls(pk=row._mapping["id"])
             for row in rows
         ]
 
@@ -168,7 +168,7 @@ class ProviderVersionDocumentation:
         with db.get_connection() as conn:
             rows = conn.execute(select).all()
         return [
-            cls(pk=row["id"])
+            cls(pk=row._mapping["id"])
             for row in rows
         ]
 
@@ -181,11 +181,11 @@ class ProviderVersionDocumentation:
     def title(self) -> str:
         """Return title"""
         # Attempt to return title
-        if title := self._get_db_row()["title"]:
+        if title := self._get_db_row()._mapping["title"]:
             return title
 
         # Fallback to returning name
-        name = self._get_db_row()["name"]
+        name = self._get_db_row()._mapping["name"]
         if name.endswith(".md"):
             name = name[:-3]
         return name
@@ -198,32 +198,32 @@ class ProviderVersionDocumentation:
     @property
     def category(self) -> 'terrareg.provider_documentation_type.ProviderDocumentationType':
         """Return category"""
-        return self._get_db_row()["documentation_type"]
+        return self._get_db_row()._mapping["documentation_type"]
 
     @property
     def language(self) -> str:
         """Return language"""
-        return self._get_db_row()["language"]
+        return self._get_db_row()._mapping["language"]
 
     @property
     def filename(self) -> str:
         """Return filename"""
-        return self._get_db_row()["filename"]
+        return self._get_db_row()._mapping["filename"]
 
     @property
     def slug(self) -> str:
         """Return slug"""
-        return self._get_db_row()["slug"]
+        return self._get_db_row()._mapping["slug"]
 
     @property
     def subcategory(self) -> str:
         """Return subcategory"""
-        return self._get_db_row()["subcategory"]
+        return self._get_db_row()._mapping["subcategory"]
 
     @property
     def description(self) -> Union[str, None]:
         """Return description"""
-        description = self._get_db_row()["description"]
+        description = self._get_db_row()._mapping["description"]
         if description is not None and isinstance(description, bytes):
             return terrareg.database.Database.decode_blob(description)
         return description
@@ -237,7 +237,7 @@ class ProviderVersionDocumentation:
         """Get object from database"""
         if self._cache_db_row is None:
             db = terrareg.database.Database.get()
-            select = db.provider_version_documentation.select().where(
+            select = sqlalchemy.select(db.provider_version_documentation).where(
                 db.provider_version_documentation.c.id == self._pk
             )
             with db.get_connection() as conn:
@@ -284,7 +284,7 @@ class ProviderVersionDocumentation:
 
     def get_content(self, html=False):
         """Return content of documentation"""
-        content = terrareg.database.Database.decode_blob(self._get_db_row()["content"])
+        content = terrareg.database.Database.decode_blob(self._get_db_row()._mapping["content"])
         if html:
             content = terrareg.utils.convert_markdown_to_html(file_name=self.filename, markdown_html=content)
             content = terrareg.utils.sanitise_html_content(content, allow_markdown_html=True)

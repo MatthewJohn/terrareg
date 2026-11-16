@@ -142,7 +142,7 @@ def upgrade():
         namespace_type_enum.create(bind, checkfirst=True)
     op.add_column('namespace', sa.Column('namespace_type', namespace_type_enum, nullable=True))
 
-    bind.execute("UPDATE namespace SET namespace_type='NONE'")
+    bind.execute(sa.text("UPDATE namespace SET namespace_type='NONE'"))
     with op.batch_alter_table("namespace") as batch_op:
         batch_op.alter_column("namespace_type", nullable=False, existing_type=namespace_type_enum)
 

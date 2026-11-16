@@ -85,12 +85,12 @@ class ApiTerraregAuditHistory(ErrorCatchingResource):
         return {
             "data": [
                 {
-                    'timestamp': event['timestamp'].isoformat(),
-                    'username': event['username'],
-                    'action': event['action'].name,
-                    'object_id': event['object_id'],
-                    'old_value': event['old_value'],
-                    'new_value': event['new_value']
+                    'timestamp': event._mapping['timestamp'].isoformat(),
+                    'username': event._mapping['username'],
+                    'action': event._mapping['action'].name,
+                    'object_id': event._mapping['object_id'],
+                    'old_value': event._mapping['old_value'],
+                    'new_value': event._mapping['new_value']
                 }
                 for event in events
             ],

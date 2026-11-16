@@ -77,7 +77,7 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
                 )
             )
             return {
-                terrareg.models.Namespace(row['namespace']): row['permission_type']
+                terrareg.models.Namespace(row._mapping['namespace']): row._mapping['permission_type']
                 for row in res
             }
 

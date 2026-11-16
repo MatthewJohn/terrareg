@@ -58,4 +58,6 @@ class AuthFactory:
     @classmethod
     def get_current_session(cls):
         """Return session object for current session"""
+        if not flask.has_request_context():
+            return None
         return terrareg.models.Session.check_session(flask.session.get('session_id', None))

@@ -79,6 +79,7 @@ class Database():
         self._example_file = None
         self._module_version_file = None
         self.transaction_connection = None
+        self.current_connection = None
 
     @property
     def session(self):
@@ -893,12 +894,24 @@ class Database():
         return None
 
     @classmethod
+    def get_current_connection(cls):
+        """Return current ambient connection, if within a get_connection block."""
+        if has_request_context():
+            if cls.get().transaction_connection is not None:
+                raise Exception('Global database transaction is present whilst in request context!')
+            return flask.g.get('database_current_connection', None)
+        else:
+            return cls.get().current_connection
+
+    @classmethod
     def start_transaction(cls):
         """Start DB transaction, store in current context and return"""
         # Check if currently in transaction
         if cls.get_current_transaction():
             raise Exception('Already within database transaction')
-        conn = Database.get().get_connection()
+        # Obtain a fresh connection, as the connection must not
+        # have an open transaction for 'begin()' to be called on it
+        conn = Database.get().get_engine().connect()
         return Transaction(conn)
 
     @classmethod
@@ -930,8 +943,53 @@ class Database():
             # to handle 'with get_connection():'
             return TransactionConnectionWrapper(current_transaction)
 
+        # If already within a get_connection block, reuse the
+        # current connection, so that nested blocks do not open a
+        # second connection, which would block the first connection's
+        # open transaction
+        current_connection = cls.get_current_connection()
+        if current_connection is not None:
+            return TransactionConnectionWrapper(current_connection)
+
         # If transaction is not currently active, return database connection
-        return cls.get().get_engine().connect()
+        # wrapped to commit on exit (SQLAlchemy 2.0 does not auto-commit)
+        return CommittingConnectionWrapper(cls.get().get_engine().connect())
+
+
+class CommittingConnectionWrapper:
+    """Wrapper that commits the connection on exit."""
+
+    def __init__(self, connection):
+        self._connection = connection
+        self._registered = False
+        self._registered_in_request_context = False
+
+    def __enter__(self):
+        """Register connection as current, so nested get_connection calls reuse it."""
+        self._registered = True
+        if has_request_context():
+            self._registered_in_request_context = True
+            flask.g.database_current_connection = self._connection
+        else:
+            Database.get().current_connection = self._connection
+        return self._connection
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._registered:
+            if self._registered_in_request_context:
+                flask.g.database_current_connection = None
+            else:
+                Database.get().current_connection = None
+            self._registered = False
+        if exc_type is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+        self._connection.close()
+        return False
+
+    def __getattr__(self, name):
+        return getattr(self._connection, name)
 
 
 class TransactionConnectionWrapper:

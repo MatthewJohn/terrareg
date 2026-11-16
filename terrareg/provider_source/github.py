@@ -533,7 +533,7 @@ class GithubProviderSource(BaseProviderSource):
             # JWT expiration time (10 minutes maximum)
             'exp': int(time.time()) + 600,
             # GitHub App's identifier
-            'iss': self.github_app_id
+            'iss': str(self.github_app_id)
         }
 
         private_key = serialization.load_pem_private_key(
