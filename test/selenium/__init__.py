@@ -17,6 +17,8 @@ import selenium
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import pytest
 import werkzeug
 
@@ -203,28 +205,21 @@ class SeleniumTest(BaseTest):
                     print('Failed asserting that {} == {}'.format(actual, value))
                     raise
 
-    def wait_for_element(self, by, val, parent=None, ensure_displayed=True):
+    def wait_for_element(self, by, val, parent=None, ensure_displayed=True, timeout=20):
         """Attempt to find element and wait, if it does not exist yet."""
         if parent is None:
             parent = self.selenium_instance
 
-        max_attempts = 10
-        for itx in range(max_attempts):
-            try:
-                # Attempt to find element
-                element = parent.find_element(by, val)
-                if ensure_displayed and not element.is_displayed():
-                    raise selenium.common.exceptions.NoSuchElementException('Element is not displayed')
-                return element
-            except selenium.common.exceptions.NoSuchElementException:
-                # If it fails the assertion,
-                # sleep and retry until last attmept
-                # and then re-raise
-                if itx < (max_attempts - 1):
-                    sleep(0.5)
-                else:
-                    print('Failed to find element')
-                    raise
+        condition = (
+            EC.visibility_of_element_located((by, val))
+            if ensure_displayed else
+            EC.presence_of_element_located((by, val))
+        )
+        try:
+            return WebDriverWait(parent, timeout, poll_frequency=0.5).until(condition)
+        except selenium.common.exceptions.TimeoutException:
+            print('Failed to find element')
+            raise
 
     def delete_cookies_and_local_storage(self):
         """Delete cookies and local storage from selenium browser"""
