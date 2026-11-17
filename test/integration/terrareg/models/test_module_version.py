@@ -27,7 +27,6 @@ class TestModuleVersion(TerraregIntegrationTest):
         '.23.1',
         '1.1.1.1',
         '1.1.1.',
-        '1.2.3-dottedsuffix1.2',
         '1.2.3-invalid-suffix',
         '1.0.9-'
     ])
@@ -47,7 +46,8 @@ class TestModuleVersion(TerraregIntegrationTest):
         ('1.2.3-alpha', True),
         ('1.2.3-beta', True),
         ('1.2.3-anothersuffix1', True),
-        ('1.2.2-123', True)
+        ('1.2.2-123', True),
+        ('1.2.3-dev.1', True)
     ])
     def test_valid_module_versions(self, version, beta):
         """Test valid module versions"""
