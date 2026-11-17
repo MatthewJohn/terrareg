@@ -1,5 +1,12 @@
 # Changelog
 
+# [4.5.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.4.1...v4.5.0) (2026-11-17)
+
+
+### Features
+
+* Add ability for pre-release version numbers ([40b2339](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/40b23398116101c738770750da1924f0a6f758cf)), closes [#585](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/585)
+
 ## [4.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.4.0...v4.4.1) (2026-11-17)
 
 
