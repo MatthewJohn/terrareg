@@ -85,6 +85,7 @@ pyvirtualdisplay = "3.0"
 pillow = "11.3.0"
 imagehash = "4.3.1"
 numpy = ">=1.22.2"
+pyright = "^1.1.410"
 
 
 [tool.poetry.group.docs.dependencies]

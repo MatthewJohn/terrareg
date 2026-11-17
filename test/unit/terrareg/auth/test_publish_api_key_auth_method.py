@@ -3,6 +3,7 @@
 from unittest import mock
 import pytest
 
+import terrareg.api_key_type
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.auth import PublishApiKeyAuthMethod
 from test.unit.terrareg.auth.base_auth_method_test import BaseAuthMethodTest
@@ -38,6 +39,16 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
         with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', publish_api_keys):
             obj = PublishApiKeyAuthMethod()
             assert obj.is_enabled() is expected_result
+
+    def test_is_enabled_from_db_api_key(self):
+        """Test DB-backed publish API keys enable the auth method."""
+        with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', []), \
+                mock.patch('terrareg.api_key.ApiKey.has_active_keys', return_value=True) as mock_has_active_keys:
+            obj = PublishApiKeyAuthMethod()
+            assert obj.is_enabled() is True
+            mock_has_active_keys.assert_called_once_with(
+                terrareg.api_key_type.ApiKeyType.PUBLISH
+            )
 
     def test_requires_csrf_tokens(self):
         """Test requires_csrf_token method"""
@@ -94,6 +105,22 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
 
             obj = PublishApiKeyAuthMethod()
             assert obj.check_auth_state() is expected_result
+
+    def test_check_auth_state_with_db_api_key(self):
+        """Test publish auth falls back to DB-backed API keys."""
+        headers = {'HTTP_X_TERRAREG_APIKEY': 'db-valid'}
+        mock_api_key = mock.MagicMock()
+        with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', []), \
+                mock.patch('terrareg.api_key.ApiKey.verify_key', return_value=mock_api_key) as mock_verify_key, \
+                BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
+
+            obj = PublishApiKeyAuthMethod()
+            assert obj.check_auth_state() is True
+
+        mock_verify_key.assert_called_once_with(
+            'db-valid', terrareg.api_key_type.ApiKeyType.PUBLISH
+        )
+        mock_api_key.mark_used.assert_called_once_with()
 
     @pytest.mark.parametrize('namespace,access_type,expected_result', [
         ('testnamespace', UserGroupNamespacePermissionType.MODIFY, False),
