@@ -1,3 +1,4 @@
+import sqlalchemy
 
 import datetime
 import secrets
@@ -34,15 +35,15 @@ class TestSession(TerraregIntegrationTest):
 
         # Ensure session ID is in database
         with db.get_connection() as conn:
-            res = conn.execute(db.session.select().where(
+            res = conn.execute(sqlalchemy.select(db.session).where(
                 db.session.c.id==session_obj.id
             ))
             row = res.fetchone()
         assert row
 
         # Check expiry is about the correct time (within 2 minutes)
-        assert row['expiry'] > (datetime.datetime.now() + datetime.timedelta(minutes=58))
-        assert row['expiry'] < (datetime.datetime.now() + datetime.timedelta(minutes=60))
+        assert row._mapping['expiry'] > (datetime.datetime.now() + datetime.timedelta(minutes=58))
+        assert row._mapping['expiry'] < (datetime.datetime.now() + datetime.timedelta(minutes=60))
 
     def test_delete_session(self):
         """Test deleting a session."""
@@ -64,7 +65,7 @@ class TestSession(TerraregIntegrationTest):
 
         # Ensure row no longer present in databases
         with db.get_connection() as conn:
-            res = conn.execute(db.session.select().where(
+            res = conn.execute(sqlalchemy.select(db.session).where(
                 db.session.c.id==session_id
             ))
             row = res.fetchone()
@@ -144,7 +145,7 @@ class TestSession(TerraregIntegrationTest):
             Session.cleanup_old_sessions()
 
         with db.get_connection() as conn:
-            rows = conn.execute(db.session.select()).fetchall()
+            rows = conn.execute(sqlalchemy.select(db.session)).fetchall()
 
         assert len(rows) == 1
-        assert rows[0]['id'] == 'notexpired'
+        assert rows[0]._mapping['id'] == 'notexpired'

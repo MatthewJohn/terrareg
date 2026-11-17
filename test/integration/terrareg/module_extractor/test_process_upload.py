@@ -274,10 +274,10 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         # Ensure that module provider is setup with git proider and overridden repo URLs
         assert module_provider is not None
-        assert module_provider._get_db_row()['repo_base_url_template']
-        assert module_provider._get_db_row()['repo_clone_url_template']
-        assert module_provider._get_db_row()['repo_browse_url_template']
-        assert module_provider._get_db_row()['git_provider_id']
+        assert module_provider._get_db_row()._mapping['repo_base_url_template']
+        assert module_provider._get_db_row()._mapping['repo_clone_url_template']
+        assert module_provider._get_db_row()._mapping['repo_browse_url_template']
+        assert module_provider._get_db_row()._mapping['git_provider_id']
 
         module_version = ModuleVersion(module_provider=module_provider, version='1.5.0')
         module_version.prepare_module()

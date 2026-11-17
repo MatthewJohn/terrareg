@@ -1,3 +1,5 @@
+import sqlalchemy
+from test.unit.terrareg import MockRow
 
 import json
 import os
@@ -72,10 +74,10 @@ class TestProvider(TerraregIntegrationTest):
 
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                res = conn.execute(db.provider.select(db.provider.c.repository_id==test_repository.pk)).all()
+                res = conn.execute(sqlalchemy.select(db.provider).where(db.provider.c.repository_id==test_repository.pk)).all()
 
             assert len(res) == 1
-            row = dict(res[0])
+            row = dict(res[0]._mapping)
             # Since we don't care what the ID is, set the result ID to a known value
             row['id'] = 1
             assert row == {
@@ -92,10 +94,10 @@ class TestProvider(TerraregIntegrationTest):
             
             # Ensure audit event was created correct
             with db.get_connection() as conn:
-                res = conn.execute(db.audit_history.select().order_by(db.audit_history.c.id.desc()).limit(1)).all()
+                res = conn.execute(sqlalchemy.select(db.audit_history).order_by(db.audit_history.c.id.desc()).limit(1)).all()
 
             assert len(res) == 1
-            audit_event = dict(res[0])
+            audit_event = dict(res[0]._mapping)
             assert audit_event['action'] == terrareg.audit_action.AuditAction.PROVIDER_CREATE
             assert audit_event['object_type'] == "Provider"
             assert audit_event['object_id'] == "some-organisation/unittest-create"
@@ -105,7 +107,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+                conn.execute(db.provider.delete().where(db.provider.c.repository_id==test_repository.pk))
 
     def test_create_duplicate(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
         """Test attempting to create with duplicate provider"""
@@ -129,7 +131,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+                conn.execute(db.provider.delete().where(db.provider.c.repository_id==test_repository.pk))
 
     def test_create_without_namespace(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
         """Test attempting to create without a namespace present for repository"""
@@ -147,7 +149,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+                conn.execute(db.provider.delete().where(db.provider.c.repository_id==test_repository.pk))
 
     def test_create_without_github_installation(cls, test_namespace, mock_provider_source_class, mock_provider_source, test_repository, test_provider_category):
         """Test provider creation without valid github installation and without using default authentication"""
@@ -166,7 +168,7 @@ class TestProvider(TerraregIntegrationTest):
             mock_provider_source_class.HAS_INSTALLATION_ID = True
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+                conn.execute(db.provider.delete().where(db.provider.c.repository_id==test_repository.pk))
 
     def test_create_without_github_installation(cls, test_namespace, mock_provider_source_class, mock_provider_source, test_repository, test_provider_category):
         """Test provider creation without valid github installation and without using default authentication"""
@@ -185,7 +187,7 @@ class TestProvider(TerraregIntegrationTest):
             mock_provider_source_class.HAS_INSTALLATION_ID = True
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+                conn.execute(db.provider.delete().where(db.provider.c.repository_id==test_repository.pk))
 
     @pytest.mark.parametrize('repository_name', [
         'invalidname',
@@ -218,8 +220,8 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.repository_id==repository.pk))
-                conn.execute(db.repository.delete(db.repository.c.id==repository_pk))
+                conn.execute(db.provider.delete().where(db.provider.c.repository_id==repository.pk))
+                conn.execute(db.repository.delete().where(db.repository.c.id==repository_pk))
 
     def test_get_by_pk(cls, test_provider):
         """Test get_by_pk method of provider"""
@@ -287,7 +289,7 @@ class TestProvider(TerraregIntegrationTest):
     def test_pk(self, test_provider):
         """Test pk property of Provider"""
         assert isinstance(test_provider.pk, int)
-        test_provider._cache_db_row = {"id": "newid"}
+        test_provider._cache_db_row = MockRow({"id": "newid"})
         assert test_provider.pk == "newid"
 
     @pytest.mark.parametrize('provider_tier', [
@@ -312,7 +314,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider.delete(db.provider.c.id==provider.pk))
+                conn.execute(db.provider.delete().where(db.provider.c.id==provider.pk))
 
     def test_base_directory(self, test_provider):
         """Test base_directory property of Provider."""
@@ -376,7 +378,7 @@ class TestProvider(TerraregIntegrationTest):
     ])
     def test_use_default_provider_source_auth(self, default_provider_source_auth, test_provider):
         """Test use_default_provider_source_auth property"""
-        test_provider._cache_db_row = {"default_provider_source_auth": default_provider_source_auth}
+        test_provider._cache_db_row = MockRow({"default_provider_source_auth": default_provider_source_auth})
         assert test_provider.use_default_provider_source_auth is default_provider_source_auth
 
     @pytest.mark.parametrize('provider_versions, expected_latest_version', [
@@ -408,7 +410,7 @@ class TestProvider(TerraregIntegrationTest):
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 for provider_version_id in created_version_mapping.values():
-                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+                    conn.execute(db.provider_version.delete().where(db.provider_version.c.id==provider_version_id))
 
     @pytest.mark.parametrize('provider_versions, expected_return_order', [
         ([], []),
@@ -435,7 +437,7 @@ class TestProvider(TerraregIntegrationTest):
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 for provider_version_id in created_version_mapping.values():
-                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+                    conn.execute(db.provider_version.delete().where(db.provider_version.c.id==provider_version_id))
 
     @pytest.mark.parametrize('provider_versions, expected_latest_version', [
         ([], None),
@@ -452,7 +454,7 @@ class TestProvider(TerraregIntegrationTest):
                 created_version_mapping[version_] = provider_version.pk
 
             test_provider._cache_db_row = None
-            assert test_provider._get_db_row()['latest_version_id'] is None
+            assert test_provider._get_db_row()._mapping['latest_version_id'] is None
 
             returned_version = test_provider.calculate_latest_version()
 
@@ -469,7 +471,7 @@ class TestProvider(TerraregIntegrationTest):
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 for provider_version_id in created_version_mapping.values():
-                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+                    conn.execute(db.provider_version.delete().where(db.provider_version.c.id==provider_version_id))
 
     def test_index_version(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test index_version method with version"""
@@ -495,7 +497,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_index_version_with_version_not_found(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method with version that does not exist"""
@@ -513,7 +515,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method"""
@@ -545,7 +547,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions_with_limit(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method with limit"""
@@ -574,7 +576,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions_no_gpg_key(self, mock_provider_source_class, test_provider, test_namespace):
         """Test refresh_versions method with no GPG key found for release"""
@@ -597,7 +599,7 @@ class TestProvider(TerraregIntegrationTest):
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions_get_gpg_key_exception(self, mock_provider_source_class, test_provider, test_namespace):
         """Test refresh_versions method with exception raised when attempting to obtain GPG key"""
@@ -625,13 +627,13 @@ class TestProvider(TerraregIntegrationTest):
                 # Ensure no provider versions were created in database
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    rows = conn.execute(db.provider_version.select(db.provider_version.c.provider_id==test_provider.pk)).all()
+                    rows = conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.provider_id==test_provider.pk)).all()
                     assert len(rows) == 0
 
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions_get_gpg_key_generic_exception(self, mock_provider_source_class, test_provider, test_namespace):
         """Test refresh_versions method with generic exception raised when attempting to obtain GPG key"""
@@ -662,13 +664,13 @@ class TestProvider(TerraregIntegrationTest):
                 # Ensure no provider versions were created in database
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    rows = conn.execute(db.provider_version.select(db.provider_version.c.provider_id==test_provider.pk)).all()
+                    rows = conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.provider_id==test_provider.pk)).all()
                     assert len(rows) == 0
 
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions_extraction_terrareg_exception(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method with Terrareg exception raised when extracting version"""
@@ -704,13 +706,13 @@ class TestProvider(TerraregIntegrationTest):
                 # Ensure no provider versions were created in database
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    rows = conn.execute(db.provider_version.select(db.provider_version.c.provider_id==test_provider.pk)).all()
+                    rows = conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.provider_id==test_provider.pk)).all()
                     assert len(rows) == 0
 
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_refresh_versions_extraction_generic_exception(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method with generic exception raised when extracting version"""
@@ -741,21 +743,21 @@ class TestProvider(TerraregIntegrationTest):
                 # Ensure no provider versions were created in database
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    rows = conn.execute(db.provider_version.select(db.provider_version.c.provider_id==test_provider.pk)).all()
+                    rows = conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.provider_id==test_provider.pk)).all()
                     assert len(rows) == 0
 
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+                conn.execute(db.provider_version.delete().where(db.provider_version.c.provider_id==test_provider.pk))
 
     def test_update_attributes(self, test_provider):
         """Test update_attributes method"""
         test_provider._cache_db_row = None
         db_row = test_provider._get_db_row()
-        assert db_row["description"] == "Unittest provider description"
-        assert db_row["tier"] is terrareg.provider_tier.ProviderTier.COMMUNITY
-        assert db_row["default_provider_source_auth"] is True
+        assert db_row._mapping['description'] == "Unittest provider description"
+        assert db_row._mapping['tier'] is terrareg.provider_tier.ProviderTier.COMMUNITY
+        assert db_row._mapping['default_provider_source_auth'] is True
 
         test_provider.update_attributes(
             description="New Description",
@@ -766,9 +768,9 @@ class TestProvider(TerraregIntegrationTest):
         # Ensure cached DB row is flushed and get_db_row immediately returns new data
         assert test_provider._cache_db_row is None
         new_db_row = test_provider._get_db_row()
-        assert new_db_row["description"] == "New Description"
-        assert new_db_row["tier"] is terrareg.provider_tier.ProviderTier.OFFICIAL
-        assert new_db_row["default_provider_source_auth"] is False
+        assert new_db_row._mapping['description'] == "New Description"
+        assert new_db_row._mapping['tier'] is terrareg.provider_tier.ProviderTier.OFFICIAL
+        assert new_db_row._mapping['default_provider_source_auth'] is False
 
     def test_get_versions_api_details(self, test_provider, test_gpg_key):
         """Test get_versions_api_details method"""
@@ -819,5 +821,5 @@ class TestProvider(TerraregIntegrationTest):
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 for provider_version_id in created_version_mapping.values():
-                    conn.execute(db.provider_version_binary.delete(db.provider_version_binary.c.provider_version_id==provider_version_id))
-                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+                    conn.execute(db.provider_version_binary.delete().where(db.provider_version_binary.c.provider_version_id==provider_version_id))
+                    conn.execute(db.provider_version.delete().where(db.provider_version.c.id==provider_version_id))

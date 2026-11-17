@@ -116,7 +116,17 @@ class TestModuleProvider(SeleniumTest):
 
     def _click_save_settings(self):
         """Click save button on settings tab."""
-        self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+        self.wait_for_element(By.ID, 'module-provider-settings-update').click()
+
+    def _wait_for_settings_save(self):
+        """Wait for settings update request to complete, via success notification."""
+        self.wait_for_element(By.ID, 'settings-status-success')
+
+    def _get_module_provider_inheritance_disabled(self, namespace, module, provider):
+        """Obtain current provider_source_inheritance_disabled value, bypassing cached DB row."""
+        module_provider = ModuleProvider(Module(Namespace(namespace), module), provider)
+        module_provider._cache_db_row = None
+        return module_provider.provider_source_inheritance_disabled
 
     def test_module_without_versions(self):
         """Test page functionality on a module without published versions."""
@@ -172,13 +182,13 @@ class TestModuleProvider(SeleniumTest):
         """Test page functionality on a module with versions."""
         # Remove custom browse/base URL from module provider
         module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        original_provider_repo_base_url_template = module_provider._get_db_row()['repo_base_url_template']
-        original_provider_repo_browse_url_template = module_provider._get_db_row()['repo_browse_url_template']
+        original_provider_repo_base_url_template = module_provider._get_db_row()._mapping['repo_base_url_template']
+        original_provider_repo_browse_url_template = module_provider._get_db_row()._mapping['repo_browse_url_template']
         module_provider.update_attributes(repo_base_url_template=None, repo_browse_url_template=None)
 
         if attribute_to_remove:
             module_version = ModuleVersion.get(module_provider, '1.5.0')
-            original_value = module_version._get_db_row()[attribute_to_remove]
+            original_value = module_version._get_db_row()._mapping[attribute_to_remove]
             module_version.update_attributes(**{attribute_to_remove: None})
 
         try:
@@ -775,11 +785,11 @@ class TestModuleProvider(SeleniumTest):
         module_provider_row = module_provider._get_db_row()
         module_version_row = module_version._get_db_row()
 
-        original_git_provider_id = module_provider_row['git_provider_id']
-        original_module_provider_browse_url_template = module_provider_row['repo_browse_url_template']
-        original_module_provider_base_url_template = module_provider_row['repo_base_url_template']
-        original_module_version_browse_url_template = module_version_row['repo_browse_url_template']
-        original_module_version_base_url_template = module_version_row['repo_base_url_template']
+        original_git_provider_id = module_provider_row._mapping['git_provider_id']
+        original_module_provider_browse_url_template = module_provider_row._mapping['repo_browse_url_template']
+        original_module_provider_base_url_template = module_provider_row._mapping['repo_base_url_template']
+        original_module_version_browse_url_template = module_version_row._mapping['repo_browse_url_template']
+        original_module_version_base_url_template = module_version_row._mapping['repo_base_url_template']
 
 
         try:
@@ -2157,13 +2167,13 @@ EOF
 
                 module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
                 # Ensure git provider has been set
-                assert module_provider._get_db_row()['git_provider_id'] == 5
+                assert module_provider._get_db_row()._mapping['git_provider_id'] == 5
 
                 # Ensure the custom URLs has been cleared
-                assert module_provider._get_db_row()['repo_base_url_template'] == None
-                assert module_provider._get_db_row()['repo_clone_url_template'] == None
-                assert module_provider._get_db_row()['repo_browse_url_template'] == None
-                assert module_provider._get_db_row()['git_path'] == "/modules/{module}"
+                assert module_provider._get_db_row()._mapping['repo_base_url_template'] == None
+                assert module_provider._get_db_row()._mapping['repo_clone_url_template'] == None
+                assert module_provider._get_db_row()._mapping['repo_browse_url_template'] == None
+                assert module_provider._get_db_row()._mapping['git_path'] == "/modules/{module}"
 
                 # Reload page, assert the new git provider has been set
                 self.selenium_instance.refresh()
@@ -2251,11 +2261,11 @@ EOF
                 self.assert_equals(lambda: self.wait_for_element(By.ID, 'settings-status-success').text, 'Settings Updated')
 
                 module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-                assert module_provider._get_db_row()['git_provider_id'] == None
-                assert module_provider._get_db_row()['repo_base_url_template'] == "https://base-example.com/somenamespace/module"
-                assert module_provider._get_db_row()['repo_clone_url_template'] == "ssh://git@clone-example.com/somenamespace/module.git"
-                assert module_provider._get_db_row()['repo_browse_url_template'] == "https://browse-example.com/somenamespace/module/{tag}/{path}"
-                assert module_provider._get_db_row()['git_path'] == "sometest"
+                assert module_provider._get_db_row()._mapping['git_provider_id'] == None
+                assert module_provider._get_db_row()._mapping['repo_base_url_template'] == "https://base-example.com/somenamespace/module"
+                assert module_provider._get_db_row()._mapping['repo_clone_url_template'] == "ssh://git@clone-example.com/somenamespace/module.git"
+                assert module_provider._get_db_row()._mapping['repo_browse_url_template'] == "https://browse-example.com/somenamespace/module/{tag}/{path}"
+                assert module_provider._get_db_row()._mapping['git_path'] == "sometest"
 
                 # Reload page, assert the new git provider has been set
                 self.selenium_instance.refresh()
@@ -3393,16 +3403,20 @@ module "root" {
         settings_tab_button.click()
 
         # Verify inheritance is not disabled (checkbox not checked)
-        inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
-        assert inheritance_disabled_checkbox.get_attribute("checked") is None
+        inheritance_disabled_checkbox = self.wait_for_element(By.ID, 'settings-provider-source-inheritance-disabled')
+        self.assert_equals(lambda: inheritance_disabled_checkbox.get_attribute("checked"), None)
 
         # Check the box to disable inheritance
         inheritance_disabled_checkbox.click()
         self._click_save_settings()
+        # Wait for update to complete, to ensure the update has been committed before verifying
+        self._wait_for_settings_save()
 
         # Verify the value was set
-        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, True)
+        self.assert_equals(
+            lambda: self._get_module_provider_inheritance_disabled('moduledetails', 'fullypopulated', 'testprovider'),
+            True
+        )
 
         # Uncheck to re-enable inheritance
         self.selenium_instance.refresh()
@@ -3414,10 +3428,14 @@ module "root" {
 
         inheritance_disabled_checkbox.click()
         self._click_save_settings()
+        # Wait for update to complete, to ensure the update has been committed before verifying
+        self._wait_for_settings_save()
 
         # Verify the value was unset
-        module_provider._cache_db_row = None
-        self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, False)
+        self.assert_equals(
+            lambda: self._get_module_provider_inheritance_disabled('moduledetails', 'fullypopulated', 'testprovider'),
+            False
+        )
 
     def test_disable_inheritance(self, mock_create_audit_event):
         """Test disabling provider source inheritance (checking the disabled box)"""
@@ -3429,14 +3447,18 @@ module "root" {
         settings_tab_button.click()
 
         # Verify inheritance is not disabled (checkbox not checked)
-        inheritance_disabled_checkbox = self.selenium_instance.find_element(By.ID, 'settings-provider-source-inheritance-disabled')
-        assert inheritance_disabled_checkbox.get_attribute("checked") is None
+        inheritance_disabled_checkbox = self.wait_for_element(By.ID, 'settings-provider-source-inheritance-disabled')
+        self.assert_equals(lambda: inheritance_disabled_checkbox.get_attribute("checked"), None)
 
         # Check the box to disable inheritance
         inheritance_disabled_checkbox.click()
         self._click_save_settings()
+        # Wait for update to complete, to ensure the update has been committed before verifying
+        self._wait_for_settings_save()
 
         # Verify the value was set
-        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-        self.assert_equals(lambda: module_provider.provider_source_inheritance_disabled, True)
+        self.assert_equals(
+            lambda: self._get_module_provider_inheritance_disabled('moduledetails', 'fullypopulated', 'testprovider'),
+            True
+        )
 

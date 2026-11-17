@@ -73,7 +73,7 @@ class TestCreateNamespace(SeleniumTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="testnamespacecreation"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="testnamespacecreation"))
 
 
     def test_create_with_display_name(self):
@@ -102,7 +102,7 @@ class TestCreateNamespace(SeleniumTest):
         finally:
             db = Database.get()
             with db.get_connection() as conn:
-                conn.execute(db.namespace.delete(db.namespace.c.namespace=="testnamespacedisplayname"))
+                conn.execute(db.namespace.delete().where(db.namespace.c.namespace=="testnamespacedisplayname"))
 
     def test_unauthenticated(self):
         """Test creating a namespace when not authenticated."""

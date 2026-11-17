@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.4.0...v4.4.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **ci:** Remove seaweed fs command, since this is the default behavoir ([3ba9247](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3ba92470640a86c67413a4c83fbb329f0a776b9e))
+* **db:** Upgrade sqlalchemy to 2.x ([3213d6f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3213d6fe9d75b7fa596a3a1de2e7fa7ab8675d74))
+* Fix use of execution of SQL text ([b3f2cb5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b3f2cb5e9292a68f0c3feee01347fe8c0f2c55cc))
+* Further fixes after upgrading packages ([dc7cd5f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dc7cd5fa0bb7c639424d518ee7bd28412efabc64))
+
 # [4.4.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.3.4...v4.4.0) (2026-05-10)
 
 

@@ -1,3 +1,4 @@
+import sqlalchemy
 
 from asyncio import subprocess
 from io import BytesIO
@@ -741,18 +742,18 @@ Test Markdown content: {file_}""")
 
                 db = terrareg.database.Database.get()
                 with db.get_connection() as conn:
-                    res = conn.execute(db.provider_version_documentation.select().where(
+                    res = conn.execute(sqlalchemy.select(db.provider_version_documentation).where(
                         db.provider_version_documentation.c.provider_version_id==provider_extractor._provider_version.pk
                     )).all()
                     assert len(res) == len(expected_files)
 
                     for row in res:
-                        assert row['filename'] in expected_files
-                        expected_file_content = expected_files[row['filename']]
-                        del expected_files[row['filename']]
+                        assert row._mapping['filename'] in expected_files
+                        expected_file_content = expected_files[row._mapping['filename']]
+                        del expected_files[row._mapping['filename']]
 
-                        assert dict(row) == {
-                            'id': row["id"],
+                        assert dict(row._mapping) == {
+                            'id': row._mapping["id"],
                             'content': f'Test Markdown content: {expected_file_content["file_id"]}'.encode('utf-8'),
                             'description': f'This is a test description for {expected_file_content["file_id"]}'.encode('utf-8'),
                             'documentation_type': documentation_type,
@@ -782,11 +783,11 @@ Test Markdown content: {file_}""")
             # Obtain DB row for release binary
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                res = conn.execute(db.provider_version_binary.select().where(
+                res = conn.execute(sqlalchemy.select(db.provider_version_binary).where(
                     db.provider_version_binary.c.provider_version_id==provider_extractor._provider_version.pk
                 )).all()
                 assert len(res) == 1
-                row = dict(res[0])
+                row = dict(res[0]._mapping)
                 assert row['architecture'] == ProviderBinaryArchitectureType.AMD64
                 assert row['checksum'] == 'a41a58bd5ac74aabbe95b33909aa3fb5bca17efb9825f3924cf4ccfe393a6abc'
                 assert row['name'] == 'terraform-provider-multiple-versions_1.9.4_linux_amd64.zip'
@@ -809,7 +810,7 @@ Test Markdown content: {file_}""")
             # Obtain DB row for release binary
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                res = conn.execute(db.provider_version_binary.select().where(
+                res = conn.execute(sqlalchemy.select(db.provider_version_binary).where(
                     db.provider_version_binary.c.provider_version_id==provider_extractor._provider_version.pk
                 )).all()
                 assert len(res) == 0
@@ -831,7 +832,7 @@ Test Markdown content: {file_}""")
             # Obtain DB row for release binary
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
-                res = conn.execute(db.provider_version_binary.select().where(
+                res = conn.execute(sqlalchemy.select(db.provider_version_binary).where(
                     db.provider_version_binary.c.provider_version_id==provider_extractor._provider_version.pk
                 )).all()
                 assert len(res) == 0
@@ -934,12 +935,12 @@ this is a random line
                     # Ensure value stored in database matches the value from the file
                     db = terrareg.database.Database.get()
                     with db.get_connection() as conn:
-                        res = conn.execute(db.provider_version.select().where(db.provider_version.c.id==provider_extractor._provider_version.pk)).all()
+                        res = conn.execute(sqlalchemy.select(db.provider_version).where(db.provider_version.c.id==provider_extractor._provider_version.pk)).all()
                         if expected_value:
-                            assert res[0]["protocol_versions"] is not None
-                            assert json.loads(res[0]["protocol_versions"]) == expected_value
+                            assert res[0]._mapping["protocol_versions"] is not None
+                            assert json.loads(res[0]._mapping["protocol_versions"]) == expected_value
                         else:
-                            assert res[0]["protocol_versions"] is None
+                            assert res[0]._mapping["protocol_versions"] is None
 
                     # Ensure property matches expected value
                     assert provider_extractor._provider_version.protocols == expected_property

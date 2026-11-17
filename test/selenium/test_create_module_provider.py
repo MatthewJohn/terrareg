@@ -177,7 +177,7 @@ class TestCreateModuleProvider(SeleniumTest):
         # Ensure module was created
         module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'with-git-path'), 'testprovider')
         assert module_provider is not None
-        assert module_provider._get_db_row()['git_path'] == './testmodulesubdir'
+        assert module_provider._get_db_row()._mapping['git_path'] == './testmodulesubdir'
         with self._patch_audit_event_creation():
             module_provider.delete()
 
@@ -230,7 +230,7 @@ class TestCreateModuleProvider(SeleniumTest):
                 # Ensure module was created
                 module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'with-git-path'), 'testprovider')
                 assert module_provider is not None
-                assert module_provider._get_db_row()['git_tag_format'] == expected_git_tag_format
+                assert module_provider._get_db_row()._mapping['git_tag_format'] == expected_git_tag_format
         finally:
             module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'with-git-path'), 'testprovider')
             if module_provider:
@@ -377,11 +377,11 @@ class TestCreateModuleProvider(SeleniumTest):
             # Ensure module was created with correct attrtibutes
             git_provider = terrareg.models.GitProvider.get_by_name(git_provider_name)
             assert module_provider is not None
-            assert module_provider._get_db_row()['git_provider_id'] == git_provider.pk
-            assert module_provider._get_db_row()['repo_base_url_template'] is None
-            assert module_provider._get_db_row()['repo_clone_url_template'] is None
-            assert module_provider._get_db_row()['repo_browse_url_template'] is None
-            assert module_provider._get_db_row()['git_path'] == expected_git_path_template
+            assert module_provider._get_db_row()._mapping['git_provider_id'] == git_provider.pk
+            assert module_provider._get_db_row()._mapping['repo_base_url_template'] is None
+            assert module_provider._get_db_row()._mapping['repo_clone_url_template'] is None
+            assert module_provider._get_db_row()._mapping['repo_browse_url_template'] is None
+            assert module_provider._get_db_row()._mapping['git_path'] == expected_git_path_template
 
         finally:
             with self._patch_audit_event_creation():

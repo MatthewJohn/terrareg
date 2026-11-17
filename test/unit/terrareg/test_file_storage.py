@@ -397,7 +397,7 @@ class TestS3FileStorage(TerraregUnitTest):
         ("/test-path/test-path2", "/test/directory/in/s3/", "test_dest_file", "/test-path/test-path2/test/directory/in/s3/test_dest_file"),
         ("/test-path/test-path3/", "/test/dir/", "/leadingslash", "/test-path/test-path3/test/dir/leadingslash"),
     ])
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_upload_file(self, bucket_path, dest_directory, dest_filename, test_key):
         """Upload file to s3"""
 
@@ -429,7 +429,7 @@ class TestS3FileStorage(TerraregUnitTest):
         True,
         False
     ])
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_write_file(self, bucket_path, dest_path, test_key, binary):
         """Upload file to s3"""
 
@@ -449,7 +449,7 @@ class TestS3FileStorage(TerraregUnitTest):
         instance = terrareg.file_storage.S3FileStorage(s3_url='s3://test-bucket')
         assert instance.make_directory(directory="/does/not/exist") is None
 
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_delete_file(self):
         """Test delete_file method"""
         with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/test-base-dir/") as instance:
@@ -468,7 +468,7 @@ class TestS3FileStorage(TerraregUnitTest):
             with pytest.raises(botocore.exceptions.ClientError):
                 instance._s3_client.head_object(Bucket="test-bucket", Key="/test-base-dir/some-test/file-to-delete")
 
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_read_file_bytes_mode(self):
         """Test read_file method"""
         with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/another-base-dir/") as instance:
@@ -485,7 +485,7 @@ class TestS3FileStorage(TerraregUnitTest):
             assert file_handler is not None
             assert file_handler.read() == expected_content
 
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_read_file_text_mode(self):
         """Test read_file method"""
         with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/another-base-dir/") as instance:
@@ -499,7 +499,7 @@ class TestS3FileStorage(TerraregUnitTest):
             with pytest.raises(NotImplementedError):
                 instance.read_file(path="/some-test/file-to-read", bytes_mode=False)
 
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_read_file_non_existent(self):
         """Test read_file method with non-existent file"""
         with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/another-base-dir/") as instance:
@@ -509,7 +509,7 @@ class TestS3FileStorage(TerraregUnitTest):
         True,
         False
     ])
-    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    @skipif_unless_ci(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to S3 storage not configured")
     def test_file_exists(self, exists):
         """Test file_exists method"""
         with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/exists-base-dir/") as instance:
